@@ -1,0 +1,323 @@
+// Prisma Schema for Hay Equipo Platform
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum SportType {
+  PADEL
+  FUTBOL_5
+  FUTBOL_7
+  FUTBOL_8
+  FUTBOL_11
+  TENIS
+  PICKLEBALL
+  BASQUET
+  VOLEY
+  HOCKEY
+  SQUASH
+}
+
+enum BookingStatus {
+  AVAILABLE
+  HELD
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  MANUAL_ENTRY
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REFUNDED
+  PARTIALLY_PAID
+}
+
+enum SplitType {
+  EQUAL
+  CUSTOM
+}
+
+enum SubscriptionStatus {
+  PENDING_APPROVAL
+  ACTIVE
+  PAUSED
+  CANCELLED
+  EXPIRED
+}
+
+enum BillingFrequency {
+  WEEKLY
+  MONTHLY
+  SEASON
+}
+
+enum OccurrenceStatus {
+  SCHEDULED
+  SKIPPED_BY_USER
+  RELEASED_TO_MARKETPLACE
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  phone         String    @unique
+  fullName      String
+  avatarUrl     String?
+  rating        Float     @default(5.0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  bookings      Booking[]
+  subscriptions FixedSlotSubscription[]
+  groupMembers  GroupMember[]
+  waitlists     Waitlist[]
+  reviews       Review[]
+  clubAdmins    ClubAdmin[]
+}
+
+model Club {
+  id            String    @id @default(uuid())
+  name          String
+  slug          String    @unique
+  description   String?
+  address       String
+  city          String
+  province      String
+  latitude      Float
+  longitude     Float
+  phone         String
+  whatsapp      String
+  instagram     String?
+  website       String?
+  rating        Float     @default(4.8)
+  reviewCount   Int       @default(0)
+  images        String[]
+  amenities     Json      // { parking: true, showers: true, buffet: true, ... }
+  openingTime   String    @default("08:00")
+  closingTime   String    @default("00:00")
+  minPrice      Float     @default(0)
+  active        Boolean   @default(true)
+  mpAccessToken String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  courts        Court[]
+  admins        ClubAdmin[]
+  subscriptions FixedSlotSubscription[]
+  reviews       Review[]
+}
+
+model ClubAdmin {
+  id        String   @id @default(uuid())
+  clubId    String
+  userId    String
+  role      String   @default("MANAGER") // OWNER, MANAGER, RECEPTIONIST
+  club      Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([clubId, userId])
+}
+
+model Court {
+  id                     String    @id @default(uuid())
+  clubId                 String
+  sportType              SportType
+  name                   String
+  surface                String    // Panorámica, Césped Sintético, Cemento, etc.
+  isCovered              Boolean   @default(false)
+  hasLighting            Boolean   @default(true)
+  durationMinutes        Int       @default(90)
+  pricePerHour           Float
+  priceFixedSlotDiscount Float     @default(0.10) // 10%
+  images                 String[]
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  club                   Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  priceRules             PriceRule[]
+  bookings               Booking[]
+  subscriptions          FixedSlotSubscription[]
+  waitlists              Waitlist[]
+}
+
+model PriceRule {
+  id             String   @id @default(uuid())
+  courtId        String
+  dayOfWeek      Int      // 0 = Domingo, 6 = Sábado
+  startTime      String   // "18:00"
+  endTime        String   // "00:00"
+  priceRegular   Float
+  priceFixedSlot Float
+  isHappyHour    Boolean  @default(false)
+
+  court          Court    @relation(fields: [courtId], references: [id], onDelete: Cascade)
+}
+
+model Booking {
+  id            String        @id @default(uuid())
+  courtId       String
+  userId        String
+  userName      String
+  userPhone     String
+  date          String        // YYYY-MM-DD
+  startTime     String        // HH:mm
+  endTime       String        // HH:mm
+  totalPrice    Float
+  serviceFee    Float         @default(0)
+  status        BookingStatus @default(HELD)
+  holdExpiresAt DateTime?
+  paymentType   String        @default("FULL") // FULL or SPLIT
+  paymentStatus PaymentStatus @default(PENDING)
+  isFixedSlot   Boolean       @default(false)
+  source        String        @default("APP")  // APP, MANUAL_ENTRY, FIXED_SLOT
+  notes         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  court         Court         @relation(fields: [courtId], references: [id], onDelete: Cascade)
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  splitPayment  SplitPayment?
+  payments      Payment[]
+  occurrences   RecurringBookingOccurrence[]
+}
+
+model SplitPayment {
+  id            String               @id @default(uuid())
+  bookingId     String               @unique
+  totalAmount   Float
+  sharesCount   Int                  @default(4)
+  splitType     SplitType            @default(EQUAL)
+  shareToken    String               @unique
+  status        PaymentStatus        @default(PENDING)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  booking       Booking              @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  participants  PaymentParticipant[]
+}
+
+model PaymentParticipant {
+  id             String        @id @default(uuid())
+  splitPaymentId String
+  userId         String?
+  name           String
+  phone          String?
+  amount         Float
+  status         String        @default("PENDING") // PENDING, PAID, REFUNDED
+  paidAt         DateTime?
+  mpPaymentId    String?
+
+  splitPayment   SplitPayment  @relation(fields: [splitPaymentId], references: [id], onDelete: Cascade)
+}
+
+model FixedSlotSubscription {
+  id                  String             @id @default(uuid())
+  userId              String
+  clubId              String
+  courtId             String
+  sportType           SportType
+  dayOfWeek           Int                // 0-6
+  startTime           String             // HH:mm
+  endTime             String             // HH:mm
+  startDate           String             // YYYY-MM-DD
+  endDate             String?
+  durationMonths      Int                @default(3)
+  pricePerOccurrence  Float
+  discountMonthlyTotal Float             @default(0)
+  billingFrequency    BillingFrequency   @default(MONTHLY)
+  status              SubscriptionStatus @default(ACTIVE)
+  autoRenew           Boolean            @default(true)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  club                Club               @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  court               Court              @relation(fields: [courtId], references: [id], onDelete: Cascade)
+  occurrences         RecurringBookingOccurrence[]
+}
+
+model RecurringBookingOccurrence {
+  id             String           @id @default(uuid())
+  subscriptionId String
+  bookingId      String?
+  scheduledDate  String           // YYYY-MM-DD
+  status         OccurrenceStatus @default(SCHEDULED)
+  isPaid         Boolean          @default(false)
+  price          Float
+  createdAt      DateTime         @default(now())
+
+  subscription   FixedSlotSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  booking        Booking?               @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+}
+
+model Payment {
+  id            String        @id @default(uuid())
+  bookingId     String
+  mpPaymentId   String?
+  amount        Float
+  paymentMethod String        @default("MERCADO_PAGO")
+  status        PaymentStatus @default(APPROVED)
+  createdAt     DateTime      @default(now())
+
+  booking       Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+}
+
+model Group {
+  id          String        @id @default(uuid())
+  name        String
+  sportType   SportType
+  avatarUrl   String?
+  createdAt   DateTime      @default(now())
+
+  members     GroupMember[]
+}
+
+model GroupMember {
+  id        String   @id @default(uuid())
+  groupId   String
+  userId    String
+  role      String   @default("MEMBER") // ADMIN, MEMBER
+  autoPay   Boolean  @default(false)
+
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+}
+
+model Waitlist {
+  id        String   @id @default(uuid())
+  courtId   String
+  userId    String
+  date      String   // YYYY-MM-DD
+  startTime String   // HH:mm
+  status    String   @default("WAITING") // WAITING, NOTIFIED, EXPIRED, CONVERTED
+  createdAt DateTime @default(now())
+
+  court     Court    @relation(fields: [courtId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Review {
+  id          String   @id @default(uuid())
+  clubId      String
+  userId      String
+  rating      Float    // 1-5
+  comment     String?
+  courtScore  Float    @default(5.0)
+  serviceScore Float   @default(5.0)
+  createdAt   DateTime @default(now())
+
+  club        Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

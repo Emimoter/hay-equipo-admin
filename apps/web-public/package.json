@@ -1,0 +1,22 @@
+{
+  "name": "@hay-equipo/web-public",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000"
+  },
+  "dependencies": {
+    "@hay-equipo/contracts": "*",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "next": "^14.2.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.12",
+    "@types/react": "^18.2.45",
+    "@types/react-dom": "^18.2.18",
+    "typescript": "^5.4.5"
+  }
+}

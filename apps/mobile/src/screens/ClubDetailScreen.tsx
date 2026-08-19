@@ -1,0 +1,349 @@
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Linking, Platform } from 'react-native';
+import { colors, typography, formatCurrency } from '../components/theme';
+import { mobileApi } from '../services/api';
+import { Club, Court, TimeSlot } from '@hay-equipo/contracts';
+
+interface ClubDetailScreenProps {
+  clubId: string;
+  onNavigateBack: () => void;
+  onNavigateCheckout: (slot: TimeSlot) => void;
+}
+
+export const ClubDetailScreen: React.FC<ClubDetailScreenProps> = ({
+  clubId,
+  onNavigateBack,
+  onNavigateCheckout
+}) => {
+  const [club, setClub] = useState<(Club & { courts: Court[] }) | null>(null);
+  const [selectedCourtId, setSelectedCourtId] = useState<string>('');
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [slots, setSlots] = useState<TimeSlot[]>([]);
+
+  useEffect(() => {
+    loadClub();
+  }, [clubId]);
+
+  useEffect(() => {
+    if (selectedCourtId) {
+      loadSlots();
+    }
+  }, [selectedCourtId, selectedDate]);
+
+  const loadClub = async () => {
+    const data = await mobileApi.getClubDetails(clubId);
+    if (data) {
+      setClub(data);
+      if (data.courts.length > 0) setSelectedCourtId(data.courts[0].id);
+    }
+  };
+
+  const loadSlots = async () => {
+    const data = await mobileApi.searchAvailability({ date: selectedDate });
+    setSlots(data.filter(s => s.courtId === selectedCourtId));
+  };
+
+  const handleOpenMaps = () => {
+    if (!club) return;
+    const lat = club.latitude;
+    const lng = club.longitude;
+    const label = encodeURIComponent(club.name);
+
+    const url = Platform.select({
+      ios: `maps:0,0?q=${label}@${lat},${lng}`,
+      android: `geo:0,0?q=${lat},${lng}(${label})`
+    }) || `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+
+    Linking.openURL(url);
+  };
+
+  if (!club) return null;
+
+  return (
+    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
+      {/* Club Cover Photo */}
+      <View style={styles.imageContainer}>
+        <Image source={{ uri: club.images[0] }} style={styles.image} />
+        <TouchableOpacity style={styles.backButton} onPress={onNavigateBack}>
+          <Text style={styles.backButtonText}>← Volver</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.favoriteButton}>
+          <Text style={{ fontSize: 18 }}>❤️</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.content}>
+        {/* Title & Rating */}
+        <View style={styles.headerRow}>
+          <Text style={typography.titleLarge}>{club.name}</Text>
+          <View style={styles.ratingBadge}>
+            <Text style={styles.ratingText}>★ {club.rating} ({club.reviewCount})</Text>
+          </View>
+        </View>
+
+        <Text style={styles.addressText}>📍 {club.address}, {club.city}</Text>
+
+        {/* Action Buttons: Cómo llegar, WhatsApp, Instagram */}
+        <View style={styles.actionsRow}>
+          <TouchableOpacity style={styles.actionButton} onPress={handleOpenMaps}>
+            <Text style={styles.actionButtonText}>🧭 Cómo llegar</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionButtonSecondary}
+            onPress={() => Linking.openURL(`https://wa.me/${club.whatsapp.replace(/\D/g, '')}`)}
+          >
+            <Text style={styles.actionButtonSecondaryText}>💬 WhatsApp</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Amenities */}
+        <Text style={styles.sectionTitle}>Servicios e Instalaciones</Text>
+        <View style={styles.amenitiesGrid}>
+          {club.amenities.parking && <View style={styles.amenityItem}><Text style={styles.amenityIcon}>🚗</Text><Text style={styles.amenityText}>Estacionamiento</Text></View>}
+          {club.amenities.showers && <View style={styles.amenityItem}><Text style={styles.amenityIcon}>🚿</Text><Text style={styles.amenityText}>Duchas & Vestuarios</Text></View>}
+          {club.amenities.buffet && <View style={styles.amenityItem}><Text style={styles.amenityIcon}>🍔</Text><Text style={styles.amenityText}>Buffet / Bar</Text></View>}
+          {club.amenities.grill && <View style={styles.amenityItem}><Text style={styles.amenityIcon}>🥩</Text><Text style={styles.amenityText}>Parrillas</Text></View>}
+          {club.amenities.equipmentRental && <View style={styles.amenityItem}><Text style={styles.amenityIcon}>🎾</Text><Text style={styles.amenityText}>Alquiler de paletas</Text></View>}
+          {club.amenities.wifi && <View style={styles.amenityItem}><Text style={styles.amenityIcon}>📶</Text><Text style={styles.amenityText}>WiFi gratis</Text></View>}
+        </View>
+
+        {/* Court Selection Tabs */}
+        <Text style={styles.sectionTitle}>Elegí una Cancha</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.courtsScroll}>
+          {club.courts.map(c => {
+            const isSelected = selectedCourtId === c.id;
+            return (
+              <TouchableOpacity
+                key={c.id}
+                style={[styles.courtTab, isSelected && styles.courtTabActive]}
+                onPress={() => setSelectedCourtId(c.id)}
+              >
+                <Text style={[styles.courtTabName, isSelected && styles.courtTabNameActive]}>{c.name}</Text>
+                <Text style={styles.courtTabSurface}>{c.surface}</Text>
+                <Text style={styles.courtTabBadge}>{c.isCovered ? 'Techada' : 'Outdoor'}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
+        {/* Availability Grid */}
+        <Text style={styles.sectionTitle}>Disponibilidad Real para Hoy</Text>
+        <View style={styles.slotsGrid}>
+          {slots.length === 0 ? (
+            <Text style={styles.noSlotsText}>No hay turnos libres para esta cancha hoy.</Text>
+          ) : (
+            slots.map((slot, idx) => (
+              <TouchableOpacity
+                key={idx}
+                style={styles.slotButton}
+                onPress={() => onNavigateCheckout(slot)}
+              >
+                <Text style={styles.slotButtonTime}>{slot.startTime}</Text>
+                <Text style={styles.slotButtonPrice}>{formatCurrency(slot.price)}</Text>
+                <Text style={styles.slotButtonStatus}>Disponible</Text>
+              </TouchableOpacity>
+            ))
+          )}
+        </View>
+      </View>
+    </ScrollView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background
+  },
+  imageContainer: {
+    position: 'relative'
+  },
+  image: {
+    width: '100%',
+    height: 220
+  },
+  backButton: {
+    position: 'absolute',
+    top: 20,
+    left: 16,
+    backgroundColor: colors.overlay,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20
+  },
+  backButtonText: {
+    color: colors.textPrimary,
+    fontWeight: '700',
+    fontSize: 13
+  },
+  favoriteButton: {
+    position: 'absolute',
+    top: 20,
+    right: 16,
+    backgroundColor: colors.overlay,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  content: {
+    padding: 16
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6
+  },
+  ratingBadge: {
+    backgroundColor: '#3B371E',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8
+  },
+  ratingText: {
+    color: '#FACC15',
+    fontWeight: '700',
+    fontSize: 13
+  },
+  addressText: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    marginBottom: 16
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 24
+  },
+  actionButton: {
+    flex: 1,
+    backgroundColor: colors.primary,
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center'
+  },
+  actionButtonText: {
+    color: colors.background,
+    fontWeight: '700',
+    fontSize: 14
+  },
+  actionButtonSecondary: {
+    flex: 1,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center'
+  },
+  actionButtonSecondaryText: {
+    color: colors.textPrimary,
+    fontWeight: '700',
+    fontSize: 14
+  },
+  sectionTitle: {
+    ...typography.titleMedium,
+    marginTop: 10,
+    marginBottom: 12
+  },
+  amenitiesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 20
+  },
+  amenityItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.card,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.cardBorder
+  },
+  amenityIcon: {
+    fontSize: 16,
+    marginRight: 6
+  },
+  amenityText: {
+    color: colors.textSecondary,
+    fontSize: 12
+  },
+  courtsScroll: {
+    marginBottom: 20
+  },
+  courtTab: {
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+    borderRadius: 12,
+    padding: 14,
+    marginRight: 10,
+    width: 170
+  },
+  courtTabActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.elevated
+  },
+  courtTabName: {
+    color: colors.textPrimary,
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 2
+  },
+  courtTabNameActive: {
+    color: colors.primary
+  },
+  courtTabSurface: {
+    color: colors.textSecondary,
+    fontSize: 11,
+    marginBottom: 6
+  },
+  courtTabBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.background,
+    color: colors.textMuted,
+    fontSize: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4
+  },
+  slotsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10
+  },
+  slotButton: {
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: 12,
+    padding: 12,
+    width: '30%',
+    alignItems: 'center'
+  },
+  slotButtonTime: {
+    color: colors.primary,
+    fontSize: 16,
+    fontWeight: '800'
+  },
+  slotButtonPrice: {
+    color: colors.textPrimary,
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 2
+  },
+  slotButtonStatus: {
+    color: colors.textMuted,
+    fontSize: 10,
+    marginTop: 2
+  },
+  noSlotsText: {
+    color: colors.textMuted,
+    fontSize: 13,
+    padding: 12
+  }
+});

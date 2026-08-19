@@ -1,0 +1,69 @@
+{
+  "expo": {
+    "name": "Hay Equipo",
+    "slug": "hay-equipo",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "hayequipo",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#0B0F17"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.hayequipo.app",
+      "associatedDomains": [
+        "applinks:hayequipo.com",
+        "applinks:app.hayequipo.com"
+      ],
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Hay Equipo necesita tu ubicación para mostrarte las canchas de pádel y fútbol más cercanas a vos.",
+        "LSApplicationQueriesSchemes": ["waze", "maps", "comgooglemaps"]
+      }
+    },
+    "android": {
+      "package": "com.hayequipo.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#0B0F17"
+      },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "hayequipo.com",
+              "pathPrefix": "/join"
+            },
+            {
+              "scheme": "https",
+              "host": "hayequipo.com",
+              "pathPrefix": "/split"
+            },
+            {
+              "scheme": "https",
+              "host": "hayequipo.com",
+              "pathPrefix": "/booking"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ],
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "POST_NOTIFICATIONS"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Mostraremos canchas y clubes cerca de tu zona."
+        }
+      ]
+    ]
+  }
+}

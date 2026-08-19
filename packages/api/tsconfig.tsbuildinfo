@@ -1,0 +1,1 @@
+{"root":["./src/server.ts","./src/routes/availability.ts","./src/routes/bookings.ts","./src/routes/club-admin.ts","./src/routes/clubs.ts","./src/routes/fixed-slots.ts","./src/routes/split.ts","./src/routes/sports.ts","./src/services/bookingengine.ts","./src/services/mercadopagoservice.ts","./src/services/notificationservice.ts","./src/test/api.test.ts"],"version":"5.9.3"}
