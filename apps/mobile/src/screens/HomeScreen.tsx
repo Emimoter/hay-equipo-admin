@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { colors, typography, formatCurrency } from '../components/theme';
 import { mobileApi } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import { Club, TimeSlot } from '@hay-equipo/contracts';
 
 interface HomeScreenProps {
@@ -9,14 +10,17 @@ interface HomeScreenProps {
   onNavigateClub: (clubId: string) => void;
   onNavigateCheckout: (slot: TimeSlot) => void;
   onNavigateFixedSlots: () => void;
+  onNavigateProfile: () => void;
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({
   onNavigateSearch,
   onNavigateClub,
   onNavigateCheckout,
-  onNavigateFixedSlots
+  onNavigateFixedSlots,
+  onNavigateProfile
 }) => {
+  const { userProfile, user } = useAuth();
   const [selectedSport, setSelectedSport] = useState<string>('PADEL');
   const [selectedDateFilter, setSelectedDateFilter] = useState<'HOY' | 'MANANA' | 'FINDE'>('HOY');
   const [clubs, setClubs] = useState<Club[]>([]);
@@ -48,16 +52,23 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     { id: 'TENIS', name: 'Tenis', icon: '🎾' }
   ];
 
+  const displayName = userProfile?.displayName || user?.displayName || 'Emiliano';
+  const photoURL = userProfile?.photoURL || user?.photoURL;
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>¡Hola, Emiliano! 👋</Text>
+          <Text style={styles.greeting}>¡Hola, {displayName.split(' ')[0]}! 👋</Text>
           <Text style={typography.titleLarge}>¿Dónde querés jugar?</Text>
         </View>
-        <TouchableOpacity style={styles.profileBadge}>
-          <Text style={styles.profileBadgeText}>E</Text>
+        <TouchableOpacity style={styles.profileBadge} onPress={onNavigateProfile}>
+          {photoURL ? (
+            <Image source={{ uri: photoURL }} style={styles.profileImage} />
+          ) : (
+            <Text style={styles.profileBadgeText}>{displayName.charAt(0)}</Text>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -235,7 +246,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.cardBorder,
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    overflow: 'hidden'
+  },
+  profileImage: {
+    width: '100%',
+    height: '100%'
   },
   profileBadgeText: {
     color: colors.primary,

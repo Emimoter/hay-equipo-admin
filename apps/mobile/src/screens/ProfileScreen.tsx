@@ -1,17 +1,52 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
 import { colors, typography, formatCurrency } from '../components/theme';
+import { useAuth } from '../context/AuthContext';
 
-export const ProfileScreen: React.FC = () => {
+interface ProfileScreenProps {
+  onNavigateLogin?: () => void;
+}
+
+export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateLogin }) => {
+  const { user, userProfile, logout } = useAuth();
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Cerrar Sesión',
+      '¿Estás seguro de que querés salir de tu cuenta?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Cerrar Sesión',
+          style: 'destructive',
+          onPress: async () => {
+            await logout();
+            if (onNavigateLogin) onNavigateLogin();
+          }
+        }
+      ]
+    );
+  };
+
+  const displayName = userProfile?.displayName || user?.displayName || 'Emiliano Martínez';
+  const email = userProfile?.email || user?.email || 'emiliano@hayequipo.com.ar';
+  const photoURL = userProfile?.photoURL || user?.photoURL || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80';
+  const phone = userProfile?.phone || '+54 9 11 5555-0001';
+  const wallet = userProfile?.walletBalance || 12000;
+  const matches = userProfile?.matchesPlayed || 24;
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Profile Header */}
       <View style={styles.profileHeader}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>E</Text>
+        <View style={styles.avatarContainer}>
+          <Image source={{ uri: photoURL }} style={styles.avatarImage} />
+          <View style={styles.googleBadge}>
+            <Text style={{ fontSize: 10 }}>🌐</Text>
+          </View>
         </View>
-        <Text style={styles.userName}>Emiliano Martínez</Text>
-        <Text style={styles.userPhone}>+54 9 11 5555-0001 · Palermo, CABA</Text>
+        <Text style={styles.userName}>{displayName}</Text>
+        <Text style={styles.userPhone}>{phone} · {email}</Text>
 
         <View style={styles.levelBadge}>
           <Text style={styles.levelBadgeText}>🎾 PÁDEL 5TA CATEGORÍA · INTERMEDIO</Text>
@@ -21,7 +56,7 @@ export const ProfileScreen: React.FC = () => {
       {/* Stats Grid */}
       <View style={styles.statsRow}>
         <View style={styles.statCard}>
-          <Text style={styles.statNumber}>24</Text>
+          <Text style={styles.statNumber}>{matches}</Text>
           <Text style={styles.statLabel}>Partidos jugados</Text>
         </View>
         <View style={styles.statCard}>
@@ -38,8 +73,8 @@ export const ProfileScreen: React.FC = () => {
       <View style={styles.walletCard}>
         <View>
           <Text style={styles.walletLabel}>Saldo en Billetera / Créditos</Text>
-          <Text style={styles.walletAmount}>{formatCurrency(12000)}</Text>
-          <Text style={styles.walletSub}>Por fechas liberadas y reembolsos</Text>
+          <Text style={styles.walletAmount}>{formatCurrency(wallet)}</Text>
+          <Text style={styles.walletSub}>Por fechas liberadas y split payments</Text>
         </View>
         <TouchableOpacity style={styles.walletBtn}>
           <Text style={styles.walletBtnText}>Usar saldo</Text>
@@ -69,9 +104,9 @@ export const ProfileScreen: React.FC = () => {
           <Text style={styles.menuText}>Notificaciones y Recordatorios (24h / 2h)</Text>
           <Text style={styles.menuArrow}>›</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem}>
-          <Text style={styles.menuIcon}>🛡️</Text>
-          <Text style={styles.menuText}>Políticas de Cancelación y Reembolso</Text>
+        <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
+          <Text style={styles.menuIcon}>🚪</Text>
+          <Text style={[styles.menuText, { color: colors.danger, fontWeight: '700' }]}>Cerrar Sesión</Text>
           <Text style={styles.menuArrow}>›</Text>
         </TouchableOpacity>
       </View>
@@ -92,26 +127,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20
   },
-  avatar: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: colors.elevated,
-    borderWidth: 2,
-    borderColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+  avatarContainer: {
+    position: 'relative',
     marginBottom: 10
   },
-  avatarText: {
-    color: colors.primary,
-    fontSize: 28,
-    fontWeight: '800'
+  avatarImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 2,
+    borderColor: colors.primary
+  },
+  googleBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: colors.card,
+    borderRadius: 10,
+    padding: 3,
+    borderWidth: 1,
+    borderColor: colors.cardBorder
   },
   userName: {
     color: colors.textPrimary,
     fontSize: 20,
-    fontWeight: '700'
+    fontWeight: '800'
   },
   userPhone: {
     color: colors.textSecondary,

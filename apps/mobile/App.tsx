@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, StatusBar } from 'react-native';
 import { colors } from './src/components/theme';
+import { AuthProvider, useAuth } from './src/context/AuthContext';
+import { AuthScreen } from './src/screens/AuthScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { SearchMapScreen } from './src/screens/SearchMapScreen';
 import { ClubDetailScreen } from './src/screens/ClubDetailScreen';
@@ -13,7 +15,9 @@ import { TimeSlot, Booking } from '@hay-equipo/contracts';
 
 type TabType = 'HOME' | 'SEARCH' | 'MATCHES' | 'BOOKINGS' | 'PROFILE';
 
-export default function App() {
+function MainAppContent() {
+  const { user, userProfile } = useAuth();
+  const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<TabType>('HOME');
   const [selectedClubId, setSelectedClubId] = useState<string | null>(null);
   const [selectedSlotForCheckout, setSelectedSlotForCheckout] = useState<TimeSlot | null>(null);
@@ -42,6 +46,10 @@ export default function App() {
     setSelectedSlotForCheckout(null);
     setActiveTab('BOOKINGS');
   };
+
+  if (showAuthModal) {
+    return <AuthScreen onSuccess={() => setShowAuthModal(false)} />;
+  }
 
   // Render Modal Views or Active Tab
   const renderScreen = () => {
@@ -90,6 +98,7 @@ export default function App() {
             onNavigateClub={navigateToClub}
             onNavigateCheckout={navigateToCheckout}
             onNavigateFixedSlots={() => setActiveTab('MATCHES')}
+            onNavigateProfile={() => setActiveTab('PROFILE')}
           />
         );
       case 'SEARCH':
@@ -110,7 +119,7 @@ export default function App() {
           />
         );
       case 'PROFILE':
-        return <ProfileScreen />;
+        return <ProfileScreen onNavigateLogin={() => setShowAuthModal(true)} />;
       default:
         return null;
     }
@@ -122,7 +131,7 @@ export default function App() {
       <View style={styles.screenContainer}>{renderScreen()}</View>
 
       {/* Bottom 5-Tab Navigation Bar */}
-      {!selectedSlotForCheckout && !activeSplitBooking && !selectedClubId && (
+      {!selectedSlotForCheckout && !activeSplitBooking && !selectedClubId && !showAuthModal && (
         <View style={styles.bottomNav}>
           <TouchableOpacity style={styles.navTab} onPress={() => setActiveTab('HOME')}>
             <Text style={[styles.navIcon, activeTab === 'HOME' && styles.navIconActive]}>🏠</Text>
@@ -151,6 +160,14 @@ export default function App() {
         </View>
       )}
     </SafeAreaView>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <MainAppContent />
+    </AuthProvider>
   );
 }
 
