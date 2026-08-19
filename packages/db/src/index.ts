@@ -1,5 +1,7 @@
 import { Sport, Club, Court, Booking, SplitPayment, FixedSlotSubscription, RecurringOccurrence, SportType } from '@hay-equipo/contracts';
 
+export * from './realistic_seed';
+
 export const INITIAL_SPORTS: Sport[] = [
   { id: 'sp-padel', name: 'Pádel', slug: 'padel', icon: 'tennisball', defaultDurationMinutes: 90, active: true },
   { id: 'sp-f5', name: 'Fútbol 5', slug: 'futbol-5', icon: 'football', defaultDurationMinutes: 60, active: true },

@@ -8,10 +8,19 @@
     "apps/*"
   ],
   "scripts": {
-    "build": "npm run build --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present"
+    "build": "next build apps/web-club",
+    "build:packages": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "dev:web-club": "next dev apps/web-club -p 3000",
+    "start:web-club": "next start apps/web-club -p 3000",
+    "deploy": "vercel --prod"
   },
   "dependencies": {
     "firebase": "^12.18.0"
+  },
+  "devDependencies": {
+    "next": "^14.2.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   }
 }

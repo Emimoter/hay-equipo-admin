@@ -1,0 +1,6 @@
+{
+  "version": 2,
+  "framework": "nextjs",
+  "buildCommand": "next build apps/web-club",
+  "outputDirectory": "apps/web-club/.next"
+}
