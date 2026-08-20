@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  ActivityIndicator,
+  Platform,
+} from 'react-native';
+import Svg, { Circle, Line } from 'react-native-svg';
 import { colors, typography, formatCurrency } from '../components/theme';
 import { mobileApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -18,52 +28,75 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   onNavigateClub,
   onNavigateCheckout,
   onNavigateFixedSlots,
-  onNavigateProfile
+  onNavigateProfile,
 }) => {
   const { userProfile, user } = useAuth();
-  const [selectedSport, setSelectedSport] = useState<string>('PADEL');
-  const [selectedDateFilter, setSelectedDateFilter] = useState<'HOY' | 'MANANA' | 'FINDE'>('HOY');
   const [clubs, setClubs] = useState<Club[]>([]);
   const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     loadHomeData();
-  }, [selectedSport, selectedDateFilter]);
+  }, []);
 
   const loadHomeData = async () => {
     setLoading(true);
     const today = new Date().toISOString().split('T')[0];
     const [clubsData, slotsData] = await Promise.all([
-      mobileApi.getClubs(selectedSport),
-      mobileApi.searchAvailability({ sport: selectedSport, date: today, timeFrom: '18:00' })
+      mobileApi.getClubs('PADEL'),
+      mobileApi.searchAvailability({ date: today, timeFrom: '18:00' }),
     ]);
     setClubs(clubsData);
     setAvailableSlots(slotsData);
     setLoading(false);
   };
 
-  const sportsList = [
-    { id: 'PADEL', name: 'Pádel', icon: '🎾' },
-    { id: 'FUTBOL_5', name: 'Fútbol 5', icon: '⚽' },
-    { id: 'FUTBOL_7', name: 'Fútbol 7', icon: '⚽' },
-    { id: 'FUTBOL_8', name: 'Fútbol 8', icon: '⚽' },
-    { id: 'FUTBOL_11', name: 'Fútbol 11', icon: '⚽' },
-    { id: 'TENIS', name: 'Tenis', icon: '🎾' }
-  ];
-
   const displayName = userProfile?.displayName || user?.displayName || 'Emiliano';
   const photoURL = userProfile?.photoURL || user?.photoURL;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>¡Hola, {displayName.split(' ')[0]}! 👋</Text>
-          <Text style={typography.titleLarge}>¿Dónde querés jugar?</Text>
-        </View>
-        <TouchableOpacity style={styles.profileBadge} onPress={onNavigateProfile}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* ═══════════════════════════════════════════════════════
+          HEADER: BUSCADOR CON LUPITA Y PERFIL
+          ═══════════════════════════════════════════════════════ */}
+      <View style={styles.headerRow}>
+        <TouchableOpacity
+          activeOpacity={0.85}
+          style={styles.searchBar}
+          onPress={() => onNavigateSearch()}
+        >
+          <View style={styles.searchIconBox}>
+            <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+              <Circle cx="11" cy="11" r="7" stroke="#fc1c46" strokeWidth={2.5} />
+              <Line
+                x1="16.5"
+                y1="16.5"
+                x2="21.5"
+                y2="21.5"
+                stroke="#fc1c46"
+                strokeWidth={3}
+                strokeLinecap="round"
+              />
+            </Svg>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.searchPlaceholder}>Buscar club, zona o cancha...</Text>
+            <Text style={styles.searchSub}>Palermo, Belgrano, Caballito · Hoy</Text>
+          </View>
+          <View style={styles.filterPill}>
+            <Text style={styles.filterPillText}>Filtros</Text>
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.profileBadge}
+          onPress={onNavigateProfile}
+          activeOpacity={0.8}
+        >
           {photoURL ? (
             <Image source={{ uri: photoURL }} style={styles.profileImage} />
           ) : (
@@ -72,87 +105,66 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         </TouchableOpacity>
       </View>
 
-      {/* Sport Selector */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.sportsScroll}>
-        {sportsList.map(sport => {
-          const isSelected = selectedSport === sport.id;
-          return (
-            <TouchableOpacity
-              key={sport.id}
-              style={[styles.sportChip, isSelected && styles.sportChipActive]}
-              onPress={() => setSelectedSport(sport.id)}
-            >
-              <Text style={styles.sportIcon}>{sport.icon}</Text>
-              <Text style={[styles.sportName, isSelected && styles.sportNameActive]}>{sport.name}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
+      {/* ═══════════════════════════════════════════════════════
+          OFERTA / ANUNCIO: TURNO FIJO SEMANAL
+          ═══════════════════════════════════════════════════════ */}
+      <TouchableOpacity
+        activeOpacity={0.9}
+        style={styles.offerBanner}
+        onPress={onNavigateFixedSlots}
+      >
+        <View style={styles.offerHeaderRow}>
+          <View style={styles.offerBadge}>
+            <Text style={styles.offerBadgeText}>🔥 15% OFF SEMANAL</Text>
+          </View>
+          <Text style={styles.offerTag}>OFERTA EXCLUSIVA</Text>
+        </View>
 
-      {/* Quick Search Bar */}
-      <TouchableOpacity style={styles.searchBarContainer} onPress={() => onNavigateSearch(selectedSport)}>
-        <View style={styles.searchIconBox}>
-          <Text style={{ fontSize: 18 }}>🔍</Text>
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.searchPlaceholder}>Buscar por zona o club...</Text>
-          <Text style={styles.searchSub}>Palermo · Hoy · 20:00 en adelante</Text>
-        </View>
-        <View style={styles.filterPill}>
-          <Text style={styles.filterPillText}>Filtros</Text>
+        <Text style={styles.offerTitle}>Asegurá tu Cancha Fija Todas las Semanas</Text>
+        <Text style={styles.offerSubtitle}>
+          Mismo día y horario reservado automáticamente con tu grupo. Descuentos especiales y sin señas manuales.
+        </Text>
+
+        <View style={styles.offerCtaRow}>
+          <View style={styles.offerButton}>
+            <Text style={styles.offerButtonText}>Aprovechar turno fijo →</Text>
+          </View>
         </View>
       </TouchableOpacity>
 
-      {/* Turno Fijo Banner */}
-      <TouchableOpacity style={styles.fixedSlotBanner} onPress={onNavigateFixedSlots}>
-        <View style={styles.fixedSlotBadge}>
-          <Text style={styles.fixedSlotBadgeText}>TURNO FIJO SEMANAL</Text>
-        </View>
-        <Text style={styles.fixedSlotTitle}>Asegurá tu cancha todas las semanas</Text>
-        <Text style={styles.fixedSlotSubtitle}>Descuentos de hasta 15% + renovación automática con tu grupo.</Text>
-        <View style={styles.fixedSlotAction}>
-          <Text style={styles.fixedSlotActionText}>Ver opciones fijas →</Text>
-        </View>
-      </TouchableOpacity>
-
-      {/* Quick Date Chips */}
-      <View style={styles.dateChipsRow}>
-        {(['HOY', 'MANANA', 'FINDE'] as const).map(dateKey => {
-          const isSelected = selectedDateFilter === dateKey;
-          const labels = { HOY: 'Hoy', MANANA: 'Mañana', FINDE: 'Fin de semana' };
-          return (
-            <TouchableOpacity
-              key={dateKey}
-              style={[styles.dateChip, isSelected && styles.dateChipActive]}
-              onPress={() => setSelectedDateFilter(dateKey)}
-            >
-              <Text style={[styles.dateChipText, isSelected && styles.dateChipTextActive]}>{labels[dateKey]}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-
-      {/* Section: Disponibles para jugar hoy (Direct Available Slots) */}
+      {/* ═══════════════════════════════════════════════════════
+          SECTION: PARA JUGAR HOY (TURNOS LIBRES INMEDIATOS)
+          ═══════════════════════════════════════════════════════ */}
       <View style={styles.sectionHeader}>
         <View>
           <Text style={typography.titleMedium}>Para jugar hoy</Text>
           <Text style={typography.bodyMuted}>Turnos libres en las próximas horas</Text>
         </View>
-        <TouchableOpacity onPress={() => onNavigateSearch(selectedSport)}>
-          <Text style={styles.seeAllText}>Ver todos</Text>
+        <TouchableOpacity onPress={() => onNavigateSearch()}>
+          <Text style={styles.seeAllText}>Ver todos →</Text>
         </TouchableOpacity>
       </View>
 
       {loading ? (
-        <ActivityIndicator size="small" color={colors.primary} style={{ marginVertical: 20 }} />
+        <ActivityIndicator size="small" color={colors.primary} style={{ marginVertical: 24 }} />
       ) : availableSlots.length === 0 ? (
         <View style={styles.emptyCard}>
-          <Text style={styles.emptyText}>No hay turnos libres inmediatos para este filtro.</Text>
+          <Text style={styles.emptyText}>No hay turnos libres inmediatos para hoy.</Text>
         </View>
       ) : (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.slotsScroll}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.slotsScroll}
+          contentContainerStyle={{ paddingRight: 16 }}
+        >
           {availableSlots.slice(0, 5).map((slot, idx) => (
-            <TouchableOpacity key={idx} style={styles.slotCard} onPress={() => onNavigateCheckout(slot)}>
+            <TouchableOpacity
+              key={idx}
+              style={styles.slotCard}
+              onPress={() => onNavigateCheckout(slot)}
+              activeOpacity={0.85}
+            >
               <View style={styles.slotTimeBadge}>
                 <Text style={styles.slotTimeText}>{slot.startTime} – {slot.endTime}</Text>
               </View>
@@ -169,16 +181,26 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         </ScrollView>
       )}
 
-      {/* Section: Clubes destacados */}
+      {/* ═══════════════════════════════════════════════════════
+          SECTION: CLUBES CERCA TUYO
+          ═══════════════════════════════════════════════════════ */}
       <View style={styles.sectionHeader}>
         <View>
           <Text style={typography.titleMedium}>Clubes cerca tuyo</Text>
           <Text style={typography.bodyMuted}>Complejos con mejores instalaciones</Text>
         </View>
+        <TouchableOpacity onPress={() => onNavigateSearch()}>
+          <Text style={styles.seeAllText}>Ver mapa →</Text>
+        </TouchableOpacity>
       </View>
 
       {clubs.map(club => (
-        <TouchableOpacity key={club.id} style={styles.clubCard} onPress={() => onNavigateClub(club.id)}>
+        <TouchableOpacity
+          key={club.id}
+          style={styles.clubCard}
+          onPress={() => onNavigateClub(club.id)}
+          activeOpacity={0.85}
+        >
           <Image source={{ uri: club.images[0] }} style={styles.clubImage} />
           <View style={styles.clubInfo}>
             <View style={styles.clubHeaderRow}>
@@ -200,21 +222,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </View>
         </TouchableOpacity>
       ))}
-
-      {/* Volvé a jugar (Repeat booking) */}
-      <View style={styles.repeatBookingCard}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.repeatBadge}>VOLVÉ A JUGAR</Text>
-          <Text style={styles.repeatTitle}>Pádel · Jueves 19:30 hs</Text>
-          <Text style={styles.repeatSubtitle}>Arena Pádel Palermo · Cancha 1</Text>
-        </View>
-        <TouchableOpacity
-          style={styles.repeatButton}
-          onPress={() => onNavigateSearch('PADEL')}
-        >
-          <Text style={styles.repeatButtonText}>Repetir</Text>
-        </TouchableOpacity>
-      </View>
     </ScrollView>
   );
 };
@@ -222,21 +229,60 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background
+    backgroundColor: colors.background,
   },
   contentContainer: {
     padding: 16,
-    paddingBottom: 40
+    paddingTop: Platform.OS === 'ios' ? 12 : 8,
+    paddingBottom: 90,
   },
-  header: {
+  headerRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20
+    gap: 12,
+    marginBottom: 16,
   },
-  greeting: {
-    ...typography.subtitle,
-    marginBottom: 4
+  searchBar: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(20, 22, 28, 0.95)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  searchIconBox: {
+    marginRight: 10,
+  },
+  searchPlaceholder: {
+    color: colors.textPrimary,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  searchSub: {
+    color: colors.textMuted,
+    fontSize: 11.5,
+    marginTop: 2,
+  },
+  filterPill: {
+    backgroundColor: 'rgba(252, 28, 70, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(252, 28, 70, 0.3)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+  },
+  filterPillText: {
+    color: '#fc1c46',
+    fontSize: 11.5,
+    fontWeight: '700',
   },
   profileBadge: {
     width: 44,
@@ -247,172 +293,107 @@ const styles = StyleSheet.create({
     borderColor: '#fc1c46',
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden'
+    overflow: 'hidden',
   },
   profileImage: {
     width: '100%',
-    height: '100%'
+    height: '100%',
   },
   profileBadgeText: {
     color: '#fc1c46',
     fontWeight: '700',
-    fontSize: 18
+    fontSize: 18,
   },
-  sportsScroll: {
-    marginBottom: 16
-  },
-  sportChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.card,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    marginRight: 10,
-    borderWidth: 1,
-    borderColor: colors.cardBorder
-  },
-  sportChipActive: {
-    backgroundColor: '#fc1c46',
-    borderColor: '#fc1c46'
-  },
-  sportIcon: {
-    fontSize: 16,
-    marginRight: 6
-  },
-  sportName: {
-    ...typography.caption,
-    color: colors.textPrimary
-  },
-  sportNameActive: {
-    color: '#ffffff',
-    fontWeight: '800'
-  },
-  searchBarContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-    borderRadius: 14,
-    padding: 12,
-    marginBottom: 16
-  },
-  searchIconBox: {
-    marginRight: 10
-  },
-  searchPlaceholder: {
-    color: colors.textPrimary,
-    fontSize: 14,
-    fontWeight: '600'
-  },
-  searchSub: {
-    color: colors.textMuted,
-    fontSize: 12,
-    marginTop: 2
-  },
-  filterPill: {
-    backgroundColor: 'rgba(252, 28, 70, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(252, 28, 70, 0.3)',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8
-  },
-  filterPillText: {
-    color: '#fc1c46',
-    fontSize: 12,
-    fontWeight: '700'
-  },
-  fixedSlotBanner: {
+  offerBanner: {
     backgroundColor: 'rgba(252, 28, 70, 0.08)',
-    borderRadius: 14,
+    borderRadius: 18,
     padding: 16,
-    marginBottom: 20,
+    marginBottom: 24,
     borderWidth: 1,
-    borderColor: 'rgba(252, 28, 70, 0.3)'
+    borderColor: 'rgba(252, 28, 70, 0.35)',
+    shadowColor: '#fc1c46',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 4,
   },
-  fixedSlotBadge: {
+  offerHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  offerBadge: {
     backgroundColor: '#fc1c46',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    marginBottom: 8
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 9999,
   },
-  fixedSlotBadgeText: {
-    color: '#FFF',
-    fontSize: 10,
-    fontWeight: '800'
+  offerBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.3,
   },
-  fixedSlotTitle: {
-    color: colors.textPrimary,
-    fontSize: 16,
+  offerTag: {
+    color: '#fc1c46',
+    fontSize: 11,
     fontWeight: '700',
-    marginBottom: 4
+    letterSpacing: 0.5,
   },
-  fixedSlotSubtitle: {
-    color: '#d1d5db',
+  offerTitle: {
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '800',
+    letterSpacing: -0.3,
+    marginBottom: 6,
+  },
+  offerSubtitle: {
+    color: '#9ca3af',
     fontSize: 13,
-    marginBottom: 10
+    lineHeight: 18,
+    marginBottom: 14,
   },
-  fixedSlotAction: {
-    alignSelf: 'flex-start'
+  offerCtaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  fixedSlotActionText: {
+  offerButton: {
+    backgroundColor: 'rgba(252, 28, 70, 0.15)',
+    borderWidth: 1,
+    borderColor: '#fc1c46',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+  },
+  offerButtonText: {
     color: '#fc1c46',
     fontWeight: '700',
-    fontSize: 13
-  },
-  dateChipsRow: {
-    flexDirection: 'row',
-    marginBottom: 20
-  },
-  dateChip: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    backgroundColor: colors.card,
-    marginRight: 8,
-    borderWidth: 1,
-    borderColor: colors.cardBorder
-  },
-  dateChipActive: {
-    backgroundColor: colors.elevated,
-    borderColor: colors.primary
-  },
-  dateChipText: {
-    color: colors.textSecondary,
     fontSize: 13,
-    fontWeight: '500'
-  },
-  dateChipTextActive: {
-    color: colors.primary,
-    fontWeight: '700'
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
     marginBottom: 14,
-    marginTop: 6
+    marginTop: 4,
   },
   seeAllText: {
-    color: colors.primary,
+    color: '#fc1c46',
     fontSize: 13,
-    fontWeight: '600'
+    fontWeight: '700',
   },
   slotsScroll: {
-    marginBottom: 24
+    marginBottom: 24,
   },
   slotCard: {
     backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: colors.cardBorder,
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 14,
     width: 210,
-    marginRight: 12
+    marginRight: 12,
   },
   slotTimeBadge: {
     backgroundColor: 'rgba(252, 28, 70, 0.12)',
@@ -422,23 +403,23 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 6,
     alignSelf: 'flex-start',
-    marginBottom: 8
+    marginBottom: 8,
   },
   slotTimeText: {
     color: '#fc1c46',
     fontWeight: '700',
-    fontSize: 13
+    fontSize: 13,
   },
   slotCourtName: {
     color: colors.textPrimary,
     fontSize: 15,
     fontWeight: '700',
-    marginBottom: 2
+    marginBottom: 2,
   },
   slotClubName: {
     color: colors.textSecondary,
     fontSize: 12,
-    marginBottom: 12
+    marginBottom: 12,
   },
   slotPriceRow: {
     flexDirection: 'row',
@@ -446,12 +427,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderTopWidth: 1,
     borderTopColor: colors.cardBorder,
-    paddingTop: 8
+    paddingTop: 8,
   },
   slotPrice: {
     color: colors.textPrimary,
     fontWeight: '700',
-    fontSize: 14
+    fontSize: 14,
   },
   reserveButton: {
     backgroundColor: '#fc1c46',
@@ -462,60 +443,60 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.4,
     shadowRadius: 4,
-    elevation: 3
+    elevation: 3,
   },
   reserveButtonText: {
     color: '#ffffff',
     fontWeight: '700',
-    fontSize: 12
+    fontSize: 12,
   },
   clubCard: {
     backgroundColor: colors.card,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: colors.cardBorder,
     overflow: 'hidden',
-    marginBottom: 16
+    marginBottom: 16,
   },
   clubImage: {
     width: '100%',
-    height: 140
+    height: 140,
   },
   clubInfo: {
-    padding: 14
+    padding: 14,
   },
   clubHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4
+    marginBottom: 4,
   },
   clubName: {
     color: colors.textPrimary,
     fontSize: 17,
-    fontWeight: '700'
+    fontWeight: '700',
   },
   ratingBadge: {
     backgroundColor: '#3B371E',
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 6
+    borderRadius: 6,
   },
   ratingText: {
     color: '#FACC15',
     fontWeight: '700',
-    fontSize: 12
+    fontSize: 12,
   },
   clubAddress: {
     color: colors.textSecondary,
     fontSize: 13,
-    marginBottom: 10
+    marginBottom: 10,
   },
   amenitiesRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
-    marginBottom: 12
+    marginBottom: 12,
   },
   amenityTag: {
     backgroundColor: colors.elevated,
@@ -523,7 +504,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 6
+    borderRadius: 6,
   },
   clubFooterRow: {
     flexDirection: 'row',
@@ -531,63 +512,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderTopWidth: 1,
     borderTopColor: colors.cardBorder,
-    paddingTop: 10
+    paddingTop: 10,
   },
   priceStartingText: {
     color: colors.textSecondary,
-    fontSize: 13
+    fontSize: 13,
   },
   viewCourtsLink: {
-    color: colors.primary,
+    color: '#fc1c46',
     fontWeight: '700',
-    fontSize: 13
+    fontSize: 13,
   },
   emptyCard: {
     padding: 20,
     backgroundColor: colors.card,
     borderRadius: 12,
-    alignItems: 'center'
+    alignItems: 'center',
+    marginBottom: 20,
   },
   emptyText: {
     color: colors.textMuted,
-    fontSize: 13
+    fontSize: 13,
   },
-  repeatBookingCard: {
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-    borderRadius: 14,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8
-  },
-  repeatBadge: {
-    color: colors.neonAccent,
-    fontSize: 10,
-    fontWeight: '800',
-    marginBottom: 4
-  },
-  repeatTitle: {
-    color: colors.textPrimary,
-    fontSize: 15,
-    fontWeight: '700'
-  },
-  repeatSubtitle: {
-    color: colors.textSecondary,
-    fontSize: 12
-  },
-  repeatButton: {
-    backgroundColor: colors.elevated,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.primary
-  },
-  repeatButtonText: {
-    color: colors.primary,
-    fontWeight: '700',
-    fontSize: 13
-  }
 });
