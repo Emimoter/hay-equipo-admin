@@ -242,9 +242,9 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: colors.elevated,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
+    backgroundColor: 'rgba(252, 28, 70, 0.15)',
+    borderWidth: 1.5,
+    borderColor: '#fc1c46',
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden'
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
     height: '100%'
   },
   profileBadgeText: {
-    color: colors.primary,
+    color: '#fc1c46',
     fontWeight: '700',
     fontSize: 18
   },
@@ -273,8 +273,8 @@ const styles = StyleSheet.create({
     borderColor: colors.cardBorder
   },
   sportChipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary
+    backgroundColor: '#fc1c46',
+    borderColor: '#fc1c46'
   },
   sportIcon: {
     fontSize: 16,
@@ -285,8 +285,8 @@ const styles = StyleSheet.create({
     color: colors.textPrimary
   },
   sportNameActive: {
-    color: colors.background,
-    fontWeight: '700'
+    color: '#ffffff',
+    fontWeight: '800'
   },
   searchBarContainer: {
     flexDirection: 'row',
@@ -312,26 +312,28 @@ const styles = StyleSheet.create({
     marginTop: 2
   },
   filterPill: {
-    backgroundColor: colors.elevated,
+    backgroundColor: 'rgba(252, 28, 70, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(252, 28, 70, 0.3)',
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8
   },
   filterPillText: {
-    color: colors.primary,
+    color: '#fc1c46',
     fontSize: 12,
-    fontWeight: '600'
+    fontWeight: '700'
   },
   fixedSlotBanner: {
-    backgroundColor: '#1E1B4B',
+    backgroundColor: 'rgba(252, 28, 70, 0.08)',
     borderRadius: 14,
     padding: 16,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#4338CA'
+    borderColor: 'rgba(252, 28, 70, 0.3)'
   },
   fixedSlotBadge: {
-    backgroundColor: '#6366F1',
+    backgroundColor: '#fc1c46',
     alignSelf: 'flex-start',
     paddingHorizontal: 8,
     paddingVertical: 3,
@@ -344,13 +346,13 @@ const styles = StyleSheet.create({
     fontWeight: '800'
   },
   fixedSlotTitle: {
-    color: '#FFF',
+    color: colors.textPrimary,
     fontSize: 16,
     fontWeight: '700',
     marginBottom: 4
   },
   fixedSlotSubtitle: {
-    color: '#C7D2FE',
+    color: '#d1d5db',
     fontSize: 13,
     marginBottom: 10
   },
@@ -358,7 +360,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start'
   },
   fixedSlotActionText: {
-    color: colors.neonAccent,
+    color: '#fc1c46',
     fontWeight: '700',
     fontSize: 13
   },
@@ -413,7 +415,9 @@ const styles = StyleSheet.create({
     marginRight: 12
   },
   slotTimeBadge: {
-    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    backgroundColor: 'rgba(252, 28, 70, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(252, 28, 70, 0.3)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
@@ -421,7 +425,7 @@ const styles = StyleSheet.create({
     marginBottom: 8
   },
   slotTimeText: {
-    color: colors.primary,
+    color: '#fc1c46',
     fontWeight: '700',
     fontSize: 13
   },
@@ -450,13 +454,18 @@ const styles = StyleSheet.create({
     fontSize: 14
   },
   reserveButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: '#fc1c46',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 8
+    borderRadius: 8,
+    shadowColor: '#fc1c46',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    elevation: 3
   },
   reserveButtonText: {
-    color: colors.background,
+    color: '#ffffff',
     fontWeight: '700',
     fontSize: 12
   },

@@ -1,21 +1,24 @@
 export const colors = {
-  background: '#0B0F17',
-  card: '#161F30',
-  cardBorder: '#23324A',
-  elevated: '#1E293B',
-  primary: '#22C55E', // Electric sports green
-  primaryLight: '#4ADE80',
-  neonAccent: '#CCFF00',
-  textPrimary: '#F8FAFC',
-  textSecondary: '#94A3B8',
-  textMuted: '#64748B',
-  accentBlue: '#38BDF8',
-  accentPurple: '#A855F7',
-  danger: '#EF4444',
-  warning: '#F59E0B',
-  success: '#10B981',
-  white: '#FFFFFF',
-  overlay: 'rgba(11, 15, 23, 0.85)'
+  background: '#08090d',
+  card: '#12151d',
+  cardBorder: 'rgba(255, 255, 255, 0.08)',
+  elevated: '#181c26',
+  primary: '#fc1c46', // Brand Crimson Red
+  primaryLight: '#ff335c',
+  primaryDark: '#d9143a',
+  primaryMuted: 'rgba(252, 28, 70, 0.15)',
+  primaryBorder: 'rgba(252, 28, 70, 0.35)',
+  neonAccent: '#ff2e56',
+  textPrimary: '#f8fafc',
+  textSecondary: '#94a3b8',
+  textMuted: '#64748b',
+  accentBlue: '#38bdf8',
+  accentPurple: '#a855f7',
+  danger: '#ef4444',
+  warning: '#f59e0b',
+  success: '#10b981',
+  white: '#ffffff',
+  overlay: 'rgba(8, 9, 13, 0.88)',
 };
 
 export const typography = {
@@ -25,7 +28,7 @@ export const typography = {
   body: { fontSize: 14, fontWeight: '400' as const, color: colors.textPrimary },
   bodyMuted: { fontSize: 13, fontWeight: '400' as const, color: colors.textMuted },
   caption: { fontSize: 12, fontWeight: '600' as const, color: colors.textSecondary },
-  badge: { fontSize: 11, fontWeight: '700' as const, textTransform: 'uppercase' as const }
+  badge: { fontSize: 11, fontWeight: '700' as const, textTransform: 'uppercase' as const },
 };
 
 export const formatCurrency = (amount: number): string => {

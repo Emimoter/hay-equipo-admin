@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, StatusBar, Platform } from 'react-native';
 import { colors } from './src/components/theme';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { AuthScreen } from './src/screens/AuthScreen';
@@ -12,13 +12,14 @@ import { FixedSlotScreen } from './src/screens/FixedSlotScreen';
 import { MyBookingsScreen } from './src/screens/MyBookingsScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 import { TimeSlot, Booking } from '@hay-equipo/contracts';
+import { HomeIcon, SearchIcon, CalendarIcon, WalletIcon, ProfileIcon } from './src/components/NavIcons';
 
-type TabType = 'HOME' | 'SEARCH' | 'MATCHES' | 'BOOKINGS' | 'PROFILE';
+type TabType = 'HOME' | 'SEARCH' | 'BOOKINGS' | 'PAYMENTS' | 'PROFILE';
 
 function MainAppContent() {
   const { user, userProfile } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<TabType>('HOME');
+  const [activeTab, setActiveTab] = useState<TabType>('SEARCH');
   const [selectedClubId, setSelectedClubId] = useState<string | null>(null);
   const [selectedSlotForCheckout, setSelectedSlotForCheckout] = useState<TimeSlot | null>(null);
   const [activeSplitBooking, setActiveSplitBooking] = useState<Booking | null>(null);
@@ -97,7 +98,7 @@ function MainAppContent() {
             onNavigateSearch={navigateToSearch}
             onNavigateClub={navigateToClub}
             onNavigateCheckout={navigateToCheckout}
-            onNavigateFixedSlots={() => setActiveTab('MATCHES')}
+            onNavigateFixedSlots={() => setActiveTab('PAYMENTS')}
             onNavigateProfile={() => setActiveTab('PROFILE')}
           />
         );
@@ -109,8 +110,6 @@ function MainAppContent() {
             onNavigateClub={navigateToClub}
           />
         );
-      case 'MATCHES':
-        return <FixedSlotScreen />;
       case 'BOOKINGS':
         return (
           <MyBookingsScreen
@@ -118,6 +117,8 @@ function MainAppContent() {
             onNavigateNewBooking={() => setActiveTab('SEARCH')}
           />
         );
+      case 'PAYMENTS':
+        return <FixedSlotScreen />;
       case 'PROFILE':
         return <ProfileScreen onNavigateLogin={() => setShowAuthModal(true)} />;
       default:
@@ -127,36 +128,72 @@ function MainAppContent() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor="#07080a" />
       <View style={styles.screenContainer}>{renderScreen()}</View>
 
-      {/* Bottom 5-Tab Navigation Bar */}
+      {/* ────────────────────────────────────────────────────────────
+          FLOATING DOCK BOTTOM NAVIGATION (Exact Mockup Reference)
+          ──────────────────────────────────────────────────────────── */}
       {!selectedSlotForCheckout && !activeSplitBooking && !selectedClubId && !showAuthModal && (
-        <View style={styles.bottomNav}>
-          <TouchableOpacity style={styles.navTab} onPress={() => setActiveTab('HOME')}>
-            <Text style={[styles.navIcon, activeTab === 'HOME' && styles.navIconActive]}>🏠</Text>
-            <Text style={[styles.navLabel, activeTab === 'HOME' && styles.navLabelActive]}>Inicio</Text>
-          </TouchableOpacity>
+        <View style={styles.floatingDockContainer}>
+          <View style={styles.floatingDock}>
 
-          <TouchableOpacity style={styles.navTab} onPress={() => setActiveTab('SEARCH')}>
-            <Text style={[styles.navIcon, activeTab === 'SEARCH' && styles.navIconActive]}>🔍</Text>
-            <Text style={[styles.navLabel, activeTab === 'SEARCH' && styles.navLabelActive]}>Buscar</Text>
-          </TouchableOpacity>
+            {/* TAB 1: INICIO */}
+            <TouchableOpacity
+              activeOpacity={0.7}
+              style={[styles.navTab, activeTab === 'HOME' && styles.navTabActive]}
+              onPress={() => setActiveTab('HOME')}
+            >
+              <HomeIcon color={activeTab === 'HOME' ? '#fc1c46' : '#6b7280'} size={20} />
+              <Text style={[styles.navLabel, activeTab === 'HOME' && styles.navLabelActive]}>Inicio</Text>
+              {activeTab === 'HOME' && <View style={styles.activeDot} />}
+            </TouchableOpacity>
 
-          <TouchableOpacity style={styles.navTab} onPress={() => setActiveTab('MATCHES')}>
-            <Text style={[styles.navIcon, activeTab === 'MATCHES' && styles.navIconActive]}>⚡</Text>
-            <Text style={[styles.navLabel, activeTab === 'MATCHES' && styles.navLabelActive]}>Fijos</Text>
-          </TouchableOpacity>
+            {/* TAB 2: EXPLORAR / SEARCH */}
+            <TouchableOpacity
+              activeOpacity={0.7}
+              style={[styles.navTab, activeTab === 'SEARCH' && styles.navTabActive]}
+              onPress={() => setActiveTab('SEARCH')}
+            >
+              <SearchIcon color={activeTab === 'SEARCH' ? '#fc1c46' : '#6b7280'} size={20} />
+              <Text style={[styles.navLabel, activeTab === 'SEARCH' && styles.navLabelActive]}>Explorar</Text>
+              {activeTab === 'SEARCH' && <View style={styles.activeDot} />}
+            </TouchableOpacity>
 
-          <TouchableOpacity style={styles.navTab} onPress={() => setActiveTab('BOOKINGS')}>
-            <Text style={[styles.navIcon, activeTab === 'BOOKINGS' && styles.navIconActive]}>📅</Text>
-            <Text style={[styles.navLabel, activeTab === 'BOOKINGS' && styles.navLabelActive]}>Reservas</Text>
-          </TouchableOpacity>
+            {/* TAB 3: RESERVAS */}
+            <TouchableOpacity
+              activeOpacity={0.7}
+              style={[styles.navTab, activeTab === 'BOOKINGS' && styles.navTabActive]}
+              onPress={() => setActiveTab('BOOKINGS')}
+            >
+              <CalendarIcon color={activeTab === 'BOOKINGS' ? '#fc1c46' : '#6b7280'} size={20} />
+              <Text style={[styles.navLabel, activeTab === 'BOOKINGS' && styles.navLabelActive]}>Reservas</Text>
+              {activeTab === 'BOOKINGS' && <View style={styles.activeDot} />}
+            </TouchableOpacity>
 
-          <TouchableOpacity style={styles.navTab} onPress={() => setActiveTab('PROFILE')}>
-            <Text style={[styles.navIcon, activeTab === 'PROFILE' && styles.navIconActive]}>👤</Text>
-            <Text style={[styles.navLabel, activeTab === 'PROFILE' && styles.navLabelActive]}>Perfil</Text>
-          </TouchableOpacity>
+            {/* TAB 4: PAGOS */}
+            <TouchableOpacity
+              activeOpacity={0.7}
+              style={[styles.navTab, activeTab === 'PAYMENTS' && styles.navTabActive]}
+              onPress={() => setActiveTab('PAYMENTS')}
+            >
+              <WalletIcon color={activeTab === 'PAYMENTS' ? '#fc1c46' : '#6b7280'} size={20} />
+              <Text style={[styles.navLabel, activeTab === 'PAYMENTS' && styles.navLabelActive]}>Pagos</Text>
+              {activeTab === 'PAYMENTS' && <View style={styles.activeDot} />}
+            </TouchableOpacity>
+
+            {/* TAB 5: PERFIL */}
+            <TouchableOpacity
+              activeOpacity={0.7}
+              style={[styles.navTab, activeTab === 'PROFILE' && styles.navTabActive]}
+              onPress={() => setActiveTab('PROFILE')}
+            >
+              <ProfileIcon color={activeTab === 'PROFILE' ? '#fc1c46' : '#6b7280'} size={20} />
+              <Text style={[styles.navLabel, activeTab === 'PROFILE' && styles.navLabelActive]}>Perfil</Text>
+              {activeTab === 'PROFILE' && <View style={styles.activeDot} />}
+            </TouchableOpacity>
+
+          </View>
         </View>
       )}
     </SafeAreaView>
@@ -174,40 +211,67 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background
+    backgroundColor: '#07080a',
   },
   screenContainer: {
-    flex: 1
+    flex: 1,
   },
-  bottomNav: {
+  floatingDockContainer: {
+    position: 'absolute',
+    bottom: Platform.OS === 'ios' ? 24 : 14,
+    left: 14,
+    right: 14,
+    zIndex: 99,
+  },
+  floatingDock: {
     flexDirection: 'row',
-    backgroundColor: colors.card,
-    borderTopWidth: 1,
-    borderTopColor: colors.cardBorder,
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-    justifyContent: 'space-around',
-    alignItems: 'center'
+    backgroundColor: 'rgba(18, 20, 26, 0.94)',
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    paddingVertical: 6,
+    paddingHorizontal: 6,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.8,
+    shadowRadius: 20,
+    elevation: 16,
   },
   navTab: {
+    flex: 1,
     alignItems: 'center',
-    flex: 1
+    justifyContent: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+    borderRadius: 16,
+    minHeight: 52,
   },
-  navIcon: {
-    fontSize: 20,
-    marginBottom: 4,
-    opacity: 0.5
-  },
-  navIconActive: {
-    opacity: 1
+  navTabActive: {
+    backgroundColor: 'rgba(252, 28, 70, 0.14)',
+    borderWidth: 1,
+    borderColor: 'rgba(252, 28, 70, 0.3)',
   },
   navLabel: {
-    color: colors.textMuted,
-    fontSize: 11,
-    fontWeight: '600'
+    color: '#6b7280',
+    fontSize: 10.5,
+    fontWeight: '600',
+    marginTop: 3,
   },
   navLabelActive: {
-    color: colors.primary,
-    fontWeight: '800'
-  }
+    color: '#fc1c46',
+    fontWeight: '800',
+  },
+  activeDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#fc1c46',
+    marginTop: 2,
+    shadowColor: '#fc1c46',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 4,
+  },
 });

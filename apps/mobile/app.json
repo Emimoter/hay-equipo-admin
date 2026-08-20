@@ -4,7 +4,6 @@
     "slug": "hay-equipo",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
     "scheme": "hayequipo",
     "userInterfaceStyle": "dark",
     "splash": {

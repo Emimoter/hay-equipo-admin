@@ -222,10 +222,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     paddingVertical: 12,
     borderRadius: 10,
-    alignItems: 'center'
+    alignItems: 'center',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 4
   },
   actionButtonText: {
-    color: colors.background,
+    color: '#ffffff',
     fontWeight: '700',
     fontSize: 14
   },
@@ -286,7 +291,7 @@ const styles = StyleSheet.create({
   },
   courtTabActive: {
     borderColor: colors.primary,
-    backgroundColor: colors.elevated
+    backgroundColor: 'rgba(252, 28, 70, 0.12)'
   },
   courtTabName: {
     color: colors.textPrimary,
@@ -319,7 +324,7 @@ const styles = StyleSheet.create({
   slotButton: {
     backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: colors.primary,
+    borderColor: 'rgba(252, 28, 70, 0.35)',
     borderRadius: 12,
     padding: 12,
     width: '30%',

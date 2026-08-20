@@ -1,697 +1,1120 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
 
-interface TimeSlotItem {
-  id: string;
-  courtId: string;
-  courtName: string;
-  sport: string;
-  time: string;
-  price: number;
-  status: 'AVAILABLE' | 'BOOKED_APP' | 'BOOKED_WHATSAPP' | 'FIXED_SLOT' | 'MAINTENANCE';
-  clientName?: string;
-  clientPhone?: string;
+/* ────────────────────────────────────────────────────────────
+   Intersection Observer Hook for Scroll Reveals
+   ──────────────────────────────────────────────────────────── */
+
+function useInView(options?: IntersectionObserverInit) {
+  const [inView, setInView] = useState(false);
+  const ref = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setInView(true);
+      }
+    }, { threshold: 0.15, ...options });
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return [ref, inView] as const;
 }
 
-interface CourtConfig {
-  id: string;
-  name: string;
-  sport: string;
-  duration: number; // 60 or 90
-  priceValley: number;
-  pricePeak: number;
-  fixedDiscount: number;
-  active: boolean;
+/* ────────────────────────────────────────────────────────────
+   Animated Reveal Components
+   ──────────────────────────────────────────────────────────── */
+
+/** Masked Slide Up Line (ThoughtLab Guillotine Text Reveal) */
+function MaskedText({
+  children,
+  delay = 0,
+  duration = 0.9,
+  inView,
+  style = {},
+  className = '',
+}: {
+  children: React.ReactNode;
+  delay?: number;
+  duration?: number;
+  inView: boolean;
+  style?: React.CSSProperties;
+  className?: string;
+}) {
+  return (
+    <div style={{ overflow: 'hidden', display: 'inline-block', verticalAlign: 'top', ...style }} className={className}>
+      <div
+        style={{
+          transform: inView ? 'translate3d(0, 0%, 0)' : 'translate3d(0, 115%, 0)',
+          opacity: inView ? 1 : 0,
+          transition: `transform ${duration}s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s, opacity ${duration * 0.6}s ease ${delay}s`,
+          willChange: 'transform, opacity',
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
 }
 
-export default function ClubManagerThoughtLabDesign() {
-  // Authentication state
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
-  const [authEmail, setAuthEmail] = useState<string>('admin@arenapadel.com.ar');
-  const [authPassword, setAuthPassword] = useState<string>('••••••••');
-  const [clubName, setClubName] = useState<string>('ARENA PÁDEL PALERMO');
+/** Tracking & Blur Expand Reveal */
+function TrackingBlurReveal({
+  children,
+  delay = 0,
+  inView,
+  style = {},
+}: {
+  children: React.ReactNode;
+  delay?: number;
+  inView: boolean;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <div
+      style={{
+        opacity: inView ? 1 : 0,
+        filter: inView ? 'blur(0px)' : 'blur(10px)',
+        transform: inView ? 'translateY(0px)' : 'translateY(24px)',
+        letterSpacing: inView ? (style.letterSpacing || 'normal') : '4px',
+        transition: `opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s, filter 0.9s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s, transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s, letter-spacing 1s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s`,
+        willChange: 'opacity, filter, transform, letter-spacing',
+        ...style,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
 
-  // Active View Tab
-  const [activeSection, setActiveSection] = useState<'SLOTS' | 'BATCH_UPLOAD' | 'COURTS' | 'FIXED_MANAGEMENT'>('SLOTS');
-  const [selectedDay, setSelectedDay] = useState<string>('HOY');
-  const [selectedCourtFilter, setSelectedCourtFilter] = useState<string>('ALL');
+/** Hairline Border Expansion */
+function HairlineRule({ inView, delay = 0 }: { inView: boolean; delay?: number }) {
+  return (
+    <div
+      style={{
+        width: '100%',
+        height: '1px',
+        backgroundColor: 'var(--color-graphite)',
+        transform: inView ? 'scaleX(1)' : 'scaleX(0)',
+        transformOrigin: 'left',
+        transition: `transform 1.1s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s`,
+        willChange: 'transform',
+      }}
+    />
+  );
+}
 
-  // Canchas del Club
-  const [courts, setCourts] = useState<CourtConfig[]>([
-    { id: 'c-1', name: 'CANCHA 1 — CENTRAL PANORÁMICA WPT', sport: 'PÁDEL', duration: 90, priceValley: 42000, pricePeak: 48000, fixedDiscount: 12, active: true },
-    { id: 'c-2', name: 'CANCHA 2 — INDOOR VIDRIO PRO', sport: 'PÁDEL', duration: 90, priceValley: 38000, pricePeak: 45000, fixedDiscount: 10, active: true },
-    { id: 'c-3', name: 'CANCHA 3 — INDOOR CLIMATIZADA', sport: 'PÁDEL', duration: 90, priceValley: 36000, pricePeak: 42000, fixedDiscount: 10, active: true },
-    { id: 'c-4', name: 'CANCHA A — FÚTBOL 5 FORBEX 50MM', sport: 'FÚTBOL 5', duration: 60, priceValley: 30000, pricePeak: 36000, fixedDiscount: 15, active: true }
-  ]);
+/* ────────────────────────────────────────────────────────────
+   QR Code Placeholder SVG
+   ──────────────────────────────────────────────────────────── */
 
-  // Turnos en Vivo
-  const [slots, setSlots] = useState<TimeSlotItem[]>([
-    { id: 's-1', courtId: 'c-1', courtName: 'CANCHA 1', sport: 'PÁDEL', time: '08:00', price: 42000, status: 'AVAILABLE' },
-    { id: 's-2', courtId: 'c-1', courtName: 'CANCHA 1', sport: 'PÁDEL', time: '09:30', price: 42000, status: 'AVAILABLE' },
-    { id: 's-3', courtId: 'c-1', courtName: 'CANCHA 1', sport: 'PÁDEL', time: '11:00', price: 42000, status: 'AVAILABLE' },
-    { id: 's-4', courtId: 'c-1', courtName: 'CANCHA 1', sport: 'PÁDEL', time: '15:00', price: 42000, status: 'AVAILABLE' },
-    { id: 's-5', courtId: 'c-1', courtName: 'CANCHA 1', sport: 'PÁDEL', time: '16:30', price: 42000, status: 'AVAILABLE' },
-    { id: 's-6', courtId: 'c-1', courtName: 'CANCHA 1', sport: 'PÁDEL', time: '18:00', price: 48000, status: 'BOOKED_WHATSAPP', clientName: 'Rodrigo De Paul', clientPhone: '+54 9 11 9988-7766' },
-    { id: 's-7', courtId: 'c-1', courtName: 'CANCHA 1', sport: 'PÁDEL', time: '19:30', price: 48000, status: 'BOOKED_APP', clientName: 'Emiliano Martínez', clientPhone: '+54 9 11 5555-0001' },
-    { id: 's-8', courtId: 'c-1', courtName: 'CANCHA 1', sport: 'PÁDEL', time: '21:00', price: 48000, status: 'FIXED_SLOT', clientName: 'Lautaro Martínez (Fijo Jueves)', clientPhone: '+54 9 11 3322-1144' },
-    { id: 's-9', courtId: 'c-1', courtName: 'CANCHA 1', sport: 'PÁDEL', time: '22:30', price: 48000, status: 'AVAILABLE' },
-    
-    { id: 's-10', courtId: 'c-2', courtName: 'CANCHA 2', sport: 'PÁDEL', time: '18:00', price: 45000, status: 'AVAILABLE' },
-    { id: 's-11', courtId: 'c-2', courtName: 'CANCHA 2', sport: 'PÁDEL', time: '19:30', price: 45000, status: 'AVAILABLE' },
-    { id: 's-12', courtId: 'c-2', courtName: 'CANCHA 2', sport: 'PÁDEL', time: '21:00', price: 45000, status: 'BOOKED_APP', clientName: 'Lucas Gómez', clientPhone: '+54 9 11 4433-2211' },
-    { id: 's-13', courtId: 'c-2', courtName: 'CANCHA 2', sport: 'PÁDEL', time: '22:30', price: 45000, status: 'AVAILABLE' }
-  ]);
+function QRCodeSVG() {
+  const s = 8;
+  const cells: React.ReactNode[] = [];
 
-  // Bulk generator state
-  const [bulkCourtId, setBulkCourtId] = useState<string>('c-1');
-  const [bulkStartHour, setBulkStartHour] = useState<string>('08:00');
-  const [bulkEndHour, setBulkEndHour] = useState<string>('23:30');
-  const [bulkInterval, setBulkInterval] = useState<number>(90);
-  const [bulkPriceValle, setBulkPriceValle] = useState<number>(42000);
-  const [bulkPricePico, setBulkPricePico] = useState<number>(48000);
-  const [bulkDays, setBulkDays] = useState<string[]>(['LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO', 'DOMINGO']);
-
-  // Add Single Slot Modal
-  const [showSingleSlotModal, setShowSingleSlotModal] = useState<boolean>(false);
-  const [newSlotCourt, setNewSlotCourt] = useState<string>('c-1');
-  const [newSlotTime, setNewSlotTime] = useState<string>('20:00');
-  const [newSlotPrice, setNewSlotPrice] = useState<number>(48000);
-
-  // Quick Action on Slot (Toggle status)
-  const handleSlotClick = (slot: TimeSlotItem) => {
-    let nextStatus: TimeSlotItem['status'] = 'AVAILABLE';
-    if (slot.status === 'AVAILABLE') nextStatus = 'BOOKED_WHATSAPP';
-    else if (slot.status === 'BOOKED_WHATSAPP') nextStatus = 'MAINTENANCE';
-    else if (slot.status === 'MAINTENANCE') nextStatus = 'AVAILABLE';
-    else if (slot.status === 'BOOKED_APP' || slot.status === 'FIXED_SLOT') {
-      if (confirm(`El turno está asignado a ${slot.clientName || 'App'}. ¿Deseas liberarlo a DISPONIBLE?`)) {
-        nextStatus = 'AVAILABLE';
-      } else {
-        return;
+  const drawFinder = (ox: number, oy: number) => {
+    for (let i = 0; i < 7; i++) {
+      cells.push(<rect key={`f-${ox}-${oy}-t${i}`} x={(ox + i) * s} y={oy * s} width={s} height={s} fill="#fff" />);
+      cells.push(<rect key={`f-${ox}-${oy}-b${i}`} x={(ox + i) * s} y={(oy + 6) * s} width={s} height={s} fill="#fff" />);
+    }
+    for (let i = 1; i < 6; i++) {
+      cells.push(<rect key={`f-${ox}-${oy}-l${i}`} x={ox * s} y={(oy + i) * s} width={s} height={s} fill="#fff" />);
+      cells.push(<rect key={`f-${ox}-${oy}-r${i}`} x={(ox + 6) * s} y={(oy + i) * s} width={s} height={s} fill="#fff" />);
+    }
+    for (let r = 2; r < 5; r++) {
+      for (let c = 2; c < 5; c++) {
+        cells.push(<rect key={`f-${ox}-${oy}-i${r}${c}`} x={(ox + c) * s} y={(oy + r) * s} width={s} height={s} fill="#fff" />);
       }
     }
-
-    setSlots(slots.map(s => s.id === slot.id ? { ...s, status: nextStatus, clientName: nextStatus === 'BOOKED_WHATSAPP' ? 'Reserva Mostrador / WA' : undefined } : s));
   };
 
-  // Generate Bulk Slots
-  const handleGenerateBulkSlots = (e: React.FormEvent) => {
-    e.preventDefault();
-    const court = courts.find(c => c.id === bulkCourtId) || courts[0];
-    const generated: TimeSlotItem[] = [];
+  drawFinder(1, 1);
+  drawFinder(17, 1);
+  drawFinder(1, 17);
 
-    const [startH, startM] = bulkStartHour.split(':').map(Number);
-    const [endH, endM] = bulkEndHour.split(':').map(Number);
+  const dataPattern = [
+    [10,10],[11,10],[13,10],[14,11],[10,12],[12,12],[14,12],[15,13],
+    [10,14],[11,14],[13,14],[14,14],[10,16],[12,16],[14,16],[16,16],
+    [9,9],[11,11],[13,13],[15,15],[17,17],[18,18],[19,19],[20,20],
+    [9,11],[10,13],[11,15],[12,17],[9,19],[11,19],[13,19],[15,19],
+    [17,19],[19,17],[19,15],[19,13],[19,11],[19,9],[17,9],[15,9],
+    [13,9],[12,10],[14,10],[16,10],[18,10],[16,12],[18,12],[20,12],
+    [16,14],[18,14],[20,14],[16,16],[18,16],[20,16],[18,18],[20,18],
+    [20,10],[22,10],[22,12],[22,14],[22,16],[22,18],[22,20],[20,22],
+    [18,22],[16,22],[14,22],[12,22],[10,22],[9,22],[11,22],[13,22],
+    [15,22],[17,22],[19,22],[21,22],[21,20],[21,18],[21,16],[21,14],
+  ];
 
-    let currentMinutes = startH * 60 + startM;
-    const endMinutes = endH * 60 + endM;
-
-    let index = 1;
-    while (currentMinutes <= endMinutes) {
-      const h = Math.floor(currentMinutes / 60);
-      const m = currentMinutes % 60;
-      const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-
-      const isPeak = h >= 18 && h <= 23;
-      const price = isPeak ? bulkPricePico : bulkPriceValle;
-
-      generated.push({
-        id: `gen-${bulkCourtId}-${Date.now()}-${index}`,
-        courtId: court.id,
-        courtName: court.name.split('—')[0].trim(),
-        sport: court.sport,
-        time: timeStr,
-        price,
-        status: 'AVAILABLE'
-      });
-
-      currentMinutes += bulkInterval;
-      index++;
+  dataPattern.forEach(([x, y], i) => {
+    if (x >= 0 && x < 25 && y >= 0 && y < 25) {
+      cells.push(<rect key={`d-${i}`} x={x * s} y={y * s} width={s} height={s} fill="#fff" />);
     }
-
-    // Replace or append
-    const filteredOld = slots.filter(s => s.courtId !== bulkCourtId);
-    setSlots([...filteredOld, ...generated]);
-    setActiveSection('SLOTS');
-    alert(`⚡ ¡Se generaron ${generated.length} turnos para ${court.name}! Publicados en tiempo real a la app de jugadores.`);
-  };
-
-  const handleAddSingleSlot = (e: React.FormEvent) => {
-    e.preventDefault();
-    const court = courts.find(c => c.id === newSlotCourt) || courts[0];
-    const newSlot: TimeSlotItem = {
-      id: `slot-single-${Date.now()}`,
-      courtId: court.id,
-      courtName: court.name.split('—')[0].trim(),
-      sport: court.sport,
-      time: newSlotTime,
-      price: newSlotPrice,
-      status: 'AVAILABLE'
-    };
-    setSlots([...slots, newSlot]);
-    setShowSingleSlotModal(false);
-  };
-
-  const filteredSlots = slots.filter(s => {
-    if (selectedCourtFilter !== 'ALL' && s.courtId !== selectedCourtFilter) return false;
-    return true;
   });
 
   return (
-    <div style={{ backgroundColor: '#000000', color: '#cccccc', minHeight: '100vh', fontFamily: '"Plus Jakarta Sans", system-ui, -apple-system, sans-serif' }}>
+    <svg viewBox={`0 0 ${25 * s} ${25 * s}`} xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%' }}>
+      <rect width={25 * s} height={25 * s} fill="#000" />
+      {cells}
+    </svg>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────
+   Features data
+   ──────────────────────────────────────────────────────────── */
+
+const FEATURES = [
+  {
+    num: '01',
+    title: 'Reservá al Instante',
+    desc: 'Buscá canchas cerca tuyo, elegí el horario que te sirva y reservá con un toque. Sin llamar, sin esperar, sin WhatsApp. La cancha se confirma en segundos y el turno queda bloqueado en tiempo real.',
+  },
+  {
+    num: '02',
+    title: 'Split de Gastos',
+    desc: 'Dividí el costo del turno entre todos los jugadores automáticamente. Cada uno paga su parte desde la app y vos dejás de perseguir a nadie. Transparente, justo, sin vueltas.',
+  },
+  {
+    num: '03',
+    title: 'Armá tu Equipo',
+    desc: 'Encontrá jugadores disponibles cerca tuyo, creá grupos recurrentes, desafiá a otros equipos. La red deportiva que convierte desconocidos en rivales y rivales en amigos.',
+  },
+  {
+    num: '04',
+    title: 'Para Clubes',
+    desc: 'Publicá tus canchas, gestioná la disponibilidad y recibí reservas desde la app. Turnos fijos, tarifas valle/pico, control total del calendario. Todo desde un panel diseñado para operadores.',
+  },
+];
+
+const STATS = [
+  { value: '+2.000', label: 'CANCHAS DISPONIBLES', prefix: '+' },
+  { value: '+50K', label: 'JUGADORES ACTIVOS', prefix: '+' },
+  { value: '+150', label: 'CLUBES ASOCIADOS', prefix: '+' },
+  { value: '24/7', label: 'RESERVAS EN TIEMPO REAL', prefix: '' },
+];
+
+/* ────────────────────────────────────────────────────────────
+   Landing Page Component
+   ──────────────────────────────────────────────────────────── */
+
+export default function LandingPage() {
+  const [isLoaded, setIsLoaded] = useState(false);
+  const ballContainerRef = useRef<HTMLDivElement | null>(null);
+  const soccerBallRef = useRef<HTMLImageElement | null>(null);
+  const padelBallRef = useRef<HTMLImageElement | null>(null);
+  const headerRef = useRef<HTMLElement | null>(null);
+  const scrollIndicatorRef = useRef<HTMLDivElement | null>(null);
+
+  // Section in-view refs
+  const [heroRef, heroInView] = useInView({ threshold: 0.1 });
+  const [aboutRef, aboutInView] = useInView({ threshold: 0.2 });
+  const [featRef, featInView] = useInView({ threshold: 0.15 });
+  const [statsRef, statsInView] = useInView({ threshold: 0.2 });
+  const [downloadRef, downloadInView] = useInView({ threshold: 0.2 });
+  const [clubRef, clubInView] = useInView({ threshold: 0.2 });
+  const [cityRef, cityInView] = useInView({ threshold: 0.2 });
+
+  useEffect(() => {
+    setIsLoaded(true);
+
+    let rafId = 0;
+
+    const onScroll = () => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        const y = window.scrollY;
+
+        // 1. Hardware Accelerated Ball Parallax Transform (No React state lag)
+        if (ballContainerRef.current) {
+          const rotation = y * 0.42;
+          const translateY = y * 0.18;
+          // Cleanly fade out & occlude as scroll approaches Section 3 (Funcionalidades)
+          const globalOpacity = y > 750 ? Math.max(0, 1 - (y - 750) / 220) : 1;
+
+          ballContainerRef.current.style.transform = `translate3d(0, calc(-50% + ${translateY}px), 0) rotate(${rotation}deg)`;
+          ballContainerRef.current.style.opacity = String(globalOpacity);
+          ballContainerRef.current.style.display = globalOpacity <= 0.001 ? 'none' : 'block';
+        }
+
+        // 2. Pure GPU Opacity Crossfade: Soccer -> Padel
+        if (soccerBallRef.current) {
+          const soccerOpacity = Math.min(1, Math.max(0, 1 - (y - 180) / 320));
+          soccerBallRef.current.style.opacity = String(soccerOpacity);
+        }
+
+        if (padelBallRef.current) {
+          const padelOpacity = Math.min(1, Math.max(0, (y - 220) / 320));
+          padelBallRef.current.style.opacity = String(padelOpacity);
+        }
+
+        // 3. Header background on scroll
+        if (headerRef.current) {
+          if (y > 80) {
+            headerRef.current.style.background = 'rgba(0,0,0,0.88)';
+            headerRef.current.style.backdropFilter = 'blur(16px)';
+            headerRef.current.style.borderBottom = '1px solid rgba(76,76,76,0.3)';
+          } else {
+            headerRef.current.style.background = 'transparent';
+            headerRef.current.style.backdropFilter = 'none';
+            headerRef.current.style.borderBottom = '1px solid transparent';
+          }
+        }
+
+        // 4. (Scroll) hint text fade
+        if (scrollIndicatorRef.current) {
+          const indOpacity = Math.max(0, 1 - y / 260);
+          scrollIndicatorRef.current.style.opacity = String(indOpacity);
+        }
+      });
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    // Initial execution
+    onScroll();
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      cancelAnimationFrame(rafId);
+    };
+  }, []);
+
+  return (
+    <div style={{ minHeight: '100vh', overflow: 'hidden', backgroundColor: 'var(--color-void)' }}>
       <Head>
-        <title>HAY EQUIPO? — Control Central de Canchas & Horarios</title>
-        <meta name="description" content="Plataforma de alta precisión para gestión de disponibilidad deportiva" />
+        <title>HAY EQUIPO? — Reservá tu cancha, armá tu equipo</title>
+        <meta name="description" content="La app que conecta jugadores con las mejores canchas deportivas de Argentina. Reservá al instante, dividí los gastos y armá tu equipo." />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* Preload ball textures for instant lag-free GPU rendering */}
+        <link rel="preload" as="image" href="/soccer-ball-hd.jpg" />
+        <link rel="preload" as="image" href="/padel-ball-red.jpg" />
       </Head>
 
-      {/* 1. TOP HEROIC BRAND BAR (ThoughtLab Style) */}
-      <header style={{ borderBottom: '1px solid #4c4c4c', padding: '22px 36px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '22px' }}>
-          <span style={{ fontSize: '27px', fontWeight: 700, color: '#ffffff', letterSpacing: '-0.9px' }}>
+      {/* ═══════════════════════════════════════════════════════
+          FIXED MORPHING BALL — Zero-Lag Hardware Accelerated
+          ═══════════════════════════════════════════════════════ */}
+      <div
+        ref={ballContainerRef}
+        style={{
+          position: 'fixed',
+          top: '50%',
+          right: '-2%',
+          width: 'min(50vw, 560px)',
+          height: 'min(50vw, 560px)',
+          transform: 'translate3d(0, -50%, 0) rotate(0deg)',
+          opacity: 1,
+          zIndex: 1,
+          pointerEvents: 'none',
+          willChange: 'transform, opacity',
+        }}
+      >
+        {/* 1. Soccer Ball (Hero Section -> Fades Smoothly) */}
+        <img
+          ref={soccerBallRef}
+          src="/soccer-ball-hd.jpg"
+          alt="Pelota de fútbol oficial Hay Equipo"
+          loading="eager"
+          decoding="sync"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'contain',
+            borderRadius: '50%',
+            opacity: 1,
+            willChange: 'opacity',
+          }}
+        />
+
+        {/* 2. Clean Crimson Padel Ball (Section 2 Manifiesto -> Sharp, No Outer Halo) */}
+        <img
+          ref={padelBallRef}
+          src="/padel-ball-red.jpg"
+          alt="Pelota de pádel oficial Hay Equipo"
+          loading="eager"
+          decoding="sync"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'contain',
+            borderRadius: '50%',
+            opacity: 0,
+            willChange: 'opacity',
+          }}
+        />
+      </div>
+
+      {/* ═══════════════════════════════════════════════════════
+          HEADER — Fixed, transparent, ThoughtLab-style
+          ═══════════════════════════════════════════════════════ */}
+      <header
+        ref={headerRef}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 72,
+          padding: '0 36px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          zIndex: 20,
+          background: 'transparent',
+          borderBottom: '1px solid transparent',
+          transition: 'background 0.25s, border-bottom 0.25s',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 22 }}>
+          <span style={{ fontSize: 27, fontWeight: 700, color: 'var(--color-frost)', letterSpacing: '-0.9px' }}>
             HAY EQUIPO?
           </span>
-          <span style={{ fontSize: '14px', color: '#4c4c4c', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
-            / CLUB PORTAL & SCHEDULE CONTROLLER
+          <span style={{ fontSize: 10, color: 'var(--color-graphite)', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
+            / Red Deportiva · Argentina
           </span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '22px' }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-            <span style={{ width: '7px', height: '7px', borderRadius: '9999px', backgroundColor: '#fc1c46' }} />
-            <span style={{ fontSize: '10px', fontWeight: 500, color: '#ffffff', letterSpacing: '1px', textTransform: 'uppercase' }}>
-              EN LÍNEA · {clubName}
-            </span>
-          </div>
-
-          <button
-            onClick={() => setActiveSection('BATCH_UPLOAD')}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          {/* Botón 1: Publicá tus Canchas (Outline / Glass Obsidian — color diferenciado) */}
+          <a
+            href="/registro-club"
             style={{
-              backgroundColor: '#fc1c46',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '9999px',
-              padding: '9px 29px',
-              fontSize: '14px',
-              fontWeight: 500,
-              cursor: 'pointer',
-              letterSpacing: '0.2px'
+              backgroundColor: 'rgba(255, 255, 255, 0.04)',
+              color: 'var(--color-frost)',
+              border: '1px solid rgba(255, 255, 255, 0.22)',
+              borderRadius: 'var(--radius-full)',
+              padding: '9px 24px',
+              fontSize: 14,
+              fontWeight: 600,
+              textDecoration: 'none',
+              textTransform: 'uppercase',
+              letterSpacing: '0.4px',
+              transition: 'all 0.2s ease',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--color-crimson-signal)';
+              (e.currentTarget as HTMLAnchorElement).style.color = 'var(--color-crimson-signal)';
+              (e.currentTarget as HTMLAnchorElement).style.backgroundColor = 'rgba(252, 28, 70, 0.08)';
+              (e.currentTarget as HTMLAnchorElement).style.transform = 'scale(1.02)';
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(255, 255, 255, 0.22)';
+              (e.currentTarget as HTMLAnchorElement).style.color = 'var(--color-frost)';
+              (e.currentTarget as HTMLAnchorElement).style.backgroundColor = 'rgba(255, 255, 255, 0.04)';
+              (e.currentTarget as HTMLAnchorElement).style.transform = 'scale(1)';
             }}
           >
-            Subir Horarios Masivos
-          </button>
+            <span>Publicá tus Canchas</span>
+            <span style={{ fontSize: 13, lineHeight: 1 }}>→</span>
+          </a>
+
+          {/* Botón 2: Descargá la App (Solid Crimson Signal) */}
+          <a
+            href="#descargar"
+            style={{
+              backgroundColor: 'var(--color-crimson-signal)',
+              color: 'var(--color-frost)',
+              border: 'none',
+              borderRadius: 'var(--radius-full)',
+              padding: '9px 28px',
+              fontSize: 14,
+              fontWeight: 600,
+              textDecoration: 'none',
+              textTransform: 'uppercase',
+              letterSpacing: '0.4px',
+              transition: 'transform 0.2s ease, filter 0.2s ease',
+            }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLAnchorElement).style.filter = 'brightness(1.15)';
+              (e.currentTarget as HTMLAnchorElement).style.transform = 'scale(1.02)';
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLAnchorElement).style.filter = 'none';
+              (e.currentTarget as HTMLAnchorElement).style.transform = 'scale(1)';
+            }}
+          >
+            Descargá la App
+          </a>
         </div>
       </header>
 
-      {/* 2. MONUMENTAL HEADLINE SECTION (ThoughtLab Aesthetic: 72px / 91px) */}
-      <section style={{ padding: '65px 36px 43px 36px', borderBottom: '1px solid #4c4c4c' }}>
-        <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-          <div style={{ fontSize: '10px', color: '#4c4c4c', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '9px' }}>
-            SISTEMA OPERATIVO DE DISPONIBILIDAD Y TURNOS
+      {/* ═══════════════════════════════════════════════════════
+          HERO — Staggered Masked Guillotine Reveal
+          ═══════════════════════════════════════════════════════ */}
+      <section
+        ref={heroRef}
+        style={{
+          position: 'relative',
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          padding: '0 36px',
+          zIndex: 2,
+        }}
+      >
+        <div style={{ maxWidth: 1400, margin: '0 auto', width: '100%' }}>
+          <div style={{ maxWidth: '65%' }}>
+            
+            {/* Eyebrow: Tracking Expansion */}
+            <TrackingBlurReveal inView={isLoaded} delay={0.1} style={{ fontSize: '10px', color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: 22 }}>
+              LA APP PARA JUGADORES Y CLUBES
+            </TrackingBlurReveal>
+
+            {/* Giant Display Lines: Staggered Guillotine slide up */}
+            <h1 style={{ margin: 0, padding: 0 }}>
+              <div style={{ display: 'block' }}>
+                <MaskedText inView={isLoaded} delay={0.2} duration={1.0}>
+                  <span style={{ display: 'block', fontSize: 'clamp(48px, 10vw, 120px)', fontWeight: 700, color: 'var(--color-frost)', lineHeight: 0.95, letterSpacing: '-2px', textTransform: 'uppercase' }}>
+                    Reservá.
+                  </span>
+                </MaskedText>
+              </div>
+
+              <div style={{ display: 'block' }}>
+                <MaskedText inView={isLoaded} delay={0.35} duration={1.0}>
+                  <span style={{ display: 'block', fontSize: 'clamp(48px, 10vw, 120px)', fontWeight: 700, color: 'var(--color-frost)', lineHeight: 0.95, letterSpacing: '-2px', textTransform: 'uppercase' }}>
+                    Jugá.
+                  </span>
+                </MaskedText>
+              </div>
+
+              <div style={{ display: 'block' }}>
+                <MaskedText inView={isLoaded} delay={0.5} duration={1.0}>
+                  <span style={{ display: 'block', fontSize: 'clamp(48px, 10vw, 120px)', fontWeight: 700, color: 'var(--color-frost)', lineHeight: 0.95, letterSpacing: '-2px', textTransform: 'uppercase' }}>
+                    Repetí.
+                  </span>
+                </MaskedText>
+              </div>
+            </h1>
+
+            {/* Subtitle: Soft slide up + blur clear */}
+            <TrackingBlurReveal inView={isLoaded} delay={0.7} style={{ fontSize: '18px', color: 'var(--color-ash)', marginTop: 26, maxWidth: 520, lineHeight: 1.3 }}>
+              La plataforma que conecta jugadores con las mejores canchas deportivas de Argentina. Reservá al instante, dividí los gastos y armá tu equipo.
+            </TrackingBlurReveal>
           </div>
-          <h1 style={{ fontSize: '72px', fontWeight: 700, color: '#ffffff', margin: 0, lineHeight: 1.0, letterSpacing: '-1.8px' }}>
-            ADMINISTRÁ TUS HORARIOS.
-          </h1>
-          <p style={{ fontSize: '18px', color: '#cccccc', margin: '18px 0 0 0', maxWidth: '700px', lineHeight: 1.3 }}>
-            Cargá los turnos disponibles de tus canchas, configurá tarifas diferenciadas valle/pico y controlá en tiempo real las reservas que ingresan desde la aplicación.
-          </p>
+        </div>
+
+        {/* (Scroll) indicator */}
+        <div
+          ref={scrollIndicatorRef}
+          style={{
+            position: 'absolute',
+            bottom: 36,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            fontSize: 14,
+            color: 'var(--color-graphite)',
+            textTransform: 'uppercase',
+            letterSpacing: '1px',
+            opacity: 1,
+            transition: 'opacity 0.2s',
+          }}
+        >
+          (Scroll)
         </div>
       </section>
 
-      {/* 3. RAZOR-SHARP NAVIGATION TABS (Frost / Ash / Graphite) */}
-      <nav style={{ padding: '0 36px', borderBottom: '1px solid #4c4c4c', display: 'flex', gap: '36px' }}>
-        {[
-          { key: 'SLOTS', label: '01 / TURNOS EN VIVO' },
-          { key: 'BATCH_UPLOAD', label: '02 / GENERADOR MASIVO DE HORARIOS' },
-          { key: 'COURTS', label: '03 / CONFIGURACIÓN DE CANCHAS' },
-          { key: 'FIXED_MANAGEMENT', label: '04 / GESTIÓN DE TURNOS FIJOS' }
-        ].map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveSection(tab.key as any)}
-            style={{
-              background: 'none',
-              border: 'none',
-              borderBottom: activeSection === tab.key ? '2px solid #fc1c46' : '2px solid transparent',
-              color: activeSection === tab.key ? '#ffffff' : '#4c4c4c',
-              fontSize: '14px',
-              fontWeight: activeSection === tab.key ? 700 : 400,
-              padding: '22px 0',
-              cursor: 'pointer',
-              letterSpacing: '0.5px'
-            }}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </nav>
+      {/* ═══════════════════════════════════════════════════════
+          ABOUT — Sentence-by-sentence Gradient Wave Reveal
+          ═══════════════════════════════════════════════════════ */}
+      <section
+        ref={aboutRef}
+        style={{
+          position: 'relative',
+          zIndex: 2,
+          backgroundColor: 'transparent',
+          padding: '108px 36px',
+        }}
+      >
+        <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+          <HairlineRule inView={aboutInView} delay={0.1} />
 
-      {/* 4. MAIN WORKSPACE */}
-      <main style={{ maxWidth: '1400px', margin: '0 auto', padding: '43px 36px' }}>
-
-        {/* SECTION 1: TURNOS EN VIVO */}
-        {activeSection === 'SLOTS' && (
-          <div>
-            {/* Filter and Day Selector Bar */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '36px', borderBottom: '1px solid #4c4c4c', paddingBottom: '22px' }}>
-              <div style={{ display: 'flex', gap: '9px' }}>
-                {['HOY', 'MAÑANA', 'VIERNES', 'SÁBADO', 'DOMINGO'].map(day => (
-                  <button
-                    key={day}
-                    onClick={() => setSelectedDay(day)}
-                    style={{
-                      backgroundColor: selectedDay === day ? '#ffffff' : 'transparent',
-                      color: selectedDay === day ? '#000000' : '#cccccc',
-                      border: selectedDay === day ? 'none' : '1px solid #4c4c4c',
-                      borderRadius: '9999px',
-                      padding: '7px 22px',
-                      fontSize: '14px',
-                      fontWeight: 500,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {day}
-                  </button>
-                ))}
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                <span style={{ fontSize: '10px', color: '#4c4c4c', textTransform: 'uppercase' }}>Filtrar Cancha:</span>
-                <select
-                  value={selectedCourtFilter}
-                  onChange={(e) => setSelectedCourtFilter(e.target.value)}
-                  style={{ backgroundColor: '#000000', color: '#ffffff', border: '1px solid #4c4c4c', padding: '7px 14px', borderRadius: '0px', fontSize: '14px', outline: 'none' }}
-                >
-                  <option value="ALL">TODAS LAS CANCHAS</option>
-                  {courts.map(c => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
-
-                <button
-                  onClick={() => setShowSingleSlotModal(true)}
-                  style={{ backgroundColor: 'transparent', color: '#ffffff', border: '1px solid #ffffff', borderRadius: '9999px', padding: '7px 22px', fontSize: '14px', fontWeight: 500, cursor: 'pointer' }}
-                >
-                  + Agregar Turno Individual
-                </button>
-              </div>
+          <div style={{ maxWidth: 960, marginTop: 65 }}>
+            <div style={{ fontSize: 10, color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: 22 }}>
+              <MaskedText inView={aboutInView} delay={0.2}>
+                00 / MANIFIESTO
+              </MaskedText>
             </div>
 
-            {/* Matrix of Available vs Booked Slots */}
-            <div style={{ marginBottom: '22px', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-              <span style={{ fontSize: '27px', fontWeight: 700, color: '#ffffff' }}>
-                PARRILLA DE TURNOS ({filteredSlots.length} HORARIOS)
+            <p style={{
+              fontSize: 'clamp(24px, 3.4vw, 42px)',
+              fontWeight: 400,
+              lineHeight: 1.25,
+              letterSpacing: '-0.8px',
+              margin: 0,
+            }}>
+              <span
+                style={{
+                  display: 'inline-block',
+                  color: 'var(--color-frost)',
+                  opacity: aboutInView ? 1 : 0.1,
+                  transform: aboutInView ? 'translateY(0)' : 'translateY(20px)',
+                  transition: 'opacity 0.8s ease 0.3s, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s',
+                }}
+              >
+                Hay Equipo? es la red deportiva en tiempo real para Argentina.
+              </span>{' '}
+              <span
+                style={{
+                  display: 'inline-block',
+                  color: 'var(--color-ash)',
+                  opacity: aboutInView ? 1 : 0.1,
+                  transform: aboutInView ? 'translateY(0)' : 'translateY(20px)',
+                  transition: 'opacity 0.8s ease 0.5s, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.5s',
+                }}
+              >
+                Conectamos jugadores que buscan cancha con clubes que tienen disponibilidad.
+              </span>{' '}
+              <span
+                style={{
+                  display: 'inline-block',
+                  color: 'var(--color-graphite)',
+                  opacity: aboutInView ? 1 : 0.1,
+                  transform: aboutInView ? 'translateY(0)' : 'translateY(20px)',
+                  transition: 'opacity 0.8s ease 0.7s, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.7s',
+                }}
+              >
+                Sin llamadas, sin esperas, sin grupos de WhatsApp.
+              </span>{' '}
+              <span
+                style={{
+                  display: 'inline-block',
+                  color: 'var(--color-crimson-signal)',
+                  fontWeight: 700,
+                  opacity: aboutInView ? 1 : 0.1,
+                  transform: aboutInView ? 'translateY(0)' : 'translateY(20px)',
+                  transition: 'opacity 0.8s ease 0.9s, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.9s',
+                }}
+              >
+                Un toque y jugás.
               </span>
-              <div style={{ display: 'flex', gap: '18px', fontSize: '10px', textTransform: 'uppercase', color: '#4c4c4c' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '6px', height: '6px', backgroundColor: '#ffffff', borderRadius: '50%' }} /> DISPONIBLE APP</span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '6px', height: '6px', backgroundColor: '#fc1c46', borderRadius: '50%' }} /> RESERVADO APP</span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '6px', height: '6px', backgroundColor: '#38bdf8', borderRadius: '50%' }} /> WHATSAPP / MOSTRADOR</span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '6px', height: '6px', backgroundColor: '#a855f7', borderRadius: '50%' }} /> TURNO FIJO</span>
-              </div>
-            </div>
-
-            {/* Slots Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '14px', marginBottom: '65px' }}>
-              {filteredSlots.map(slot => {
-                const isAvailable = slot.status === 'AVAILABLE';
-                const isApp = slot.status === 'BOOKED_APP';
-                const isWA = slot.status === 'BOOKED_WHATSAPP';
-                const isFixed = slot.status === 'FIXED_SLOT';
-                const isMaint = slot.status === 'MAINTENANCE';
-
-                return (
-                  <div
-                    key={slot.id}
-                    onClick={() => handleSlotClick(slot)}
-                    style={{
-                      border: isAvailable ? '1px solid #4c4c4c' : isApp ? '1px solid #fc1c46' : isWA ? '1px solid #38bdf8' : isFixed ? '1px solid #a855f7' : '1px solid #4c4c4c',
-                      backgroundColor: isAvailable ? '#000000' : isApp ? '#100204' : isWA ? '#030c14' : isFixed ? '#0d0414' : '#111111',
-                      padding: '22px',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease'
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
-                      <span style={{ fontSize: '27px', fontWeight: 700, color: '#ffffff', letterSpacing: '-0.5px' }}>
-                        {slot.time} hs
-                      </span>
-                      <span
-                        style={{
-                          fontSize: '10px',
-                          fontWeight: 700,
-                          padding: '2px 8px',
-                          borderRadius: '9999px',
-                          backgroundColor: isAvailable ? '#ffffff' : isApp ? '#fc1c46' : isWA ? '#38bdf8' : isFixed ? '#a855f7' : '#4c4c4c',
-                          color: isAvailable ? '#000000' : '#ffffff',
-                          textTransform: 'uppercase'
-                        }}
-                      >
-                        {isAvailable ? 'DISPONIBLE' : isApp ? 'APP (PAGADO)' : isWA ? 'WHATSAPP' : isFixed ? 'TURNO FIJO' : 'BLOQUEADO'}
-                      </span>
-                    </div>
-
-                    <div style={{ fontSize: '14px', color: '#cccccc', fontWeight: 400, marginBottom: '6px' }}>
-                      {slot.courtName} · {slot.sport}
-                    </div>
-
-                    <div style={{ fontSize: '18px', fontWeight: 700, color: isAvailable ? '#ffffff' : '#cccccc' }}>
-                      ${slot.price.toLocaleString('es-AR')}
-                    </div>
-
-                    {slot.clientName && (
-                      <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #222222', fontSize: '10px', color: '#4c4c4c' }}>
-                        <div style={{ color: '#ffffff', fontWeight: 500 }}>{slot.clientName}</div>
-                        <div>{slot.clientPhone}</div>
-                      </div>
-                    )}
-
-                    <div style={{ marginTop: '14px', fontSize: '10px', color: '#4c4c4c', textAlign: 'right' }}>
-                      CLICK PARA CAMBIAR ESTADO →
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* SECTION 2: GENERADOR MASIVO DE HORARIOS */}
-        {activeSection === 'BATCH_UPLOAD' && (
-          <div style={{ maxWidth: '900px' }}>
-            <div style={{ marginBottom: '36px' }}>
-              <span style={{ fontSize: '10px', color: '#fc1c46', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                AUTOMATIZACIÓN DE DISPONIBILIDAD
-              </span>
-              <h2 style={{ fontSize: '72px', fontWeight: 700, color: '#ffffff', margin: '6px 0 0 0', lineHeight: 1.0, letterSpacing: '-1.5px' }}>
-                SUBIR HORARIOS.
-              </h2>
-              <p style={{ fontSize: '18px', color: '#cccccc', marginTop: '14px' }}>
-                Generá los bloques de turnos para toda la semana con tarifas valle y pico automáticas.
-              </p>
-            </div>
-
-            <form onSubmit={handleGenerateBulkSlots} style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
-              
-              {/* Seleccionar Cancha */}
-              <div>
-                <label style={{ display: 'block', fontSize: '10px', color: '#ffffff', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '9px' }}>
-                  01 / SELECCIONAR CANCHA
-                </label>
-                <select
-                  value={bulkCourtId}
-                  onChange={(e) => setBulkCourtId(e.target.value)}
-                  style={{ width: '100%', backgroundColor: '#000000', color: '#ffffff', border: '1px solid #4c4c4c', padding: '14px', fontSize: '18px', outline: 'none' }}
-                >
-                  {courts.map(c => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} ({c.sport} · {c.duration} MINUTOS)
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Rango Horario */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '22px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '10px', color: '#ffffff', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '9px' }}>
-                    02 / PRIMER TURNO
-                  </label>
-                  <input
-                    type="text"
-                    value={bulkStartHour}
-                    onChange={(e) => setBulkStartHour(e.target.value)}
-                    style={{ width: '100%', backgroundColor: '#000000', color: '#ffffff', border: '1px solid #4c4c4c', padding: '14px', fontSize: '18px', outline: 'none', boxSizing: 'border-box' }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '10px', color: '#ffffff', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '9px' }}>
-                    03 / ÚLTIMO TURNO
-                  </label>
-                  <input
-                    type="text"
-                    value={bulkEndHour}
-                    onChange={(e) => setBulkEndHour(e.target.value)}
-                    style={{ width: '100%', backgroundColor: '#000000', color: '#ffffff', border: '1px solid #4c4c4c', padding: '14px', fontSize: '18px', outline: 'none', boxSizing: 'border-box' }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '10px', color: '#ffffff', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '9px' }}>
-                    04 / INTERVALO (MINUTOS)
-                  </label>
-                  <select
-                    value={bulkInterval}
-                    onChange={(e) => setBulkInterval(Number(e.target.value))}
-                    style={{ width: '100%', backgroundColor: '#000000', color: '#ffffff', border: '1px solid #4c4c4c', padding: '14px', fontSize: '18px', outline: 'none', boxSizing: 'border-box' }}
-                  >
-                    <option value={90}>90 Minutos (Pádel estándar)</option>
-                    <option value={60}>60 Minutos (Fútbol / Clases)</option>
-                    <option value={120}>120 Minutos (Partidos largos)</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Precios Valle vs Pico */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '22px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '10px', color: '#ffffff', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '9px' }}>
-                    05 / PRECIO TARIFA VALLE (08:00 A 17:00 HS)
-                  </label>
-                  <input
-                    type="number"
-                    value={bulkPriceValle}
-                    onChange={(e) => setBulkPriceValle(Number(e.target.value))}
-                    style={{ width: '100%', backgroundColor: '#000000', color: '#ffffff', border: '1px solid #4c4c4c', padding: '14px', fontSize: '18px', outline: 'none', boxSizing: 'border-box' }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '10px', color: '#ffffff', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '9px' }}>
-                    06 / PRECIO TARIFA PICO (18:00 A 00:00 HS)
-                  </label>
-                  <input
-                    type="number"
-                    value={bulkPricePico}
-                    onChange={(e) => setBulkPricePico(Number(e.target.value))}
-                    style={{ width: '100%', backgroundColor: '#000000', color: '#ffffff', border: '1px solid #4c4c4c', padding: '14px', fontSize: '18px', outline: 'none', boxSizing: 'border-box' }}
-                  />
-                </div>
-              </div>
-
-              {/* Action Button */}
-              <div style={{ marginTop: '22px' }}>
-                <button
-                  type="submit"
-                  style={{
-                    backgroundColor: '#fc1c46',
-                    color: '#ffffff',
-                    border: 'none',
-                    borderRadius: '9999px',
-                    padding: '18px 43px',
-                    fontSize: '18px',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    letterSpacing: '0.5px'
-                  }}
-                >
-                  PUBLICAR HORARIOS EN TIEMPO REAL →
-                </button>
-              </div>
-
-            </form>
-          </div>
-        )}
-
-        {/* SECTION 3: CONFIGURACIÓN DE CANCHAS */}
-        {activeSection === 'COURTS' && (
-          <div>
-            <div style={{ marginBottom: '36px' }}>
-              <span style={{ fontSize: '10px', color: '#4c4c4c', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                CATÁLOGO DE INSTALACIONES
-              </span>
-              <h2 style={{ fontSize: '72px', fontWeight: 700, color: '#ffffff', margin: '6px 0 0 0', lineHeight: 1.0, letterSpacing: '-1.5px' }}>
-                CANCHAS ACTIVAS.
-              </h2>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '14px' }}>
-              {courts.map(c => (
-                <div
-                  key={c.id}
-                  style={{ border: '1px solid #4c4c4c', padding: '29px 36px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                >
-                  <div>
-                    <div style={{ fontSize: '10px', color: '#fc1c46', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                      {c.sport} · {c.duration} MINUTOS
-                    </div>
-                    <div style={{ fontSize: '27px', fontWeight: 700, color: '#ffffff', margin: '4px 0' }}>
-                      {c.name}
-                    </div>
-                    <div style={{ fontSize: '14px', color: '#cccccc' }}>
-                      Valle: ${c.priceValley.toLocaleString('es-AR')} · Pico: ${c.pricePeak.toLocaleString('es-AR')} · Descuento Turno Fijo: {c.fixedDiscount}%
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '14px' }}>
-                    <button
-                      onClick={() => {
-                        setBulkCourtId(c.id);
-                        setActiveSection('BATCH_UPLOAD');
-                      }}
-                      style={{ backgroundColor: '#ffffff', color: '#000000', border: 'none', borderRadius: '9999px', padding: '9px 22px', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}
-                    >
-                      Subir Horarios
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* SECTION 4: GESTIÓN DE TURNOS FIJOS */}
-        {activeSection === 'FIXED_MANAGEMENT' && (
-          <div>
-            <div style={{ marginBottom: '36px' }}>
-              <span style={{ fontSize: '10px', color: '#fc1c46', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                CONTRATOS Y SUSCRIPCIONES SEMANALES
-              </span>
-              <h2 style={{ fontSize: '72px', fontWeight: 700, color: '#ffffff', margin: '6px 0 0 0', lineHeight: 1.0, letterSpacing: '-1.5px' }}>
-                TURNOS FIJOS.
-              </h2>
-            </div>
-
-            <div style={{ border: '1px solid #4c4c4c' }}>
-              <div style={{ padding: '22px 36px', borderBottom: '1px solid #4c4c4c', display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#4c4c4c', textTransform: 'uppercase' }}>
-                <span>TITULAR & TELÉFONO</span>
-                <span>CANCHA Y HORARIO</span>
-                <span>TARIFA MENSUAL</span>
-                <span>ACCIONES</span>
-              </div>
-
-              {[
-                { name: 'Lautaro Martínez', phone: '+54 9 11 3322-1144', court: 'Cancha 1 (Central Panorámica)', time: 'Jueves · 21:00 hs', monthly: 168960 },
-                { name: 'Gonzalo Montiel', phone: '+54 9 11 7788-9900', court: 'Cancha 2 (Indoor Vidrio)', time: 'Martes · 20:00 hs', monthly: 162000 },
-                { name: 'Nicolás Tagliafico', phone: '+54 9 11 5544-3322', court: 'Cancha 3 (Indoor Climatizada)', time: 'Miércoles · 21:30 hs', monthly: 151200 }
-              ].map((f, i) => (
-                <div key={i} style={{ padding: '22px 36px', borderBottom: '1px solid #222222', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <div style={{ fontSize: '18px', fontWeight: 700, color: '#ffffff' }}>{f.name}</div>
-                    <div style={{ fontSize: '14px', color: '#4c4c4c' }}>{f.phone}</div>
-                  </div>
-
-                  <div style={{ fontSize: '18px', color: '#ffffff', fontWeight: 500 }}>
-                    {f.court} · <span style={{ color: '#fc1c46' }}>{f.time}</span>
-                  </div>
-
-                  <div style={{ fontSize: '18px', fontWeight: 700, color: '#ffffff' }}>
-                    ${f.monthly.toLocaleString('es-AR')}/mes
-                  </div>
-
-                  <div>
-                    <button
-                      onClick={() => alert(`¡Turno de ${f.name} liberado al marketplace de Hay Equipo para esta semana!`)}
-                      style={{ backgroundColor: 'transparent', color: '#fc1c46', border: '1px solid #fc1c46', borderRadius: '9999px', padding: '7px 22px', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}
-                    >
-                      Liberar Esta Semana
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-      </main>
-
-      {/* MODAL AGREGAR TURNO INDIVIDUAL */}
-      {showSingleSlotModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <div style={{ backgroundColor: '#000000', border: '1px solid #4c4c4c', padding: '43px', width: '100%', maxWidth: '480px' }}>
-            <div style={{ fontSize: '10px', color: '#fc1c46', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '6px' }}>
-              AGREGAR HORARIO
-            </div>
-            <div style={{ fontSize: '27px', fontWeight: 700, color: '#ffffff', marginBottom: '22px' }}>
-              NUEVO TURNO.
-            </div>
-
-            <form onSubmit={handleAddSingleSlot} style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '10px', color: '#ffffff', textTransform: 'uppercase', marginBottom: '6px' }}>
-                  Cancha
-                </label>
-                <select
-                  value={newSlotCourt}
-                  onChange={(e) => setNewSlotCourt(e.target.value)}
-                  style={{ width: '100%', backgroundColor: '#000000', color: '#ffffff', border: '1px solid #4c4c4c', padding: '14px', fontSize: '14px' }}
-                >
-                  {courts.map(c => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '10px', color: '#ffffff', textTransform: 'uppercase', marginBottom: '6px' }}>
-                  Horario (ej: 20:00)
-                </label>
-                <input
-                  type="text"
-                  value={newSlotTime}
-                  onChange={(e) => setNewSlotTime(e.target.value)}
-                  style={{ width: '100%', backgroundColor: '#000000', color: '#ffffff', border: '1px solid #4c4c4c', padding: '14px', fontSize: '18px', boxSizing: 'border-box' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '10px', color: '#ffffff', textTransform: 'uppercase', marginBottom: '6px' }}>
-                  Precio ($ ARS)
-                </label>
-                <input
-                  type="number"
-                  value={newSlotPrice}
-                  onChange={(e) => setNewSlotPrice(Number(e.target.value))}
-                  style={{ width: '100%', backgroundColor: '#000000', color: '#ffffff', border: '1px solid #4c4c4c', padding: '14px', fontSize: '18px', boxSizing: 'border-box' }}
-                />
-              </div>
-
-              <div style={{ display: 'flex', gap: '14px', marginTop: '14px' }}>
-                <button
-                  type="button"
-                  onClick={() => setShowSingleSlotModal(false)}
-                  style={{ flex: 1, backgroundColor: 'transparent', color: '#ffffff', border: '1px solid #4c4c4c', padding: '14px', borderRadius: '9999px', fontSize: '14px', cursor: 'pointer' }}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  style={{ flex: 1, backgroundColor: '#fc1c46', color: '#ffffff', border: 'none', padding: '14px', borderRadius: '9999px', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}
-                >
-                  Guardar y Publicar
-                </button>
-              </div>
-            </form>
+            </p>
           </div>
         </div>
-      )}
+      </section>
 
-      {/* 5. FOOTER (ThoughtLab Pure Minimalist Style) */}
-      <footer style={{ borderTop: '1px solid #4c4c4c', padding: '65px 36px', marginTop: '86px' }}>
-        <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div>
-            <div style={{ fontSize: '27px', fontWeight: 700, color: '#ffffff' }}>HAY EQUIPO?</div>
-            <div style={{ fontSize: '14px', color: '#4c4c4c', marginTop: '6px' }}>
-              Sistema Operativo y Red de Disponibilidad Deportiva en Tiempo Real.
+      {/* ═══════════════════════════════════════════════════════
+          FEATURES — Staggered Card & Number Zoom Reveals
+          ═══════════════════════════════════════════════════════ */}
+      <section
+        ref={featRef}
+        style={{
+          position: 'relative',
+          zIndex: 2,
+          backgroundColor: 'transparent',
+          padding: '43px 36px 108px',
+        }}
+      >
+        <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+          {/* Section header */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 65 }}>
+            <div
+              style={{
+                width: featInView ? 48 : 0,
+                height: 1,
+                backgroundColor: 'var(--color-crimson-signal)',
+                transition: 'width 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s',
+              }}
+            />
+            <MaskedText inView={featInView} delay={0.2}>
+              <h2 style={{ fontSize: 18, fontWeight: 400, color: 'var(--color-frost)', margin: 0 }}>
+                Funcionalidades
+              </h2>
+            </MaskedText>
+          </div>
+
+          {/* Features grid */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+            gap: 43,
+          }}>
+            {FEATURES.map((feat, i) => (
+              <div
+                key={i}
+                style={{
+                  position: 'relative',
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}
+              >
+                {/* Hairline across top with staggered delay */}
+                <HairlineRule inView={featInView} delay={0.2 + i * 0.12} />
+
+                {/* Number with scale drop reveal */}
+                <div
+                  style={{
+                    fontSize: 72,
+                    fontWeight: 700,
+                    color: '#181818',
+                    lineHeight: 1,
+                    marginTop: 36,
+                    marginBottom: 22,
+                    letterSpacing: '-2px',
+                    transform: featInView ? 'scale(1) translateY(0)' : 'scale(1.4) translateY(15px)',
+                    opacity: featInView ? 1 : 0,
+                    transition: `transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) ${0.3 + i * 0.15}s, opacity 0.8s ease ${0.3 + i * 0.15}s`,
+                    willChange: 'transform, opacity',
+                  }}
+                >
+                  {feat.num}
+                </div>
+
+                {/* Title slide */}
+                <MaskedText inView={featInView} delay={0.4 + i * 0.15}>
+                  <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-frost)', margin: '0 0 14px', lineHeight: 1.1 }}>
+                    {feat.title}
+                  </h3>
+                </MaskedText>
+
+                {/* Description fade */}
+                <div
+                  style={{
+                    opacity: featInView ? 1 : 0,
+                    transform: featInView ? 'translateY(0)' : 'translateY(18px)',
+                    transition: `all 0.8s cubic-bezier(0.16, 1, 0.3, 1) ${0.5 + i * 0.15}s`,
+                  }}
+                >
+                  <p style={{ fontSize: 14, color: 'var(--color-ash)', lineHeight: 1.55, margin: 0 }}>
+                    {feat.desc}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+
+
+      {/* ═══════════════════════════════════════════════════════
+          DOWNLOAD — QR Code & Shutter Heading Reveal
+          ═══════════════════════════════════════════════════════ */}
+      <section
+        id="descargar"
+        ref={downloadRef}
+        style={{
+          position: 'relative',
+          zIndex: 2,
+          backgroundColor: 'transparent',
+          padding: '108px 36px',
+        }}
+      >
+        <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+          <HairlineRule inView={downloadInView} delay={0.1} />
+
+          <div style={{
+            marginTop: 65,
+            display: 'grid',
+            gridTemplateColumns: '1fr auto',
+            gap: 86,
+            alignItems: 'center',
+          }}>
+            {/* Left — Heading + description */}
+            <div>
+              <TrackingBlurReveal inView={downloadInView} delay={0.2} style={{ fontSize: '10px', color: 'var(--color-crimson-signal)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 9 }}>
+                DISPONIBLE PARA IOS Y ANDROID
+              </TrackingBlurReveal>
+
+              <h2 style={{ margin: '0 0 22px', padding: 0 }}>
+                <div style={{ display: 'block' }}>
+                  <MaskedText inView={downloadInView} delay={0.3} duration={1.0}>
+                    <span style={{ display: 'block', fontSize: 'clamp(42px, 8vw, 91px)', fontWeight: 700, color: 'var(--color-frost)', lineHeight: 0.92, letterSpacing: '-1.82px', textTransform: 'uppercase' }}>
+                      DESCARGÁ
+                    </span>
+                  </MaskedText>
+                </div>
+                <div style={{ display: 'block' }}>
+                  <MaskedText inView={downloadInView} delay={0.45} duration={1.0}>
+                    <span style={{ display: 'block', fontSize: 'clamp(42px, 8vw, 91px)', fontWeight: 700, color: 'var(--color-frost)', lineHeight: 0.92, letterSpacing: '-1.82px', textTransform: 'uppercase' }}>
+                      LA APP.
+                    </span>
+                  </MaskedText>
+                </div>
+              </h2>
+
+              <TrackingBlurReveal inView={downloadInView} delay={0.6} style={{ fontSize: '18px', color: 'var(--color-ash)', lineHeight: 1.25, maxWidth: 480, margin: '0 0 36px' }}>
+                Escaneá el código QR con tu celular o buscá &quot;Hay Equipo&quot; en App Store o Google Play. Creá tu cuenta en segundos y empezá a reservar.
+              </TrackingBlurReveal>
+
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 14,
+                  flexWrap: 'wrap',
+                  opacity: downloadInView ? 1 : 0,
+                  transform: downloadInView ? 'translateY(0)' : 'translateY(20px)',
+                  transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.75s',
+                }}
+              >
+                <a
+                  href="#"
+                  style={{
+                    backgroundColor: 'var(--color-frost)',
+                    color: 'var(--color-void)',
+                    border: 'none',
+                    borderRadius: 'var(--radius-full)',
+                    padding: '14px 36px',
+                    fontSize: 14,
+                    fontWeight: 700,
+                    textDecoration: 'none',
+                    textTransform: 'uppercase',
+                    transition: 'transform 0.2s ease',
+                  }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.transform = 'scale(1.04)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.transform = 'scale(1)'; }}
+                >
+                  App Store
+                </a>
+                <a
+                  href="#"
+                  style={{
+                    backgroundColor: 'transparent',
+                    color: 'var(--color-frost)',
+                    border: '1px solid var(--color-graphite)',
+                    borderRadius: 'var(--radius-full)',
+                    padding: '14px 36px',
+                    fontSize: 14,
+                    fontWeight: 400,
+                    textDecoration: 'none',
+                    textTransform: 'uppercase',
+                    transition: 'border-color 0.2s ease, transform 0.2s ease',
+                  }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--color-frost)'; (e.currentTarget as HTMLAnchorElement).style.transform = 'scale(1.04)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--color-graphite)'; (e.currentTarget as HTMLAnchorElement).style.transform = 'scale(1)'; }}
+                >
+                  Google Play
+                </a>
+              </div>
+            </div>
+
+            {/* Right — QR Code with Shutter Box Reveal */}
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 14,
+                opacity: downloadInView ? 1 : 0,
+                transform: downloadInView ? 'scale(1) rotate(0deg)' : 'scale(0.85) rotate(-6deg)',
+                filter: downloadInView ? 'blur(0px)' : 'blur(10px)',
+                transition: 'all 1s cubic-bezier(0.16, 1, 0.3, 1) 0.4s',
+              }}
+            >
+              <div style={{
+                width: 200,
+                height: 200,
+                border: '1px solid var(--color-graphite)',
+                padding: 14,
+                backgroundColor: '#000000',
+              }}>
+                <QRCodeSVG />
+              </div>
+              <span style={{ fontSize: 10, color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                ESCANEÁ PARA DESCARGAR
+              </span>
             </div>
           </div>
+        </div>
+      </section>
 
-          <div style={{ textAlign: 'right', fontSize: '10px', color: '#4c4c4c', textTransform: 'uppercase', letterSpacing: '1px' }}>
-            <div>CONNECTED TO REDIS & SSE REALTIME GATEWAY</div>
-            <div style={{ marginTop: '4px' }}>© 2026 HAY EQUIPO INC. ALL RIGHTS RESERVED.</div>
+      {/* ═══════════════════════════════════════════════════════
+          CLUBS CTA — "¿Tenés un club?"
+          ═══════════════════════════════════════════════════════ */}
+      <section
+        ref={clubRef}
+        style={{
+          position: 'relative',
+          zIndex: 2,
+          backgroundColor: 'transparent',
+          padding: '108px 36px',
+        }}
+      >
+        <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+          <HairlineRule inView={clubInView} delay={0.1} />
+
+          <div style={{
+            marginTop: 65,
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))',
+            gap: 43,
+            alignItems: 'center',
+          }}>
+            {/* Left — Text & CTA */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 22 }}>
+                <div
+                  style={{
+                    width: clubInView ? 36 : 0,
+                    height: 1,
+                    backgroundColor: 'var(--color-graphite)',
+                    transition: 'width 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s',
+                  }}
+                />
+                <MaskedText inView={clubInView} delay={0.2}>
+                  <span style={{ fontSize: 10, color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '1.5px' }}>
+                    PARA OPERADORES Y DUEÑOS
+                  </span>
+                </MaskedText>
+              </div>
+
+              <h2 style={{ margin: '0 0 22px', padding: 0 }}>
+                <div style={{ display: 'block' }}>
+                  <MaskedText inView={clubInView} delay={0.3} duration={1.0}>
+                    <span style={{ display: 'block', fontSize: 'clamp(42px, 8vw, 91px)', fontWeight: 700, color: 'var(--color-frost)', lineHeight: 0.92, letterSpacing: '-1.82px', textTransform: 'uppercase' }}>
+                      ¿TENÉS
+                    </span>
+                  </MaskedText>
+                </div>
+                <div style={{ display: 'block' }}>
+                  <MaskedText inView={clubInView} delay={0.45} duration={1.0}>
+                    <span style={{ display: 'block', fontSize: 'clamp(42px, 8vw, 91px)', fontWeight: 700, color: 'var(--color-frost)', lineHeight: 0.92, letterSpacing: '-1.82px', textTransform: 'uppercase' }}>
+                      UN CLUB?
+                    </span>
+                  </MaskedText>
+                </div>
+              </h2>
+
+              <TrackingBlurReveal inView={clubInView} delay={0.6} style={{ fontSize: '20px', color: 'var(--color-frost)', lineHeight: 1.35, maxWidth: 540, margin: '0 0 14px', fontWeight: 700 }}>
+                Hacé que tus canchas aparezcan en nuestra app de forma gratuita.
+              </TrackingBlurReveal>
+
+              <TrackingBlurReveal inView={clubInView} delay={0.7} style={{ fontSize: '15px', color: 'var(--color-ash)', lineHeight: 1.45, maxWidth: 540, margin: '0 0 36px' }}>
+                Publicá la disponibilidad de tus canchas, recibí reservas desde la app en tiempo real y gestioná tarifas valle/pico y turnos fijos sin costo de mantenimiento.
+              </TrackingBlurReveal>
+
+              <div
+                style={{
+                  opacity: clubInView ? 1 : 0,
+                  transform: clubInView ? 'translateY(0) scale(1)' : 'translateY(24px) scale(0.95)',
+                  transition: 'all 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.75s',
+                }}
+              >
+                <a
+                  href="/registro-club"
+                  style={{
+                    display: 'inline-block',
+                    backgroundColor: 'var(--color-crimson-signal)',
+                    color: 'var(--color-frost)',
+                    border: 'none',
+                    borderRadius: 'var(--radius-full)',
+                    padding: '18px 43px',
+                    fontSize: 18,
+                    fontWeight: 700,
+                    textDecoration: 'none',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    transition: 'transform 0.2s ease, filter 0.2s ease',
+                  }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.filter = 'brightness(1.15)'; (e.currentTarget as HTMLAnchorElement).style.transform = 'scale(1.03)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.filter = 'none'; (e.currentTarget as HTMLAnchorElement).style.transform = 'scale(1)'; }}
+                >
+                  Publicá tus Canchas →
+                </a>
+              </div>
+            </div>
+
+            {/* Right — 3D Dashboard Mockup */}
+            <div
+              style={{
+                opacity: clubInView ? 1 : 0,
+                transform: clubInView ? 'translateY(0) scale(1)' : 'translateY(40px) scale(0.95)',
+                transition: 'all 1s cubic-bezier(0.16, 1, 0.3, 1) 0.4s',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+            >
+              <div
+                style={{
+                  position: 'relative',
+                  width: '100%',
+                  maxWidth: 620,
+                  borderRadius: 16,
+                  overflow: 'hidden',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  boxShadow: '0 25px 60px -15px rgba(252, 28, 70, 0.18)',
+                  transition: 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s ease',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.transform = 'translateY(-6px) scale(1.02)';
+                  e.currentTarget.style.boxShadow = '0 32px 75px -10px rgba(252, 28, 70, 0.3)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                  e.currentTarget.style.boxShadow = '0 25px 60px -15px rgba(252, 28, 70, 0.18)';
+                }}
+              >
+                <img
+                  src="/club-mockup.png"
+                  alt="Panel del Club — Hay Equipo?"
+                  style={{
+                    width: '100%',
+                    height: 'auto',
+                    display: 'block',
+                    objectFit: 'cover',
+                  }}
+                  loading="lazy"
+                />
+              </div>
+            </div>
           </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════
+          CONTACT / LOCATION — Converging Split City Text
+          ═══════════════════════════════════════════════════════ */}
+      <section
+        ref={cityRef}
+        style={{
+          position: 'relative',
+          zIndex: 2,
+          backgroundColor: 'transparent',
+          padding: '86px 36px 43px',
+        }}
+      >
+        <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+          <HairlineRule inView={cityInView} delay={0.1} />
+
+          <div style={{ marginTop: 65 }}>
+            <TrackingBlurReveal inView={cityInView} delay={0.2} style={{ fontSize: '10px', color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: 9 }}>
+              OPERANDO DESDE
+            </TrackingBlurReveal>
+
+            <h3 style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              justifyContent: 'space-between',
+              margin: 0,
+              overflow: 'hidden',
+            }}>
+              {/* BUENOS slides in from left */}
+              <div
+                style={{
+                  transform: cityInView ? 'translate3d(0, 0, 0)' : 'translate3d(-60px, 60px, 0)',
+                  opacity: cityInView ? 1 : 0,
+                  transition: 'transform 1.1s cubic-bezier(0.16, 1, 0.3, 1) 0.3s, opacity 0.8s ease 0.3s',
+                }}
+              >
+                <span style={{ fontSize: 'clamp(36px, 8vw, 91px)', fontWeight: 700, color: 'var(--color-frost)', lineHeight: 0.92, letterSpacing: '-1.82px', textTransform: 'uppercase' }}>
+                  BUENOS
+                </span>
+              </div>
+
+              {/* AIRES slides in from right */}
+              <div
+                style={{
+                  transform: cityInView ? 'translate3d(0, 0, 0)' : 'translate3d(60px, 60px, 0)',
+                  opacity: cityInView ? 1 : 0,
+                  transition: 'transform 1.1s cubic-bezier(0.16, 1, 0.3, 1) 0.45s, opacity 0.8s ease 0.45s',
+                }}
+              >
+                <span style={{ fontSize: 'clamp(36px, 8vw, 91px)', fontWeight: 700, color: 'var(--color-frost)', lineHeight: 0.92, letterSpacing: '-1.82px', textTransform: 'uppercase' }}>
+                  AIRES
+                </span>
+              </div>
+            </h3>
+
+            <div
+              style={{
+                fontSize: 18,
+                fontWeight: 300,
+                color: 'var(--color-graphite)',
+                textTransform: 'uppercase',
+                textAlign: 'right',
+                marginTop: -8,
+                opacity: cityInView ? 1 : 0,
+                transform: cityInView ? 'translateY(0)' : 'translateY(15px)',
+                transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.6s',
+              }}
+            >
+              / ARGENTINA
+            </div>
+          </div>
+        </div>
+
+        {/* Contact links grid */}
+        <div style={{
+          maxWidth: 1400,
+          margin: '65px auto 0',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: 36,
+          opacity: cityInView ? 1 : 0,
+          transform: cityInView ? 'translateY(0)' : 'translateY(25px)',
+          transition: 'all 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.7s',
+        }}>
+          <div>
+            <div style={{ fontSize: 14, color: 'var(--color-frost)', marginBottom: 14 }}>Contacto</div>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+              <li><a href="mailto:hola@hayequipo.app" style={{ fontSize: 14, color: 'var(--color-ash)', textDecoration: 'none' }}>hola@hayequipo.app</a></li>
+            </ul>
+          </div>
+          <div>
+            <div style={{ fontSize: 14, color: 'var(--color-frost)', marginBottom: 14 }}>Seguinos</div>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <li><a href="#" style={{ fontSize: 14, color: 'var(--color-ash)', textDecoration: 'none' }}>Instagram</a></li>
+              <li><a href="#" style={{ fontSize: 14, color: 'var(--color-ash)', textDecoration: 'none' }}>Twitter / X</a></li>
+            </ul>
+          </div>
+          <div>
+            <div style={{ fontSize: 14, color: 'var(--color-frost)', marginBottom: 14 }}>Clubes</div>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+              <li><a href="/" style={{ fontSize: 14, color: 'var(--color-ash)', textDecoration: 'none' }}>Panel de Gestión</a></li>
+              <li style={{ marginTop: 4 }}><a href="#" style={{ fontSize: 14, color: 'var(--color-ash)', textDecoration: 'none' }}>Asociar mi club</a></li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════
+          FOOTER — ThoughtLab minimal
+          ═══════════════════════════════════════════════════════ */}
+      <footer
+        style={{
+          position: 'relative',
+          zIndex: 2,
+          backgroundColor: 'transparent',
+          padding: '43px 36px',
+          borderTop: '1px solid var(--color-graphite)',
+        }}
+      >
+        <div style={{
+          maxWidth: 1400,
+          margin: '0 auto',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 14,
+        }}>
+          <span style={{ fontSize: 10, color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+            © 2026 HAY EQUIPO. ALL RIGHTS RESERVED.
+          </span>
+          <span style={{ fontSize: 10, color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+            BUENOS AIRES, ARGENTINA
+          </span>
         </div>
       </footer>
 
+      {/* ── Global Styles ── */}
+      <style jsx>{`
+        a:hover {
+          opacity: 0.85;
+        }
+      `}</style>
     </div>
   );
 }
