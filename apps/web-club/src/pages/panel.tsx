@@ -35,6 +35,8 @@ interface CourtInfo {
   pricePeak: number;
   indoor: boolean;
   lighting: boolean;
+  openTime: string;  // ej: "08:00"
+  closeTime: string; // ej: "23:30"
 }
 
 interface PlayerRecord {
@@ -50,25 +52,25 @@ interface PlayerRecord {
 }
 
 /* ────────────────────────────────────────────────────────────
-   Initial Data (Strict 100% Upfront Payment)
+   Initial Data (Strict 100% Upfront Payment + Custom Court Schedule)
    ──────────────────────────────────────────────────────────── */
 
 const INITIAL_SLOTS: CourtSlot[] = [
-  { id: 's-1', courtId: 'c-1', courtName: 'Cancha 1', sport: 'Pádel', time: '18:00', status: 'RESERVED', player: 'Juan R.', price: 48000, phone: '+54 9 11 4433-2211', paymentMethod: 'APP_MERCADOPAGO', isPaid100: true },
-  { id: 's-2', courtId: 'c-2', courtName: 'Cancha 2', sport: 'Pádel', time: '18:00', status: 'AVAILABLE', player: '—', price: 45000, isPaid100: false },
-  { id: 's-3', courtId: 'c-3', courtName: 'Cancha 3', sport: 'Pádel', time: '19:30', status: 'FIXED', player: 'Escuela Padel', price: 42000, phone: '+54 9 11 9988-7766', paymentMethod: 'MOSTRADOR_TRANSFERENCIA', isPaid100: true },
-  { id: 's-4', courtId: 'c-4', courtName: 'Cancha 4', sport: 'Fútbol 5', time: '20:00', status: 'AVAILABLE', player: '—', price: 36000, isPaid100: false },
-  { id: 's-5', courtId: 'c-1', courtName: 'Cancha 1', sport: 'Pádel', time: '19:30', status: 'RESERVED', player: 'Rodrigo De Paul', price: 48000, phone: '+54 9 11 5566-7788', paymentMethod: 'APP_MERCADOPAGO', isPaid100: true },
-  { id: 's-6', courtId: 'c-2', courtName: 'Cancha 2', sport: 'Pádel', time: '21:00', status: 'RESERVED', player: 'Emiliano M.', price: 45000, phone: '+54 9 11 2233-4455', paymentMethod: 'APP_MERCADOPAGO', isPaid100: true },
-  { id: 's-7', courtId: 'c-3', courtName: 'Cancha 3', sport: 'Pádel', time: '21:00', status: 'AVAILABLE', player: '—', price: 42000, isPaid100: false },
-  { id: 's-8', courtId: 'c-4', courtName: 'Cancha 4', sport: 'Fútbol 5', time: '21:30', status: 'RESERVED', player: 'Torneo Nocturno', price: 36000, phone: '+54 9 11 1122-3344', paymentMethod: 'MOSTRADOR_EFECTIVO', isPaid100: true },
+  { id: 's-1', courtId: 'c-1', courtName: 'Cancha 1 — Panorámica WPT', sport: 'Pádel', time: '18:00', status: 'RESERVED', player: 'Juan R.', price: 48000, phone: '+54 9 11 4433-2211', paymentMethod: 'APP_MERCADOPAGO', isPaid100: true },
+  { id: 's-2', courtId: 'c-2', courtName: 'Cancha 2 — Cristal Pro', sport: 'Pádel', time: '18:00', status: 'AVAILABLE', player: '—', price: 45000, isPaid100: false },
+  { id: 's-3', courtId: 'c-3', courtName: 'Cancha 3 — Master Climatizada', sport: 'Pádel', time: '19:30', status: 'FIXED', player: 'Escuela Padel', price: 42000, phone: '+54 9 11 9988-7766', paymentMethod: 'MOSTRADOR_TRANSFERENCIA', isPaid100: true },
+  { id: 's-4', courtId: 'c-4', courtName: 'Cancha 4 — Fútbol 5 Forbex', sport: 'Fútbol 5', time: '20:00', status: 'AVAILABLE', player: '—', price: 36000, isPaid100: false },
+  { id: 's-5', courtId: 'c-1', courtName: 'Cancha 1 — Panorámica WPT', sport: 'Pádel', time: '19:30', status: 'RESERVED', player: 'Rodrigo De Paul', price: 48000, phone: '+54 9 11 5566-7788', paymentMethod: 'APP_MERCADOPAGO', isPaid100: true },
+  { id: 's-6', courtId: 'c-2', courtName: 'Cancha 2 — Cristal Pro', sport: 'Pádel', time: '21:00', status: 'RESERVED', player: 'Emiliano M.', price: 45000, phone: '+54 9 11 2233-4455', paymentMethod: 'APP_MERCADOPAGO', isPaid100: true },
+  { id: 's-7', courtId: 'c-3', courtName: 'Cancha 3 — Master Climatizada', sport: 'Pádel', time: '21:00', status: 'AVAILABLE', player: '—', price: 42000, isPaid100: false },
+  { id: 's-8', courtId: 'c-4', courtName: 'Cancha 4 — Fútbol 5 Forbex', sport: 'Fútbol 5', time: '21:30', status: 'RESERVED', player: 'Torneo Nocturno', price: 36000, phone: '+54 9 11 1122-3344', paymentMethod: 'MOSTRADOR_EFECTIVO', isPaid100: true },
 ];
 
 const INITIAL_COURTS: CourtInfo[] = [
-  { id: 'c-1', name: 'Cancha 1 — Panorámica WPT', sport: 'Pádel', surface: 'Vidrio Panorámico 12mm · Césped Texturado', active: true, pausedForWeather: false, priceValley: 42000, pricePeak: 48000, indoor: true, lighting: true },
-  { id: 'c-2', name: 'Cancha 2 — Cristal Pro', sport: 'Pádel', surface: 'Vidrio Templado 10mm · Césped Monofilamento', active: true, pausedForWeather: false, priceValley: 38000, pricePeak: 45000, indoor: true, lighting: true },
-  { id: 'c-3', name: 'Cancha 3 — Master Climatizada', sport: 'Pádel', surface: 'Muros Perimetrales · Cubierta Climatizada', active: true, pausedForWeather: false, priceValley: 36000, pricePeak: 42000, indoor: true, lighting: true },
-  { id: 'c-4', name: 'Cancha 4 — Fútbol 5 Forbex', sport: 'Fútbol 5', surface: 'Césped Sintético Forbex 50mm con Caucho', active: true, pausedForWeather: false, priceValley: 30000, pricePeak: 36000, indoor: false, lighting: true },
+  { id: 'c-1', name: 'Cancha 1 — Panorámica WPT', sport: 'Pádel', surface: 'Vidrio Panorámico 12mm · Césped Texturado', active: true, pausedForWeather: false, priceValley: 42000, pricePeak: 48000, indoor: true, lighting: true, openTime: '08:00', closeTime: '23:30' },
+  { id: 'c-2', name: 'Cancha 2 — Cristal Pro', sport: 'Pádel', surface: 'Vidrio Templado 10mm · Césped Monofilamento', active: true, pausedForWeather: false, priceValley: 38000, pricePeak: 45000, indoor: true, lighting: true, openTime: '08:00', closeTime: '23:30' },
+  { id: 'c-3', name: 'Cancha 3 — Master Climatizada', sport: 'Pádel', surface: 'Muros Perimetrales · Cubierta Climatizada', active: true, pausedForWeather: false, priceValley: 36000, pricePeak: 42000, indoor: true, lighting: true, openTime: '09:00', closeTime: '23:00' },
+  { id: 'c-4', name: 'Cancha 4 — Fútbol 5 Forbex', sport: 'Fútbol 5', surface: 'Césped Sintético Forbex 50mm con Caucho', active: true, pausedForWeather: false, priceValley: 30000, pricePeak: 36000, indoor: false, lighting: true, openTime: '10:00', closeTime: '24:00' },
 ];
 
 const INITIAL_PLAYERS: PlayerRecord[] = [
@@ -115,6 +117,19 @@ export default function ClubPanel() {
   const [modalType, setModalType] = useState<SlotStatus>('RESERVED');
   const [modalPaymentMethod, setModalPaymentMethod] = useState<PaymentMethod>('MOSTRADOR_EFECTIVO');
 
+  // Modal "+ Configurar / Editar Cancha"
+  const [showCourtModal, setShowCourtModal] = useState(false);
+  const [editingCourtId, setEditingCourtId] = useState<string | null>(null);
+  const [courtNameInput, setCourtNameInput] = useState('');
+  const [courtSportInput, setCourtSportInput] = useState('Pádel');
+  const [courtSurfaceInput, setCourtSurfaceInput] = useState('Vidrio Templado 10mm');
+  const [courtOpenTimeInput, setCourtOpenTimeInput] = useState('08:00');
+  const [courtCloseTimeInput, setCourtCloseTimeInput] = useState('23:30');
+  const [courtPriceValleyInput, setCourtPriceValleyInput] = useState(38000);
+  const [courtPricePeakInput, setCourtPricePeakInput] = useState(45000);
+  const [courtIndoorInput, setCourtIndoorInput] = useState(true);
+  const [courtLightingInput, setCourtLightingInput] = useState(true);
+
   /* ── Auth Verification & Auto Demo Fallback ── */
   useEffect(() => {
     const raw = localStorage.getItem('hayequipo_club_session');
@@ -145,6 +160,72 @@ export default function ClubPanel() {
     localStorage.removeItem('hayequipo_club_session');
     router.push('/login');
   }, [router]);
+
+  // Open Court Modal for Add or Edit
+  const handleOpenCourtModal = (court?: CourtInfo) => {
+    if (court) {
+      setEditingCourtId(court.id);
+      setCourtNameInput(court.name);
+      setCourtSportInput(court.sport);
+      setCourtSurfaceInput(court.surface);
+      setCourtOpenTimeInput(court.openTime || '08:00');
+      setCourtCloseTimeInput(court.closeTime || '23:30');
+      setCourtPriceValleyInput(court.priceValley);
+      setCourtPricePeakInput(court.pricePeak);
+      setCourtIndoorInput(court.indoor);
+      setCourtLightingInput(court.lighting);
+    } else {
+      setEditingCourtId(null);
+      setCourtNameInput(`Cancha ${courts.length + 1}`);
+      setCourtSportInput('Pádel');
+      setCourtSurfaceInput('Sintético & Cristal Pro');
+      setCourtOpenTimeInput('08:00');
+      setCourtCloseTimeInput('23:30');
+      setCourtPriceValleyInput(38000);
+      setCourtPricePeakInput(45000);
+      setCourtIndoorInput(true);
+      setCourtLightingInput(true);
+    }
+    setShowCourtModal(true);
+  };
+
+  // Save Court (Add or Edit)
+  const handleSaveCourt = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!courtNameInput.trim()) return;
+
+    if (editingCourtId) {
+      setCourts(prev => prev.map(c => c.id === editingCourtId ? {
+        ...c,
+        name: courtNameInput.trim(),
+        sport: courtSportInput,
+        surface: courtSurfaceInput,
+        openTime: courtOpenTimeInput,
+        closeTime: courtCloseTimeInput,
+        priceValley: courtPriceValleyInput,
+        pricePeak: courtPricePeakInput,
+        indoor: courtIndoorInput,
+        lighting: courtLightingInput,
+      } : c));
+    } else {
+      const newCourt: CourtInfo = {
+        id: `c-${Date.now()}`,
+        name: courtNameInput.trim(),
+        sport: courtSportInput,
+        surface: courtSurfaceInput,
+        active: true,
+        pausedForWeather: false,
+        openTime: courtOpenTimeInput,
+        closeTime: courtCloseTimeInput,
+        priceValley: courtPriceValleyInput,
+        pricePeak: courtPricePeakInput,
+        indoor: courtIndoorInput,
+        lighting: courtLightingInput,
+      };
+      setCourts(prev => [...prev, newCourt]);
+    }
+    setShowCourtModal(false);
+  };
 
   // Cycle status on row click
   const handleToggleStatus = (id: string) => {
@@ -196,7 +277,7 @@ export default function ClubPanel() {
     const newSlot: CourtSlot = {
       id: `slot-${Date.now()}`,
       courtId: court.id,
-      courtName: court.name.split('—')[0].trim(),
+      courtName: court.name,
       sport: court.sport,
       time: modalTime,
       status: modalType,
@@ -404,7 +485,7 @@ export default function ClubPanel() {
               {/* Tab 3: Courts Layout */}
               <button
                 onClick={() => setActiveTab('COURTS')}
-                title="Canchas & Tarifas"
+                title="Canchas & Configuración de Horarios"
                 style={{
                   width: 40,
                   height: 40,
@@ -695,6 +776,87 @@ export default function ClubPanel() {
           </header>
 
           {/* ═══════════════════════════════════════════════════════
+              ⭐ TOP BAR: CANCHAS CONFIGURADAS Y HORARIOS HABILITADOS
+              ═══════════════════════════════════════════════════════ */}
+          <section style={{
+            backgroundColor: '#11131a',
+            border: '1px solid rgba(255, 255, 255, 0.06)',
+            borderRadius: 16,
+            padding: '10px 14px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            overflowX: 'auto',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+                Canchas Configuradas:
+              </span>
+              <button
+                onClick={() => handleOpenCourtModal()}
+                style={{
+                  backgroundColor: 'rgba(252, 28, 70, 0.12)',
+                  color: '#fc1c46',
+                  border: '1px solid rgba(252, 28, 70, 0.3)',
+                  borderRadius: 8,
+                  padding: '3px 10px',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                + Configurar Nueva Cancha
+              </button>
+            </div>
+
+            {/* Horizontal List of Configured Courts with Name & Operating Hours */}
+            <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 2 }}>
+              {filteredCourts.map(court => (
+                <div
+                  key={court.id}
+                  onClick={() => handleOpenCourtModal(court)}
+                  title="Click para editar nombre u horarios de esta cancha"
+                  style={{
+                    backgroundColor: '#181b22',
+                    border: court.pausedForWeather ? '1px solid rgba(234, 179, 8, 0.4)' : '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: 10,
+                    padding: '6px 12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    cursor: 'pointer',
+                    transition: 'border-color 0.15s ease',
+                    flexShrink: 0,
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.borderColor = '#fc1c46')}
+                  onMouseLeave={e => (e.currentTarget.style.borderColor = court.pausedForWeather ? 'rgba(234, 179, 8, 0.4)' : 'rgba(255,255,255,0.08)')}
+                >
+                  <span style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: '50%',
+                    backgroundColor: court.pausedForWeather ? '#eab308' : court.active ? '#4ade80' : '#6b7280',
+                    boxShadow: court.active ? '0 0 6px #4ade80' : 'none',
+                    display: 'inline-block',
+                  }} />
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#ffffff', lineHeight: 1.1 }}>
+                      {court.name}
+                    </div>
+                    <div style={{ fontSize: 10, color: '#8b92a0', marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span style={{ color: '#fc1c46', fontWeight: 600 }}>{court.sport}</span>
+                      <span>·</span>
+                      <span>🕒 {court.openTime} a {court.closeTime} hs</span>
+                    </div>
+                  </div>
+                  <span style={{ fontSize: 11, color: '#6b7280', marginLeft: 4 }}>✏️</span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* ═══════════════════════════════════════════════════════
               VIEW 1: DASHBOARD
               ═══════════════════════════════════════════════════════ */}
           {activeTab === 'DASHBOARD' && (
@@ -822,14 +984,14 @@ export default function ClubPanel() {
                 </div>
               </section>
 
-              {/* MAIN SPLIT GRID (HORARIO PICO + ACTIVIDAD) */}
+              {/* MAIN SPLIT GRID (HORARIOS + ACTIVIDAD) */}
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: '1.7fr 1fr',
                 gap: 14,
                 flex: 1,
               }}>
-                {/* LEFT: HORARIO PICO */}
+                {/* LEFT: HORARIOS DEL DÍA */}
                 <div style={{
                   backgroundColor: '#14161c',
                   borderRadius: 16,
@@ -857,7 +1019,7 @@ export default function ClubPanel() {
                     {/* Table Header */}
                     <div style={{
                       display: 'grid',
-                      gridTemplateColumns: '1.3fr 0.8fr 1.3fr 1.3fr 0.2fr',
+                      gridTemplateColumns: '1.5fr 0.8fr 1.3fr 1.2fr 0.2fr',
                       paddingBottom: 8,
                       borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
                       fontSize: 10,
@@ -887,7 +1049,7 @@ export default function ClubPanel() {
                             title="Click para alternar estado"
                             style={{
                               display: 'grid',
-                              gridTemplateColumns: '1.3fr 0.8fr 1.3fr 1.3fr 0.2fr',
+                              gridTemplateColumns: '1.5fr 0.8fr 1.3fr 1.2fr 0.2fr',
                               alignItems: 'center',
                               padding: '8px 0',
                               borderBottom: '1px solid rgba(255, 255, 255, 0.03)',
@@ -1023,7 +1185,7 @@ export default function ClubPanel() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: 0 }}>Grilla Matriz de Turnos y Disponibilidad</h2>
-                  <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>Supervisá la ocupación en tiempo real por cancha y gestioná parates por clima.</p>
+                  <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>Supervisá la ocupación en tiempo real por cancha e itinerario de horas.</p>
                 </div>
                 <button
                   onClick={() => setShowModal(true)}
@@ -1066,8 +1228,10 @@ export default function ClubPanel() {
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: 10 }}>
                         <div>
-                          <div style={{ fontWeight: 700, color: '#fff', fontSize: 15 }}>{court.name.split('—')[0].trim()}</div>
-                          <span style={{ fontSize: 10, color: '#fc1c46', backgroundColor: 'rgba(252,28,70,0.12)', padding: '2px 8px', borderRadius: 6, fontWeight: 600, marginTop: 4, display: 'inline-block' }}>{court.sport}</span>
+                          <div style={{ fontWeight: 700, color: '#fff', fontSize: 15 }}>{court.name}</div>
+                          <div style={{ fontSize: 11, color: '#8b92a0', marginTop: 2 }}>
+                            <span style={{ color: '#fc1c46', fontWeight: 600 }}>{court.sport}</span> · 🕒 {court.openTime} a {court.closeTime} hs
+                          </div>
                         </div>
 
                         {/* Weather Pause Button */}
@@ -1141,15 +1305,30 @@ export default function ClubPanel() {
           )}
 
           {/* ═══════════════════════════════════════════════════════
-              VIEW 3: COURTS & TARIFAS
+              VIEW 3: COURTS & TARIFAS (Con Nombres y Horarios Editables)
               ═══════════════════════════════════════════════════════ */}
           {activeTab === 'COURTS' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: 0 }}>Canchas & Tarifas Dinámicas</h2>
-                  <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>Configuración de instalaciones, superficies y precios por hora.</p>
+                  <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: 0 }}>Configuración de Canchas y Horarios Habilitados</h2>
+                  <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>Personalizá nombres de canchas, superficies, franjas horarias de apertura/cierre y tarifas.</p>
                 </div>
+                <button
+                  onClick={() => handleOpenCourtModal()}
+                  style={{
+                    backgroundColor: '#fc1c46',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: 10,
+                    padding: '10px 18px',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  + Agregar Nueva Cancha
+                </button>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
@@ -1171,24 +1350,49 @@ export default function ClubPanel() {
                         <div style={{ fontSize: 16, fontWeight: 700, color: '#ffffff' }}>{court.name}</div>
                         <div style={{ fontSize: 12, color: '#8b92a0', marginTop: 4 }}>{court.surface}</div>
                       </div>
-                      <button
-                        onClick={() => handleToggleCourtActive(court.id)}
-                        style={{
-                          backgroundColor: court.active ? '#1e293b' : '#33151b',
-                          color: court.active ? '#4ade80' : '#fc1c46',
-                          border: 'none',
-                          borderRadius: 9999,
-                          padding: '4px 10px',
-                          fontSize: 11,
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                        }}
-                      >
-                        {court.active ? '● Activa' : '○ Pausada'}
-                      </button>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button
+                          onClick={() => handleOpenCourtModal(court)}
+                          style={{
+                            backgroundColor: '#1e293b',
+                            color: '#38bdf8',
+                            border: 'none',
+                            borderRadius: 9999,
+                            padding: '4px 10px',
+                            fontSize: 11,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          ✏️ Editar
+                        </button>
+                        <button
+                          onClick={() => handleToggleCourtActive(court.id)}
+                          style={{
+                            backgroundColor: court.active ? '#1e293b' : '#33151b',
+                            color: court.active ? '#4ade80' : '#fc1c46',
+                            border: 'none',
+                            borderRadius: 9999,
+                            padding: '4px 10px',
+                            fontSize: 11,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {court.active ? '● Activa' : '○ Pausada'}
+                        </button>
+                      </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 4 }}>
+                    {/* Horarios Habilitados Tag */}
+                    <div style={{ backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.05)', padding: '10px 12px', borderRadius: 10 }}>
+                      <div style={{ fontSize: 10, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Horarios Habilitados para Reserva</div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: '#ffffff', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span>🕒 {court.openTime} hs a {court.closeTime} hs</span>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                       <div style={{ backgroundColor: '#181b22', padding: '10px', borderRadius: 10 }}>
                         <div style={{ fontSize: 10, color: '#888', textTransform: 'uppercase' }}>Tarifa Valle (08-17h)</div>
                         <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', marginTop: 3 }}>${court.priceValley.toLocaleString()}</div>
@@ -1211,7 +1415,7 @@ export default function ClubPanel() {
           )}
 
           {/* ═══════════════════════════════════════════════════════
-              VIEW 4: PLAYERS & CLIENTS (Strict Paid 100% Architecture)
+              VIEW 4: PLAYERS & CLIENTS
               ═══════════════════════════════════════════════════════ */}
           {activeTab === 'PLAYERS' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -1468,7 +1672,7 @@ export default function ClubPanel() {
       </div>
 
       {/* ────────────────────────────────────────────────────────────
-          MODAL: "+ NUEVA RESERVA MANUAL"
+          MODAL 1: "+ NUEVA RESERVA MANUAL"
           ──────────────────────────────────────────────────────────── */}
       {showModal && (
         <div style={{
@@ -1556,7 +1760,6 @@ export default function ClubPanel() {
                 />
               </div>
 
-              {/* Autocomplete from existing database */}
               <div>
                 <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
                   Seleccionar Jugador de Base de Datos
@@ -1684,6 +1887,235 @@ export default function ClubPanel() {
                 }}
               >
                 Confirmar Reserva (100% Pagado)
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ────────────────────────────────────────────────────────────
+          MODAL 2: "+ CONFIGURAR / EDITAR CANCHA Y HORARIOS"
+          ──────────────────────────────────────────────────────────── */}
+      {showCourtModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: 20,
+        }}>
+          <div style={{
+            width: '100%',
+            maxWidth: 500,
+            backgroundColor: '#12141a',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: 20,
+            padding: '26px 28px',
+            boxShadow: '0 25px 60px rgba(0, 0, 0, 0.9)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+              <div>
+                <h3 style={{ fontSize: 19, fontWeight: 700, color: '#ffffff', margin: 0 }}>
+                  {editingCourtId ? 'Editar Cancha y Horarios' : 'Configurar Nueva Cancha'}
+                </h3>
+                <div style={{ fontSize: 11, color: '#fc1c46', marginTop: 2 }}>Establecé el nombre personalizado y la franja de apertura</div>
+              </div>
+              <button
+                onClick={() => setShowCourtModal(false)}
+                style={{ backgroundColor: 'transparent', border: 'none', color: '#6b7280', fontSize: 18, cursor: 'pointer' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveCourt} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
+                  Nombre Personalizado de la Cancha
+                </label>
+                <input
+                  type="text"
+                  value={courtNameInput}
+                  onChange={e => setCourtNameInput(e.target.value)}
+                  placeholder="ej. Cancha 1 — Panorámica WPT"
+                  required
+                  style={{
+                    width: '100%',
+                    backgroundColor: '#181b22',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: 10,
+                    padding: '10px 12px',
+                    color: '#ffffff',
+                    fontSize: 13.5,
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
+                    Deporte
+                  </label>
+                  <select
+                    value={courtSportInput}
+                    onChange={e => setCourtSportInput(e.target.value)}
+                    style={{
+                      width: '100%',
+                      backgroundColor: '#181b22',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: 10,
+                      padding: '10px 12px',
+                      color: '#ffffff',
+                      fontSize: 13.5,
+                    }}
+                  >
+                    <option value="Pádel">Pádel</option>
+                    <option value="Fútbol 5">Fútbol 5</option>
+                    <option value="Fútbol 7">Fútbol 7</option>
+                    <option value="Tenis">Tenis</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
+                    Tipo de Superficie
+                  </label>
+                  <input
+                    type="text"
+                    value={courtSurfaceInput}
+                    onChange={e => setCourtSurfaceInput(e.target.value)}
+                    placeholder="ej. Césped Sintético"
+                    style={{
+                      width: '100%',
+                      backgroundColor: '#181b22',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: 10,
+                      padding: '10px 12px',
+                      color: '#ffffff',
+                      fontSize: 13.5,
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Operating Schedule Configuration */}
+              <div style={{ backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '12px 14px' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#fc1c46', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 8 }}>
+                  🕒 Horarios Habilitados para Reserva en App
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 10, color: '#9ca3af', marginBottom: 4 }}>Hora Apertura</label>
+                    <input
+                      type="text"
+                      value={courtOpenTimeInput}
+                      onChange={e => setCourtOpenTimeInput(e.target.value)}
+                      placeholder="08:00"
+                      required
+                      style={{
+                        width: '100%',
+                        backgroundColor: '#11131a',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        borderRadius: 8,
+                        padding: '8px 10px',
+                        color: '#ffffff',
+                        fontSize: 13,
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 10, color: '#9ca3af', marginBottom: 4 }}>Hora Cierre</label>
+                    <input
+                      type="text"
+                      value={courtCloseTimeInput}
+                      onChange={e => setCourtCloseTimeInput(e.target.value)}
+                      placeholder="23:30"
+                      required
+                      style={{
+                        width: '100%',
+                        backgroundColor: '#11131a',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        borderRadius: 8,
+                        padding: '8px 10px',
+                        color: '#ffffff',
+                        fontSize: 13,
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
+                    Tarifa Valle ($)
+                  </label>
+                  <input
+                    type="number"
+                    value={courtPriceValleyInput}
+                    onChange={e => setCourtPriceValleyInput(Number(e.target.value))}
+                    required
+                    style={{
+                      width: '100%',
+                      backgroundColor: '#181b22',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: 10,
+                      padding: '10px 12px',
+                      color: '#ffffff',
+                      fontSize: 13.5,
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, color: '#fc1c46', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
+                    Tarifa Pico ($)
+                  </label>
+                  <input
+                    type="number"
+                    value={courtPricePeakInput}
+                    onChange={e => setCourtPricePeakInput(Number(e.target.value))}
+                    required
+                    style={{
+                      width: '100%',
+                      backgroundColor: '#181b22',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: 10,
+                      padding: '10px 12px',
+                      color: '#ffffff',
+                      fontSize: 13.5,
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                style={{
+                  marginTop: 8,
+                  padding: '13px',
+                  backgroundColor: '#fc1c46',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: 12,
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                Guardar Configuración de Cancha
               </button>
             </form>
           </div>
