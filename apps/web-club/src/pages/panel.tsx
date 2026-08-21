@@ -939,83 +939,115 @@ export default function ClubPanel() {
                       </h2>
                     </div>
 
-                    {/* Table Header */}
+                    {/* Matrix Table Header: HORA | Cancha 1 | Cancha 2 | Cancha 3 | ... */}
                     <div style={{
                       display: 'grid',
-                      gridTemplateColumns: '1.5fr 0.8fr 1.3fr 1.2fr 0.2fr',
-                      paddingBottom: 8,
-                      borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
+                      gridTemplateColumns: `0.7fr repeat(${Math.max(1, filteredCourts.length)}, 1fr)`,
+                      gap: 8,
+                      paddingBottom: 10,
+                      borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
                       fontSize: 10,
-                      fontWeight: 600,
-                      color: '#6b7280',
+                      fontWeight: 700,
+                      color: '#9ca3af',
                       textTransform: 'uppercase',
                       letterSpacing: '0.8px',
+                      alignItems: 'center',
                     }}>
-                      <div>CANCHA</div>
                       <div>HORA</div>
-                      <div>ESTADO / PAGO</div>
-                      <div>JUGADOR / RESERVA</div>
-                      <div style={{ textAlign: 'right' }}></div>
+                      {filteredCourts.map(court => (
+                        <div key={court.id} style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={court.name}>
+                          {court.name.split('—')[0].trim()}
+                        </div>
+                      ))}
                     </div>
 
-                    {/* Table Rows */}
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      {filteredSlots.slice(0, 5).map((slot) => {
-                        const isReserved = slot.status === 'RESERVED';
-                        const isFixed = slot.status === 'FIXED';
-                        const isAvailable = slot.status === 'AVAILABLE';
-
-                        return (
-                          <div
-                            key={slot.id}
-                            onClick={() => handleToggleStatus(slot.id)}
-                            title="Click para alternar estado"
-                            style={{
-                              display: 'grid',
-                              gridTemplateColumns: '1.5fr 0.8fr 1.3fr 1.2fr 0.2fr',
-                              alignItems: 'center',
-                              padding: '8px 0',
-                              borderBottom: '1px solid rgba(255, 255, 255, 0.03)',
-                              fontSize: 12.5,
-                              cursor: 'pointer',
-                            }}
-                          >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 7, color: '#f3f4f6', fontWeight: 500 }}>
-                              <span>{slot.courtName}</span>
-                            </div>
-
-                            <div style={{ color: '#d1d5db', fontWeight: 500 }}>
-                              {slot.time} hs
-                            </div>
-
-                            <div>
-                              {isReserved && (
-                                <span style={{ backgroundColor: 'rgba(252, 28, 70, 0.15)', color: '#fc1c46', border: '1px solid rgba(252, 28, 70, 0.3)', padding: '3px 9px', borderRadius: 9999, fontSize: 10, fontWeight: 700, display: 'inline-block' }}>
-                                  ✓ Pagado 100% {slot.paymentMethod === 'APP_MERCADOPAGO' ? '(App MP)' : '(Mostrador)'}
-                                </span>
-                              )}
-                              {isFixed && (
-                                <span style={{ backgroundColor: 'rgba(225, 29, 72, 0.15)', color: '#e11d48', border: '1px solid rgba(225, 29, 72, 0.3)', padding: '3px 9px', borderRadius: 9999, fontSize: 10, fontWeight: 700, display: 'inline-block' }}>
-                                  ✓ Turno Fijo Prepago
-                                </span>
-                              )}
-                              {isAvailable && (
-                                <span style={{ backgroundColor: '#20232a', color: '#9ca3af', padding: '3px 9px', borderRadius: 9999, fontSize: 10, fontWeight: 500, display: 'inline-block' }}>
-                                  Disponible en App
-                                </span>
-                              )}
-                            </div>
-
-                            <div style={{ color: isAvailable ? '#4b5563' : '#d1d5db', fontSize: 12 }}>
-                              {slot.player}
-                            </div>
-
-                            <div style={{ textAlign: 'right', color: '#6b7280', fontSize: 14 }}>
-                              ⋮
-                            </div>
+                    {/* Matrix Table Rows: Operating Hours */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10 }}>
+                      {['16:30', '18:00', '19:30', '21:00', '22:30'].map((time) => (
+                        <div
+                          key={time}
+                          style={{
+                            display: 'grid',
+                            gridTemplateColumns: `0.7fr repeat(${Math.max(1, filteredCourts.length)}, 1fr)`,
+                            gap: 8,
+                            alignItems: 'center',
+                          }}
+                        >
+                          {/* Time Column */}
+                          <div style={{ color: '#d1d5db', fontSize: 12, fontWeight: 700 }}>
+                            {time} hs
                           </div>
-                        );
-                      })}
+
+                          {/* Court Columns */}
+                          {filteredCourts.map((court) => {
+                            const slot = filteredSlots.find(s => s.courtId === court.id && s.time === time);
+                            const isReserved = slot && (slot.status === 'RESERVED' || slot.status === 'FIXED');
+
+                            if (isReserved) {
+                              return (
+                                <div
+                                  key={court.id}
+                                  onClick={() => slot && handleToggleStatus(slot.id)}
+                                  title={`Click para alternar estado — ${slot.player}`}
+                                  style={{
+                                    backgroundColor: slot.status === 'FIXED' ? 'rgba(225, 29, 72, 0.15)' : 'rgba(252, 28, 70, 0.15)',
+                                    border: slot.status === 'FIXED' ? '1px solid rgba(225, 29, 72, 0.35)' : '1px solid rgba(252, 28, 70, 0.35)',
+                                    borderRadius: 8,
+                                    padding: '6px 8px',
+                                    cursor: 'pointer',
+                                    transition: 'transform 0.1s ease',
+                                  }}
+                                  onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.02)')}
+                                  onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+                                >
+                                  <div style={{ fontSize: 11.5, fontWeight: 700, color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {slot.player}
+                                  </div>
+                                  <div style={{ fontSize: 9.5, color: slot.status === 'FIXED' ? '#e11d48' : '#fc1c46', fontWeight: 600, marginTop: 1 }}>
+                                    {slot.status === 'FIXED' ? '✓ Turno Fijo' : '✓ Pagado 100%'}
+                                  </div>
+                                </div>
+                              );
+                            }
+
+                            return (
+                              <div
+                                key={court.id}
+                                onClick={() => {
+                                  if (slot) {
+                                    handleToggleStatus(slot.id);
+                                  } else {
+                                    setModalCourt(court.id);
+                                    setModalTime(time);
+                                    setShowModal(true);
+                                  }
+                                }}
+                                title="Click para reservar turno disponible"
+                                style={{
+                                  backgroundColor: '#181b22',
+                                  border: '1px solid rgba(255, 255, 255, 0.04)',
+                                  borderRadius: 8,
+                                  padding: '6px 8px',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.15s ease',
+                                }}
+                                onMouseEnter={e => {
+                                  e.currentTarget.style.borderColor = 'rgba(252, 28, 70, 0.3)';
+                                  e.currentTarget.style.backgroundColor = '#20242f';
+                                }}
+                                onMouseLeave={e => {
+                                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.04)';
+                                  e.currentTarget.style.backgroundColor = '#181b22';
+                                }}
+                              >
+                                <div style={{ fontSize: 11, color: '#6b7280', textAlign: 'center' }}>
+                                  Disponible
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
