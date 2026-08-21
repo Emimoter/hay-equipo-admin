@@ -715,9 +715,6 @@ export default function ClubPanel() {
                 fontSize: 13,
               }}>
                 <span>{clubName}</span>
-                <span style={{ fontSize: 10, color: '#4ade80', backgroundColor: 'rgba(74, 222, 128, 0.1)', padding: '2px 8px', borderRadius: 9999, fontWeight: 600 }}>
-                  🔒 Pago 100% Anticipado
-                </span>
               </div>
             </div>
 
