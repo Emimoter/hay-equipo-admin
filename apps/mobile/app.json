@@ -6,8 +6,11 @@
     "orientation": "portrait",
     "scheme": "hayequipo",
     "userInterfaceStyle": "dark",
+    "icon": "./assets/icon.png",
     "splash": {
-      "backgroundColor": "#0B0F17"
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#000000"
     },
     "ios": {
       "supportsTablet": true,
@@ -24,7 +27,8 @@
     "android": {
       "package": "com.hayequipo.app",
       "adaptiveIcon": {
-        "backgroundColor": "#0B0F17"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#000000"
       },
       "intentFilters": [
         {
