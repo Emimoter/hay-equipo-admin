@@ -51,6 +51,9 @@ interface PlayerRecord {
   lastPaymentMethod: 'MP (APP 100%)' | 'MOSTRADOR (100%)' | 'PREPAGO MES';
 }
 
+// Master Operating Times List
+const ALL_OPERATING_TIMES = ['08:00', '09:30', '11:00', '12:30', '14:00', '15:30', '16:30', '18:00', '19:30', '21:00', '22:30'];
+
 /* ────────────────────────────────────────────────────────────
    Initial Data (Strict 100% Upfront Payment + Custom Court Schedule)
    ──────────────────────────────────────────────────────────── */
@@ -169,6 +172,41 @@ export default function ClubPanel() {
     localStorage.removeItem('hayequipo_club_session');
     router.push('/login');
   }, [router]);
+
+  // Helper: Get strictly available times for a court (prevent double-booking)
+  const getAvailableTimesForCourt = useCallback((courtId: string, currentSlotId?: string) => {
+    const reservedTimes = slots
+      .filter(s => s.courtId === courtId && s.id !== currentSlotId && (s.status === 'RESERVED' || s.status === 'FIXED'))
+      .map(s => s.time);
+
+    const available = ALL_OPERATING_TIMES.filter(t => !reservedTimes.includes(t));
+    
+    // Always preserve current slot time if editing
+    const currentSlot = slots.find(s => s.id === currentSlotId);
+    if (currentSlot && currentSlot.courtId === courtId && !available.includes(currentSlot.time)) {
+      available.push(currentSlot.time);
+      available.sort();
+    }
+
+    return available.length > 0 ? available : ['Sin horarios disponibles'];
+  }, [slots]);
+
+  // Court change handlers in Modals
+  const handleModalCourtChange = (newCourtId: string) => {
+    setModalCourt(newCourtId);
+    const avail = getAvailableTimesForCourt(newCourtId);
+    if (avail.length > 0 && !avail.includes(modalTime)) {
+      setModalTime(avail[0]);
+    }
+  };
+
+  const handleEditCourtChange = (newCourtId: string) => {
+    setEditCourtId(newCourtId);
+    const avail = getAvailableTimesForCourt(newCourtId, editingSlot?.id);
+    if (avail.length > 0 && !avail.includes(editTime)) {
+      setEditTime(avail[0]);
+    }
+  };
 
   // Open Court Modal for Add or Edit
   const handleOpenCourtModal = (court?: CourtInfo) => {
@@ -1046,7 +1084,7 @@ export default function ClubPanel() {
                               <div
                                 key={court.id}
                                 onClick={() => {
-                                  setModalCourt(court.id);
+                                  handleModalCourtChange(court.id);
                                   setModalTime(time);
                                   setModalPlayer('');
                                   setModalPhone('');
@@ -1253,7 +1291,7 @@ export default function ClubPanel() {
                                 if (s.status === 'RESERVED' || s.status === 'FIXED') {
                                   handleOpenEditReservation(s);
                                 } else {
-                                  setModalCourt(court.id);
+                                  handleModalCourtChange(court.id);
                                   setModalTime(s.time);
                                   setShowModal(true);
                                 }
@@ -1714,7 +1752,7 @@ export default function ClubPanel() {
                 </label>
                 <select
                   value={modalCourt}
-                  onChange={e => setModalCourt(e.target.value)}
+                  onChange={e => handleModalCourtChange(e.target.value)}
                   style={{
                     width: '100%',
                     backgroundColor: '#181b22',
@@ -1733,14 +1771,11 @@ export default function ClubPanel() {
 
               <div>
                 <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
-                  Horario
+                  Horario Habilitado (Libre)
                 </label>
-                <input
-                  type="text"
+                <select
                   value={modalTime}
                   onChange={e => setModalTime(e.target.value)}
-                  placeholder="ej. 21:00"
-                  required
                   style={{
                     width: '100%',
                     backgroundColor: '#181b22',
@@ -1749,9 +1784,14 @@ export default function ClubPanel() {
                     padding: '10px 12px',
                     color: '#ffffff',
                     fontSize: 13.5,
-                    boxSizing: 'border-box',
                   }}
-                />
+                >
+                  {getAvailableTimesForCourt(modalCourt).map(time => (
+                    <option key={time} value={time}>
+                      🕒 {time} hs (Disponible)
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* Autocomplete from existing database */}
@@ -2213,7 +2253,7 @@ export default function ClubPanel() {
                   </label>
                   <select
                     value={editCourtId}
-                    onChange={e => setEditCourtId(e.target.value)}
+                    onChange={e => handleEditCourtChange(e.target.value)}
                     style={{
                       width: '100%',
                       backgroundColor: '#181b22',
@@ -2232,13 +2272,11 @@ export default function ClubPanel() {
 
                 <div>
                   <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
-                    Horario
+                    Horario Habilitado (Libre)
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={editTime}
                     onChange={e => setEditTime(e.target.value)}
-                    required
                     style={{
                       width: '100%',
                       backgroundColor: '#181b22',
@@ -2247,9 +2285,14 @@ export default function ClubPanel() {
                       padding: '10px 12px',
                       color: '#ffffff',
                       fontSize: 13.5,
-                      boxSizing: 'border-box',
                     }}
-                  />
+                  >
+                    {getAvailableTimesForCourt(editCourtId, editingSlot.id).map(time => (
+                      <option key={time} value={time}>
+                        🕒 {time} hs {time === editingSlot.time ? '(Actual)' : '(Disponible)'}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
