@@ -12,15 +12,26 @@ import {
 import { WebView } from 'react-native-webview';
 import * as Location from 'expo-location';
 import Svg, { Circle, Line, Rect } from 'react-native-svg';
-import { colors, formatCurrency } from '../components/theme';
+import { colors, fonts, formatCurrency } from '../components/theme';
+import {
+  PadelIcon,
+  FootballIcon,
+  TennisIcon,
+  MapPinIcon,
+  StarIcon,
+  ClockIcon,
+  RepeatIcon,
+} from '../components/AppIcons';
 import { mobileApi } from '../services/api';
+import {
+  getRealUserLocation,
+  UserLocationState,
+  DEFAULT_LOCATION,
+  calculateDistanceKm,
+} from '../services/location';
 import { TimeSlot, Club } from '@hay-equipo/contracts';
 
 const { width, height } = Dimensions.get('window');
-
-// Default coordinates: Palermo, Buenos Aires
-const DEFAULT_LATITUDE = -34.5885;
-const DEFAULT_LONGITUDE = -58.4350;
 
 interface SearchMapScreenProps {
   initialSport?: string;
@@ -40,10 +51,7 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
   const [clubs, setClubs] = useState<Club[]>([]);
   const [selectedClub, setSelectedClub] = useState<Club | null>(null);
   const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
-  const [userCoords, setUserCoords] = useState<{ latitude: number; longitude: number }>({
-    latitude: DEFAULT_LATITUDE,
-    longitude: DEFAULT_LONGITUDE,
-  });
+  const [userLocation, setUserLocation] = useState<UserLocationState>(DEFAULT_LOCATION);
 
   // Request real GPS Location on mount
   useEffect(() => {
@@ -52,21 +60,9 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
 
   const requestUserLocation = async () => {
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status === 'granted') {
-        const loc = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-        });
-
-        const newCoords = {
-          latitude: loc.coords.latitude,
-          longitude: loc.coords.longitude,
-        };
-        setUserCoords(newCoords);
-
-        // Update webview map position and user marker
-        sendCoordsToMap(newCoords.latitude, newCoords.longitude, 15);
-      }
+      const loc = await getRealUserLocation();
+      setUserLocation(loc);
+      sendCoordsToMap(loc.latitude, loc.longitude, 15);
     } catch (e) {
       console.log('Location request error:', e);
     }
@@ -74,7 +70,7 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
 
   useEffect(() => {
     loadData();
-  }, [sport, timeFilter, userCoords]);
+  }, [sport, timeFilter, userLocation]);
 
   const loadData = async () => {
     const today = new Date().toISOString().split('T')[0];
@@ -94,8 +90,8 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
       const offset = offsets[i % offsets.length];
       return {
         ...c,
-        latitude: userCoords.latitude + offset.lat,
-        longitude: userCoords.longitude + offset.lng,
+        latitude: userLocation.latitude + offset.lat,
+        longitude: userLocation.longitude + offset.lng,
       };
     });
 
@@ -120,7 +116,7 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
   };
 
   const centerOnUser = () => {
-    sendCoordsToMap(userCoords.latitude, userCoords.longitude, 15);
+    sendCoordsToMap(userLocation.latitude, userLocation.longitude, 15);
   };
 
   const sendCoordsToMap = (lat: number, lng: number, zoom = 15) => {
@@ -129,7 +125,7 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
         if (window.map) {
           window.map.flyTo([${lat}, ${lng}], ${zoom}, { animate: true, duration: 1.0 });
           if (window.userMarker) {
-            window.userMarker.setLatLng([${userCoords.latitude}, ${userCoords.longitude}]);
+            window.userMarker.setLatLng([${userLocation.latitude}, ${userLocation.longitude}]);
           }
         }
         true;
@@ -147,7 +143,7 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
           lat: c.latitude,
           lng: c.longitude,
           price: c.minPrice,
-          sport: c.name.toLowerCase().includes('padel') ? '🎾' : '⚽',
+          sport: c.name.toLowerCase().includes('padel') ? 'PADEL' : 'FUTBOL',
           isActive: c.id === activeId,
         }))
       );
@@ -173,7 +169,7 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
         }
       } else if (data.type === 'MAP_READY') {
         updateMapMarkers(clubs, selectedClub?.id);
-        sendCoordsToMap(userCoords.latitude, userCoords.longitude, 15);
+        sendCoordsToMap(userLocation.latitude, userLocation.longitude, 15);
       }
     } catch (err) {
       console.log('Error parsing webview message:', err);
@@ -248,24 +244,27 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
           .custom-pin-pill.inactive {
             background: #141720;
             color: #f0f2f5;
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255,255,255,0.14);
           }
           .custom-pin-pill.active {
             background: #fc1c46;
             color: #ffffff;
             border: 1.5px solid #ffffff;
-            box-shadow: 0 0 18px rgba(252, 28, 70, 0.9), 0 4px 14px rgba(0,0,0,0.7);
-            transform: scale(1.14);
+            transform: scale(1.12);
+            box-shadow: 0 0 20px rgba(252, 28, 70, 0.85);
           }
           .custom-pin-arrow {
             width: 0;
             height: 0;
             border-left: 6px solid transparent;
             border-right: 6px solid transparent;
-            border-top: 7px solid #141720;
+            margin-top: -1px;
+          }
+          .custom-pin-arrow.inactive {
+            border-top: 6px solid #141720;
           }
           .custom-pin-arrow.active {
-            border-top-color: #fc1c46;
+            border-top: 7px solid #fc1c46;
           }
           
           /* Hide Leaflet default controls to fit our custom floating UI */
@@ -278,18 +277,15 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
       <body>
         <div id="map"></div>
         <script>
-          // Initialize Real Dark Map
           var map = L.map('map', {
-            center: [${userCoords.latitude}, ${userCoords.longitude}],
-            zoom: 15,
             zoomControl: false,
             attributionControl: false
-          });
+          }).setView([${userLocation.latitude}, ${userLocation.longitude}], 15);
 
-          // High Resolution Real Dark Street Tiles (CartoDB Dark Matter)
+          // CartoDB Dark Matter Tiles
           L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            maxZoom: 19,
             subdomains: 'abcd',
-            maxZoom: 19
           }).addTo(map);
 
           // User Pulse Marker
@@ -299,7 +295,7 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
             iconSize: [44, 44],
             iconAnchor: [22, 22]
           });
-          var userMarker = L.marker([${userCoords.latitude}, ${userCoords.longitude}], { icon: userIcon, zIndexOffset: 500 }).addTo(map);
+          var userMarker = L.marker([${userLocation.latitude}, ${userLocation.longitude}], { icon: userIcon, zIndexOffset: 500 }).addTo(map);
 
           // Dynamic Club Markers Group
           var clubsLayerGroup = L.layerGroup().addTo(map);
@@ -385,7 +381,7 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
             centerOnUser();
           }}
         >
-          <Text style={{ fontSize: 18 }}>📍</Text>
+          <MapPinIcon size={18} color="#f8fafc" strokeWidth={2} />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -400,7 +396,11 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
             }
           }}
         >
-          <Text style={{ fontSize: 18 }}>🎯</Text>
+          <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+            <Circle cx="12" cy="12" r="10" stroke="#f8fafc" strokeWidth={2} />
+            <Circle cx="12" cy="12" r="4" stroke="#f8fafc" strokeWidth={2} />
+            <Circle cx="12" cy="12" r="1" fill="#f8fafc" />
+          </Svg>
         </TouchableOpacity>
       </View>
 
@@ -410,7 +410,8 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
         style={styles.searchThisAreaBtn}
         onPress={() => loadData()}
       >
-        <Text style={styles.searchThisAreaText}>🔄 Buscar en esta zona</Text>
+        <RepeatIcon size={12} color="#ffffff" strokeWidth={2.2} />
+        <Text style={styles.searchThisAreaText}>Buscar en esta zona</Text>
       </TouchableOpacity>
 
       {/* ═══════════════════════════════════════════════════════
@@ -469,7 +470,7 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
             style={[styles.filterPill, sport === 'PADEL' && styles.filterPillActive]}
             onPress={() => setSport('PADEL')}
           >
-            <Text style={styles.filterPillIcon}>🎾</Text>
+            <PadelIcon size={14} color={sport === 'PADEL' ? '#fc1c46' : '#94a3b8'} strokeWidth={2} />
             <Text
               style={[
                 styles.filterPillText,
@@ -484,7 +485,7 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
             style={[styles.filterPill, sport === 'FUTBOL_5' && styles.filterPillActive]}
             onPress={() => setSport('FUTBOL_5')}
           >
-            <Text style={styles.filterPillIcon}>⚽</Text>
+            <FootballIcon size={14} color={sport === 'FUTBOL_5' ? '#fc1c46' : '#94a3b8'} strokeWidth={2} />
             <Text
               style={[
                 styles.filterPillText,
@@ -499,7 +500,7 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
             style={[styles.filterPill, sport === 'TENIS' && styles.filterPillActive]}
             onPress={() => setSport('TENIS')}
           >
-            <Text style={styles.filterPillIcon}>🎾</Text>
+            <TennisIcon size={14} color={sport === 'TENIS' ? '#fc1c46' : '#94a3b8'} strokeWidth={2} />
             <Text
               style={[
                 styles.filterPillText,
@@ -511,25 +512,10 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.filterPill, sport === 'BASQUET' && styles.filterPillActive]}
-            onPress={() => setSport('BASQUET')}
-          >
-            <Text style={styles.filterPillIcon}>🏀</Text>
-            <Text
-              style={[
-                styles.filterPillText,
-                sport === 'BASQUET' && styles.filterPillTextActive,
-              ]}
-            >
-              Básquet
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
             style={[styles.filterPill, timeFilter === '20:00' && styles.filterPillActive]}
             onPress={() => setTimeFilter(timeFilter === '20:00' ? '' : '20:00')}
           >
-            <Text style={styles.filterPillIcon}>⏰</Text>
+            <ClockIcon size={13} color={timeFilter === '20:00' ? '#fc1c46' : '#94a3b8'} strokeWidth={2} />
             <Text
               style={[
                 styles.filterPillText,
@@ -543,7 +529,7 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
       </View>
 
       {/* ═══════════════════════════════════════════════════════
-          FLOATING BOTTOM CARD: "CERCA DE VOS" (Exact Reference)
+          FLOATING BOTTOM CARD: "CERCA DE VOS"
           ═══════════════════════════════════════════════════════ */}
       {selectedClub && (
         <View style={styles.bottomCardWrapper}>
@@ -559,7 +545,7 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
             <View style={styles.cardTopRow}>
               {/* Club Logo / Crimson Icon Box */}
               <View style={styles.clubLogoBox}>
-                <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+                <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
                   <Rect x="3" y="3" width="18" height="18" rx="4" stroke="#fc1c46" strokeWidth={2} />
                   <Line x1="12" y1="3" x2="12" y2="21" stroke="#fc1c46" strokeWidth={1.5} />
                   <Line x1="3" y1="12" x2="21" y2="12" stroke="#fc1c46" strokeWidth={1.5} />
@@ -584,15 +570,22 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
                   </View>
                 </View>
 
-                <Text style={styles.clubCardAddress} numberOfLines={1}>
-                  📍 {selectedClub.address}
-                </Text>
+                <View style={styles.clubAddressRow}>
+                  <MapPinIcon size={12} color={colors.textSecondary} strokeWidth={1.8} />
+                  <Text style={styles.clubCardAddress} numberOfLines={1}>
+                    {selectedClub.address}
+                  </Text>
+                </View>
 
                 <View style={styles.clubMetaRow}>
-                  <Text style={styles.clubRatingText}>★ {selectedClub.rating}</Text>
+                  <StarIcon size={11} fill="#FACC15" color="#FACC15" />
+                  <Text style={styles.clubRatingText}>{selectedClub.rating}</Text>
                   <Text style={styles.clubDotSeparator}>·</Text>
-                  <Text style={styles.clubDistanceText}>a 0.8 km</Text>
+                  <Text style={styles.clubDistanceText}>
+                    a {calculateDistanceKm(userLocation.latitude, userLocation.longitude, selectedClub.latitude, selectedClub.longitude)} km
+                  </Text>
                   <Text style={styles.clubDotSeparator}>·</Text>
+                  <ClockIcon size={11} color="#fc1c46" strokeWidth={2} />
                   <Text style={styles.clubTimeSlotText}>Hoy 20:30 hs</Text>
                 </View>
               </View>
@@ -812,9 +805,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   clubCardTitle: {
+    fontFamily: fonts.headingBold,
     color: '#ffffff',
-    fontSize: 15.5,
-    fontWeight: '700',
+    fontSize: 16,
+    letterSpacing: -0.3,
     maxWidth: '70%',
   },
   fixedSlotBadge: {
@@ -824,11 +818,19 @@ const styles = StyleSheet.create({
     borderRadius: 9999,
   },
   fixedSlotBadgeText: {
+    fontFamily: fonts.bold,
     color: '#ffffff',
     fontSize: 10,
-    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  clubAddressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
   },
   clubCardAddress: {
+    fontFamily: fonts.regular,
     color: '#8b92a0',
     fontSize: 11.5,
     marginTop: 2,

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, StatusBar, Platform } from 'react-native';
-import { colors } from './src/components/theme';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, StatusBar, Platform, ActivityIndicator } from 'react-native';
+import { colors, fonts } from './src/components/theme';
+import { useFonts } from 'expo-font';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { AuthScreen } from './src/screens/AuthScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
@@ -19,7 +20,7 @@ type TabType = 'HOME' | 'SEARCH' | 'BOOKINGS' | 'PAYMENTS' | 'PROFILE';
 function MainAppContent() {
   const { user, userProfile } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<TabType>('SEARCH');
+  const [activeTab, setActiveTab] = useState<TabType>('HOME');
   const [selectedClubId, setSelectedClubId] = useState<string | null>(null);
   const [selectedSlotForCheckout, setSelectedSlotForCheckout] = useState<TimeSlot | null>(null);
   const [activeSplitBooking, setActiveSplitBooking] = useState<Booking | null>(null);
@@ -201,6 +202,23 @@ function MainAppContent() {
 }
 
 export default function App() {
+  const [fontsLoaded] = useFonts({
+    'Outfit-Bold': require('./assets/fonts/Outfit-Bold.ttf'),
+    'Outfit-SemiBold': require('./assets/fonts/Outfit-SemiBold.ttf'),
+    'PlusJakartaSans-Bold': require('./assets/fonts/PlusJakartaSans-Bold.ttf'),
+    'PlusJakartaSans-SemiBold': require('./assets/fonts/PlusJakartaSans-SemiBold.ttf'),
+    'PlusJakartaSans-Medium': require('./assets/fonts/PlusJakartaSans-Medium.ttf'),
+    'PlusJakartaSans-Regular': require('./assets/fonts/PlusJakartaSans-Regular.ttf'),
+  });
+
+  if (!fontsLoaded) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#07080a', justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#fc1c46" />
+      </View>
+    );
+  }
+
   return (
     <AuthProvider>
       <MainAppContent />
@@ -254,14 +272,14 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(252, 28, 70, 0.3)',
   },
   navLabel: {
+    fontFamily: fonts.medium,
     color: '#6b7280',
     fontSize: 10.5,
-    fontWeight: '600',
     marginTop: 3,
   },
   navLabelActive: {
+    fontFamily: fonts.bold,
     color: '#fc1c46',
-    fontWeight: '800',
   },
   activeDot: {
     width: 4,

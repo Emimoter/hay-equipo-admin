@@ -1,8 +1,8 @@
 export const colors = {
-  background: '#08090d',
-  card: '#12151d',
+  background: '#07080a',
+  card: '#10131c',
   cardBorder: 'rgba(255, 255, 255, 0.08)',
-  elevated: '#181c26',
+  elevated: '#171b26',
   primary: '#fc1c46', // Brand Crimson Red
   primaryLight: '#ff335c',
   primaryDark: '#d9143a',
@@ -18,17 +18,61 @@ export const colors = {
   warning: '#f59e0b',
   success: '#10b981',
   white: '#ffffff',
-  overlay: 'rgba(8, 9, 13, 0.88)',
+  overlay: 'rgba(7, 8, 10, 0.88)',
+};
+
+export const fonts = {
+  // Headings: Outfit (Geometric, modern sporty, distinctive)
+  headingSemiBold: 'Outfit-SemiBold',
+  headingBold: 'Outfit-Bold',
+  
+  // UI and Body: Plus Jakarta Sans (Clean, high-end, premium editorial)
+  regular: 'PlusJakartaSans-Regular',
+  medium: 'PlusJakartaSans-Medium',
+  semiBold: 'PlusJakartaSans-SemiBold',
+  bold: 'PlusJakartaSans-Bold',
 };
 
 export const typography = {
-  titleLarge: { fontSize: 26, fontWeight: '700' as const, color: colors.textPrimary, letterSpacing: -0.5 },
-  titleMedium: { fontSize: 20, fontWeight: '600' as const, color: colors.textPrimary, letterSpacing: -0.3 },
-  subtitle: { fontSize: 15, fontWeight: '500' as const, color: colors.textSecondary },
-  body: { fontSize: 14, fontWeight: '400' as const, color: colors.textPrimary },
-  bodyMuted: { fontSize: 13, fontWeight: '400' as const, color: colors.textMuted },
-  caption: { fontSize: 12, fontWeight: '600' as const, color: colors.textSecondary },
-  badge: { fontSize: 11, fontWeight: '700' as const, textTransform: 'uppercase' as const },
+  titleLarge: {
+    fontFamily: fonts.headingBold,
+    fontSize: 26,
+    color: colors.textPrimary,
+    letterSpacing: -0.6,
+  },
+  titleMedium: {
+    fontFamily: fonts.headingBold,
+    fontSize: 20,
+    color: colors.textPrimary,
+    letterSpacing: -0.4,
+  },
+  subtitle: {
+    fontFamily: fonts.medium,
+    fontSize: 15,
+    color: colors.textSecondary,
+    letterSpacing: -0.1,
+  },
+  body: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textPrimary,
+  },
+  bodyMuted: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textMuted,
+  },
+  caption: {
+    fontFamily: fonts.semiBold,
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  badge: {
+    fontFamily: fonts.bold,
+    fontSize: 11,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 0.5,
+  },
 };
 
 export const formatCurrency = (amount: number): string => {

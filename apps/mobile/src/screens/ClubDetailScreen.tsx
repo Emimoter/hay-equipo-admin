@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Linking, Platform } from 'react-native';
-import { colors, typography, formatCurrency } from '../components/theme';
+import Svg, { Path, Circle, Line, Rect } from 'react-native-svg';
+import { colors, typography, fonts, formatCurrency } from '../components/theme';
+import {
+  MapPinIcon,
+  StarIcon,
+  ParkingIcon,
+  RoofIcon,
+  CoffeeIcon,
+  PadelIcon,
+  ClockIcon,
+} from '../components/AppIcons';
 import { mobileApi } from '../services/api';
 import { Club, Court, TimeSlot } from '@hay-equipo/contracts';
 
@@ -68,43 +78,82 @@ export const ClubDetailScreen: React.FC<ClubDetailScreenProps> = ({
           <Text style={styles.backButtonText}>← Volver</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.favoriteButton}>
-          <Text style={{ fontSize: 18 }}>❤️</Text>
+          <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+            <Path
+              d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+              stroke="#fc1c46"
+              strokeWidth={2}
+              fill="rgba(252,28,70,0.2)"
+            />
+          </Svg>
         </TouchableOpacity>
       </View>
 
       <View style={styles.content}>
         {/* Title & Rating */}
         <View style={styles.headerRow}>
-          <Text style={typography.titleLarge}>{club.name}</Text>
+          <Text style={[typography.titleLarge, { fontFamily: fonts.headingBold }]}>{club.name}</Text>
           <View style={styles.ratingBadge}>
-            <Text style={styles.ratingText}>★ {club.rating} ({club.reviewCount})</Text>
+            <StarIcon size={12} fill="#FACC15" color="#FACC15" />
+            <Text style={styles.ratingText}>{club.rating} ({club.reviewCount})</Text>
           </View>
         </View>
 
-        <Text style={styles.addressText}>📍 {club.address}, {club.city}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 14 }}>
+          <MapPinIcon size={13} color={colors.textSecondary} strokeWidth={1.8} />
+          <Text style={styles.addressText}>{club.address}, {club.city}</Text>
+        </View>
 
-        {/* Action Buttons: Cómo llegar, WhatsApp, Instagram */}
+        {/* Action Buttons: Cómo llegar, WhatsApp */}
         <View style={styles.actionsRow}>
           <TouchableOpacity style={styles.actionButton} onPress={handleOpenMaps}>
-            <Text style={styles.actionButtonText}>🧭 Cómo llegar</Text>
+            <MapPinIcon size={14} color="#ffffff" strokeWidth={2} />
+            <Text style={styles.actionButtonText}>Cómo llegar</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.actionButtonSecondary}
             onPress={() => Linking.openURL(`https://wa.me/${club.whatsapp.replace(/\D/g, '')}`)}
           >
-            <Text style={styles.actionButtonSecondaryText}>💬 WhatsApp</Text>
+            <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
+              <Path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="#fc1c46" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+            </Svg>
+            <Text style={styles.actionButtonSecondaryText}>WhatsApp</Text>
           </TouchableOpacity>
         </View>
 
         {/* Amenities */}
         <Text style={styles.sectionTitle}>Servicios e Instalaciones</Text>
         <View style={styles.amenitiesGrid}>
-          {club.amenities.parking && <View style={styles.amenityItem}><Text style={styles.amenityIcon}>🚗</Text><Text style={styles.amenityText}>Estacionamiento</Text></View>}
-          {club.amenities.showers && <View style={styles.amenityItem}><Text style={styles.amenityIcon}>🚿</Text><Text style={styles.amenityText}>Duchas & Vestuarios</Text></View>}
-          {club.amenities.buffet && <View style={styles.amenityItem}><Text style={styles.amenityIcon}>🍔</Text><Text style={styles.amenityText}>Buffet / Bar</Text></View>}
-          {club.amenities.grill && <View style={styles.amenityItem}><Text style={styles.amenityIcon}>🥩</Text><Text style={styles.amenityText}>Parrillas</Text></View>}
-          {club.amenities.equipmentRental && <View style={styles.amenityItem}><Text style={styles.amenityIcon}>🎾</Text><Text style={styles.amenityText}>Alquiler de paletas</Text></View>}
-          {club.amenities.wifi && <View style={styles.amenityItem}><Text style={styles.amenityIcon}>📶</Text><Text style={styles.amenityText}>WiFi gratis</Text></View>}
+          {club.amenities.parking && (
+            <View style={styles.amenityItem}>
+              <ParkingIcon size={15} color="#fc1c46" strokeWidth={2} />
+              <Text style={styles.amenityText}>Estacionamiento</Text>
+            </View>
+          )}
+          {club.amenities.showers && (
+            <View style={styles.amenityItem}>
+              <RoofIcon size={15} color="#fc1c46" strokeWidth={2} />
+              <Text style={styles.amenityText}>Vestuarios</Text>
+            </View>
+          )}
+          {club.amenities.buffet && (
+            <View style={styles.amenityItem}>
+              <CoffeeIcon size={15} color="#fc1c46" strokeWidth={2} />
+              <Text style={styles.amenityText}>Buffet / Bar</Text>
+            </View>
+          )}
+          {club.amenities.covered && (
+            <View style={styles.amenityItem}>
+              <RoofIcon size={15} color="#fc1c46" strokeWidth={2} />
+              <Text style={styles.amenityText}>Canchas Techadas</Text>
+            </View>
+          )}
+          {club.amenities.equipmentRental && (
+            <View style={styles.amenityItem}>
+              <PadelIcon size={15} color="#fc1c46" strokeWidth={2} />
+              <Text style={styles.amenityText}>Alquiler de paletas</Text>
+            </View>
+          )}
         </View>
 
         {/* Court Selection Tabs */}
@@ -219,10 +268,13 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
     backgroundColor: colors.primary,
     paddingVertical: 12,
-    borderRadius: 10,
-    alignItems: 'center',
+    borderRadius: 12,
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
@@ -230,22 +282,25 @@ const styles = StyleSheet.create({
     elevation: 4
   },
   actionButtonText: {
+    fontFamily: fonts.bold,
     color: '#ffffff',
-    fontWeight: '700',
     fontSize: 14
   },
   actionButtonSecondary: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
     backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: colors.cardBorder,
     paddingVertical: 12,
-    borderRadius: 10,
-    alignItems: 'center'
+    borderRadius: 12,
   },
   actionButtonSecondaryText: {
+    fontFamily: fonts.bold,
     color: colors.textPrimary,
-    fontWeight: '700',
     fontSize: 14
   },
   sectionTitle: {

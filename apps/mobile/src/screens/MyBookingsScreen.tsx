@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Linking, Platform } from 'react-native';
-import { colors, typography, formatCurrency } from '../components/theme';
+import Svg, { Path, Circle, Line, Rect } from 'react-native-svg';
+import { colors, typography, fonts, formatCurrency } from '../components/theme';
+import {
+  MapPinIcon,
+  CalendarIcon,
+  ClockIcon,
+  UsersIcon,
+  ZapIcon,
+  PadelIcon,
+} from '../components/AppIcons';
 import { mobileApi } from '../services/api';
 import { Booking } from '@hay-equipo/contracts';
 
@@ -66,21 +75,33 @@ export const MyBookingsScreen: React.FC<MyBookingsScreenProps> = ({
         <View style={styles.cardHeader}>
           <View>
             <Text style={styles.courtName}>{booking.courtName || 'Cancha Principal'}</Text>
-            <Text style={styles.clubName}>📍 {booking.clubName || 'Arena Pádel'}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
+              <MapPinIcon size={12} color={colors.textSecondary} strokeWidth={1.8} />
+              <Text style={styles.clubName}>{booking.clubName || 'Arena Pádel'}</Text>
+            </View>
           </View>
           <View style={[styles.statusBadge, booking.status === 'CONFIRMED' ? styles.badgeConfirmed : styles.badgeHeld]}>
-            <Text style={styles.statusBadgeText}>{booking.status === 'CONFIRMED' ? '✓ CONFIRMADA' : '⏳ PENDIENTE'}</Text>
+            <Text style={styles.statusBadgeText}>
+              {booking.status === 'CONFIRMED' ? 'CONFIRMADA' : 'PENDIENTE'}
+            </Text>
           </View>
         </View>
 
         <View style={styles.timeInfoRow}>
-          <Text style={styles.dateTimeText}>📅 {booking.date} · ⏰ {booking.startTime} – {booking.endTime} hs</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <CalendarIcon size={13} color="#fc1c46" strokeWidth={2} />
+            <Text style={styles.dateTimeText}>{booking.date}</Text>
+            <Text style={styles.dateTimeText}>·</Text>
+            <ClockIcon size={13} color="#fc1c46" strokeWidth={2} />
+            <Text style={styles.dateTimeText}>{booking.startTime} – {booking.endTime} hs</Text>
+          </View>
           <Text style={styles.priceText}>{formatCurrency(booking.totalPrice)}</Text>
         </View>
 
         {booking.paymentType === 'SPLIT' && (
           <View style={styles.splitNoticeBox}>
-            <Text style={styles.splitNoticeText}>⚡ Pago Dividido (Split) activo entre jugadores</Text>
+            <ZapIcon size={12} color="#fc1c46" strokeWidth={2} />
+            <Text style={styles.splitNoticeText}>Pago Dividido (Split) activo entre jugadores</Text>
           </View>
         )}
 
@@ -90,13 +111,15 @@ export const MyBookingsScreen: React.FC<MyBookingsScreenProps> = ({
               style={styles.actionBtnPrimary}
               onPress={() => onNavigateSplit(booking)}
             >
-              <Text style={styles.actionBtnPrimaryText}>👥 Ver Split / Invitar</Text>
+              <UsersIcon size={14} color="#ffffff" strokeWidth={2} />
+              <Text style={styles.actionBtnPrimaryText}>Ver Split / Invitar</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.actionBtnSecondary}
               onPress={() => handleOpenMaps(booking.clubName || 'Arena Padel')}
             >
-              <Text style={styles.actionBtnSecondaryText}>🧭 Cómo llegar</Text>
+              <MapPinIcon size={14} color={colors.textPrimary} strokeWidth={2} />
+              <Text style={styles.actionBtnSecondaryText}>Cómo llegar</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.cancelBtn}
@@ -126,8 +149,8 @@ export const MyBookingsScreen: React.FC<MyBookingsScreenProps> = ({
   const list = getActiveList();
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={typography.titleLarge}>Mis Reservas</Text>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <Text style={styles.screenTitle}>Mis Reservas</Text>
       <Text style={styles.subtitle}>Historial, partidos próximos y gestión de grupos.</Text>
 
       {/* Tabs Row */}
@@ -153,7 +176,7 @@ export const MyBookingsScreen: React.FC<MyBookingsScreenProps> = ({
         <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
       ) : list.length === 0 ? (
         <View style={styles.emptyCard}>
-          <Text style={styles.emptyIcon}>🎾</Text>
+          <PadelIcon size={36} color="#fc1c46" strokeWidth={1.5} />
           <Text style={styles.emptyTitle}>No tenés reservas {activeTab === 'UPCOMING' ? 'próximas' : 'en esta sección'}</Text>
           <Text style={styles.emptySub}>Buscá una cancha disponible y reservá en menos de 30 segundos.</Text>
           <TouchableOpacity style={styles.ctaBtn} onPress={onNavigateNewBooking}>
@@ -176,8 +199,16 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 40
   },
+  screenTitle: {
+    fontFamily: fonts.headingBold,
+    color: colors.textPrimary,
+    fontSize: 22,
+    letterSpacing: -0.4,
+  },
   subtitle: {
-    ...typography.subtitle,
+    fontFamily: fonts.regular,
+    color: colors.textMuted,
+    fontSize: 13,
     marginTop: 4,
     marginBottom: 20
   },
@@ -200,35 +231,43 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary
   },
   tabBtnText: {
+    fontFamily: fonts.medium,
     color: colors.textSecondary,
-    fontSize: 13,
-    fontWeight: '700'
+    fontSize: 13
   },
   tabBtnTextActive: {
-    color: colors.background
+    fontFamily: fonts.bold,
+    color: '#ffffff'
   },
   card: {
     backgroundColor: colors.card,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: colors.cardBorder,
     padding: 16,
-    marginBottom: 16
+    marginBottom: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 10
+    marginBottom: 12
   },
   courtName: {
+    fontFamily: fonts.headingBold,
     color: colors.textPrimary,
     fontSize: 16,
-    fontWeight: '700'
+    letterSpacing: -0.2
   },
   clubName: {
+    fontFamily: fonts.regular,
     color: colors.textSecondary,
-    fontSize: 13
+    fontSize: 12.5
   },
   statusBadge: {
     paddingHorizontal: 8,
@@ -236,107 +275,131 @@ const styles = StyleSheet.create({
     borderRadius: 6
   },
   badgeConfirmed: {
-    backgroundColor: 'rgba(34, 197, 94, 0.15)'
+    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(34, 197, 94, 0.3)'
   },
   badgeHeld: {
-    backgroundColor: 'rgba(245, 158, 11, 0.15)'
+    backgroundColor: 'rgba(234, 179, 8, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(234, 179, 8, 0.3)'
   },
   statusBadgeText: {
-    color: colors.primary,
-    fontWeight: '800',
-    fontSize: 11
+    fontFamily: fonts.bold,
+    color: '#22c55e',
+    fontSize: 10,
+    letterSpacing: 0.5
   },
   timeInfoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
     marginBottom: 12
   },
   dateTimeText: {
-    color: colors.neonAccent,
-    fontSize: 13,
-    fontWeight: '700'
+    fontFamily: fonts.medium,
+    color: colors.textPrimary,
+    fontSize: 12.5
   },
   priceText: {
-    color: colors.textPrimary,
-    fontSize: 15,
-    fontWeight: '800'
+    fontFamily: fonts.headingBold,
+    color: '#fc1c46',
+    fontSize: 15
   },
   splitNoticeBox: {
-    backgroundColor: colors.elevated,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(252, 28, 70, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(252, 28, 70, 0.2)',
     padding: 8,
-    borderRadius: 6,
-    marginBottom: 14
+    borderRadius: 8,
+    marginBottom: 12
   },
   splitNoticeText: {
-    color: colors.textSecondary,
-    fontSize: 11,
-    fontWeight: '600'
+    fontFamily: fonts.medium,
+    color: '#fc1c46',
+    fontSize: 11.5
   },
   actionsGrid: {
     flexDirection: 'row',
     gap: 8,
-    borderTopWidth: 1,
-    borderTopColor: colors.cardBorder,
-    paddingTop: 12
-  },
-  actionBtnPrimary: {
-    flex: 2,
-    backgroundColor: colors.primary,
-    paddingVertical: 10,
-    borderRadius: 8,
     alignItems: 'center'
   },
+  actionBtnPrimary: {
+    flex: 1.2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    backgroundColor: colors.primary,
+    paddingVertical: 9,
+    borderRadius: 10
+  },
   actionBtnPrimaryText: {
-    color: colors.background,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
+    color: '#ffffff',
     fontSize: 12
   },
   actionBtnSecondary: {
-    flex: 2,
-    backgroundColor: colors.elevated,
-    paddingVertical: 10,
-    borderRadius: 8,
+    flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: colors.cardBorder
+    borderColor: colors.cardBorder,
+    paddingVertical: 9,
+    borderRadius: 10
   },
   actionBtnSecondaryText: {
+    fontFamily: fonts.medium,
     color: colors.textPrimary,
-    fontSize: 12,
-    fontWeight: '600'
+    fontSize: 12
   },
   cancelBtn: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: 'center'
+    paddingVertical: 9,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.2)'
   },
   cancelBtnText: {
+    fontFamily: fonts.bold,
     color: colors.danger,
-    fontSize: 12,
-    fontWeight: '600'
+    fontSize: 12
   },
   emptyCard: {
-    backgroundColor: colors.card,
-    borderRadius: 14,
     padding: 30,
-    alignItems: 'center'
-  },
-  emptyIcon: {
-    fontSize: 40,
-    marginBottom: 10
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+    alignItems: 'center',
+    marginTop: 20
   },
   emptyTitle: {
+    fontFamily: fonts.headingBold,
     color: colors.textPrimary,
-    fontSize: 16,
-    fontWeight: '700'
+    fontSize: 15,
+    marginTop: 14,
+    marginBottom: 6,
+    textAlign: 'center'
   },
   emptySub: {
+    fontFamily: fonts.regular,
     color: colors.textMuted,
-    fontSize: 13,
+    fontSize: 12.5,
     textAlign: 'center',
-    marginTop: 4,
-    marginBottom: 16
+    marginBottom: 18,
+    lineHeight: 18
   },
   ctaBtn: {
     backgroundColor: colors.primary,
@@ -345,8 +408,8 @@ const styles = StyleSheet.create({
     borderRadius: 10
   },
   ctaBtnText: {
-    color: colors.background,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
+    color: '#ffffff',
     fontSize: 13
   }
 });
