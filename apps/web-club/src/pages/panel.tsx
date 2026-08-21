@@ -107,7 +107,7 @@ export default function ClubPanel() {
   const [cancellationWindowHours, setCancellationWindowHours] = useState(6);
   const [clubAddress, setClubAddress] = useState('Av. Del Libertador 4400, Palermo, CABA');
 
-  // Modal "+ Nueva reserva"
+  // Modal 1: "+ Nueva reserva"
   const [showModal, setShowModal] = useState(false);
   const [modalCourt, setModalCourt] = useState('c-1');
   const [modalTime, setModalTime] = useState('21:00');
@@ -117,7 +117,7 @@ export default function ClubPanel() {
   const [modalType, setModalType] = useState<SlotStatus>('RESERVED');
   const [modalPaymentMethod, setModalPaymentMethod] = useState<PaymentMethod>('MOSTRADOR_EFECTIVO');
 
-  // Modal "+ Configurar / Editar Cancha"
+  // Modal 2: "+ Configurar / Editar Cancha"
   const [showCourtModal, setShowCourtModal] = useState(false);
   const [editingCourtId, setEditingCourtId] = useState<string | null>(null);
   const [courtNameInput, setCourtNameInput] = useState('');
@@ -129,6 +129,15 @@ export default function ClubPanel() {
   const [courtPricePeakInput, setCourtPricePeakInput] = useState(45000);
   const [courtIndoorInput, setCourtIndoorInput] = useState(true);
   const [courtLightingInput, setCourtLightingInput] = useState(true);
+
+  // Modal 3: "Editar / Eliminar Reserva Existente"
+  const [showEditReservationModal, setShowEditReservationModal] = useState(false);
+  const [editingSlot, setEditingSlot] = useState<CourtSlot | null>(null);
+  const [editPlayerName, setEditPlayerName] = useState('');
+  const [editPlayerPhone, setEditPlayerPhone] = useState('');
+  const [editCourtId, setEditCourtId] = useState('');
+  const [editTime, setEditTime] = useState('');
+  const [editPaymentMethod, setEditPaymentMethod] = useState<PaymentMethod>('APP_MERCADOPAGO');
 
   /* ── Auth Verification & Auto Demo Fallback ── */
   useEffect(() => {
@@ -227,23 +236,47 @@ export default function ClubPanel() {
     setShowCourtModal(false);
   };
 
-  // Cycle status on row click
-  const handleToggleStatus = (id: string) => {
-    setSlots(prev =>
-      prev.map(slot => {
-        if (slot.id !== id) return slot;
-        if (slot.status === 'AVAILABLE') {
-          return { ...slot, status: 'RESERVED', player: 'Mostrador 100%', paymentMethod: 'MOSTRADOR_EFECTIVO', isPaid100: true };
-        }
-        if (slot.status === 'RESERVED') {
-          return { ...slot, status: 'FIXED', player: 'Turno Fijo Prepago', paymentMethod: 'MOSTRADOR_TRANSFERENCIA', isPaid100: true };
-        }
-        if (slot.status === 'FIXED') {
-          return { ...slot, status: 'AVAILABLE', player: '—', isPaid100: false };
-        }
-        return { ...slot, status: 'AVAILABLE', player: '—', isPaid100: false };
-      })
-    );
+  // Open Edit / Delete Reservation Modal for existing slots
+  const handleOpenEditReservation = (slot: CourtSlot) => {
+    setEditingSlot(slot);
+    setEditPlayerName(slot.player);
+    setEditPlayerPhone(slot.phone || '');
+    setEditCourtId(slot.courtId);
+    setEditTime(slot.time);
+    setEditPaymentMethod(slot.paymentMethod || 'MOSTRADOR_EFECTIVO');
+    setShowEditReservationModal(true);
+  };
+
+  // Save Edit Reservation
+  const handleSaveEditReservation = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingSlot) return;
+    const court = courts.find(c => c.id === editCourtId) || courts[0];
+    setSlots(prev => prev.map(s => s.id === editingSlot.id ? {
+      ...s,
+      player: editPlayerName.trim() || 'Reserva Directa',
+      phone: editPlayerPhone.trim() || undefined,
+      courtId: court.id,
+      courtName: court.name,
+      time: editTime,
+      paymentMethod: editPaymentMethod,
+    } : s));
+    setShowEditReservationModal(false);
+    setEditingSlot(null);
+  };
+
+  // Delete / Release Reservation (Liberar turno)
+  const handleDeleteReservation = () => {
+    if (!editingSlot) return;
+    setSlots(prev => prev.map(s => s.id === editingSlot.id ? {
+      ...s,
+      status: 'AVAILABLE',
+      player: '—',
+      phone: undefined,
+      isPaid100: false,
+    } : s));
+    setShowEditReservationModal(false);
+    setEditingSlot(null);
   };
 
   // Toggle Court Active / Weather Pause
@@ -778,7 +811,6 @@ export default function ClubPanel() {
             </div>
           </header>
 
-
           {/* ═══════════════════════════════════════════════════════
               VIEW 1: DASHBOARD
               ═══════════════════════════════════════════════════════ */}
@@ -983,12 +1015,12 @@ export default function ClubPanel() {
                             const slot = filteredSlots.find(s => s.courtId === court.id && s.time === time);
                             const isReserved = slot && (slot.status === 'RESERVED' || slot.status === 'FIXED');
 
-                            if (isReserved) {
+                            if (isReserved && slot) {
                               return (
                                 <div
                                   key={court.id}
-                                  onClick={() => slot && handleToggleStatus(slot.id)}
-                                  title={`Click para alternar estado — ${slot.player}`}
+                                  onClick={() => handleOpenEditReservation(slot)}
+                                  title={`Click para editar o eliminar reserva de ${slot.player}`}
                                   style={{
                                     backgroundColor: slot.status === 'FIXED' ? 'rgba(225, 29, 72, 0.15)' : 'rgba(252, 28, 70, 0.15)',
                                     border: slot.status === 'FIXED' ? '1px solid rgba(225, 29, 72, 0.35)' : '1px solid rgba(252, 28, 70, 0.35)',
@@ -1014,15 +1046,14 @@ export default function ClubPanel() {
                               <div
                                 key={court.id}
                                 onClick={() => {
-                                  if (slot) {
-                                    handleToggleStatus(slot.id);
-                                  } else {
-                                    setModalCourt(court.id);
-                                    setModalTime(time);
-                                    setShowModal(true);
-                                  }
+                                  setModalCourt(court.id);
+                                  setModalTime(time);
+                                  setModalPlayer('');
+                                  setModalPhone('');
+                                  setModalSelectedPlayerId('CUSTOM');
+                                  setShowModal(true);
                                 }}
-                                title="Click para reservar turno disponible"
+                                title="Click para crear nueva reserva"
                                 style={{
                                   backgroundColor: '#181b22',
                                   border: '1px solid rgba(255, 255, 255, 0.04)',
@@ -1218,7 +1249,15 @@ export default function ClubPanel() {
                           courtSlots.map(s => (
                             <div
                               key={s.id}
-                              onClick={() => handleToggleStatus(s.id)}
+                              onClick={() => {
+                                if (s.status === 'RESERVED' || s.status === 'FIXED') {
+                                  handleOpenEditReservation(s);
+                                } else {
+                                  setModalCourt(court.id);
+                                  setModalTime(s.time);
+                                  setShowModal(true);
+                                }
+                              }}
                               style={{
                                 padding: '10px 12px',
                                 borderRadius: 10,
@@ -1715,6 +1754,7 @@ export default function ClubPanel() {
                 />
               </div>
 
+              {/* Autocomplete from existing database */}
               <div>
                 <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
                   Seleccionar Jugador de Base de Datos
@@ -2072,6 +2112,205 @@ export default function ClubPanel() {
               >
                 Guardar Configuración de Cancha
               </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ────────────────────────────────────────────────────────────
+          MODAL 3: "EDITAR O ELIMINAR RESERVA EXISTENTE"
+          ──────────────────────────────────────────────────────────── */}
+      {showEditReservationModal && editingSlot && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: 20,
+        }}>
+          <div style={{
+            width: '100%',
+            maxWidth: 480,
+            backgroundColor: '#12141a',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: 20,
+            padding: '26px 28px',
+            boxShadow: '0 25px 60px rgba(0, 0, 0, 0.9)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+              <div>
+                <h3 style={{ fontSize: 19, fontWeight: 700, color: '#ffffff', margin: 0 }}>
+                  Gestionar Reserva
+                </h3>
+                <div style={{ fontSize: 11, color: '#fc1c46', marginTop: 2 }}>
+                  {editingSlot.courtName} · {editingSlot.time} hs
+                </div>
+              </div>
+              <button
+                onClick={() => setShowEditReservationModal(false)}
+                style={{ backgroundColor: 'transparent', border: 'none', color: '#6b7280', fontSize: 18, cursor: 'pointer' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditReservation} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
+                  Nombre del Jugador
+                </label>
+                <input
+                  type="text"
+                  value={editPlayerName}
+                  onChange={e => setEditPlayerName(e.target.value)}
+                  required
+                  style={{
+                    width: '100%',
+                    backgroundColor: '#181b22',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: 10,
+                    padding: '10px 12px',
+                    color: '#ffffff',
+                    fontSize: 13.5,
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
+                  Teléfono / WhatsApp
+                </label>
+                <input
+                  type="text"
+                  value={editPlayerPhone}
+                  onChange={e => setEditPlayerPhone(e.target.value)}
+                  placeholder="+54 9 11 0000-0000"
+                  style={{
+                    width: '100%',
+                    backgroundColor: '#181b22',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: 10,
+                    padding: '10px 12px',
+                    color: '#ffffff',
+                    fontSize: 13.5,
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
+                    Cancha
+                  </label>
+                  <select
+                    value={editCourtId}
+                    onChange={e => setEditCourtId(e.target.value)}
+                    style={{
+                      width: '100%',
+                      backgroundColor: '#181b22',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: 10,
+                      padding: '10px 12px',
+                      color: '#ffffff',
+                      fontSize: 13.5,
+                    }}
+                  >
+                    {courts.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
+                    Horario
+                  </label>
+                  <input
+                    type="text"
+                    value={editTime}
+                    onChange={e => setEditTime(e.target.value)}
+                    required
+                    style={{
+                      width: '100%',
+                      backgroundColor: '#181b22',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: 10,
+                      padding: '10px 12px',
+                      color: '#ffffff',
+                      fontSize: 13.5,
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
+                  Método de Pago Confirmado
+                </label>
+                <select
+                  value={editPaymentMethod}
+                  onChange={e => setEditPaymentMethod(e.target.value as PaymentMethod)}
+                  style={{
+                    width: '100%',
+                    backgroundColor: '#181b22',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: 10,
+                    padding: '10px 12px',
+                    color: '#ffffff',
+                    fontSize: 13.5,
+                  }}
+                >
+                  <option value="APP_MERCADOPAGO">📱 Mercado Pago App (100% Pagado)</option>
+                  <option value="MOSTRADOR_EFECTIVO">💵 Efectivo Mostrador (100% Pagado)</option>
+                  <option value="MOSTRADOR_TRANSFERENCIA">💳 Transferencia / Débito (100% Pagado)</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
+                <button
+                  type="submit"
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    backgroundColor: '#fc1c46',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: 12,
+                    fontSize: 13.5,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  💾 Guardar Cambios
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteReservation}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                    color: '#ef4444',
+                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    borderRadius: 12,
+                    fontSize: 13.5,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  🗑️ Eliminar Reserva
+                </button>
+              </div>
             </form>
           </div>
         </div>
