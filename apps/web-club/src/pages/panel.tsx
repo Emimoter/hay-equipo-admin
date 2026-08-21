@@ -29,8 +29,7 @@ interface CourtInfo {
   surface: string;
   active: boolean;
   pausedForWeather?: boolean;
-  priceValley: number;
-  pricePeak: number;
+  price: number;
   indoor: boolean;
   lighting: boolean;
   openTime: string;  // ej: "08:00"
@@ -52,7 +51,7 @@ interface PlayerRecord {
 const ALL_OPERATING_TIMES = ['08:00', '09:30', '11:00', '12:30', '14:00', '15:30', '16:30', '18:00', '19:30', '21:00', '22:30'];
 
 /* ────────────────────────────────────────────────────────────
-   Initial Data (Simplified: 100% Paid Upfront, No payment method or reservation type fluff)
+   Initial Data (Simplified Court Pricing: Single price per court)
    ──────────────────────────────────────────────────────────── */
 
 const INITIAL_SLOTS: CourtSlot[] = [
@@ -67,10 +66,10 @@ const INITIAL_SLOTS: CourtSlot[] = [
 ];
 
 const INITIAL_COURTS: CourtInfo[] = [
-  { id: 'c-1', name: 'Cancha 1 — Panorámica WPT', sport: 'Pádel', surface: 'Vidrio Panorámico 12mm · Césped Texturado', active: true, pausedForWeather: false, priceValley: 42000, pricePeak: 48000, indoor: true, lighting: true, openTime: '08:00', closeTime: '23:30' },
-  { id: 'c-2', name: 'Cancha 2 — Cristal Pro', sport: 'Pádel', surface: 'Vidrio Templado 10mm · Césped Monofilamento', active: true, pausedForWeather: false, priceValley: 38000, pricePeak: 45000, indoor: true, lighting: true, openTime: '08:00', closeTime: '23:30' },
-  { id: 'c-3', name: 'Cancha 3 — Master Climatizada', sport: 'Pádel', surface: 'Muros Perimetrales · Cubierta Climatizada', active: true, pausedForWeather: false, priceValley: 36000, pricePeak: 42000, indoor: true, lighting: true, openTime: '09:00', closeTime: '23:00' },
-  { id: 'c-4', name: 'Cancha 4 — Fútbol 5 Forbex', sport: 'Fútbol 5', surface: 'Césped Sintético Forbex 50mm con Caucho', active: true, pausedForWeather: false, priceValley: 30000, pricePeak: 36000, indoor: false, lighting: true, openTime: '10:00', closeTime: '24:00' },
+  { id: 'c-1', name: 'Cancha 1 — Panorámica WPT', sport: 'Pádel', surface: 'Vidrio Panorámico 12mm · Césped Texturado', active: true, pausedForWeather: false, price: 48000, indoor: true, lighting: true, openTime: '08:00', closeTime: '23:30' },
+  { id: 'c-2', name: 'Cancha 2 — Cristal Pro', sport: 'Pádel', surface: 'Vidrio Templado 10mm · Césped Monofilamento', active: true, pausedForWeather: false, price: 45000, indoor: true, lighting: true, openTime: '08:00', closeTime: '23:30' },
+  { id: 'c-3', name: 'Cancha 3 — Master Climatizada', sport: 'Pádel', surface: 'Muros Perimetrales · Cubierta Climatizada', active: true, pausedForWeather: false, price: 42000, indoor: true, lighting: true, openTime: '09:00', closeTime: '23:00' },
+  { id: 'c-4', name: 'Cancha 4 — Fútbol 5 Forbex', sport: 'Fútbol 5', surface: 'Césped Sintético Forbex 50mm con Caucho', active: true, pausedForWeather: false, price: 36000, indoor: false, lighting: true, openTime: '10:00', closeTime: '24:00' },
 ];
 
 const INITIAL_PLAYERS: PlayerRecord[] = [
@@ -122,8 +121,7 @@ export default function ClubPanel() {
   const [courtSurfaceInput, setCourtSurfaceInput] = useState('Vidrio Templado 10mm');
   const [courtOpenTimeInput, setCourtOpenTimeInput] = useState('08:00');
   const [courtCloseTimeInput, setCourtCloseTimeInput] = useState('23:30');
-  const [courtPriceValleyInput, setCourtPriceValleyInput] = useState(38000);
-  const [courtPricePeakInput, setCourtPricePeakInput] = useState(45000);
+  const [courtPriceInput, setCourtPriceInput] = useState(45000);
   const [courtIndoorInput, setCourtIndoorInput] = useState(true);
   const [courtLightingInput, setCourtLightingInput] = useState(true);
 
@@ -210,8 +208,7 @@ export default function ClubPanel() {
       setCourtSurfaceInput(court.surface);
       setCourtOpenTimeInput(court.openTime || '08:00');
       setCourtCloseTimeInput(court.closeTime || '23:30');
-      setCourtPriceValleyInput(court.priceValley);
-      setCourtPricePeakInput(court.pricePeak);
+      setCourtPriceInput(court.price);
       setCourtIndoorInput(court.indoor);
       setCourtLightingInput(court.lighting);
     } else {
@@ -221,8 +218,7 @@ export default function ClubPanel() {
       setCourtSurfaceInput('Sintético & Cristal Pro');
       setCourtOpenTimeInput('08:00');
       setCourtCloseTimeInput('23:30');
-      setCourtPriceValleyInput(38000);
-      setCourtPricePeakInput(45000);
+      setCourtPriceInput(45000);
       setCourtIndoorInput(true);
       setCourtLightingInput(true);
     }
@@ -242,8 +238,7 @@ export default function ClubPanel() {
         surface: courtSurfaceInput,
         openTime: courtOpenTimeInput,
         closeTime: courtCloseTimeInput,
-        priceValley: courtPriceValleyInput,
-        pricePeak: courtPricePeakInput,
+        price: courtPriceInput,
         indoor: courtIndoorInput,
         lighting: courtLightingInput,
       } : c));
@@ -257,8 +252,7 @@ export default function ClubPanel() {
         pausedForWeather: false,
         openTime: courtOpenTimeInput,
         closeTime: courtCloseTimeInput,
-        priceValley: courtPriceValleyInput,
-        pricePeak: courtPricePeakInput,
+        price: courtPriceInput,
         indoor: courtIndoorInput,
         lighting: courtLightingInput,
       };
@@ -345,7 +339,7 @@ export default function ClubPanel() {
       status: 'RESERVED',
       player: modalPlayer.trim() || 'Reserva Directa',
       phone: modalPhone.trim() || undefined,
-      price: court.pricePeak,
+      price: court.price,
       isPaid100: true,
     };
     setSlots(prev => [newSlot, ...prev]);
@@ -992,7 +986,7 @@ export default function ClubPanel() {
                         display: 'inline-block',
                       }} />
                       <h2 style={{ fontSize: 15, fontWeight: 700, color: '#ffffff', margin: 0 }}>
-                        Horarios del Día (Pagados 100%)
+                        Horarios del Día
                       </h2>
                     </div>
 
@@ -1331,7 +1325,7 @@ export default function ClubPanel() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: 0 }}>Configuración de Canchas y Horarios Habilitados</h2>
-                  <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>Personalizá nombres de canchas, superficies, franjas horarias de apertura/cierre y tarifas.</p>
+                  <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>Personalizá nombres de canchas, superficies, franjas horarias de apertura/cierre y precio por turno.</p>
                 </div>
                 <button
                   onClick={() => handleOpenCourtModal()}
@@ -1411,15 +1405,10 @@ export default function ClubPanel() {
                       </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                      <div style={{ backgroundColor: '#181b22', padding: '10px', borderRadius: 10 }}>
-                        <div style={{ fontSize: 10, color: '#888', textTransform: 'uppercase' }}>Tarifa Valle (08-17h)</div>
-                        <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', marginTop: 3 }}>${court.priceValley.toLocaleString()}</div>
-                      </div>
-                      <div style={{ backgroundColor: '#181b22', padding: '10px', borderRadius: 10 }}>
-                        <div style={{ fontSize: 10, color: '#fc1c46', textTransform: 'uppercase' }}>Tarifa Pico (18-23h)</div>
-                        <div style={{ fontSize: 15, fontWeight: 700, color: '#fc1c46', marginTop: 3 }}>${court.pricePeak.toLocaleString()}</div>
-                      </div>
+                    {/* Precio Único de la Cancha */}
+                    <div style={{ backgroundColor: '#181b22', padding: '10px 14px', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ fontSize: 11, color: '#888', textTransform: 'uppercase' }}>Precio por Turno</div>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: '#fc1c46' }}>${court.price.toLocaleString()}</div>
                     </div>
 
                     <div style={{ display: 'flex', gap: 8, fontSize: 11, color: '#9ca3af' }}>
@@ -2007,49 +1996,27 @@ export default function ClubPanel() {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
-                    Tarifa Valle ($)
-                  </label>
-                  <input
-                    type="number"
-                    value={courtPriceValleyInput}
-                    onChange={e => setCourtPriceValleyInput(Number(e.target.value))}
-                    required
-                    style={{
-                      width: '100%',
-                      backgroundColor: '#181b22',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      borderRadius: 10,
-                      padding: '10px 12px',
-                      color: '#ffffff',
-                      fontSize: 13.5,
-                      boxSizing: 'border-box',
-                    }}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, color: '#fc1c46', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
-                    Tarifa Pico ($)
-                  </label>
-                  <input
-                    type="number"
-                    value={courtPricePeakInput}
-                    onChange={e => setCourtPricePeakInput(Number(e.target.value))}
-                    required
-                    style={{
-                      width: '100%',
-                      backgroundColor: '#181b22',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      borderRadius: 10,
-                      padding: '10px 12px',
-                      color: '#ffffff',
-                      fontSize: 13.5,
-                      boxSizing: 'border-box',
-                    }}
-                  />
-                </div>
+              {/* Single Price Input */}
+              <div>
+                <label style={{ display: 'block', fontSize: 11, color: '#fc1c46', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
+                  Precio de la Cancha por Turno ($)
+                </label>
+                <input
+                  type="number"
+                  value={courtPriceInput}
+                  onChange={e => setCourtPriceInput(Number(e.target.value))}
+                  required
+                  style={{
+                    width: '100%',
+                    backgroundColor: '#181b22',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: 10,
+                    padding: '10px 12px',
+                    color: '#ffffff',
+                    fontSize: 13.5,
+                    boxSizing: 'border-box',
+                  }}
+                />
               </div>
 
               <button
