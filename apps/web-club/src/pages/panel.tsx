@@ -8,6 +8,7 @@ import { useRouter } from 'next/router';
 
 type NavTab = 'DASHBOARD' | 'CALENDAR' | 'COURTS' | 'PLAYERS' | 'ANALYTICS' | 'SETTINGS';
 type SlotStatus = 'RESERVED' | 'AVAILABLE' | 'FIXED' | 'MAINTENANCE';
+type PaymentMethod = 'APP_MERCADOPAGO' | 'MOSTRADOR_EFECTIVO' | 'MOSTRADOR_TRANSFERENCIA';
 
 interface CourtSlot {
   id: string;
@@ -19,6 +20,8 @@ interface CourtSlot {
   player: string;
   price: number;
   phone?: string;
+  paymentMethod?: PaymentMethod;
+  isPaid100: boolean;
 }
 
 interface CourtInfo {
@@ -27,6 +30,7 @@ interface CourtInfo {
   sport: string;
   surface: string;
   active: boolean;
+  pausedForWeather?: boolean;
   priceValley: number;
   pricePeak: number;
   indoor: boolean;
@@ -41,39 +45,39 @@ interface PlayerRecord {
   sport: string;
   matchesPlayed: number;
   reliability: number; // 1-5
-  balanceStatus: 'AL_DIA' | 'DEUDA' | 'SEÑA_PENDIENTE';
-  debtAmount?: number;
+  playerTag: 'JUGADOR FRECUENTE' | 'ABONADO FIJO' | 'JUGADOR VIP';
+  lastPaymentMethod: 'MP (APP 100%)' | 'MOSTRADOR (100%)' | 'PREPAGO MES';
 }
 
 /* ────────────────────────────────────────────────────────────
-   Initial Mock Data
+   Initial Data (Strict 100% Upfront Payment)
    ──────────────────────────────────────────────────────────── */
 
 const INITIAL_SLOTS: CourtSlot[] = [
-  { id: 's-1', courtId: 'c-1', courtName: 'Cancha 1', sport: 'Pádel', time: '18:00', status: 'RESERVED', player: 'Juan R.', price: 48000, phone: '+54 9 11 4433-2211' },
-  { id: 's-2', courtId: 'c-2', courtName: 'Cancha 2', sport: 'Pádel', time: '18:00', status: 'AVAILABLE', player: '—', price: 45000 },
-  { id: 's-3', courtId: 'c-3', courtName: 'Cancha 3', sport: 'Pádel', time: '19:30', status: 'FIXED', player: 'Escuela Padel', price: 42000, phone: '+54 9 11 9988-7766' },
-  { id: 's-4', courtId: 'c-4', courtName: 'Cancha 4', sport: 'Fútbol 5', time: '20:00', status: 'AVAILABLE', player: '—', price: 36000 },
-  { id: 's-5', courtId: 'c-1', courtName: 'Cancha 1', sport: 'Pádel', time: '19:30', status: 'RESERVED', player: 'Rodrigo De Paul', price: 48000, phone: '+54 9 11 5566-7788' },
-  { id: 's-6', courtId: 'c-2', courtName: 'Cancha 2', sport: 'Pádel', time: '21:00', status: 'RESERVED', player: 'Emiliano M.', price: 45000, phone: '+54 9 11 2233-4455' },
-  { id: 's-7', courtId: 'c-3', courtName: 'Cancha 3', sport: 'Pádel', time: '21:00', status: 'AVAILABLE', player: '—', price: 42000 },
-  { id: 's-8', courtId: 'c-4', courtName: 'Cancha 4', sport: 'Fútbol 5', time: '21:30', status: 'RESERVED', player: 'Torneo Nocturno', price: 36000, phone: '+54 9 11 1122-3344' },
+  { id: 's-1', courtId: 'c-1', courtName: 'Cancha 1', sport: 'Pádel', time: '18:00', status: 'RESERVED', player: 'Juan R.', price: 48000, phone: '+54 9 11 4433-2211', paymentMethod: 'APP_MERCADOPAGO', isPaid100: true },
+  { id: 's-2', courtId: 'c-2', courtName: 'Cancha 2', sport: 'Pádel', time: '18:00', status: 'AVAILABLE', player: '—', price: 45000, isPaid100: false },
+  { id: 's-3', courtId: 'c-3', courtName: 'Cancha 3', sport: 'Pádel', time: '19:30', status: 'FIXED', player: 'Escuela Padel', price: 42000, phone: '+54 9 11 9988-7766', paymentMethod: 'MOSTRADOR_TRANSFERENCIA', isPaid100: true },
+  { id: 's-4', courtId: 'c-4', courtName: 'Cancha 4', sport: 'Fútbol 5', time: '20:00', status: 'AVAILABLE', player: '—', price: 36000, isPaid100: false },
+  { id: 's-5', courtId: 'c-1', courtName: 'Cancha 1', sport: 'Pádel', time: '19:30', status: 'RESERVED', player: 'Rodrigo De Paul', price: 48000, phone: '+54 9 11 5566-7788', paymentMethod: 'APP_MERCADOPAGO', isPaid100: true },
+  { id: 's-6', courtId: 'c-2', courtName: 'Cancha 2', sport: 'Pádel', time: '21:00', status: 'RESERVED', player: 'Emiliano M.', price: 45000, phone: '+54 9 11 2233-4455', paymentMethod: 'APP_MERCADOPAGO', isPaid100: true },
+  { id: 's-7', courtId: 'c-3', courtName: 'Cancha 3', sport: 'Pádel', time: '21:00', status: 'AVAILABLE', player: '—', price: 42000, isPaid100: false },
+  { id: 's-8', courtId: 'c-4', courtName: 'Cancha 4', sport: 'Fútbol 5', time: '21:30', status: 'RESERVED', player: 'Torneo Nocturno', price: 36000, phone: '+54 9 11 1122-3344', paymentMethod: 'MOSTRADOR_EFECTIVO', isPaid100: true },
 ];
 
 const INITIAL_COURTS: CourtInfo[] = [
-  { id: 'c-1', name: 'Cancha 1 — Panorámica WPT', sport: 'Pádel', surface: 'Vidrio Panorámico 12mm · Césped Texturado', active: true, priceValley: 42000, pricePeak: 48000, indoor: true, lighting: true },
-  { id: 'c-2', name: 'Cancha 2 — Cristal Pro', sport: 'Pádel', surface: 'Vidrio Templado 10mm · Césped Monofilamento', active: true, priceValley: 38000, pricePeak: 45000, indoor: true, lighting: true },
-  { id: 'c-3', name: 'Cancha 3 — Master Climatizada', sport: 'Pádel', surface: 'Muros Perimetrales · Cubierta Climatizada', active: true, priceValley: 36000, pricePeak: 42000, indoor: true, lighting: true },
-  { id: 'c-4', name: 'Cancha 4 — Fútbol 5 Forbex', sport: 'Fútbol 5', surface: 'Césped Sintético Forbex 50mm con Caucho', active: true, priceValley: 30000, pricePeak: 36000, indoor: false, lighting: true },
+  { id: 'c-1', name: 'Cancha 1 — Panorámica WPT', sport: 'Pádel', surface: 'Vidrio Panorámico 12mm · Césped Texturado', active: true, pausedForWeather: false, priceValley: 42000, pricePeak: 48000, indoor: true, lighting: true },
+  { id: 'c-2', name: 'Cancha 2 — Cristal Pro', sport: 'Pádel', surface: 'Vidrio Templado 10mm · Césped Monofilamento', active: true, pausedForWeather: false, priceValley: 38000, pricePeak: 45000, indoor: true, lighting: true },
+  { id: 'c-3', name: 'Cancha 3 — Master Climatizada', sport: 'Pádel', surface: 'Muros Perimetrales · Cubierta Climatizada', active: true, pausedForWeather: false, priceValley: 36000, pricePeak: 42000, indoor: true, lighting: true },
+  { id: 'c-4', name: 'Cancha 4 — Fútbol 5 Forbex', sport: 'Fútbol 5', surface: 'Césped Sintético Forbex 50mm con Caucho', active: true, pausedForWeather: false, priceValley: 30000, pricePeak: 36000, indoor: false, lighting: true },
 ];
 
 const INITIAL_PLAYERS: PlayerRecord[] = [
-  { id: 'p-1', name: 'Juan Román Riquelme', phone: '+54 9 11 4433-2211', category: '4ta División', sport: 'Pádel', matchesPlayed: 28, reliability: 5, balanceStatus: 'AL_DIA' },
-  { id: 'p-2', name: 'Rodrigo De Paul', phone: '+54 9 11 5566-7788', category: '3ra Libre', sport: 'Pádel', matchesPlayed: 19, reliability: 5, balanceStatus: 'AL_DIA' },
-  { id: 'p-3', name: 'Emiliano Martínez', phone: '+54 9 11 2233-4455', category: 'Arquero / 5ta', sport: 'Fútbol 5', matchesPlayed: 34, reliability: 5, balanceStatus: 'AL_DIA' },
-  { id: 'p-4', name: 'Lautaro Martínez', phone: '+54 9 11 3322-1144', category: 'Delantero / Pro', sport: 'Fútbol 5', matchesPlayed: 15, reliability: 4, balanceStatus: 'DEUDA', debtAmount: 18000 },
-  { id: 'p-5', name: 'Escuela Padel Menores', phone: '+54 9 11 9988-7766', category: 'Formativo / Fijo', sport: 'Pádel', matchesPlayed: 52, reliability: 5, balanceStatus: 'AL_DIA' },
-  { id: 'p-6', name: 'Marcos Acuña', phone: '+54 9 11 7788-9900', category: '5ta División', sport: 'Pádel', matchesPlayed: 11, reliability: 4, balanceStatus: 'SEÑA_PENDIENTE', debtAmount: 15000 },
+  { id: 'p-1', name: 'Juan Román Riquelme', phone: '+54 9 11 4433-2211', category: '4ta División', sport: 'Pádel', matchesPlayed: 28, reliability: 5, playerTag: 'JUGADOR FRECUENTE', lastPaymentMethod: 'MP (APP 100%)' },
+  { id: 'p-2', name: 'Rodrigo De Paul', phone: '+54 9 11 5566-7788', category: '3ra Libre', sport: 'Pádel', matchesPlayed: 19, reliability: 5, playerTag: 'JUGADOR VIP', lastPaymentMethod: 'MP (APP 100%)' },
+  { id: 'p-3', name: 'Emiliano Martínez', phone: '+54 9 11 2233-4455', category: 'Arquero / 5ta', sport: 'Fútbol 5', matchesPlayed: 34, reliability: 5, playerTag: 'JUGADOR VIP', lastPaymentMethod: 'MP (APP 100%)' },
+  { id: 'p-4', name: 'Lautaro Martínez', phone: '+54 9 11 3322-1144', category: 'Delantero / Pro', sport: 'Fútbol 5', matchesPlayed: 15, reliability: 4, playerTag: 'JUGADOR FRECUENTE', lastPaymentMethod: 'MOSTRADOR (100%)' },
+  { id: 'p-5', name: 'Escuela Padel Menores', phone: '+54 9 11 9988-7766', category: 'Formativo / Fijo', sport: 'Pádel', matchesPlayed: 52, reliability: 5, playerTag: 'ABONADO FIJO', lastPaymentMethod: 'PREPAGO MES' },
+  { id: 'p-6', name: 'Marcos Acuña', phone: '+54 9 11 7788-9900', category: '5ta División', sport: 'Pádel', matchesPlayed: 11, reliability: 4, playerTag: 'JUGADOR FRECUENTE', lastPaymentMethod: 'MP (APP 100%)' },
 ];
 
 /* ────────────────────────────────────────────────────────────
@@ -86,6 +90,7 @@ export default function ClubPanel() {
   const [clubName, setClubName] = useState('Club Padel Center');
   const [activeTab, setActiveTab] = useState<NavTab>('DASHBOARD');
   const [dateFilter, setDateFilter] = useState('Hoy');
+  const [selectedSportFilter, setSelectedSportFilter] = useState<string>('TODOS');
   const [showToast, setShowToast] = useState(true);
 
   // Core Data state
@@ -97,16 +102,18 @@ export default function ClubPanel() {
   // Settings State
   const [mercadoPagoConnected, setMercadoPagoConnected] = useState(true);
   const [whatsappBotEnabled, setWhatsappBotEnabled] = useState(true);
-  const [autoDepositPercentage, setAutoDepositPercentage] = useState(50);
+  const [cancellationWindowHours, setCancellationWindowHours] = useState(6);
   const [clubAddress, setClubAddress] = useState('Av. Del Libertador 4400, Palermo, CABA');
 
   // Modal "+ Nueva reserva"
   const [showModal, setShowModal] = useState(false);
   const [modalCourt, setModalCourt] = useState('c-1');
   const [modalTime, setModalTime] = useState('21:00');
+  const [modalSelectedPlayerId, setModalSelectedPlayerId] = useState<string>('CUSTOM');
   const [modalPlayer, setModalPlayer] = useState('');
   const [modalPhone, setModalPhone] = useState('');
   const [modalType, setModalType] = useState<SlotStatus>('RESERVED');
+  const [modalPaymentMethod, setModalPaymentMethod] = useState<PaymentMethod>('MOSTRADOR_EFECTIVO');
 
   /* ── Auth Verification & Auto Demo Fallback ── */
   useEffect(() => {
@@ -145,25 +152,44 @@ export default function ClubPanel() {
       prev.map(slot => {
         if (slot.id !== id) return slot;
         if (slot.status === 'AVAILABLE') {
-          return { ...slot, status: 'RESERVED', player: 'Mostrador / WA' };
+          return { ...slot, status: 'RESERVED', player: 'Mostrador 100%', paymentMethod: 'MOSTRADOR_EFECTIVO', isPaid100: true };
         }
         if (slot.status === 'RESERVED') {
-          return { ...slot, status: 'FIXED', player: 'Turno Fijo' };
+          return { ...slot, status: 'FIXED', player: 'Turno Fijo Prepago', paymentMethod: 'MOSTRADOR_TRANSFERENCIA', isPaid100: true };
         }
         if (slot.status === 'FIXED') {
-          return { ...slot, status: 'AVAILABLE', player: '—' };
+          return { ...slot, status: 'AVAILABLE', player: '—', isPaid100: false };
         }
-        return { ...slot, status: 'AVAILABLE', player: '—' };
+        return { ...slot, status: 'AVAILABLE', player: '—', isPaid100: false };
       })
     );
   };
 
-  // Toggle Court Active
+  // Toggle Court Active / Weather Pause
   const handleToggleCourtActive = (id: string) => {
     setCourts(prev => prev.map(c => c.id === id ? { ...c, active: !c.active } : c));
   };
 
-  // Add new reservation
+  const handleToggleWeatherPause = (id: string) => {
+    setCourts(prev => prev.map(c => c.id === id ? { ...c, pausedForWeather: !c.pausedForWeather } : c));
+  };
+
+  // Select player in Modal
+  const handleSelectPlayerInModal = (id: string) => {
+    setModalSelectedPlayerId(id);
+    if (id === 'CUSTOM') {
+      setModalPlayer('');
+      setModalPhone('');
+    } else {
+      const p = players.find(x => x.id === id);
+      if (p) {
+        setModalPlayer(p.name);
+        setModalPhone(p.phone);
+      }
+    }
+  };
+
+  // Add new reservation (Strict 100% Paid)
   const handleAddReservation = (e: React.FormEvent) => {
     e.preventDefault();
     const court = courts.find(c => c.id === modalCourt) || courts[0];
@@ -177,31 +203,60 @@ export default function ClubPanel() {
       player: modalPlayer.trim() || 'Reserva Directa',
       phone: modalPhone.trim() || undefined,
       price: court.pricePeak,
+      paymentMethod: modalPaymentMethod,
+      isPaid100: true,
     };
     setSlots(prev => [newSlot, ...prev]);
     setShowModal(false);
     setModalPlayer('');
     setModalPhone('');
+    setModalSelectedPlayerId('CUSTOM');
   };
+
+  // Print Daily Roster
+  const handlePrintDailyRoster = () => {
+    window.print();
+  };
+
+  // Filtered Courts & Slots by Sport Filter
+  const filteredCourts = useMemo(() => {
+    if (selectedSportFilter === 'TODOS') return courts;
+    return courts.filter(c => c.sport.toUpperCase().includes(selectedSportFilter));
+  }, [courts, selectedSportFilter]);
+
+  const filteredSlots = useMemo(() => {
+    let result = slots;
+    if (selectedSportFilter !== 'TODOS') {
+      result = result.filter(s => s.sport.toUpperCase().includes(selectedSportFilter));
+    }
+    return result;
+  }, [slots, selectedSportFilter]);
 
   // Filtered Players
   const filteredPlayers = useMemo(() => {
-    if (!searchPlayer.trim()) return players;
-    return players.filter(p =>
-      p.name.toLowerCase().includes(searchPlayer.toLowerCase()) ||
-      p.phone.includes(searchPlayer) ||
-      p.category.toLowerCase().includes(searchPlayer.toLowerCase())
-    );
-  }, [players, searchPlayer]);
+    let result = players;
+    if (selectedSportFilter !== 'TODOS') {
+      result = result.filter(p => p.sport.toUpperCase().includes(selectedSportFilter));
+    }
+    if (searchPlayer.trim()) {
+      const q = searchPlayer.toLowerCase();
+      result = result.filter(p =>
+        p.name.toLowerCase().includes(q) ||
+        p.phone.includes(q) ||
+        p.category.toLowerCase().includes(q)
+      );
+    }
+    return result;
+  }, [players, searchPlayer, selectedSportFilter]);
 
   // Metrics calculation
   const totalReservedToday = useMemo(() => {
-    return slots.filter(s => s.status === 'RESERVED' || s.status === 'FIXED').length + 8;
-  }, [slots]);
+    return filteredSlots.filter(s => s.status === 'RESERVED' || s.status === 'FIXED').length + 8;
+  }, [filteredSlots]);
 
   const activeCourtsCount = useMemo(() => {
-    return courts.filter(c => c.active).length;
-  }, [courts]);
+    return filteredCourts.filter(c => c.active && !c.pausedForWeather).length;
+  }, [filteredCourts]);
 
   if (!authed) {
     return (
@@ -229,8 +284,8 @@ export default function ClubPanel() {
       overflow: 'hidden',
     }}>
       <Head>
-        <title>{clubName} — Panel del Club</title>
-        <meta name="description" content="Panel de control y gestión en tiempo real para clubes deportivos" />
+        <title>{clubName} — Panel de Gestión</title>
+        <meta name="description" content="Panel de control en tiempo real para gestión de reservas 100% anticipadas" />
       </Head>
 
       {/* ═══════════════════════════════════════════════════════
@@ -248,6 +303,7 @@ export default function ClubPanel() {
         display: 'flex',
         overflow: 'hidden',
         position: 'relative',
+        boxSizing: 'border-box',
       }}>
 
         {/* ────────────────────────────────────────────────────────────
@@ -310,8 +366,6 @@ export default function ClubPanel() {
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
                 }}
-                onMouseEnter={e => { if (activeTab !== 'DASHBOARD') e.currentTarget.style.color = '#fff'; }}
-                onMouseLeave={e => { if (activeTab !== 'DASHBOARD') e.currentTarget.style.color = '#6b7280'; }}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                   <rect x="3" y="3" width="7" height="7" rx="2" />
@@ -324,7 +378,7 @@ export default function ClubPanel() {
               {/* Tab 2: Calendar / Slots */}
               <button
                 onClick={() => setActiveTab('CALENDAR')}
-                title="Calendario & Grilla de Turnos"
+                title="Matriz de Horarios & Turnos"
                 style={{
                   width: 40,
                   height: 40,
@@ -338,8 +392,6 @@ export default function ClubPanel() {
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
                 }}
-                onMouseEnter={e => { if (activeTab !== 'CALENDAR') e.currentTarget.style.color = '#fff'; }}
-                onMouseLeave={e => { if (activeTab !== 'CALENDAR') e.currentTarget.style.color = '#6b7280'; }}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
@@ -366,8 +418,6 @@ export default function ClubPanel() {
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
                 }}
-                onMouseEnter={e => { if (activeTab !== 'COURTS') e.currentTarget.style.color = '#fff'; }}
-                onMouseLeave={e => { if (activeTab !== 'COURTS') e.currentTarget.style.color = '#6b7280'; }}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -379,7 +429,7 @@ export default function ClubPanel() {
               {/* Tab 4: Players / Community */}
               <button
                 onClick={() => setActiveTab('PLAYERS')}
-                title="Jugadores & Clientes"
+                title="Base de Jugadores"
                 style={{
                   width: 40,
                   height: 40,
@@ -393,8 +443,6 @@ export default function ClubPanel() {
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
                 }}
-                onMouseEnter={e => { if (activeTab !== 'PLAYERS') e.currentTarget.style.color = '#fff'; }}
-                onMouseLeave={e => { if (activeTab !== 'PLAYERS') e.currentTarget.style.color = '#6b7280'; }}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -407,7 +455,7 @@ export default function ClubPanel() {
               {/* Tab 5: Analytics / Stats */}
               <button
                 onClick={() => setActiveTab('ANALYTICS')}
-                title="Métricas & Finanzas"
+                title="Métricas & Ocupación"
                 style={{
                   width: 40,
                   height: 40,
@@ -421,8 +469,6 @@ export default function ClubPanel() {
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
                 }}
-                onMouseEnter={e => { if (activeTab !== 'ANALYTICS') e.currentTarget.style.color = '#fff'; }}
-                onMouseLeave={e => { if (activeTab !== 'ANALYTICS') e.currentTarget.style.color = '#6b7280'; }}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="18" y1="20" x2="18" y2="10" />
@@ -448,8 +494,6 @@ export default function ClubPanel() {
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
                 }}
-                onMouseEnter={e => { if (activeTab !== 'SETTINGS') e.currentTarget.style.color = '#fff'; }}
-                onMouseLeave={e => { if (activeTab !== 'SETTINGS') e.currentTarget.style.color = '#6b7280'; }}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="3" />
@@ -476,8 +520,6 @@ export default function ClubPanel() {
               cursor: 'pointer',
               transition: 'all 0.2s ease',
             }}
-            onMouseEnter={e => { e.currentTarget.style.color = '#fc1c46'; e.currentTarget.style.backgroundColor = 'rgba(252,28,70,0.1)'; }}
-            onMouseLeave={e => { e.currentTarget.style.color = '#6b7280'; e.currentTarget.style.backgroundColor = 'transparent'; }}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
@@ -505,6 +547,8 @@ export default function ClubPanel() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 10,
           }}>
             <div>
               <h1 style={{
@@ -524,17 +568,65 @@ export default function ClubPanel() {
                 marginTop: 2,
                 color: '#9ca3af',
                 fontSize: 13,
-                cursor: 'pointer',
               }}>
                 <span>{clubName}</span>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M6 9l6 6 6-6" />
-                </svg>
+                <span style={{ fontSize: 10, color: '#4ade80', backgroundColor: 'rgba(74, 222, 128, 0.1)', padding: '2px 8px', borderRadius: 9999, fontWeight: 600 }}>
+                  🔒 Pago 100% Anticipado
+                </span>
               </div>
             </div>
 
-            {/* Right Controls: Notifications + Date Pill */}
+            {/* Middle: Sport Filter Tabs */}
+            <div style={{
+              display: 'flex',
+              backgroundColor: '#16181e',
+              padding: 3,
+              borderRadius: 10,
+              border: '1px solid rgba(255,255,255,0.06)',
+            }}>
+              {['TODOS', 'PÁDEL', 'FÚTBOL 5', 'FÚTBOL 7'].map(sport => (
+                <button
+                  key={sport}
+                  onClick={() => setSelectedSportFilter(sport)}
+                  style={{
+                    backgroundColor: selectedSportFilter === sport ? '#fc1c46' : 'transparent',
+                    color: selectedSportFilter === sport ? '#ffffff' : '#9ca3af',
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '5px 12px',
+                    fontSize: 11,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  {sport}
+                </button>
+              ))}
+            </div>
+
+            {/* Right Controls: Notifications + Date Pill + Print */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <button
+                onClick={handlePrintDailyRoster}
+                title="Imprimir planilla del día"
+                style={{
+                  backgroundColor: '#16181e',
+                  color: '#d1d5db',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: 9999,
+                  padding: '6px 14px',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 5,
+                }}
+              >
+                <span>🖨️ Planilla</span>
+              </button>
+
               {/* Notification Bell */}
               <div
                 style={{
@@ -598,23 +690,12 @@ export default function ClubPanel() {
                   <option value="Mañana">Mañana</option>
                   <option value="Esta semana">Esta semana</option>
                 </select>
-                <svg
-                  width="10"
-                  height="10"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#9ca3af"
-                  strokeWidth="2.5"
-                  style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
-                >
-                  <path d="M6 9l6 6 6-6" />
-                </svg>
               </div>
             </div>
           </header>
 
           {/* ═══════════════════════════════════════════════════════
-              VIEW 1: DASHBOARD (Exact 3D Mockup)
+              VIEW 1: DASHBOARD
               ═══════════════════════════════════════════════════════ */}
           {activeTab === 'DASHBOARD' && (
             <>
@@ -658,12 +739,12 @@ export default function ClubPanel() {
                       {totalReservedToday}
                     </div>
                     <div style={{ fontSize: 11, color: '#8b92a0', marginTop: 3 }}>
-                      reservas hoy
+                      reservas confirmadas hoy
                     </div>
                   </div>
                 </div>
 
-                {/* KPI 2: Facturación semanal */}
+                {/* KPI 2: Facturación semanal (100% Cobrada) */}
                 <div style={{
                   backgroundColor: '#14161c',
                   borderRadius: 16,
@@ -677,12 +758,12 @@ export default function ClubPanel() {
                     width: 40,
                     height: 40,
                     borderRadius: 12,
-                    backgroundColor: 'rgba(252, 28, 70, 0.12)',
-                    border: '1px solid rgba(252, 28, 70, 0.2)',
+                    backgroundColor: 'rgba(74, 222, 128, 0.12)',
+                    border: '1px solid rgba(74, 222, 128, 0.2)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#fc1c46',
+                    color: '#4ade80',
                     flexShrink: 0,
                   }}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -695,8 +776,8 @@ export default function ClubPanel() {
                     <div style={{ fontSize: 'clamp(18px, 2.2vh, 22px)', fontWeight: 700, color: '#ffffff', lineHeight: 1 }}>
                       $348.000
                     </div>
-                    <div style={{ fontSize: 11, color: '#8b92a0', marginTop: 3 }}>
-                      esta semana
+                    <div style={{ fontSize: 11, color: '#4ade80', marginTop: 3 }}>
+                      100% cobrado esta semana
                     </div>
                   </div>
                 </div>
@@ -732,10 +813,10 @@ export default function ClubPanel() {
                   </div>
                   <div>
                     <div style={{ fontSize: 'clamp(20px, 2.5vh, 24px)', fontWeight: 700, color: '#ffffff', lineHeight: 1 }}>
-                      {activeCourtsCount}
+                      {activeCourtsCount} / {filteredCourts.length}
                     </div>
                     <div style={{ fontSize: 11, color: '#8b92a0', marginTop: 3 }}>
-                      canchas activas
+                      canchas operativas
                     </div>
                   </div>
                 </div>
@@ -769,14 +850,14 @@ export default function ClubPanel() {
                         display: 'inline-block',
                       }} />
                       <h2 style={{ fontSize: 15, fontWeight: 700, color: '#ffffff', margin: 0 }}>
-                        Horario pico
+                        Horarios del Día (Pagados 100%)
                       </h2>
                     </div>
 
                     {/* Table Header */}
                     <div style={{
                       display: 'grid',
-                      gridTemplateColumns: '1.3fr 0.8fr 1.1fr 1.4fr 0.2fr',
+                      gridTemplateColumns: '1.3fr 0.8fr 1.3fr 1.3fr 0.2fr',
                       paddingBottom: 8,
                       borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
                       fontSize: 10,
@@ -787,14 +868,14 @@ export default function ClubPanel() {
                     }}>
                       <div>CANCHA</div>
                       <div>HORA</div>
-                      <div>ESTADO</div>
+                      <div>ESTADO / PAGO</div>
                       <div>JUGADOR / RESERVA</div>
                       <div style={{ textAlign: 'right' }}></div>
                     </div>
 
-                    {/* Table Rows (Clean 4-5 rows) */}
+                    {/* Table Rows */}
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      {slots.slice(0, 4).map((slot) => {
+                      {filteredSlots.slice(0, 5).map((slot) => {
                         const isReserved = slot.status === 'RESERVED';
                         const isFixed = slot.status === 'FIXED';
                         const isAvailable = slot.status === 'AVAILABLE';
@@ -806,44 +887,36 @@ export default function ClubPanel() {
                             title="Click para alternar estado"
                             style={{
                               display: 'grid',
-                              gridTemplateColumns: '1.3fr 0.8fr 1.1fr 1.4fr 0.2fr',
+                              gridTemplateColumns: '1.3fr 0.8fr 1.3fr 1.3fr 0.2fr',
                               alignItems: 'center',
                               padding: '8px 0',
                               borderBottom: '1px solid rgba(255, 255, 255, 0.03)',
                               fontSize: 12.5,
                               cursor: 'pointer',
-                              transition: 'background-color 0.15s ease',
                             }}
-                            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.02)')}
-                            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
                           >
                             <div style={{ display: 'flex', alignItems: 'center', gap: 7, color: '#f3f4f6', fontWeight: 500 }}>
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2">
-                                <rect x="3" y="3" width="18" height="18" rx="2" />
-                                <line x1="12" y1="3" x2="12" y2="21" />
-                                <line x1="3" y1="12" x2="21" y2="12" />
-                              </svg>
                               <span>{slot.courtName}</span>
                             </div>
 
                             <div style={{ color: '#d1d5db', fontWeight: 500 }}>
-                              {slot.time}
+                              {slot.time} hs
                             </div>
 
                             <div>
                               {isReserved && (
-                                <span style={{ backgroundColor: '#fc1c46', color: '#ffffff', padding: '3px 10px', borderRadius: 9999, fontSize: 10.5, fontWeight: 600, display: 'inline-block' }}>
-                                  Reservado
+                                <span style={{ backgroundColor: 'rgba(252, 28, 70, 0.15)', color: '#fc1c46', border: '1px solid rgba(252, 28, 70, 0.3)', padding: '3px 9px', borderRadius: 9999, fontSize: 10, fontWeight: 700, display: 'inline-block' }}>
+                                  ✓ Pagado 100% {slot.paymentMethod === 'APP_MERCADOPAGO' ? '(App MP)' : '(Mostrador)'}
                                 </span>
                               )}
                               {isFixed && (
-                                <span style={{ backgroundColor: '#e11d48', color: '#ffffff', padding: '3px 10px', borderRadius: 9999, fontSize: 10.5, fontWeight: 600, display: 'inline-block' }}>
-                                  Turno fijo
+                                <span style={{ backgroundColor: 'rgba(225, 29, 72, 0.15)', color: '#e11d48', border: '1px solid rgba(225, 29, 72, 0.3)', padding: '3px 9px', borderRadius: 9999, fontSize: 10, fontWeight: 700, display: 'inline-block' }}>
+                                  ✓ Turno Fijo Prepago
                                 </span>
                               )}
                               {isAvailable && (
-                                <span style={{ backgroundColor: '#20232a', color: '#9ca3af', padding: '3px 10px', borderRadius: 9999, fontSize: 10.5, fontWeight: 500, display: 'inline-block' }}>
-                                  Disponible
+                                <span style={{ backgroundColor: '#20232a', color: '#9ca3af', padding: '3px 9px', borderRadius: 9999, fontSize: 10, fontWeight: 500, display: 'inline-block' }}>
+                                  Disponible en App
                                 </span>
                               )}
                             </div>
@@ -876,17 +949,10 @@ export default function ClubPanel() {
                     flex: 1,
                   }}>
                     <h3 style={{ fontSize: 13.5, fontWeight: 700, color: '#ffffff', margin: '0 0 10px' }}>
-                      Actividad de hoy
+                      Curva de Ocupación Hoy
                     </h3>
 
                     <div style={{ position: 'relative', width: '100%', height: 95 }}>
-                      <div style={{ position: 'absolute', left: 0, top: 0, bottom: 18, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', fontSize: 9, color: '#6b7280' }}>
-                        <span>12</span>
-                        <span>8</span>
-                        <span>4</span>
-                        <span>0</span>
-                      </div>
-
                       <svg viewBox="0 0 320 110" style={{ width: '100%', height: '100%', paddingLeft: 18, overflow: 'visible' }}>
                         <defs>
                           <linearGradient id="crimsonGradient" x1="0" y1="0" x2="0" y2="1">
@@ -910,30 +976,14 @@ export default function ClubPanel() {
                         <line x1="220" y1="15" x2="220" y2="95" stroke="rgba(252, 28, 70, 0.4)" strokeWidth="1" strokeDasharray="3 3" />
                         <circle cx="220" cy="15" r="4" fill="#ffffff" stroke="#fc1c46" strokeWidth="2" />
                       </svg>
-
-                      <div style={{
-                        position: 'absolute',
-                        top: -6,
-                        left: '68%',
-                        transform: 'translateX(-50%)',
-                        backgroundColor: '#fc1c46',
-                        color: '#ffffff',
-                        padding: '2px 8px',
-                        borderRadius: 9999,
-                        fontSize: 10,
-                        fontWeight: 700,
-                        boxShadow: '0 4px 10px rgba(252, 28, 70, 0.4)',
-                      }}>
-                        18:00
-                      </div>
                     </div>
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: 18, marginTop: 4, fontSize: 9, color: '#6b7280' }}>
-                      <span>08</span>
-                      <span>12</span>
-                      <span>16</span>
-                      <span>20</span>
-                      <span>24</span>
+                      <span>08h</span>
+                      <span>12h</span>
+                      <span>16h</span>
+                      <span>20h</span>
+                      <span>24h</span>
                     </div>
                   </div>
 
@@ -955,13 +1005,10 @@ export default function ClubPanel() {
                       justifyContent: 'center',
                       gap: 6,
                       boxShadow: '0 6px 20px -3px rgba(252, 28, 70, 0.4)',
-                      transition: 'transform 0.15s ease, filter 0.15s ease',
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.filter = 'brightness(1.1)'; e.currentTarget.style.transform = 'scale(1.02)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.filter = 'none'; e.currentTarget.style.transform = 'scale(1)'; }}
                   >
                     <span style={{ fontSize: 16, lineHeight: 1 }}>+</span>
-                    <span>Nueva reserva</span>
+                    <span>Nueva reserva manual (100% Pagada)</span>
                   </button>
                 </div>
               </div>
@@ -969,14 +1016,14 @@ export default function ClubPanel() {
           )}
 
           {/* ═══════════════════════════════════════════════════════
-              VIEW 2: CALENDAR / TURNOS (Full Matrix View)
+              VIEW 2: CALENDAR / TURNOS (Full Timeline Matrix View)
               ═══════════════════════════════════════════════════════ */}
           {activeTab === 'CALENDAR' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: 0 }}>Grilla de Turnos y Disponibilidad</h2>
-                  <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>Gestioná los bloques de horarios por cancha y modificá estados en vivo.</p>
+                  <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: 0 }}>Grilla Matriz de Turnos y Disponibilidad</h2>
+                  <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>Supervisá la ocupación en tiempo real por cancha y gestioná parates por clima.</p>
                 </div>
                 <button
                   onClick={() => setShowModal(true)}
@@ -1001,8 +1048,8 @@ export default function ClubPanel() {
                 gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
                 gap: 16,
               }}>
-                {courts.map((court) => {
-                  const courtSlots = slots.filter(s => s.courtId === court.id);
+                {filteredCourts.map((court) => {
+                  const courtSlots = filteredSlots.filter(s => s.courtId === court.id);
 
                   return (
                     <div
@@ -1010,7 +1057,7 @@ export default function ClubPanel() {
                       style={{
                         backgroundColor: '#14161c',
                         borderRadius: 18,
-                        border: '1px solid rgba(255,255,255,0.06)',
+                        border: court.pausedForWeather ? '1px solid rgba(234, 179, 8, 0.4)' : '1px solid rgba(255,255,255,0.06)',
                         padding: '18px 20px',
                         display: 'flex',
                         flexDirection: 'column',
@@ -1018,47 +1065,73 @@ export default function ClubPanel() {
                       }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: 10 }}>
-                        <div style={{ fontWeight: 700, color: '#fff', fontSize: 15 }}>{court.name.split('—')[0].trim()}</div>
-                        <span style={{ fontSize: 10, color: '#fc1c46', backgroundColor: 'rgba(252,28,70,0.12)', padding: '2px 8px', borderRadius: 6, fontWeight: 600 }}>{court.sport}</span>
+                        <div>
+                          <div style={{ fontWeight: 700, color: '#fff', fontSize: 15 }}>{court.name.split('—')[0].trim()}</div>
+                          <span style={{ fontSize: 10, color: '#fc1c46', backgroundColor: 'rgba(252,28,70,0.12)', padding: '2px 8px', borderRadius: 6, fontWeight: 600, marginTop: 4, display: 'inline-block' }}>{court.sport}</span>
+                        </div>
+
+                        {/* Weather Pause Button */}
+                        <button
+                          onClick={() => handleToggleWeatherPause(court.id)}
+                          title="Pausar venta por lluvia o viento"
+                          style={{
+                            backgroundColor: court.pausedForWeather ? 'rgba(234, 179, 8, 0.2)' : '#181b22',
+                            color: court.pausedForWeather ? '#eab308' : '#6b7280',
+                            border: court.pausedForWeather ? '1px solid #eab308' : '1px solid rgba(255,255,255,0.08)',
+                            borderRadius: 8,
+                            padding: '4px 8px',
+                            fontSize: 10,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {court.pausedForWeather ? '🌧️ Pausada Lluvia' : '☁ Clima OK'}
+                        </button>
                       </div>
 
                       {/* Slots List */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                        {courtSlots.map(s => (
-                          <div
-                            key={s.id}
-                            onClick={() => handleToggleStatus(s.id)}
-                            style={{
-                              padding: '10px 12px',
-                              borderRadius: 10,
-                              backgroundColor: s.status === 'AVAILABLE' ? '#181b22' : 'rgba(252, 28, 70, 0.12)',
-                              border: s.status === 'AVAILABLE' ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(252, 28, 70, 0.3)',
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'center',
-                              cursor: 'pointer',
-                            }}
-                          >
-                            <div>
-                              <div style={{ fontSize: 13, fontWeight: 700, color: s.status === 'AVAILABLE' ? '#fff' : '#fc1c46' }}>
-                                {s.time} hs
-                              </div>
-                              <div style={{ fontSize: 11, color: '#8b92a0', marginTop: 2 }}>
-                                {s.player}
-                              </div>
-                            </div>
-                            <span style={{
-                              fontSize: 10,
-                              fontWeight: 600,
-                              padding: '3px 8px',
-                              borderRadius: 6,
-                              backgroundColor: s.status === 'AVAILABLE' ? '#20232a' : '#fc1c46',
-                              color: s.status === 'AVAILABLE' ? '#9ca3af' : '#fff',
-                            }}>
-                              {s.status === 'AVAILABLE' ? 'LIBRE' : s.status === 'FIXED' ? 'FIJO' : 'RESERVADO'}
-                            </span>
+                        {court.pausedForWeather ? (
+                          <div style={{ padding: '20px 10px', textAlign: 'center', color: '#eab308', fontSize: 12, backgroundColor: 'rgba(234, 179, 8, 0.08)', borderRadius: 10 }}>
+                            🌧️ Cancha descubierta pausada temporariamente por motivos climáticos.
                           </div>
-                        ))}
+                        ) : (
+                          courtSlots.map(s => (
+                            <div
+                              key={s.id}
+                              onClick={() => handleToggleStatus(s.id)}
+                              style={{
+                                padding: '10px 12px',
+                                borderRadius: 10,
+                                backgroundColor: s.status === 'AVAILABLE' ? '#181b22' : 'rgba(252, 28, 70, 0.12)',
+                                border: s.status === 'AVAILABLE' ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(252, 28, 70, 0.3)',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              <div>
+                                <div style={{ fontSize: 13, fontWeight: 700, color: s.status === 'AVAILABLE' ? '#fff' : '#fc1c46' }}>
+                                  {s.time} hs
+                                </div>
+                                <div style={{ fontSize: 11, color: '#8b92a0', marginTop: 2 }}>
+                                  {s.player}
+                                </div>
+                              </div>
+                              <span style={{
+                                fontSize: 10,
+                                fontWeight: 700,
+                                padding: '3px 8px',
+                                borderRadius: 6,
+                                backgroundColor: s.status === 'AVAILABLE' ? '#20232a' : '#fc1c46',
+                                color: s.status === 'AVAILABLE' ? '#9ca3af' : '#fff',
+                              }}>
+                                {s.status === 'AVAILABLE' ? 'LIBRE' : s.status === 'FIXED' ? '✓ FIJO PREPAGO' : '✓ 100% PAGADO'}
+                              </span>
+                            </div>
+                          ))
+                        )}
                       </div>
                     </div>
                   );
@@ -1075,12 +1148,12 @@ export default function ClubPanel() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: 0 }}>Canchas & Tarifas Dinámicas</h2>
-                  <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>Configuración de instalaciones, iluminación y precios valle / pico.</p>
+                  <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>Configuración de instalaciones, superficies y precios por hora.</p>
                 </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
-                {courts.map(court => (
+                {filteredCourts.map(court => (
                   <div
                     key={court.id}
                     style={{
@@ -1138,20 +1211,20 @@ export default function ClubPanel() {
           )}
 
           {/* ═══════════════════════════════════════════════════════
-              VIEW 4: PLAYERS & CLIENTS
+              VIEW 4: PLAYERS & CLIENTS (Strict Paid 100% Architecture)
               ═══════════════════════════════════════════════════════ */}
           {activeTab === 'PLAYERS' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: 0 }}>Base de Jugadores & Clientes</h2>
-                  <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>Historial de partidos, señas pendientes y control de asistencia.</p>
+                  <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>Historial de partidos jugados y hábitos de pago confirmado.</p>
                 </div>
                 <input
                   type="text"
                   value={searchPlayer}
                   onChange={e => setSearchPlayer(e.target.value)}
-                  placeholder="🔍 Buscar por nombre o teléfono..."
+                  placeholder="🔍 Buscar jugador..."
                   style={{
                     backgroundColor: '#16181e',
                     color: '#fff',
@@ -1159,7 +1232,7 @@ export default function ClubPanel() {
                     borderRadius: 10,
                     padding: '8px 16px',
                     fontSize: 13,
-                    width: 260,
+                    width: 240,
                   }}
                 />
               </div>
@@ -1174,7 +1247,7 @@ export default function ClubPanel() {
               }}>
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: '1.6fr 1.2fr 1fr 0.8fr 1fr',
+                  gridTemplateColumns: '1.6fr 1.2fr 1.2fr 0.8fr 1.2fr',
                   padding: '10px 0',
                   borderBottom: '1px solid rgba(255,255,255,0.05)',
                   fontSize: 11,
@@ -1186,7 +1259,7 @@ export default function ClubPanel() {
                   <div>TELÉFONO</div>
                   <div>CATEGORÍA / DEPORTE</div>
                   <div>PARTIDOS</div>
-                  <div style={{ textAlign: 'right' }}>ESTADO DE CUENTA</div>
+                  <div style={{ textAlign: 'right' }}>MÉTODO HABITUAL (100%)</div>
                 </div>
 
                 {filteredPlayers.map(p => (
@@ -1194,33 +1267,26 @@ export default function ClubPanel() {
                     key={p.id}
                     style={{
                       display: 'grid',
-                      gridTemplateColumns: '1.6fr 1.2fr 1fr 0.8fr 1fr',
+                      gridTemplateColumns: '1.6fr 1.2fr 1.2fr 0.8fr 1.2fr',
                       padding: '14px 0',
                       borderBottom: '1px solid rgba(255,255,255,0.03)',
                       alignItems: 'center',
                       fontSize: 13.5,
                     }}
                   >
-                    <div style={{ fontWeight: 600, color: '#fff' }}>{p.name}</div>
+                    <div>
+                      <div style={{ fontWeight: 600, color: '#fff' }}>{p.name}</div>
+                      <span style={{ fontSize: 9.5, color: '#fc1c46', backgroundColor: 'rgba(252,28,70,0.12)', padding: '1px 6px', borderRadius: 4, fontWeight: 700, marginTop: 2, display: 'inline-block' }}>
+                        {p.playerTag}
+                      </span>
+                    </div>
                     <div style={{ color: '#9ca3af' }}>{p.phone}</div>
                     <div style={{ color: '#d1d5db', fontSize: 12 }}>{p.category} · {p.sport}</div>
-                    <div style={{ color: '#fff' }}>{p.matchesPlayed}</div>
+                    <div style={{ color: '#fff', fontWeight: 600 }}>{p.matchesPlayed} jugados</div>
                     <div style={{ textAlign: 'right' }}>
-                      {p.balanceStatus === 'AL_DIA' && (
-                        <span style={{ backgroundColor: 'rgba(74, 222, 128, 0.12)', color: '#4ade80', padding: '3px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>
-                          Al Día
-                        </span>
-                      )}
-                      {p.balanceStatus === 'DEUDA' && (
-                        <span style={{ backgroundColor: 'rgba(252, 28, 70, 0.15)', color: '#fc1c46', padding: '3px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>
-                          Deuda ${p.debtAmount?.toLocaleString()}
-                        </span>
-                      )}
-                      {p.balanceStatus === 'SEÑA_PENDIENTE' && (
-                        <span style={{ backgroundColor: 'rgba(234, 179, 8, 0.15)', color: '#eab308', padding: '3px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>
-                          Seña Pendiente
-                        </span>
-                      )}
+                      <span style={{ backgroundColor: 'rgba(74, 222, 128, 0.12)', color: '#4ade80', padding: '3px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>
+                        ✓ {p.lastPaymentMethod}
+                      </span>
                     </div>
                   </div>
                 ))}
@@ -1235,24 +1301,24 @@ export default function ClubPanel() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
               <div>
                 <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: 0 }}>Métricas & Rendimiento Financiero</h2>
-                <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>Análisis de ocupación, métodos de pago y facturación mensual.</p>
+                <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>Análisis de ocupación por horario y cobros 100% anticipados.</p>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
                 <div style={{ backgroundColor: '#14161c', padding: '20px', borderRadius: 18, border: '1px solid rgba(255,255,255,0.05)' }}>
-                  <div style={{ fontSize: 11, color: '#888', textTransform: 'uppercase' }}>Facturación del Mes</div>
+                  <div style={{ fontSize: 11, color: '#888', textTransform: 'uppercase' }}>Facturación Total del Mes</div>
                   <div style={{ fontSize: 26, fontWeight: 700, color: '#fff', marginTop: 6 }}>$1.840.000</div>
-                  <div style={{ fontSize: 11, color: '#4ade80', marginTop: 4 }}>+18% vs mes anterior</div>
+                  <div style={{ fontSize: 11, color: '#4ade80', marginTop: 4 }}>✓ 100% Cobrado por Adelantado</div>
                 </div>
                 <div style={{ backgroundColor: '#14161c', padding: '20px', borderRadius: 18, border: '1px solid rgba(255,255,255,0.05)' }}>
-                  <div style={{ fontSize: 11, color: '#888', textTransform: 'uppercase' }}>Tasa de Ocupación Pico</div>
+                  <div style={{ fontSize: 11, color: '#888', textTransform: 'uppercase' }}>Tasa Ocupación Franja Pico</div>
                   <div style={{ fontSize: 26, fontWeight: 700, color: '#fc1c46', marginTop: 6 }}>94.2%</div>
-                  <div style={{ fontSize: 11, color: '#888', marginTop: 4 }}>Lunes a Viernes 18-23h</div>
+                  <div style={{ fontSize: 11, color: '#888', marginTop: 4 }}>18:00 a 24:00 hs</div>
                 </div>
                 <div style={{ backgroundColor: '#14161c', padding: '20px', borderRadius: 18, border: '1px solid rgba(255,255,255,0.05)' }}>
-                  <div style={{ fontSize: 11, color: '#888', textTransform: 'uppercase' }}>Cobro por App (Mercado Pago)</div>
-                  <div style={{ fontSize: 26, fontWeight: 700, color: '#38bdf8', marginTop: 6 }}>78%</div>
-                  <div style={{ fontSize: 11, color: '#888', marginTop: 4 }}>22% restante en mostrador</div>
+                  <div style={{ fontSize: 11, color: '#888', textTransform: 'uppercase' }}>Cobro por App Mercado Pago</div>
+                  <div style={{ fontSize: 26, fontWeight: 700, color: '#38bdf8', marginTop: 6 }}>82%</div>
+                  <div style={{ fontSize: 11, color: '#888', marginTop: 4 }}>18% restante cobrado en mostrador</div>
                 </div>
               </div>
             </div>
@@ -1265,7 +1331,7 @@ export default function ClubPanel() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
               <div>
                 <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: 0 }}>Configuración del Club</h2>
-                <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>Datos generales, integración de Mercado Pago y automatización de WhatsApp.</p>
+                <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>Integración de cobros, políticas de cancelación y automatización de WhatsApp.</p>
               </div>
 
               <div style={{ backgroundColor: '#14161c', padding: '24px', borderRadius: 20, border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -1291,8 +1357,8 @@ export default function ClubPanel() {
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 16 }}>
                   <div>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>Cobros Automáticos con Mercado Pago</div>
-                    <div style={{ fontSize: 12, color: '#888' }}>Exigir {autoDepositPercentage}% de seña al reservar desde la app</div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>Cobro 100% Obligatorio Mercado Pago</div>
+                    <div style={{ fontSize: 12, color: '#888' }}>La app exige el pago total del turno para confirmar la reserva</div>
                   </div>
                   <button
                     onClick={() => setMercadoPagoConnected(!mercadoPagoConnected)}
@@ -1307,30 +1373,26 @@ export default function ClubPanel() {
                       cursor: 'pointer',
                     }}
                   >
-                    {mercadoPagoConnected ? '✓ Conectado' : 'Desconectado'}
+                    {mercadoPagoConnected ? '✓ Conectado 100%' : 'Desconectado'}
                   </button>
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 16 }}>
                   <div>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>Bot de Respuestas de WhatsApp</div>
-                    <div style={{ fontSize: 12, color: '#888' }}>Envío automático de links de reserva a consultas entrantes</div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>Política de Cancelación / Devolución</div>
+                    <div style={{ fontSize: 12, color: '#888' }}>Devolución automática si el jugador cancela con más de {cancellationWindowHours} horas de anticipación</div>
                   </div>
-                  <button
-                    onClick={() => setWhatsappBotEnabled(!whatsappBotEnabled)}
-                    style={{
-                      backgroundColor: whatsappBotEnabled ? '#1e293b' : '#241217',
-                      color: whatsappBotEnabled ? '#4ade80' : '#fc1c46',
-                      border: 'none',
-                      borderRadius: 8,
-                      padding: '8px 14px',
-                      fontSize: 12,
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                    }}
+                  <select
+                    value={cancellationWindowHours}
+                    onChange={e => setCancellationWindowHours(Number(e.target.value))}
+                    style={{ backgroundColor: '#181b22', color: '#fff', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '6px 10px', fontSize: 12 }}
                   >
-                    {whatsappBotEnabled ? '✓ Activo' : 'Inactivo'}
-                  </button>
+                    <option value={2}>2 horas</option>
+                    <option value={4}>4 horas</option>
+                    <option value={6}>6 horas</option>
+                    <option value={12}>12 horas</option>
+                    <option value={24}>24 horas</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -1361,11 +1423,11 @@ export default function ClubPanel() {
               width: 32,
               height: 32,
               borderRadius: 10,
-              backgroundColor: '#fc1c46',
+              backgroundColor: '#4ade80',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#ffffff',
+              color: '#000000',
               flexShrink: 0,
             }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
@@ -1376,12 +1438,12 @@ export default function ClubPanel() {
 
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#ffffff' }}>Nueva reserva</span>
-                <span style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: '#fc1c46', display: 'inline-block' }} />
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#ffffff' }}>Nueva reserva 100% Pagada</span>
+                <span style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: '#4ade80', display: 'inline-block' }} />
                 <span style={{ fontSize: 10, color: '#6b7280' }}>· ahora</span>
               </div>
               <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 1 }}>
-                Cancha 2 · 21:00
+                Cancha 2 · 21:00 hs · Mercado Pago ($45.000)
               </div>
             </div>
 
@@ -1397,8 +1459,6 @@ export default function ClubPanel() {
                 marginLeft: 10,
                 lineHeight: 1,
               }}
-              onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
-              onMouseLeave={e => (e.currentTarget.style.color = '#6b7280')}
             >
               ✕
             </button>
@@ -1408,7 +1468,7 @@ export default function ClubPanel() {
       </div>
 
       {/* ────────────────────────────────────────────────────────────
-          MODAL: "+ NUEVA RESERVA"
+          MODAL: "+ NUEVA RESERVA MANUAL"
           ──────────────────────────────────────────────────────────── */}
       {showModal && (
         <div style={{
@@ -1427,17 +1487,20 @@ export default function ClubPanel() {
         }}>
           <div style={{
             width: '100%',
-            maxWidth: 460,
+            maxWidth: 480,
             backgroundColor: '#12141a',
             border: '1px solid rgba(255, 255, 255, 0.1)',
             borderRadius: 20,
-            padding: '28px 30px',
+            padding: '26px 28px',
             boxShadow: '0 25px 60px rgba(0, 0, 0, 0.9)',
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 }}>
-              <h3 style={{ fontSize: 20, fontWeight: 700, color: '#ffffff', margin: 0 }}>
-                Nueva Reserva
-              </h3>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+              <div>
+                <h3 style={{ fontSize: 19, fontWeight: 700, color: '#ffffff', margin: 0 }}>
+                  Nueva Reserva Manual
+                </h3>
+                <div style={{ fontSize: 11, color: '#4ade80', marginTop: 2 }}>✓ Pago 100% anticipado requerido</div>
+              </div>
               <button
                 onClick={() => setShowModal(false)}
                 style={{ backgroundColor: 'transparent', border: 'none', color: '#6b7280', fontSize: 18, cursor: 'pointer' }}
@@ -1446,7 +1509,7 @@ export default function ClubPanel() {
               </button>
             </div>
 
-            <form onSubmit={handleAddReservation} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <form onSubmit={handleAddReservation} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
                 <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
                   Cancha
@@ -1459,9 +1522,9 @@ export default function ClubPanel() {
                     backgroundColor: '#181b22',
                     border: '1px solid rgba(255,255,255,0.08)',
                     borderRadius: 10,
-                    padding: '12px 14px',
+                    padding: '10px 12px',
                     color: '#ffffff',
-                    fontSize: 14,
+                    fontSize: 13.5,
                   }}
                 >
                   {courts.map(c => (
@@ -1485,12 +1548,37 @@ export default function ClubPanel() {
                     backgroundColor: '#181b22',
                     border: '1px solid rgba(255,255,255,0.08)',
                     borderRadius: 10,
-                    padding: '12px 14px',
+                    padding: '10px 12px',
                     color: '#ffffff',
-                    fontSize: 14,
+                    fontSize: 13.5,
                     boxSizing: 'border-box',
                   }}
                 />
+              </div>
+
+              {/* Autocomplete from existing database */}
+              <div>
+                <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
+                  Seleccionar Jugador de Base de Datos
+                </label>
+                <select
+                  value={modalSelectedPlayerId}
+                  onChange={e => handleSelectPlayerInModal(e.target.value)}
+                  style={{
+                    width: '100%',
+                    backgroundColor: '#181b22',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: 10,
+                    padding: '10px 12px',
+                    color: '#ffffff',
+                    fontSize: 13.5,
+                  }}
+                >
+                  <option value="CUSTOM">+ Tipear Nuevo Jugador Manualmente</option>
+                  {players.map(p => (
+                    <option key={p.id} value={p.id}>{p.name} ({p.phone})</option>
+                  ))}
+                </select>
               </div>
 
               <div>
@@ -1508,9 +1596,9 @@ export default function ClubPanel() {
                     backgroundColor: '#181b22',
                     border: '1px solid rgba(255,255,255,0.08)',
                     borderRadius: 10,
-                    padding: '12px 14px',
+                    padding: '10px 12px',
                     color: '#ffffff',
-                    fontSize: 14,
+                    fontSize: 13.5,
                     boxSizing: 'border-box',
                   }}
                 />
@@ -1518,24 +1606,25 @@ export default function ClubPanel() {
 
               <div>
                 <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
-                  Teléfono / WhatsApp
+                  Método de Pago Confirmado (100%)
                 </label>
-                <input
-                  type="text"
-                  value={modalPhone}
-                  onChange={e => setModalPhone(e.target.value)}
-                  placeholder="+54 9 11 0000-0000"
+                <select
+                  value={modalPaymentMethod}
+                  onChange={e => setModalPaymentMethod(e.target.value as PaymentMethod)}
                   style={{
                     width: '100%',
                     backgroundColor: '#181b22',
                     border: '1px solid rgba(255,255,255,0.08)',
                     borderRadius: 10,
-                    padding: '12px 14px',
+                    padding: '10px 12px',
                     color: '#ffffff',
-                    fontSize: 14,
-                    boxSizing: 'border-box',
+                    fontSize: 13.5,
                   }}
-                />
+                >
+                  <option value="MOSTRADOR_EFECTIVO">💵 Efectivo Mostrador (100% Pagado)</option>
+                  <option value="MOSTRADOR_TRANSFERENCIA">💳 Transferencia / Débito (100% Pagado)</option>
+                  <option value="APP_MERCADOPAGO">📱 Mercado Pago App (100% Pagado)</option>
+                </select>
               </div>
 
               <div>
@@ -1548,32 +1637,34 @@ export default function ClubPanel() {
                     onClick={() => setModalType('RESERVED')}
                     style={{
                       flex: 1,
-                      padding: '10px',
+                      padding: '9px',
                       borderRadius: 8,
                       border: modalType === 'RESERVED' ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
                       backgroundColor: modalType === 'RESERVED' ? 'rgba(252,28,70,0.15)' : 'transparent',
                       color: modalType === 'RESERVED' ? '#fc1c46' : '#9ca3af',
                       fontWeight: 600,
                       cursor: 'pointer',
+                      fontSize: 12,
                     }}
                   >
-                    Reserva Simple
+                    Reserva Puntual
                   </button>
                   <button
                     type="button"
                     onClick={() => setModalType('FIXED')}
                     style={{
                       flex: 1,
-                      padding: '10px',
+                      padding: '9px',
                       borderRadius: 8,
                       border: modalType === 'FIXED' ? '1px solid #e11d48' : '1px solid rgba(255,255,255,0.08)',
                       backgroundColor: modalType === 'FIXED' ? 'rgba(225,29,72,0.15)' : 'transparent',
                       color: modalType === 'FIXED' ? '#e11d48' : '#9ca3af',
                       fontWeight: 600,
                       cursor: 'pointer',
+                      fontSize: 12,
                     }}
                   >
-                    Turno Fijo
+                    Turno Fijo Mensual
                   </button>
                 </div>
               </div>
@@ -1581,21 +1672,18 @@ export default function ClubPanel() {
               <button
                 type="submit"
                 style={{
-                  marginTop: 10,
-                  padding: '14px',
+                  marginTop: 8,
+                  padding: '13px',
                   backgroundColor: '#fc1c46',
                   color: '#ffffff',
                   border: 'none',
                   borderRadius: 12,
-                  fontSize: 15,
+                  fontSize: 14,
                   fontWeight: 700,
                   cursor: 'pointer',
-                  transition: 'filter 0.2s ease',
                 }}
-                onMouseEnter={e => (e.currentTarget.style.filter = 'brightness(1.15)')}
-                onMouseLeave={e => (e.currentTarget.style.filter = 'none')}
               >
-                Guardar Reserva
+                Confirmar Reserva (100% Pagado)
               </button>
             </form>
           </div>
