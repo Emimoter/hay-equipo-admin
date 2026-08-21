@@ -482,10 +482,10 @@ export default function ClubPanel() {
                 </svg>
               </button>
 
-              {/* Tab 3: Courts Layout */}
+              {/* Tab 3: Courts Layout & Config */}
               <button
                 onClick={() => setActiveTab('COURTS')}
-                title="Canchas & Configuración de Horarios"
+                title="Configuración de Canchas & Horarios (+)"
                 style={{
                   width: 40,
                   height: 40,
@@ -500,10 +500,13 @@ export default function ClubPanel() {
                   transition: 'all 0.2s ease',
                 }}
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="3" width="18" height="18" rx="2" />
-                  <line x1="12" y1="3" x2="12" y2="21" />
-                  <line x1="3" y1="12" x2="21" y2="12" />
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="3" width="14" height="18" rx="2" />
+                  <line x1="2" y1="12" x2="16" y2="12" />
+                  <circle cx="9" cy="12" r="2.5" />
+                  <circle cx="18.5" cy="5.5" r="4.5" fill="#fc1c46" stroke="#0f1115" strokeWidth="1.5" />
+                  <line x1="18.5" y1="3.5" x2="18.5" y2="7.5" stroke="#ffffff" strokeWidth="1.8" />
+                  <line x1="16.5" y1="5.5" x2="20.5" y2="5.5" stroke="#ffffff" strokeWidth="1.8" />
                 </svg>
               </button>
 
@@ -775,86 +778,6 @@ export default function ClubPanel() {
             </div>
           </header>
 
-          {/* ═══════════════════════════════════════════════════════
-              ⭐ TOP BAR: CANCHAS CONFIGURADAS Y HORARIOS HABILITADOS
-              ═══════════════════════════════════════════════════════ */}
-          <section style={{
-            backgroundColor: '#11131a',
-            border: '1px solid rgba(255, 255, 255, 0.06)',
-            borderRadius: 16,
-            padding: '10px 14px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 12,
-            overflowX: 'auto',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
-                Canchas Configuradas:
-              </span>
-              <button
-                onClick={() => handleOpenCourtModal()}
-                style={{
-                  backgroundColor: 'rgba(252, 28, 70, 0.12)',
-                  color: '#fc1c46',
-                  border: '1px solid rgba(252, 28, 70, 0.3)',
-                  borderRadius: 8,
-                  padding: '3px 10px',
-                  fontSize: 11,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                }}
-              >
-                + Configurar Nueva Cancha
-              </button>
-            </div>
-
-            {/* Horizontal List of Configured Courts with Name & Operating Hours */}
-            <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 2 }}>
-              {filteredCourts.map(court => (
-                <div
-                  key={court.id}
-                  onClick={() => handleOpenCourtModal(court)}
-                  title="Click para editar nombre u horarios de esta cancha"
-                  style={{
-                    backgroundColor: '#181b22',
-                    border: court.pausedForWeather ? '1px solid rgba(234, 179, 8, 0.4)' : '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: 10,
-                    padding: '6px 12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    cursor: 'pointer',
-                    transition: 'border-color 0.15s ease',
-                    flexShrink: 0,
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = '#fc1c46')}
-                  onMouseLeave={e => (e.currentTarget.style.borderColor = court.pausedForWeather ? 'rgba(234, 179, 8, 0.4)' : 'rgba(255,255,255,0.08)')}
-                >
-                  <span style={{
-                    width: 7,
-                    height: 7,
-                    borderRadius: '50%',
-                    backgroundColor: court.pausedForWeather ? '#eab308' : court.active ? '#4ade80' : '#6b7280',
-                    boxShadow: court.active ? '0 0 6px #4ade80' : 'none',
-                    display: 'inline-block',
-                  }} />
-                  <div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: '#ffffff', lineHeight: 1.1 }}>
-                      {court.name}
-                    </div>
-                    <div style={{ fontSize: 10, color: '#8b92a0', marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <span style={{ color: '#fc1c46', fontWeight: 600 }}>{court.sport}</span>
-                      <span>·</span>
-                      <span>🕒 {court.openTime} a {court.closeTime} hs</span>
-                    </div>
-                  </div>
-                  <span style={{ fontSize: 11, color: '#6b7280', marginLeft: 4 }}>✏️</span>
-                </div>
-              ))}
-            </div>
-          </section>
 
           {/* ═══════════════════════════════════════════════════════
               VIEW 1: DASHBOARD
