@@ -8,7 +8,6 @@ import { useRouter } from 'next/router';
 
 type NavTab = 'DASHBOARD' | 'CALENDAR' | 'COURTS' | 'PLAYERS' | 'ANALYTICS' | 'SETTINGS';
 type SlotStatus = 'RESERVED' | 'AVAILABLE' | 'FIXED' | 'MAINTENANCE';
-type PaymentMethod = 'APP_MERCADOPAGO' | 'MOSTRADOR_EFECTIVO' | 'MOSTRADOR_TRANSFERENCIA';
 
 interface CourtSlot {
   id: string;
@@ -20,7 +19,6 @@ interface CourtSlot {
   player: string;
   price: number;
   phone?: string;
-  paymentMethod?: PaymentMethod;
   isPaid100: boolean;
 }
 
@@ -48,25 +46,24 @@ interface PlayerRecord {
   matchesPlayed: number;
   reliability: number; // 1-5
   playerTag: 'JUGADOR FRECUENTE' | 'ABONADO FIJO' | 'JUGADOR VIP';
-  lastPaymentMethod: 'MP (APP 100%)' | 'MOSTRADOR (100%)' | 'PREPAGO MES';
 }
 
 // Master Operating Times List
 const ALL_OPERATING_TIMES = ['08:00', '09:30', '11:00', '12:30', '14:00', '15:30', '16:30', '18:00', '19:30', '21:00', '22:30'];
 
 /* ────────────────────────────────────────────────────────────
-   Initial Data (Strict 100% Upfront Payment + Custom Court Schedule)
+   Initial Data (Simplified: 100% Paid Upfront, No payment method or reservation type fluff)
    ──────────────────────────────────────────────────────────── */
 
 const INITIAL_SLOTS: CourtSlot[] = [
-  { id: 's-1', courtId: 'c-1', courtName: 'Cancha 1 — Panorámica WPT', sport: 'Pádel', time: '18:00', status: 'RESERVED', player: 'Juan R.', price: 48000, phone: '+54 9 11 4433-2211', paymentMethod: 'APP_MERCADOPAGO', isPaid100: true },
+  { id: 's-1', courtId: 'c-1', courtName: 'Cancha 1 — Panorámica WPT', sport: 'Pádel', time: '18:00', status: 'RESERVED', player: 'Juan R.', price: 48000, phone: '+54 9 11 4433-2211', isPaid100: true },
   { id: 's-2', courtId: 'c-2', courtName: 'Cancha 2 — Cristal Pro', sport: 'Pádel', time: '18:00', status: 'AVAILABLE', player: '—', price: 45000, isPaid100: false },
-  { id: 's-3', courtId: 'c-3', courtName: 'Cancha 3 — Master Climatizada', sport: 'Pádel', time: '19:30', status: 'FIXED', player: 'Escuela Padel', price: 42000, phone: '+54 9 11 9988-7766', paymentMethod: 'MOSTRADOR_TRANSFERENCIA', isPaid100: true },
+  { id: 's-3', courtId: 'c-3', courtName: 'Cancha 3 — Master Climatizada', sport: 'Pádel', time: '19:30', status: 'RESERVED', player: 'Escuela Padel', price: 42000, phone: '+54 9 11 9988-7766', isPaid100: true },
   { id: 's-4', courtId: 'c-4', courtName: 'Cancha 4 — Fútbol 5 Forbex', sport: 'Fútbol 5', time: '20:00', status: 'AVAILABLE', player: '—', price: 36000, isPaid100: false },
-  { id: 's-5', courtId: 'c-1', courtName: 'Cancha 1 — Panorámica WPT', sport: 'Pádel', time: '19:30', status: 'RESERVED', player: 'Rodrigo De Paul', price: 48000, phone: '+54 9 11 5566-7788', paymentMethod: 'APP_MERCADOPAGO', isPaid100: true },
-  { id: 's-6', courtId: 'c-2', courtName: 'Cancha 2 — Cristal Pro', sport: 'Pádel', time: '21:00', status: 'RESERVED', player: 'Emiliano M.', price: 45000, phone: '+54 9 11 2233-4455', paymentMethod: 'APP_MERCADOPAGO', isPaid100: true },
+  { id: 's-5', courtId: 'c-1', courtName: 'Cancha 1 — Panorámica WPT', sport: 'Pádel', time: '19:30', status: 'RESERVED', player: 'Rodrigo De Paul', price: 48000, phone: '+54 9 11 5566-7788', isPaid100: true },
+  { id: 's-6', courtId: 'c-2', courtName: 'Cancha 2 — Cristal Pro', sport: 'Pádel', time: '21:00', status: 'RESERVED', player: 'Emiliano M.', price: 45000, phone: '+54 9 11 2233-4455', isPaid100: true },
   { id: 's-7', courtId: 'c-3', courtName: 'Cancha 3 — Master Climatizada', sport: 'Pádel', time: '21:00', status: 'AVAILABLE', player: '—', price: 42000, isPaid100: false },
-  { id: 's-8', courtId: 'c-4', courtName: 'Cancha 4 — Fútbol 5 Forbex', sport: 'Fútbol 5', time: '21:30', status: 'RESERVED', player: 'Torneo Nocturno', price: 36000, phone: '+54 9 11 1122-3344', paymentMethod: 'MOSTRADOR_EFECTIVO', isPaid100: true },
+  { id: 's-8', courtId: 'c-4', courtName: 'Cancha 4 — Fútbol 5 Forbex', sport: 'Fútbol 5', time: '21:30', status: 'RESERVED', player: 'Torneo Nocturno', price: 36000, phone: '+54 9 11 1122-3344', isPaid100: true },
 ];
 
 const INITIAL_COURTS: CourtInfo[] = [
@@ -77,12 +74,12 @@ const INITIAL_COURTS: CourtInfo[] = [
 ];
 
 const INITIAL_PLAYERS: PlayerRecord[] = [
-  { id: 'p-1', name: 'Juan Román Riquelme', phone: '+54 9 11 4433-2211', category: '4ta División', sport: 'Pádel', matchesPlayed: 28, reliability: 5, playerTag: 'JUGADOR FRECUENTE', lastPaymentMethod: 'MP (APP 100%)' },
-  { id: 'p-2', name: 'Rodrigo De Paul', phone: '+54 9 11 5566-7788', category: '3ra Libre', sport: 'Pádel', matchesPlayed: 19, reliability: 5, playerTag: 'JUGADOR VIP', lastPaymentMethod: 'MP (APP 100%)' },
-  { id: 'p-3', name: 'Emiliano Martínez', phone: '+54 9 11 2233-4455', category: 'Arquero / 5ta', sport: 'Fútbol 5', matchesPlayed: 34, reliability: 5, playerTag: 'JUGADOR VIP', lastPaymentMethod: 'MP (APP 100%)' },
-  { id: 'p-4', name: 'Lautaro Martínez', phone: '+54 9 11 3322-1144', category: 'Delantero / Pro', sport: 'Fútbol 5', matchesPlayed: 15, reliability: 4, playerTag: 'JUGADOR FRECUENTE', lastPaymentMethod: 'MOSTRADOR (100%)' },
-  { id: 'p-5', name: 'Escuela Padel Menores', phone: '+54 9 11 9988-7766', category: 'Formativo / Fijo', sport: 'Pádel', matchesPlayed: 52, reliability: 5, playerTag: 'ABONADO FIJO', lastPaymentMethod: 'PREPAGO MES' },
-  { id: 'p-6', name: 'Marcos Acuña', phone: '+54 9 11 7788-9900', category: '5ta División', sport: 'Pádel', matchesPlayed: 11, reliability: 4, playerTag: 'JUGADOR FRECUENTE', lastPaymentMethod: 'MP (APP 100%)' },
+  { id: 'p-1', name: 'Juan Román Riquelme', phone: '+54 9 11 4433-2211', category: '4ta División', sport: 'Pádel', matchesPlayed: 28, reliability: 5, playerTag: 'JUGADOR FRECUENTE' },
+  { id: 'p-2', name: 'Rodrigo De Paul', phone: '+54 9 11 5566-7788', category: '3ra Libre', sport: 'Pádel', matchesPlayed: 19, reliability: 5, playerTag: 'JUGADOR VIP' },
+  { id: 'p-3', name: 'Emiliano Martínez', phone: '+54 9 11 2233-4455', category: 'Arquero / 5ta', sport: 'Fútbol 5', matchesPlayed: 34, reliability: 5, playerTag: 'JUGADOR VIP' },
+  { id: 'p-4', name: 'Lautaro Martínez', phone: '+54 9 11 3322-1144', category: 'Delantero / Pro', sport: 'Fútbol 5', matchesPlayed: 15, reliability: 4, playerTag: 'JUGADOR FRECUENTE' },
+  { id: 'p-5', name: 'Escuela Padel Menores', phone: '+54 9 11 9988-7766', category: 'Formativo / Fijo', sport: 'Pádel', matchesPlayed: 52, reliability: 5, playerTag: 'ABONADO FIJO' },
+  { id: 'p-6', name: 'Marcos Acuña', phone: '+54 9 11 7788-9900', category: '5ta División', sport: 'Pádel', matchesPlayed: 11, reliability: 4, playerTag: 'JUGADOR FRECUENTE' },
 ];
 
 /* ────────────────────────────────────────────────────────────
@@ -106,7 +103,6 @@ export default function ClubPanel() {
 
   // Settings State
   const [mercadoPagoConnected, setMercadoPagoConnected] = useState(true);
-  const [whatsappBotEnabled, setWhatsappBotEnabled] = useState(true);
   const [cancellationWindowHours, setCancellationWindowHours] = useState(6);
   const [clubAddress, setClubAddress] = useState('Av. Del Libertador 4400, Palermo, CABA');
 
@@ -117,8 +113,6 @@ export default function ClubPanel() {
   const [modalSelectedPlayerId, setModalSelectedPlayerId] = useState<string>('CUSTOM');
   const [modalPlayer, setModalPlayer] = useState('');
   const [modalPhone, setModalPhone] = useState('');
-  const [modalType, setModalType] = useState<SlotStatus>('RESERVED');
-  const [modalPaymentMethod, setModalPaymentMethod] = useState<PaymentMethod>('MOSTRADOR_EFECTIVO');
 
   // Modal 2: "+ Configurar / Editar Cancha"
   const [showCourtModal, setShowCourtModal] = useState(false);
@@ -140,7 +134,6 @@ export default function ClubPanel() {
   const [editPlayerPhone, setEditPlayerPhone] = useState('');
   const [editCourtId, setEditCourtId] = useState('');
   const [editTime, setEditTime] = useState('');
-  const [editPaymentMethod, setEditPaymentMethod] = useState<PaymentMethod>('APP_MERCADOPAGO');
 
   /* ── Auth Verification & Auto Demo Fallback ── */
   useEffect(() => {
@@ -281,7 +274,6 @@ export default function ClubPanel() {
     setEditPlayerPhone(slot.phone || '');
     setEditCourtId(slot.courtId);
     setEditTime(slot.time);
-    setEditPaymentMethod(slot.paymentMethod || 'MOSTRADOR_EFECTIVO');
     setShowEditReservationModal(true);
   };
 
@@ -297,7 +289,6 @@ export default function ClubPanel() {
       courtId: court.id,
       courtName: court.name,
       time: editTime,
-      paymentMethod: editPaymentMethod,
     } : s));
     setShowEditReservationModal(false);
     setEditingSlot(null);
@@ -341,7 +332,7 @@ export default function ClubPanel() {
     }
   };
 
-  // Add new reservation (Strict 100% Paid)
+  // Add new reservation (Clean & Direct)
   const handleAddReservation = (e: React.FormEvent) => {
     e.preventDefault();
     const court = courts.find(c => c.id === modalCourt) || courts[0];
@@ -351,11 +342,10 @@ export default function ClubPanel() {
       courtName: court.name,
       sport: court.sport,
       time: modalTime,
-      status: modalType,
+      status: 'RESERVED',
       player: modalPlayer.trim() || 'Reserva Directa',
       phone: modalPhone.trim() || undefined,
       price: court.pricePeak,
-      paymentMethod: modalPaymentMethod,
       isPaid100: true,
     };
     setSlots(prev => [newSlot, ...prev]);
@@ -437,7 +427,7 @@ export default function ClubPanel() {
     }}>
       <Head>
         <title>{clubName} — Panel de Gestión</title>
-        <meta name="description" content="Panel de control en tiempo real para gestión de reservas 100% anticipadas" />
+        <meta name="description" content="Panel de control en tiempo real para gestión de reservas de canchas" />
       </Head>
 
       {/* ═══════════════════════════════════════════════════════
@@ -1060,8 +1050,8 @@ export default function ClubPanel() {
                                   onClick={() => handleOpenEditReservation(slot)}
                                   title={`Click para editar o eliminar reserva de ${slot.player}`}
                                   style={{
-                                    backgroundColor: slot.status === 'FIXED' ? 'rgba(225, 29, 72, 0.15)' : 'rgba(252, 28, 70, 0.15)',
-                                    border: slot.status === 'FIXED' ? '1px solid rgba(225, 29, 72, 0.35)' : '1px solid rgba(252, 28, 70, 0.35)',
+                                    backgroundColor: 'rgba(252, 28, 70, 0.15)',
+                                    border: '1px solid rgba(252, 28, 70, 0.35)',
                                     borderRadius: 8,
                                     padding: '6px 8px',
                                     cursor: 'pointer',
@@ -1073,8 +1063,8 @@ export default function ClubPanel() {
                                   <div style={{ fontSize: 11.5, fontWeight: 700, color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                     {slot.player}
                                   </div>
-                                  <div style={{ fontSize: 9.5, color: slot.status === 'FIXED' ? '#e11d48' : '#fc1c46', fontWeight: 600, marginTop: 1 }}>
-                                    {slot.status === 'FIXED' ? '✓ Turno Fijo' : '✓ Pagado 100%'}
+                                  <div style={{ fontSize: 9.5, color: '#fc1c46', fontWeight: 600, marginTop: 1 }}>
+                                    ✓ Reservado
                                   </div>
                                 </div>
                               );
@@ -1194,7 +1184,7 @@ export default function ClubPanel() {
                     }}
                   >
                     <span style={{ fontSize: 16, lineHeight: 1 }}>+</span>
-                    <span>Nueva reserva manual (100% Pagada)</span>
+                    <span>Nueva reserva manual</span>
                   </button>
                 </div>
               </div>
@@ -1323,7 +1313,7 @@ export default function ClubPanel() {
                                 backgroundColor: s.status === 'AVAILABLE' ? '#20232a' : '#fc1c46',
                                 color: s.status === 'AVAILABLE' ? '#9ca3af' : '#fff',
                               }}>
-                                {s.status === 'AVAILABLE' ? 'LIBRE' : s.status === 'FIXED' ? '✓ FIJO PREPAGO' : '✓ 100% PAGADO'}
+                                {s.status === 'AVAILABLE' ? 'LIBRE' : '✓ RESERVADO'}
                               </span>
                             </div>
                           ))
@@ -1454,7 +1444,7 @@ export default function ClubPanel() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: 0 }}>Base de Jugadores & Clientes</h2>
-                  <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>Historial de partidos jugados y hábitos de pago confirmado.</p>
+                  <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>Historial de partidos jugados por jugador.</p>
                 </div>
                 <input
                   type="text"
@@ -1483,7 +1473,7 @@ export default function ClubPanel() {
               }}>
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: '1.6fr 1.2fr 1.2fr 0.8fr 1.2fr',
+                  gridTemplateColumns: '1.6fr 1.2fr 1.2fr 1fr',
                   padding: '10px 0',
                   borderBottom: '1px solid rgba(255,255,255,0.05)',
                   fontSize: 11,
@@ -1494,8 +1484,7 @@ export default function ClubPanel() {
                   <div>JUGADOR</div>
                   <div>TELÉFONO</div>
                   <div>CATEGORÍA / DEPORTE</div>
-                  <div>PARTIDOS</div>
-                  <div style={{ textAlign: 'right' }}>MÉTODO HABITUAL (100%)</div>
+                  <div style={{ textAlign: 'right' }}>PARTIDOS JUGADOS</div>
                 </div>
 
                 {filteredPlayers.map(p => (
@@ -1503,7 +1492,7 @@ export default function ClubPanel() {
                     key={p.id}
                     style={{
                       display: 'grid',
-                      gridTemplateColumns: '1.6fr 1.2fr 1.2fr 0.8fr 1.2fr',
+                      gridTemplateColumns: '1.6fr 1.2fr 1.2fr 1fr',
                       padding: '14px 0',
                       borderBottom: '1px solid rgba(255,255,255,0.03)',
                       alignItems: 'center',
@@ -1518,12 +1507,7 @@ export default function ClubPanel() {
                     </div>
                     <div style={{ color: '#9ca3af' }}>{p.phone}</div>
                     <div style={{ color: '#d1d5db', fontSize: 12 }}>{p.category} · {p.sport}</div>
-                    <div style={{ color: '#fff', fontWeight: 600 }}>{p.matchesPlayed} jugados</div>
-                    <div style={{ textAlign: 'right' }}>
-                      <span style={{ backgroundColor: 'rgba(74, 222, 128, 0.12)', color: '#4ade80', padding: '3px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>
-                        ✓ {p.lastPaymentMethod}
-                      </span>
-                    </div>
+                    <div style={{ textAlign: 'right', color: '#fff', fontWeight: 600 }}>{p.matchesPlayed} jugados</div>
                   </div>
                 ))}
               </div>
@@ -1536,8 +1520,8 @@ export default function ClubPanel() {
           {activeTab === 'ANALYTICS' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
               <div>
-                <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: 0 }}>Métricas & Rendimiento Financiero</h2>
-                <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>Análisis de ocupación por horario y cobros 100% anticipados.</p>
+                <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: 0 }}>Métricas & Rendimiento</h2>
+                <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>Análisis de ocupación por horario y facturación total del complejo.</p>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
@@ -1552,9 +1536,9 @@ export default function ClubPanel() {
                   <div style={{ fontSize: 11, color: '#888', marginTop: 4 }}>18:00 a 24:00 hs</div>
                 </div>
                 <div style={{ backgroundColor: '#14161c', padding: '20px', borderRadius: 18, border: '1px solid rgba(255,255,255,0.05)' }}>
-                  <div style={{ fontSize: 11, color: '#888', textTransform: 'uppercase' }}>Cobro por App Mercado Pago</div>
-                  <div style={{ fontSize: 26, fontWeight: 700, color: '#38bdf8', marginTop: 6 }}>82%</div>
-                  <div style={{ fontSize: 11, color: '#888', marginTop: 4 }}>18% restante cobrado en mostrador</div>
+                  <div style={{ fontSize: 11, color: '#888', textTransform: 'uppercase' }}>Ocupación Promedio Diario</div>
+                  <div style={{ fontSize: 26, fontWeight: 700, color: '#38bdf8', marginTop: 6 }}>88.5%</div>
+                  <div style={{ fontSize: 11, color: '#888', marginTop: 4 }}>Canchas de Pádel y Fútbol</div>
                 </div>
               </div>
             </div>
@@ -1567,7 +1551,7 @@ export default function ClubPanel() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
               <div>
                 <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: 0 }}>Configuración del Club</h2>
-                <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>Integración de cobros, políticas de cancelación y automatización de WhatsApp.</p>
+                <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>Datos principales del club y política de cancelación.</p>
               </div>
 
               <div style={{ backgroundColor: '#14161c', padding: '24px', borderRadius: 20, border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -1593,8 +1577,8 @@ export default function ClubPanel() {
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 16 }}>
                   <div>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>Cobro 100% Obligatorio Mercado Pago</div>
-                    <div style={{ fontSize: 12, color: '#888' }}>La app exige el pago total del turno para confirmar la reserva</div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>Cobro 100% Obligatorio para Reservar</div>
+                    <div style={{ fontSize: 12, color: '#888' }}>El sistema exige el pago total del turno para confirmar la reserva</div>
                   </div>
                   <button
                     onClick={() => setMercadoPagoConnected(!mercadoPagoConnected)}
@@ -1609,7 +1593,7 @@ export default function ClubPanel() {
                       cursor: 'pointer',
                     }}
                   >
-                    {mercadoPagoConnected ? '✓ Conectado 100%' : 'Desconectado'}
+                    {mercadoPagoConnected ? '✓ Activo 100%' : 'Inactivo'}
                   </button>
                 </div>
 
@@ -1679,7 +1663,7 @@ export default function ClubPanel() {
                 <span style={{ fontSize: 10, color: '#6b7280' }}>· ahora</span>
               </div>
               <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 1 }}>
-                Cancha 2 · 21:00 hs · Mercado Pago ($45.000)
+                Cancha 2 · 21:00 hs ($45.000)
               </div>
             </div>
 
@@ -1842,71 +1826,6 @@ export default function ClubPanel() {
                 />
               </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
-                  Método de Pago Confirmado (100%)
-                </label>
-                <select
-                  value={modalPaymentMethod}
-                  onChange={e => setModalPaymentMethod(e.target.value as PaymentMethod)}
-                  style={{
-                    width: '100%',
-                    backgroundColor: '#181b22',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: 10,
-                    padding: '10px 12px',
-                    color: '#ffffff',
-                    fontSize: 13.5,
-                  }}
-                >
-                  <option value="MOSTRADOR_EFECTIVO">💵 Efectivo Mostrador (100% Pagado)</option>
-                  <option value="MOSTRADOR_TRANSFERENCIA">💳 Transferencia / Débito (100% Pagado)</option>
-                  <option value="APP_MERCADOPAGO">📱 Mercado Pago App (100% Pagado)</option>
-                </select>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
-                  Tipo de Reserva
-                </label>
-                <div style={{ display: 'flex', gap: 10 }}>
-                  <button
-                    type="button"
-                    onClick={() => setModalType('RESERVED')}
-                    style={{
-                      flex: 1,
-                      padding: '9px',
-                      borderRadius: 8,
-                      border: modalType === 'RESERVED' ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
-                      backgroundColor: modalType === 'RESERVED' ? 'rgba(252,28,70,0.15)' : 'transparent',
-                      color: modalType === 'RESERVED' ? '#fc1c46' : '#9ca3af',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      fontSize: 12,
-                    }}
-                  >
-                    Reserva Puntual
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setModalType('FIXED')}
-                    style={{
-                      flex: 1,
-                      padding: '9px',
-                      borderRadius: 8,
-                      border: modalType === 'FIXED' ? '1px solid #e11d48' : '1px solid rgba(255,255,255,0.08)',
-                      backgroundColor: modalType === 'FIXED' ? 'rgba(225,29,72,0.15)' : 'transparent',
-                      color: modalType === 'FIXED' ? '#e11d48' : '#9ca3af',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      fontSize: 12,
-                    }}
-                  >
-                    Turno Fijo Mensual
-                  </button>
-                </div>
-              </div>
-
               <button
                 type="submit"
                 style={{
@@ -1921,7 +1840,7 @@ export default function ClubPanel() {
                   cursor: 'pointer',
                 }}
               >
-                Confirmar Reserva (100% Pagado)
+                Confirmar Reserva (100% Pagada)
               </button>
             </form>
           </div>
@@ -2294,29 +2213,6 @@ export default function ClubPanel() {
                     ))}
                   </select>
                 </div>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
-                  Método de Pago Confirmado
-                </label>
-                <select
-                  value={editPaymentMethod}
-                  onChange={e => setEditPaymentMethod(e.target.value as PaymentMethod)}
-                  style={{
-                    width: '100%',
-                    backgroundColor: '#181b22',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: 10,
-                    padding: '10px 12px',
-                    color: '#ffffff',
-                    fontSize: 13.5,
-                  }}
-                >
-                  <option value="APP_MERCADOPAGO">📱 Mercado Pago App (100% Pagado)</option>
-                  <option value="MOSTRADOR_EFECTIVO">💵 Efectivo Mostrador (100% Pagado)</option>
-                  <option value="MOSTRADOR_TRANSFERENCIA">💳 Transferencia / Débito (100% Pagado)</option>
-                </select>
               </div>
 
               <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
