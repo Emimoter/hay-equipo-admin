@@ -70,6 +70,72 @@ export default function App({ Component, pageProps }: AppProps) {
         ::-webkit-scrollbar-thumb {
           background: var(--color-graphite);
         }
+
+        /* ── Landing Mobile Fixes (max-width 768px) ── */
+        @media (max-width: 768px) {
+          /* Header */
+          .landing-header {
+            padding: 0 18px !important;
+            height: 60px !important;
+          }
+          .landing-header-logo-sub {
+            display: none !important;
+          }
+          .landing-header-btn-outline {
+            display: none !important;
+          }
+          .landing-header-btn-cta {
+            padding: 8px 16px !important;
+            font-size: 12px !important;
+          }
+
+          /* Hero — full width, top padding for fixed header */
+          .landing-hero {
+            padding: 96px 18px 56px !important;
+            min-height: 100svh !important;
+          }
+          .landing-hero-inner {
+            max-width: 100% !important;
+          }
+
+          /* Generic section padding */
+          .landing-section {
+            padding: 60px 18px !important;
+          }
+
+          /* Download section: collapse to single column */
+          .landing-download-grid {
+            grid-template-columns: 1fr !important;
+            gap: 40px !important;
+          }
+
+          /* Club CTA section */
+          .landing-clubs-grid {
+            gap: 36px !important;
+          }
+
+          /* City text: prevent horizontal overflow */
+          .landing-city-text {
+            flex-direction: column !important;
+            gap: 0 !important;
+          }
+
+          /* Footer */
+          .landing-footer {
+            padding: 28px 18px !important;
+          }
+          .landing-footer-inner {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 6px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .landing-header-logo {
+            font-size: 20px !important;
+          }
+        }
       `}</style>
       <Component {...pageProps} />
     </>

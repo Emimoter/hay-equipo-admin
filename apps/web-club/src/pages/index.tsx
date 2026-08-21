@@ -298,6 +298,7 @@ export default function LandingPage() {
           ═══════════════════════════════════════════════════════ */}
       <div
         ref={ballContainerRef}
+        className="ball-container"
         style={{
           position: 'fixed',
           top: '50%',
@@ -357,6 +358,7 @@ export default function LandingPage() {
           ═══════════════════════════════════════════════════════ */}
       <header
         ref={headerRef}
+        className="landing-header"
         style={{
           position: 'fixed',
           top: 0,
@@ -374,18 +376,19 @@ export default function LandingPage() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 22 }}>
-          <span style={{ fontSize: 27, fontWeight: 700, color: 'var(--color-frost)', letterSpacing: '-0.9px' }}>
+          <span className="landing-header-logo" style={{ fontSize: 27, fontWeight: 700, color: 'var(--color-frost)', letterSpacing: '-0.9px' }}>
             HAY EQUIPO?
           </span>
-          <span style={{ fontSize: 10, color: 'var(--color-graphite)', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
+          <span className="landing-header-logo-sub" style={{ fontSize: 10, color: 'var(--color-graphite)', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
             / Red Deportiva · Argentina
           </span>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          {/* Botón 1: Publicá tus Canchas (Outline / Glass Obsidian — color diferenciado) */}
+          {/* Botón 1: Publicá tus Canchas (Outline / Glass Obsidian) */}
           <a
             href="/registro-club"
+            className="landing-header-btn-outline"
             style={{
               backgroundColor: 'rgba(255, 255, 255, 0.04)',
               color: 'var(--color-frost)',
@@ -422,6 +425,7 @@ export default function LandingPage() {
           {/* Botón 2: Descargá la App (Solid Crimson Signal) */}
           <a
             href="#descargar"
+            className="landing-header-btn-cta"
             style={{
               backgroundColor: 'var(--color-crimson-signal)',
               color: 'var(--color-frost)',
@@ -454,6 +458,7 @@ export default function LandingPage() {
           ═══════════════════════════════════════════════════════ */}
       <section
         ref={heroRef}
+        className="landing-hero"
         style={{
           position: 'relative',
           minHeight: '100vh',
@@ -464,7 +469,7 @@ export default function LandingPage() {
         }}
       >
         <div style={{ maxWidth: 1400, margin: '0 auto', width: '100%' }}>
-          <div style={{ maxWidth: '65%' }}>
+          <div className="landing-hero-inner" style={{ maxWidth: '65%' }}>
             
             {/* Eyebrow: Tracking Expansion */}
             <TrackingBlurReveal inView={isLoaded} delay={0.1} style={{ fontSize: '10px', color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: 22 }}>
@@ -530,6 +535,7 @@ export default function LandingPage() {
           ═══════════════════════════════════════════════════════ */}
       <section
         ref={aboutRef}
+        className="landing-section"
         style={{
           position: 'relative',
           zIndex: 2,
@@ -609,6 +615,7 @@ export default function LandingPage() {
           ═══════════════════════════════════════════════════════ */}
       <section
         ref={featRef}
+        className="landing-section"
         style={{
           position: 'relative',
           zIndex: 2,
@@ -704,6 +711,7 @@ export default function LandingPage() {
       <section
         id="descargar"
         ref={downloadRef}
+        className="landing-section"
         style={{
           position: 'relative',
           zIndex: 2,
@@ -714,13 +722,16 @@ export default function LandingPage() {
         <div style={{ maxWidth: 1400, margin: '0 auto' }}>
           <HairlineRule inView={downloadInView} delay={0.1} />
 
-          <div style={{
-            marginTop: 65,
-            display: 'grid',
-            gridTemplateColumns: '1fr auto',
-            gap: 86,
-            alignItems: 'center',
-          }}>
+          <div
+            className="landing-download-grid"
+            style={{
+              marginTop: 65,
+              display: 'grid',
+              gridTemplateColumns: '1fr auto',
+              gap: 86,
+              alignItems: 'center',
+            }}
+          >
             {/* Left — Heading + description */}
             <div>
               <TrackingBlurReveal inView={downloadInView} delay={0.2} style={{ fontSize: '10px', color: 'var(--color-crimson-signal)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 9 }}>
@@ -834,6 +845,7 @@ export default function LandingPage() {
           ═══════════════════════════════════════════════════════ */}
       <section
         ref={clubRef}
+        className="landing-section"
         style={{
           position: 'relative',
           zIndex: 2,
@@ -1083,6 +1095,7 @@ export default function LandingPage() {
           FOOTER — ThoughtLab minimal
           ═══════════════════════════════════════════════════════ */}
       <footer
+        className="landing-footer"
         style={{
           position: 'relative',
           zIndex: 2,
@@ -1091,15 +1104,18 @@ export default function LandingPage() {
           borderTop: '1px solid var(--color-graphite)',
         }}
       >
-        <div style={{
-          maxWidth: 1400,
-          margin: '0 auto',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: 14,
-        }}>
+        <div
+          className="landing-footer-inner"
+          style={{
+            maxWidth: 1400,
+            margin: '0 auto',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 14,
+          }}
+        >
           <span style={{ fontSize: 10, color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '1px' }}>
             © 2026 HAY EQUIPO. ALL RIGHTS RESERVED.
           </span>

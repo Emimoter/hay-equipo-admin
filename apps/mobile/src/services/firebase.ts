@@ -84,20 +84,17 @@ export async function syncUserProfile(user: FirebaseUser, extraPhone?: string): 
   }
 }
 
-// 2. Fetch Clubs from Firestore or Seed
+// 2. Fetch Clubs from Firestore
 export async function getClubsFirestore() {
   try {
+    const snap = await getDoc(doc(dbFirestore, 'settings', 'hay_equipo_clubs'));
+    if (snap.exists() && snap.data()?.clubs?.length > 0) {
+      return snap.data()?.clubs;
+    }
     const col = collection(dbFirestore, 'clubs');
-    const snap = await getDocs(col);
-    if (!snap.empty) {
-      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    }
-    // Seed initial clubs if empty
-    for (const club of INITIAL_CLUBS) {
-      await setDoc(doc(dbFirestore, 'clubs', club.id), club);
-    }
-    for (const court of INITIAL_COURTS) {
-      await setDoc(doc(dbFirestore, 'courts', court.id), court);
+    const colSnap = await getDocs(col);
+    if (!colSnap.empty) {
+      return colSnap.docs.map(d => ({ id: d.id, ...d.data() }));
     }
     return INITIAL_CLUBS;
   } catch {
@@ -108,10 +105,15 @@ export async function getClubsFirestore() {
 // 3. Fetch Courts for a Club from Firestore
 export async function getCourtsFirestore(clubId: string) {
   try {
+    const snap = await getDoc(doc(dbFirestore, 'settings', 'hay_equipo_courts'));
+    if (snap.exists() && snap.data()?.courts?.length > 0) {
+      const courts = snap.data()?.courts;
+      return courts.filter((c: any) => c.clubId === clubId);
+    }
     const q = query(collection(dbFirestore, 'courts'), where('clubId', '==', clubId));
-    const snap = await getDocs(q);
-    if (!snap.empty) {
-      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const colSnap = await getDocs(q);
+    if (!colSnap.empty) {
+      return colSnap.docs.map(d => ({ id: d.id, ...d.data() }));
     }
     return INITIAL_COURTS.filter(c => c.clubId === clubId);
   } catch {
