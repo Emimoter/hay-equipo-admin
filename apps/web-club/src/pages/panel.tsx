@@ -2139,11 +2139,40 @@ export default function ClubPanel() {
                 </div>
               </div>
 
-              {/* Operating Schedule Configuration — Direct Minimalist Inline Selector */}
+              {/* Operating Schedule Configuration — Direct Minimalist Inline Selector + 24hs Toggle */}
               <div style={{ backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '14px 16px' }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#fc1c46', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 10 }}>
-                  🕒 Horarios Habilitados para Reserva en App
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#fc1c46', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+                    🕒 Horarios Habilitados para Reserva en App
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const is24hs = courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00';
+                      if (is24hs) {
+                        setCourtOpenTimeInput('08:00');
+                        setCourtCloseTimeInput('23:30');
+                      } else {
+                        setCourtOpenTimeInput('00:00');
+                        setCourtCloseTimeInput('24:00');
+                      }
+                    }}
+                    style={{
+                      backgroundColor: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? 'rgba(252,28,70,0.18)' : '#11131a',
+                      color: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '#fc1c46' : '#9ca3af',
+                      border: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: 8,
+                      padding: '4px 10px',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    {(courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '✓ Abierto 24 Horas' : '🌙 Abierto 24hs'}
+                  </button>
                 </div>
+
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                   {/* Hora Apertura */}
                   <div>
@@ -2165,7 +2194,7 @@ export default function ClubPanel() {
                         boxSizing: 'border-box',
                       }}
                     >
-                      {['06:00', '07:00', '07:30', '08:00', '08:30', '09:00', '09:30', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00'].map(t => (
+                      {['00:00', '06:00', '07:00', '07:30', '08:00', '08:30', '09:00', '09:30', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00'].map(t => (
                         <option key={t} value={t} style={{ backgroundColor: '#11131a', color: '#ffffff' }}>
                           🕒 {t} hs
                         </option>
