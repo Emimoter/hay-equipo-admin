@@ -786,7 +786,7 @@ export default function ClubPanel() {
               borderRadius: 10,
               border: '1px solid rgba(255,255,255,0.06)',
             }}>
-              {['TODOS', 'PÁDEL', 'FÚTBOL 5', 'FÚTBOL 7'].map(sport => (
+              {['TODOS', 'PÁDEL', 'FÚTBOL 5', 'FÚTBOL 7', 'TENIS', 'BÁSQUET'].map(sport => (
                 <button
                   key={sport}
                   onClick={() => setSelectedSportFilter(sport)}
@@ -2003,6 +2003,7 @@ export default function ClubPanel() {
                   <option value="Fútbol 5">Fútbol 5</option>
                   <option value="Fútbol 7">Fútbol 7</option>
                   <option value="Tenis">Tenis</option>
+                  <option value="Básquet">Básquet</option>
                 </select>
               </div>
 
