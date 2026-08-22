@@ -6,7 +6,7 @@ import { useRouter } from 'next/router';
    Types & Interfaces
    ──────────────────────────────────────────────────────────── */
 
-type NavTab = 'DASHBOARD' | 'CALENDAR' | 'COURTS' | 'PLAYERS' | 'ANALYTICS' | 'SETTINGS';
+type NavTab = 'DASHBOARD' | 'COURTS' | 'CALENDAR' | 'PLAYERS' | 'ANALYTICS' | 'SETTINGS';
 type SlotStatus = 'RESERVED' | 'AVAILABLE' | 'FIXED' | 'MAINTENANCE';
 
 interface CourtSlot {
@@ -32,6 +32,8 @@ interface CourtInfo {
   price: number;
   indoor: boolean;
   lighting: boolean;
+  hasCameras?: boolean;
+  hasHeating?: boolean;
   openTime: string;  // ej: "08:00"
   closeTime: string; // ej: "23:30"
 }
@@ -51,7 +53,7 @@ interface PlayerRecord {
 const ALL_OPERATING_TIMES = ['08:00', '09:30', '11:00', '12:30', '14:00', '15:30', '16:30', '18:00', '19:30', '21:00', '22:30'];
 
 /* ────────────────────────────────────────────────────────────
-   Initial Data (Simplified Court Pricing: Single price per court)
+   Initial Data (Simplified Court Pricing & Full Features)
    ──────────────────────────────────────────────────────────── */
 
 const INITIAL_SLOTS: CourtSlot[] = [
@@ -66,10 +68,10 @@ const INITIAL_SLOTS: CourtSlot[] = [
 ];
 
 const INITIAL_COURTS: CourtInfo[] = [
-  { id: 'c-1', name: 'Cancha 1 — Panorámica WPT', sport: 'Pádel', surface: 'Vidrio Panorámico 12mm · Césped Texturado', active: true, pausedForWeather: false, price: 48000, indoor: true, lighting: true, openTime: '08:00', closeTime: '23:30' },
-  { id: 'c-2', name: 'Cancha 2 — Cristal Pro', sport: 'Pádel', surface: 'Vidrio Templado 10mm · Césped Monofilamento', active: true, pausedForWeather: false, price: 45000, indoor: true, lighting: true, openTime: '08:00', closeTime: '23:30' },
-  { id: 'c-3', name: 'Cancha 3 — Master Climatizada', sport: 'Pádel', surface: 'Muros Perimetrales · Cubierta Climatizada', active: true, pausedForWeather: false, price: 42000, indoor: true, lighting: true, openTime: '09:00', closeTime: '23:00' },
-  { id: 'c-4', name: 'Cancha 4 — Fútbol 5 Forbex', sport: 'Fútbol 5', surface: 'Césped Sintético Forbex 50mm con Caucho', active: true, pausedForWeather: false, price: 36000, indoor: false, lighting: true, openTime: '10:00', closeTime: '24:00' },
+  { id: 'c-1', name: 'Cancha 1 — Panorámica WPT', sport: 'Pádel', surface: 'Vidrio Panorámico 12mm · Césped Texturado', active: true, pausedForWeather: false, price: 48000, indoor: true, lighting: true, hasCameras: true, hasHeating: true, openTime: '08:00', closeTime: '23:30' },
+  { id: 'c-2', name: 'Cancha 2 — Cristal Pro', sport: 'Pádel', surface: 'Vidrio Templado 10mm · Césped Monofilamento', active: true, pausedForWeather: false, price: 45000, indoor: true, lighting: true, hasCameras: true, hasHeating: false, openTime: '08:00', closeTime: '23:30' },
+  { id: 'c-3', name: 'Cancha 3 — Master Climatizada', sport: 'Pádel', surface: 'Muros Perimetrales · Cubierta Climatizada', active: true, pausedForWeather: false, price: 42000, indoor: true, lighting: true, hasCameras: false, hasHeating: true, openTime: '09:00', closeTime: '23:00' },
+  { id: 'c-4', name: 'Cancha 4 — Fútbol 5 Forbex', sport: 'Fútbol 5', surface: 'Césped Sintético Forbex 50mm con Caucho', active: true, pausedForWeather: false, price: 36000, indoor: false, lighting: true, hasCameras: false, hasHeating: false, openTime: '10:00', closeTime: '24:00' },
 ];
 
 const INITIAL_PLAYERS: PlayerRecord[] = [
@@ -124,6 +126,8 @@ export default function ClubPanel() {
   const [courtPriceInput, setCourtPriceInput] = useState(45000);
   const [courtIndoorInput, setCourtIndoorInput] = useState(true);
   const [courtLightingInput, setCourtLightingInput] = useState(true);
+  const [courtCamerasInput, setCourtCamerasInput] = useState(true);
+  const [courtHeatingInput, setCourtHeatingInput] = useState(false);
 
   // Modal 3: "Editar / Eliminar Reserva Existente"
   const [showEditReservationModal, setShowEditReservationModal] = useState(false);
@@ -211,6 +215,8 @@ export default function ClubPanel() {
       setCourtPriceInput(court.price);
       setCourtIndoorInput(court.indoor);
       setCourtLightingInput(court.lighting);
+      setCourtCamerasInput(court.hasCameras ?? true);
+      setCourtHeatingInput(court.hasHeating ?? false);
     } else {
       setEditingCourtId(null);
       setCourtNameInput(`Cancha ${courts.length + 1}`);
@@ -221,6 +227,8 @@ export default function ClubPanel() {
       setCourtPriceInput(45000);
       setCourtIndoorInput(true);
       setCourtLightingInput(true);
+      setCourtCamerasInput(true);
+      setCourtHeatingInput(false);
     }
     setShowCourtModal(true);
   };
@@ -241,6 +249,8 @@ export default function ClubPanel() {
         price: courtPriceInput,
         indoor: courtIndoorInput,
         lighting: courtLightingInput,
+        hasCameras: courtCamerasInput,
+        hasHeating: courtHeatingInput,
       } : c));
     } else {
       const newCourt: CourtInfo = {
@@ -255,6 +265,8 @@ export default function ClubPanel() {
         price: courtPriceInput,
         indoor: courtIndoorInput,
         lighting: courtLightingInput,
+        hasCameras: courtCamerasInput,
+        hasHeating: courtHeatingInput,
       };
       setCourts(prev => [...prev, newCourt]);
     }
@@ -1180,7 +1192,126 @@ export default function ClubPanel() {
           )}
 
           {/* ═══════════════════════════════════════════════════════
-              VIEW 2: CALENDAR / TURNOS (Full Timeline Matrix View)
+              VIEW 2: COURTS & TARIFAS (Con Atributos Completos)
+              ═══════════════════════════════════════════════════════ */}
+          {activeTab === 'COURTS' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: 0 }}>Configuración de Canchas y Atributos</h2>
+                  <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>Personalizá nombres, si es techada, iluminación, cámaras, climatización y tarifas por turno.</p>
+                </div>
+                <button
+                  onClick={() => handleOpenCourtModal()}
+                  style={{
+                    backgroundColor: '#fc1c46',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: 10,
+                    padding: '10px 18px',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  + Agregar Nueva Cancha
+                </button>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+                {filteredCourts.map(court => (
+                  <div
+                    key={court.id}
+                    style={{
+                      backgroundColor: '#14161c',
+                      borderRadius: 18,
+                      border: '1px solid rgba(255,255,255,0.06)',
+                      padding: '22px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 14,
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: '#ffffff' }}>{court.name}</div>
+                        <div style={{ fontSize: 12, color: '#8b92a0', marginTop: 4 }}>{court.surface}</div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button
+                          onClick={() => handleOpenCourtModal(court)}
+                          style={{
+                            backgroundColor: '#1e293b',
+                            color: '#38bdf8',
+                            border: 'none',
+                            borderRadius: 9999,
+                            padding: '4px 10px',
+                            fontSize: 11,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          ✏️ Editar
+                        </button>
+                        <button
+                          onClick={() => handleToggleCourtActive(court.id)}
+                          style={{
+                            backgroundColor: court.active ? '#1e293b' : '#33151b',
+                            color: court.active ? '#4ade80' : '#fc1c46',
+                            border: 'none',
+                            borderRadius: 9999,
+                            padding: '4px 10px',
+                            fontSize: 11,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {court.active ? '● Activa' : '○ Pausada'}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Horarios Habilitados Tag */}
+                    <div style={{ backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.05)', padding: '10px 12px', borderRadius: 10 }}>
+                      <div style={{ fontSize: 10, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Horarios Habilitados para Reserva</div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: '#ffffff', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span>🕒 {court.openTime} hs a {court.closeTime} hs</span>
+                      </div>
+                    </div>
+
+                    {/* Precio Único de la Cancha */}
+                    <div style={{ backgroundColor: '#181b22', padding: '10px 14px', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ fontSize: 11, color: '#888', textTransform: 'uppercase' }}>Precio por Turno</div>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: '#fc1c46' }}>${court.price.toLocaleString()}</div>
+                    </div>
+
+                    {/* Court Feature Pills */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, fontSize: 11 }}>
+                      <span style={{ backgroundColor: court.indoor ? 'rgba(56,189,248,0.12)' : 'rgba(255,255,255,0.05)', color: court.indoor ? '#38bdf8' : '#9ca3af', padding: '4px 9px', borderRadius: 6, fontWeight: 600 }}>
+                        {court.indoor ? '🏠 Techada (Indoor)' : '☁ Descubierta (Outdoor)'}
+                      </span>
+                      <span style={{ backgroundColor: court.lighting ? 'rgba(250,204,21,0.12)' : 'rgba(255,255,255,0.05)', color: court.lighting ? '#facc15' : '#9ca3af', padding: '4px 9px', borderRadius: 6, fontWeight: 600 }}>
+                        {court.lighting ? '💡 Luz LED Pro' : '🌙 Sin Iluminación'}
+                      </span>
+                      {court.hasCameras && (
+                        <span style={{ backgroundColor: 'rgba(168,85,247,0.12)', color: '#c084fc', padding: '4px 9px', borderRadius: 6, fontWeight: 600 }}>
+                          📹 Grabación HD
+                        </span>
+                      )}
+                      {court.hasHeating && (
+                        <span style={{ backgroundColor: 'rgba(249,115,22,0.12)', color: '#fb923c', padding: '4px 9px', borderRadius: 6, fontWeight: 600 }}>
+                          ❄️ Climatizada
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ═══════════════════════════════════════════════════════
+              VIEW 3: CALENDAR / TURNOS (Full Timeline Matrix View)
               ═══════════════════════════════════════════════════════ */}
           {activeTab === 'CALENDAR' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -1310,111 +1441,6 @@ export default function ClubPanel() {
                     </div>
                   );
                 })}
-              </div>
-            </div>
-          )}
-
-          {/* ═══════════════════════════════════════════════════════
-              VIEW 3: COURTS & TARIFAS (Con Nombres y Horarios Editables)
-              ═══════════════════════════════════════════════════════ */}
-          {activeTab === 'COURTS' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: 0 }}>Configuración de Canchas y Horarios Habilitados</h2>
-                  <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>Personalizá nombres de canchas, superficies, franjas horarias de apertura/cierre y precio por turno.</p>
-                </div>
-                <button
-                  onClick={() => handleOpenCourtModal()}
-                  style={{
-                    backgroundColor: '#fc1c46',
-                    color: '#ffffff',
-                    border: 'none',
-                    borderRadius: 10,
-                    padding: '10px 18px',
-                    fontSize: 13,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                  }}
-                >
-                  + Agregar Nueva Cancha
-                </button>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
-                {filteredCourts.map(court => (
-                  <div
-                    key={court.id}
-                    style={{
-                      backgroundColor: '#14161c',
-                      borderRadius: 18,
-                      border: '1px solid rgba(255,255,255,0.06)',
-                      padding: '22px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 14,
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <div>
-                        <div style={{ fontSize: 16, fontWeight: 700, color: '#ffffff' }}>{court.name}</div>
-                        <div style={{ fontSize: 12, color: '#8b92a0', marginTop: 4 }}>{court.surface}</div>
-                      </div>
-                      <div style={{ display: 'flex', gap: 6 }}>
-                        <button
-                          onClick={() => handleOpenCourtModal(court)}
-                          style={{
-                            backgroundColor: '#1e293b',
-                            color: '#38bdf8',
-                            border: 'none',
-                            borderRadius: 9999,
-                            padding: '4px 10px',
-                            fontSize: 11,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                          }}
-                        >
-                          ✏️ Editar
-                        </button>
-                        <button
-                          onClick={() => handleToggleCourtActive(court.id)}
-                          style={{
-                            backgroundColor: court.active ? '#1e293b' : '#33151b',
-                            color: court.active ? '#4ade80' : '#fc1c46',
-                            border: 'none',
-                            borderRadius: 9999,
-                            padding: '4px 10px',
-                            fontSize: 11,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                          }}
-                        >
-                          {court.active ? '● Activa' : '○ Pausada'}
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Horarios Habilitados Tag */}
-                    <div style={{ backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.05)', padding: '10px 12px', borderRadius: 10 }}>
-                      <div style={{ fontSize: 10, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Horarios Habilitados para Reserva</div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: '#ffffff', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span>🕒 {court.openTime} hs a {court.closeTime} hs</span>
-                      </div>
-                    </div>
-
-                    {/* Precio Único de la Cancha */}
-                    <div style={{ backgroundColor: '#181b22', padding: '10px 14px', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <div style={{ fontSize: 11, color: '#888', textTransform: 'uppercase' }}>Precio por Turno</div>
-                      <div style={{ fontSize: 16, fontWeight: 700, color: '#fc1c46' }}>${court.price.toLocaleString()}</div>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: 8, fontSize: 11, color: '#9ca3af' }}>
-                      <span>{court.indoor ? '✓ Techada / Indoor' : '☁ Descubierta'}</span>
-                      <span>·</span>
-                      <span>{court.lighting ? '💡 Iluminación LED Pro' : 'Sin luz'}</span>
-                    </div>
-                  </div>
-                ))}
               </div>
             </div>
           )}
@@ -1850,7 +1876,9 @@ export default function ClubPanel() {
         }}>
           <div style={{
             width: '100%',
-            maxWidth: 500,
+            maxWidth: 520,
+            maxHeight: '90vh',
+            overflowY: 'auto',
             backgroundColor: '#12141a',
             border: '1px solid rgba(255, 255, 255, 0.1)',
             borderRadius: 20,
@@ -1862,7 +1890,7 @@ export default function ClubPanel() {
                 <h3 style={{ fontSize: 19, fontWeight: 700, color: '#ffffff', margin: 0 }}>
                   {editingCourtId ? 'Editar Cancha y Horarios' : 'Configurar Nueva Cancha'}
                 </h3>
-                <div style={{ fontSize: 11, color: '#fc1c46', marginTop: 2 }}>Establecé el nombre personalizado y la franja de apertura</div>
+                <div style={{ fontSize: 11, color: '#fc1c46', marginTop: 2 }}>Establecé el nombre personalizado, características y horario</div>
               </div>
               <button
                 onClick={() => setShowCourtModal(false)}
@@ -1941,6 +1969,136 @@ export default function ClubPanel() {
                       boxSizing: 'border-box',
                     }}
                   />
+                </div>
+              </div>
+
+              {/* Court Features & Attributes Selection */}
+              <div style={{ backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '14px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+                  ⚙️ Características y Servicios de la Cancha
+                </div>
+
+                {/* Techada vs Descubierta */}
+                <div>
+                  <label style={{ display: 'block', fontSize: 10.5, color: '#9ca3af', marginBottom: 6, textTransform: 'uppercase' }}>
+                    Cubierta / Techo
+                  </label>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      type="button"
+                      onClick={() => setCourtIndoorInput(true)}
+                      style={{
+                        flex: 1,
+                        padding: '9px',
+                        borderRadius: 8,
+                        border: courtIndoorInput ? '1px solid #38bdf8' : '1px solid rgba(255,255,255,0.08)',
+                        backgroundColor: courtIndoorInput ? 'rgba(56,189,248,0.15)' : 'transparent',
+                        color: courtIndoorInput ? '#38bdf8' : '#9ca3af',
+                        fontWeight: 600,
+                        fontSize: 12,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      🏠 Techada (Indoor)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCourtIndoorInput(false)}
+                      style={{
+                        flex: 1,
+                        padding: '9px',
+                        borderRadius: 8,
+                        border: !courtIndoorInput ? '1px solid #eab308' : '1px solid rgba(255,255,255,0.08)',
+                        backgroundColor: !courtIndoorInput ? 'rgba(234,179,8,0.15)' : 'transparent',
+                        color: !courtIndoorInput ? '#eab308' : '#9ca3af',
+                        fontWeight: 600,
+                        fontSize: 12,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      ☁ Descubierta (Outdoor)
+                    </button>
+                  </div>
+                </div>
+
+                {/* Iluminación */}
+                <div>
+                  <label style={{ display: 'block', fontSize: 10.5, color: '#9ca3af', marginBottom: 6, textTransform: 'uppercase' }}>
+                    Iluminación
+                  </label>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      type="button"
+                      onClick={() => setCourtLightingInput(true)}
+                      style={{
+                        flex: 1,
+                        padding: '9px',
+                        borderRadius: 8,
+                        border: courtLightingInput ? '1px solid #facc15' : '1px solid rgba(255,255,255,0.08)',
+                        backgroundColor: courtLightingInput ? 'rgba(250,204,21,0.15)' : 'transparent',
+                        color: courtLightingInput ? '#facc15' : '#9ca3af',
+                        fontWeight: 600,
+                        fontSize: 12,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      💡 Con Iluminación LED
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCourtLightingInput(false)}
+                      style={{
+                        flex: 1,
+                        padding: '9px',
+                        borderRadius: 8,
+                        border: !courtLightingInput ? '1px solid #6b7280' : '1px solid rgba(255,255,255,0.08)',
+                        backgroundColor: !courtLightingInput ? 'rgba(107,114,128,0.15)' : 'transparent',
+                        color: !courtLightingInput ? '#d1d5db' : '#9ca3af',
+                        fontWeight: 600,
+                        fontSize: 12,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      🌙 Sin Iluminación
+                    </button>
+                  </div>
+                </div>
+
+                {/* Extras: Cámaras de Grabación & Climatización */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                  <button
+                    type="button"
+                    onClick={() => setCourtCamerasInput(!courtCamerasInput)}
+                    style={{
+                      padding: '9px',
+                      borderRadius: 8,
+                      border: courtCamerasInput ? '1px solid #c084fc' : '1px solid rgba(255,255,255,0.08)',
+                      backgroundColor: courtCamerasInput ? 'rgba(192,132,252,0.15)' : 'transparent',
+                      color: courtCamerasInput ? '#c084fc' : '#9ca3af',
+                      fontWeight: 600,
+                      fontSize: 11.5,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {courtCamerasInput ? '📹 Cámaras HD (Grabación)' : '📷 Sin Cámaras'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setCourtHeatingInput(!courtHeatingInput)}
+                    style={{
+                      padding: '9px',
+                      borderRadius: 8,
+                      border: courtHeatingInput ? '1px solid #fb923c' : '1px solid rgba(255,255,255,0.08)',
+                      backgroundColor: courtHeatingInput ? 'rgba(251,146,60,0.15)' : 'transparent',
+                      color: courtHeatingInput ? '#fb923c' : '#9ca3af',
+                      fontWeight: 600,
+                      fontSize: 11.5,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {courtHeatingInput ? '❄️ Climatizada (Aire/Calef)' : '🌬️ Ventilación Natural'}
+                  </button>
                 </div>
               </div>
 
