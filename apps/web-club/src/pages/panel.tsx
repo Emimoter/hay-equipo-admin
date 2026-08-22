@@ -196,6 +196,9 @@ export default function ClubPanel() {
   const [editCourtId, setEditCourtId] = useState('');
   const [editTime, setEditTime] = useState('');
 
+  // Modal 4: "Detalle de Recaudación y Cobros en Tiempo Real"
+  const [showRevenueModal, setShowRevenueModal] = useState(false);
+
   /* ── Auth Verification & Auto Demo Fallback ── */
   useEffect(() => {
     const raw = localStorage.getItem('hayequipo_club_session');
@@ -478,9 +481,38 @@ export default function ClubPanel() {
     return result;
   }, [players, searchPlayer, selectedSportFilter]);
 
+  // Dynamic Real-Time Revenue & Collection Metrics
+  const financialMetrics = useMemo(() => {
+    const reservedSlots = slots.filter(s => s.status === 'RESERVED' || s.status === 'FIXED');
+
+    // Sum prices of reserved slots for current selected sport filter if any
+    const activeReservedSlots = selectedSportFilter === 'TODOS'
+      ? reservedSlots
+      : reservedSlots.filter(s => s.sport.toUpperCase() === selectedSportFilter);
+
+    const totalRevenue = activeReservedSlots.reduce((acc, slot) => acc + (slot.price || 45000), 0);
+    const paidRevenue = activeReservedSlots.filter(s => s.isPaid100).reduce((acc, slot) => acc + (slot.price || 45000), 0);
+    const pendingRevenue = totalRevenue - paidRevenue;
+
+    // Calculate collection percentage (default to 100% if 0 reservations)
+    const percentage = totalRevenue > 0 ? Math.round((paidRevenue / totalRevenue) * 100) : 100;
+
+    return {
+      totalRevenue,
+      paidRevenue,
+      pendingRevenue,
+      percentage,
+      formattedTotal: `$${totalRevenue.toLocaleString('es-AR')}`,
+      formattedPaid: `$${paidRevenue.toLocaleString('es-AR')}`,
+      formattedPending: `$${pendingRevenue.toLocaleString('es-AR')}`,
+      reservedCount: activeReservedSlots.length,
+      activeReservedSlots,
+    };
+  }, [slots, selectedSportFilter]);
+
   // Metrics calculation
   const totalReservedToday = useMemo(() => {
-    return filteredSlots.filter(s => s.status === 'RESERVED' || s.status === 'FIXED').length + 8;
+    return filteredSlots.filter(s => s.status === 'RESERVED' || s.status === 'FIXED').length;
   }, [filteredSlots]);
 
   const activeCourtsCount = useMemo(() => {
@@ -970,16 +1002,29 @@ export default function ClubPanel() {
                   </div>
                 </div>
 
-                {/* KPI 2: Facturación semanal (100% Cobrada) */}
-                <div style={{
-                  backgroundColor: '#14161c',
-                  borderRadius: 16,
-                  border: '1px solid rgba(255, 255, 255, 0.05)',
-                  padding: '12px 16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 14,
-                }}>
+                {/* KPI 2: Facturación en Tiempo Real (Clickable con desglose) */}
+                <div
+                  onClick={() => setShowRevenueModal(true)}
+                  style={{
+                    backgroundColor: '#14161c',
+                    borderRadius: 16,
+                    border: '1px solid rgba(255, 255, 255, 0.05)',
+                    padding: '12px 16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 14,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.borderColor = 'rgba(74, 222, 128, 0.4)';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.05)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
                   <div style={{
                     width: 40,
                     height: 40,
@@ -998,12 +1043,13 @@ export default function ClubPanel() {
                       <path d="M12 6v2m0 8v2" />
                     </svg>
                   </div>
-                  <div>
+                  <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 'clamp(18px, 2.2vh, 22px)', fontWeight: 700, color: '#ffffff', lineHeight: 1 }}>
-                      $348.000
+                      {financialMetrics.formattedTotal}
                     </div>
-                    <div style={{ fontSize: 11, color: '#4ade80', marginTop: 3 }}>
-                      100% cobrado esta semana
+                    <div style={{ fontSize: 11, color: '#4ade80', marginTop: 3, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span>{financialMetrics.percentage}% cobrado {dateFilter.toLowerCase()}</span>
+                      <span style={{ fontSize: 10, opacity: 0.6 }}>🔍 Ver detalle</span>
                     </div>
                   </div>
                 </div>
@@ -2639,6 +2685,131 @@ export default function ClubPanel() {
                 </button>
               </div>
             </form>
+      {/* ────────────────────────────────────────────────────────────
+          MODAL 4: "DETALLE DE RECAUDACIÓN Y COBROS EN TIEMPO REAL"
+          ──────────────────────────────────────────────────────────── */}
+      {showRevenueModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.75)',
+          backdropFilter: 'blur(8px)',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 16,
+        }}>
+          <div style={{
+            backgroundColor: '#111318',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 20,
+            width: '100%',
+            maxWidth: 520,
+            padding: 24,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 18,
+            boxShadow: '0 20px 50px rgba(0,0,0,0.6)',
+            animation: 'fadeInUp 0.25s ease-out forwards',
+          }}>
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <h3 style={{ fontSize: 18, fontWeight: 700, color: '#ffffff', margin: 0 }}>
+                  Detalle de Recaudación ({dateFilter})
+                </h3>
+                <div style={{ fontSize: 12, color: '#4ade80', marginTop: 4 }}>
+                  Métricas calculadas en tiempo real para las reservas activas
+                </div>
+              </div>
+              <button
+                onClick={() => setShowRevenueModal(false)}
+                style={{ backgroundColor: 'transparent', border: 'none', color: '#6b7280', fontSize: 18, cursor: 'pointer' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Financial Summary KPI Cards Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+              <div style={{ backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: 12, textAlign: 'center' }}>
+                <div style={{ fontSize: 10, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Estimado</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#ffffff', marginTop: 4 }}>{financialMetrics.formattedTotal}</div>
+              </div>
+              <div style={{ backgroundColor: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.25)', borderRadius: 12, padding: 12, textAlign: 'center' }}>
+                <div style={{ fontSize: 10, color: '#4ade80', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Cobrado (100%)</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#4ade80', marginTop: 4 }}>{financialMetrics.formattedPaid}</div>
+              </div>
+              <div style={{ backgroundColor: 'rgba(252,28,70,0.1)', border: '1px solid rgba(252,28,70,0.25)', borderRadius: 12, padding: 12, textAlign: 'center' }}>
+                <div style={{ fontSize: 10, color: '#fc1c46', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Pendiente</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#fc1c46', marginTop: 4 }}>{financialMetrics.formattedPending}</div>
+              </div>
+            </div>
+
+            {/* List of Contributing Reservations */}
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 8 }}>
+                Desglose de Reservas Confirmadas ({financialMetrics.reservedCount})
+              </div>
+              <div style={{ maxHeight: 240, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6, paddingRight: 4 }}>
+                {financialMetrics.activeReservedSlots.map(slot => (
+                  <div
+                    key={slot.id}
+                    style={{
+                      backgroundColor: '#181b22',
+                      border: '1px solid rgba(255,255,255,0.05)',
+                      borderRadius: 10,
+                      padding: '10px 14px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      fontSize: 12.5,
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontWeight: 700, color: '#ffffff' }}>{slot.courtName}</div>
+                      <div style={{ color: '#9ca3af', fontSize: 11, marginTop: 2 }}>{slot.player} · {slot.time} hs</div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontWeight: 700, color: '#ffffff' }}>${slot.price?.toLocaleString()}</div>
+                      <span style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        padding: '2px 7px',
+                        borderRadius: 4,
+                        backgroundColor: slot.isPaid100 ? 'rgba(74,222,128,0.15)' : 'rgba(252,28,70,0.15)',
+                        color: slot.isPaid100 ? '#4ade80' : '#fc1c46',
+                        display: 'inline-block',
+                        marginTop: 2,
+                      }}>
+                        {slot.isPaid100 ? '✓ Pagado 100%' : 'Pendiente Mostrador'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowRevenueModal(false)}
+              style={{
+                padding: '12px',
+                backgroundColor: '#fc1c46',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: 12,
+                fontSize: 13.5,
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              Cerrar Desglose
+            </button>
           </div>
         </div>
       )}
