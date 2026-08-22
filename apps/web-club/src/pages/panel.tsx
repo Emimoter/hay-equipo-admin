@@ -1088,25 +1088,15 @@ export default function ClubPanel() {
           }}>
             <div>
               <h1 style={{
-                fontSize: 'clamp(20px, 2.5vh, 23px)',
-                fontWeight: 700,
+                fontSize: 24,
+                fontWeight: 800,
                 color: '#ffffff',
                 margin: 0,
-                letterSpacing: '-0.5px',
+                letterSpacing: '-0.6px',
                 lineHeight: 1.1,
               }}>
-                Panel del club
+                {clubName}
               </h1>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 5,
-                marginTop: 2,
-                color: '#9ca3af',
-                fontSize: 13,
-              }}>
-                <span>{clubName}</span>
-              </div>
             </div>
 
             {/* Middle: Dynamic Sport Filter Tabs (Only sports registered in current courts) */}
@@ -1636,8 +1626,12 @@ export default function ClubPanel() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: 0 }}>Configuración de Canchas y Atributos</h2>
-                  <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>Personalizá nombres, si es techada, iluminación, cámaras, climatización y tarifas por turno.</p>
+                  <h2 style={{ fontSize: 22, fontWeight: 800, color: '#ffffff', margin: 0, letterSpacing: '-0.4px' }}>
+                    Configuración de Canchas y Atributos
+                  </h2>
+                  <p style={{ fontSize: 13, color: '#9ca3af', margin: '4px 0 0' }}>
+                    Personalizá nombres, si es techada, iluminación, cámaras, climatización y tarifas por turno.
+                  </p>
                 </div>
                 <button
                   onClick={() => handleOpenCourtModal()}
@@ -1782,11 +1776,11 @@ export default function ClubPanel() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
               {/* Header */}
               <div>
-                <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: 0 }}>
+                <h2 style={{ fontSize: 22, fontWeight: 800, color: '#ffffff', margin: 0, letterSpacing: '-0.4px' }}>
                   Recaudación ({dateFilter})
                 </h2>
-                <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>
-                  Control de cobros y turnos del club.
+                <p style={{ fontSize: 13, color: '#9ca3af', margin: '4px 0 0' }}>
+                  Control de cobros y reservas del club.
                 </p>
               </div>
 
@@ -1927,10 +1921,10 @@ export default function ClubPanel() {
               {/* Header Banner */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
                 <div>
-                  <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: 0 }}>
+                  <h2 style={{ fontSize: 22, fontWeight: 800, color: '#ffffff', margin: 0, letterSpacing: '-0.4px' }}>
                     Calendario de Recaudación (Agosto 2026)
                   </h2>
-                  <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>
+                  <p style={{ fontSize: 13, color: '#9ca3af', margin: '4px 0 0' }}>
                     Recaudación diaria del club mes a mes.
                   </p>
                 </div>
@@ -2054,8 +2048,8 @@ export default function ClubPanel() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
                 <div>
-                  <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: 0 }}>Base de Jugadores & Clientes</h2>
-                  <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>Gestión de clientes y abonados del club.</p>
+                  <h2 style={{ fontSize: 22, fontWeight: 800, color: '#ffffff', margin: 0, letterSpacing: '-0.4px' }}>Base de Jugadores & Clientes</h2>
+                  <p style={{ fontSize: 13, color: '#9ca3af', margin: '4px 0 0' }}>Gestión de clientes y abonados del club.</p>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <input
@@ -2150,10 +2144,10 @@ export default function ClubPanel() {
               {/* Header */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
                 <div>
-                  <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: 0 }}>
+                  <h2 style={{ fontSize: 22, fontWeight: 800, color: '#ffffff', margin: 0, letterSpacing: '-0.4px' }}>
                     Turnos Fijos & Abonados Semanales
                   </h2>
-                  <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>
+                  <p style={{ fontSize: 13, color: '#9ca3af', margin: '4px 0 0' }}>
                     Gestión y programación de turnos fijos recurrentes para los clientes del club.
                   </p>
                 </div>
@@ -2296,8 +2290,8 @@ export default function ClubPanel() {
           {activeTab === 'SETTINGS' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
               <div>
-                <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: 0 }}>Configuración del Club</h2>
-                <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>Datos principales del club y política de cancelación.</p>
+                <h2 style={{ fontSize: 22, fontWeight: 800, color: '#ffffff', margin: 0, letterSpacing: '-0.4px' }}>Configuración del Club</h2>
+                <p style={{ fontSize: 13, color: '#9ca3af', margin: '4px 0 0' }}>Datos principales del club y política de cancelación.</p>
               </div>
 
               <div style={{ backgroundColor: '#14161c', padding: '24px', borderRadius: 20, border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: 20 }}>
