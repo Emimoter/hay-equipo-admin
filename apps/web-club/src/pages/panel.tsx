@@ -63,6 +63,50 @@ interface PlayerRecord {
   playerTag: 'JUGADOR FRECUENTE' | 'ABONADO FIJO' | 'JUGADOR VIP' | string;
 }
 
+interface ClubNotification {
+  id: string;
+  title: string;
+  message: string;
+  time: string;
+  read: boolean;
+  type: 'RESERVATION' | 'PAYMENT' | 'CANCEL' | 'SYSTEM';
+}
+
+const INITIAL_NOTIFICATIONS: ClubNotification[] = [
+  {
+    id: 'n-1',
+    title: 'Nueva Reserva Confirmada',
+    message: 'Rodrigo De Paul reservó Cancha 1 Panorámica WPT a las 19:30 hs.',
+    time: 'Hace 12 min',
+    read: false,
+    type: 'RESERVATION',
+  },
+  {
+    id: 'n-2',
+    title: 'Pago Recibido por MercadoPago',
+    message: '$48.000 abonado 100% por Juan Román Riquelme.',
+    time: 'Hace 45 min',
+    read: false,
+    type: 'PAYMENT',
+  },
+  {
+    id: 'n-3',
+    title: 'Turno Fijo Renovado',
+    message: 'Escuela Padel confirmó su reserva semanal en Cancha 3.',
+    time: 'Hace 2 horas',
+    read: true,
+    type: 'RESERVATION',
+  },
+  {
+    id: 'n-4',
+    title: 'Alerta del Sistema',
+    message: 'Resumen de caja diaria disponible para exportar.',
+    time: 'Hace 5 horas',
+    read: true,
+    type: 'SYSTEM',
+  },
+];
+
 // Master Operating Times List
 const ALL_OPERATING_TIMES = ['08:00', '09:30', '11:00', '12:30', '14:00', '15:30', '16:30', '18:00', '19:30', '21:00', '22:30'];
 
@@ -329,6 +373,27 @@ export default function ClubPanel() {
   const [mercadoPagoConnected, setMercadoPagoConnected] = useState(true);
   const [cancellationWindowHours, setCancellationWindowHours] = useState(6);
   const [clubAddress, setClubAddress] = useState('Av. Del Libertador 4400, Palermo, CABA');
+
+  // Notifications State & Handlers
+  const [notifications, setNotifications] = useState<ClubNotification[]>(INITIAL_NOTIFICATIONS);
+  const [showNotificationDropdown, setShowNotificationDropdown] = useState(false);
+
+  const unreadNotificationCount = useMemo(() => {
+    return notifications.filter(n => !n.read).length;
+  }, [notifications]);
+
+  const handleMarkNotificationAsRead = (id: string) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+  };
+
+  const handleMarkAllNotificationsAsRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  };
+
+  const handleDeleteNotification = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  };
 
   // Modal 1: "+ Nueva reserva / Bloquear"
   const [showModal, setShowModal] = useState(false);
@@ -605,6 +670,18 @@ export default function ClubPanel() {
         isPaid100: false,
       };
       setSlots(prev => [blockedSlot, ...prev.filter(s => !(s.courtId === court.id && s.time === modalTime))]);
+
+      // Push notification
+      const blockNotif: ClubNotification = {
+        id: `n-${Date.now()}`,
+        title: 'Horario Bloqueado',
+        message: `${reasonClean} en ${court.name.split('—')[0].trim()} a las ${modalTime} hs.`,
+        time: 'Hace un momento',
+        read: false,
+        type: 'SYSTEM',
+      };
+      setNotifications(prev => [blockNotif, ...prev]);
+
       setShowModal(false);
       setModalBlockReason('Mantenimiento / Uso del Club');
       setModalReservationType('RESERVED');
@@ -644,6 +721,18 @@ export default function ClubPanel() {
       isPaid100: true,
     };
     setSlots(prev => [newSlot, ...prev.filter(s => !(s.courtId === court.id && s.time === modalTime))]);
+
+    // Push notification
+    const resNotif: ClubNotification = {
+      id: `n-${Date.now()}`,
+      title: 'Nueva Reserva Manual',
+      message: `${playerNameClean} reservó ${court.name.split('—')[0].trim()} a las ${modalTime} hs.`,
+      time: 'Hace un momento',
+      read: false,
+      type: 'RESERVATION',
+    };
+    setNotifications(prev => [resNotif, ...prev]);
+
     setShowModal(false);
     setModalPlayer('');
     setModalPhone('');
@@ -1182,45 +1271,207 @@ export default function ClubPanel() {
                 <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Icons.Printer /> Planilla</span>
               </button>
 
-              {/* Notification Bell */}
-              <div
-                style={{
-                  position: 'relative',
-                  width: 34,
-                  height: 34,
-                  borderRadius: '50%',
-                  backgroundColor: '#16181e',
-                  border: '1px solid rgba(255,255,255,0.06)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  color: '#d1d5db',
-                }}
-                onClick={() => setShowToast(true)}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                </svg>
-                <span style={{
-                  position: 'absolute',
-                  top: -2,
-                  right: -2,
-                  backgroundColor: '#fc1c46',
-                  color: '#ffffff',
-                  fontSize: 9,
-                  fontWeight: 700,
-                  width: 15,
-                  height: 15,
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  border: '2px solid #0f1115',
-                }}>
-                  2
-                </span>
+              {/* Notification Bell & Interactive Dropdown Overlay */}
+              <div style={{ position: 'relative' }}>
+                <div
+                  style={{
+                    position: 'relative',
+                    width: 34,
+                    height: 34,
+                    borderRadius: '50%',
+                    backgroundColor: showNotificationDropdown ? '#20242f' : '#16181e',
+                    border: showNotificationDropdown ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.06)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    color: showNotificationDropdown ? '#ffffff' : '#d1d5db',
+                    transition: 'all 0.15s ease',
+                  }}
+                  onClick={() => setShowNotificationDropdown(prev => !prev)}
+                  title="Ver notificaciones del club"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                  </svg>
+                  {unreadNotificationCount > 0 && (
+                    <span style={{
+                      position: 'absolute',
+                      top: -2,
+                      right: -2,
+                      backgroundColor: '#fc1c46',
+                      color: '#ffffff',
+                      fontSize: 9.5,
+                      fontWeight: 800,
+                      width: 17,
+                      height: 17,
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: '2px solid #0f1115',
+                      boxShadow: '0 2px 6px rgba(252,28,70,0.4)',
+                    }}>
+                      {unreadNotificationCount}
+                    </span>
+                  )}
+                </div>
+
+                {/* Dropdown Flyout Panel */}
+                {showNotificationDropdown && (
+                  <>
+                    <div
+                      style={{ position: 'fixed', inset: 0, zIndex: 990 }}
+                      onClick={() => setShowNotificationDropdown(false)}
+                    />
+                    
+                    <div style={{
+                      position: 'absolute',
+                      right: 0,
+                      top: 'calc(100% + 8px)',
+                      width: 340,
+                      backgroundColor: '#12141a',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: 16,
+                      boxShadow: '0 20px 50px rgba(0, 0, 0, 0.85)',
+                      zIndex: 1000,
+                      overflow: 'hidden',
+                      display: 'flex',
+                      flexDirection: 'column',
+                    }}>
+                      {/* Header */}
+                      <div style={{
+                        padding: '14px 16px',
+                        borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        backgroundColor: '#161820',
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontSize: 13, fontWeight: 800, color: '#ffffff' }}>Notificaciones</span>
+                          {unreadNotificationCount > 0 && (
+                            <span style={{ fontSize: 10, fontWeight: 700, backgroundColor: 'rgba(252, 28, 70, 0.15)', color: '#fc1c46', padding: '2px 7px', borderRadius: 10 }}>
+                              {unreadNotificationCount} nuevas
+                            </span>
+                          )}
+                        </div>
+                        {unreadNotificationCount > 0 && (
+                          <button
+                            type="button"
+                            onClick={handleMarkAllNotificationsAsRead}
+                            style={{
+                              backgroundColor: 'transparent',
+                              border: 'none',
+                              color: '#9ca3af',
+                              fontSize: 11,
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              padding: 0,
+                              textDecoration: 'underline',
+                            }}
+                          >
+                            Marcar todas leídas
+                          </button>
+                        )}
+                      </div>
+
+                      {/* List (Scrollable) */}
+                      <div style={{
+                        maxHeight: 320,
+                        overflowY: 'auto',
+                        display: 'flex',
+                        flexDirection: 'column',
+                      }}>
+                        {notifications.length === 0 ? (
+                          <div style={{ padding: 24, textAlign: 'center', color: '#6b7280', fontSize: 12 }}>
+                            No tenés notificaciones registradas.
+                          </div>
+                        ) : (
+                          notifications.map(n => (
+                            <div
+                              key={n.id}
+                              onClick={() => handleMarkNotificationAsRead(n.id)}
+                              style={{
+                                padding: '12px 16px',
+                                borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
+                                backgroundColor: n.read ? 'transparent' : 'rgba(252, 28, 70, 0.04)',
+                                cursor: 'pointer',
+                                transition: 'all 0.12s ease',
+                                display: 'flex',
+                                gap: 12,
+                                alignItems: 'flex-start',
+                              }}
+                              onMouseEnter={e => e.currentTarget.style.backgroundColor = n.read ? 'rgba(255,255,255,0.03)' : 'rgba(252, 28, 70, 0.08)'}
+                              onMouseLeave={e => e.currentTarget.style.backgroundColor = n.read ? 'transparent' : 'rgba(252, 28, 70, 0.04)'}
+                            >
+                              <div style={{
+                                width: 28,
+                                height: 28,
+                                borderRadius: '50%',
+                                backgroundColor: n.type === 'PAYMENT' ? 'rgba(74, 222, 128, 0.12)' : n.type === 'CANCEL' ? 'rgba(239, 68, 68, 0.12)' : 'rgba(252, 28, 70, 0.12)',
+                                color: n.type === 'PAYMENT' ? '#4ade80' : n.type === 'CANCEL' ? '#ef4444' : '#fc1c46',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: 12,
+                                fontWeight: 700,
+                                flexShrink: 0,
+                                marginTop: 2,
+                              }}>
+                                {n.type === 'PAYMENT' ? '$' : '✓'}
+                              </div>
+
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+                                  <div style={{ fontSize: 12.5, fontWeight: n.read ? 600 : 800, color: n.read ? '#d1d5db' : '#ffffff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {n.title}
+                                  </div>
+                                  <span style={{ fontSize: 10, color: '#6b7280', flexShrink: 0 }}>{n.time}</span>
+                                </div>
+                                <div style={{ fontSize: 11.5, color: '#9ca3af', marginTop: 2, lineHeight: 1.3 }}>
+                                  {n.message}
+                                </div>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={(e) => handleDeleteNotification(n.id, e)}
+                                title="Eliminar notificación"
+                                style={{
+                                  backgroundColor: 'transparent',
+                                  border: 'none',
+                                  color: '#4b5563',
+                                  fontSize: 12,
+                                  cursor: 'pointer',
+                                  padding: '2px 4px',
+                                  borderRadius: 4,
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.color = '#ef4444'}
+                                onMouseLeave={e => e.currentTarget.style.color = '#4b5563'}
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          ))
+                        )}
+                      </div>
+
+                      {/* Footer */}
+                      <div style={{
+                        padding: '10px 16px',
+                        borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+                        backgroundColor: '#161820',
+                        textAlign: 'center',
+                        fontSize: 11,
+                        color: '#6b7280',
+                      }}>
+                        {unreadNotificationCount === 0 ? '✓ Todas las notificaciones están leídas' : `${unreadNotificationCount} sin leer`}
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Date Filter Pill */}
