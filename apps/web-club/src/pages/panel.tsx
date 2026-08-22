@@ -36,6 +36,7 @@ interface CourtInfo {
   hasHeating?: boolean;
   openTime: string;  // ej: "08:00"
   closeTime: string; // ej: "23:30"
+  slotDuration?: 60 | 90 | 120; // 60, 90, 120 min
 }
 
 interface PlayerRecord {
@@ -68,10 +69,10 @@ const INITIAL_SLOTS: CourtSlot[] = [
 ];
 
 const INITIAL_COURTS: CourtInfo[] = [
-  { id: 'c-1', name: 'Cancha 1 — Panorámica WPT', sport: 'Pádel', surface: 'Vidrio Panorámico 12mm · Césped Texturado', active: true, pausedForWeather: false, price: 48000, indoor: true, lighting: true, hasCameras: true, hasHeating: true, openTime: '08:00', closeTime: '23:30' },
-  { id: 'c-2', name: 'Cancha 2 — Cristal Pro', sport: 'Pádel', surface: 'Vidrio Templado 10mm · Césped Monofilamento', active: true, pausedForWeather: false, price: 45000, indoor: true, lighting: true, hasCameras: true, hasHeating: false, openTime: '08:00', closeTime: '23:30' },
-  { id: 'c-3', name: 'Cancha 3 — Master Climatizada', sport: 'Pádel', surface: 'Muros Perimetrales · Cubierta Climatizada', active: true, pausedForWeather: false, price: 42000, indoor: true, lighting: true, hasCameras: false, hasHeating: true, openTime: '09:00', closeTime: '23:00' },
-  { id: 'c-4', name: 'Cancha 4 — Fútbol 5 Forbex', sport: 'Fútbol 5', surface: 'Césped Sintético Forbex 50mm con Caucho', active: true, pausedForWeather: false, price: 36000, indoor: false, lighting: true, hasCameras: false, hasHeating: false, openTime: '10:00', closeTime: '24:00' },
+  { id: 'c-1', name: 'Cancha 1 — Panorámica WPT', sport: 'Pádel', surface: 'Vidrio Panorámico 12mm · Césped Texturado', active: true, pausedForWeather: false, price: 48000, indoor: true, lighting: true, hasCameras: true, hasHeating: true, openTime: '08:00', closeTime: '23:30', slotDuration: 90 },
+  { id: 'c-2', name: 'Cancha 2 — Cristal Pro', sport: 'Pádel', surface: 'Vidrio Templado 10mm · Césped Monofilamento', active: true, pausedForWeather: false, price: 45000, indoor: true, lighting: true, hasCameras: true, hasHeating: false, openTime: '08:00', closeTime: '23:30', slotDuration: 90 },
+  { id: 'c-3', name: 'Cancha 3 — Master Climatizada', sport: 'Pádel', surface: 'Muros Perimetrales · Cubierta Climatizada', active: true, pausedForWeather: false, price: 42000, indoor: true, lighting: true, hasCameras: false, hasHeating: true, openTime: '09:00', closeTime: '23:00', slotDuration: 60 },
+  { id: 'c-4', name: 'Cancha 4 — Fútbol 5 Forbex', sport: 'Fútbol 5', surface: 'Césped Sintético Forbex 50mm con Caucho', active: true, pausedForWeather: false, price: 36000, indoor: false, lighting: true, hasCameras: false, hasHeating: false, openTime: '10:00', closeTime: '24:00', slotDuration: 60 },
 ];
 
 const INITIAL_PLAYERS: PlayerRecord[] = [
@@ -185,6 +186,7 @@ export default function ClubPanel() {
   const [courtLightingInput, setCourtLightingInput] = useState(true);
   const [courtCamerasInput, setCourtCamerasInput] = useState(true);
   const [courtHeatingInput, setCourtHeatingInput] = useState(false);
+  const [courtSlotDurationInput, setCourtSlotDurationInput] = useState<60 | 90 | 120>(90);
 
   // Modal 3: "Editar / Eliminar Reserva Existente"
   const [showEditReservationModal, setShowEditReservationModal] = useState(false);
@@ -274,6 +276,7 @@ export default function ClubPanel() {
       setCourtLightingInput(court.lighting);
       setCourtCamerasInput(court.hasCameras ?? true);
       setCourtHeatingInput(court.hasHeating ?? false);
+      setCourtSlotDurationInput(court.slotDuration || 90);
     } else {
       setEditingCourtId(null);
       setCourtNameInput(`Cancha ${courts.length + 1}`);
@@ -286,6 +289,7 @@ export default function ClubPanel() {
       setCourtLightingInput(true);
       setCourtCamerasInput(true);
       setCourtHeatingInput(false);
+      setCourtSlotDurationInput(90);
     }
     setShowCourtModal(true);
   };
@@ -308,6 +312,7 @@ export default function ClubPanel() {
         lighting: courtLightingInput,
         hasCameras: courtCamerasInput,
         hasHeating: courtHeatingInput,
+        slotDuration: courtSlotDurationInput,
       } : c));
     } else {
       const newCourt: CourtInfo = {
@@ -1343,6 +1348,9 @@ export default function ClubPanel() {
 
                     {/* Court Feature Pills */}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, fontSize: 11 }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, backgroundColor: 'rgba(255,255,255,0.06)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.1)', padding: '4px 9px', borderRadius: 6, fontWeight: 700 }}>
+                        <Icons.Clock /> {court.slotDuration || 90} min / turno
+                      </span>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, backgroundColor: court.indoor ? 'rgba(252,28,70,0.12)' : 'rgba(255,255,255,0.04)', color: court.indoor ? '#fc1c46' : '#9ca3af', border: court.indoor ? '1px solid rgba(252,28,70,0.25)' : '1px solid rgba(255,255,255,0.06)', padding: '4px 9px', borderRadius: 6, fontWeight: 600 }}>
                         {court.indoor ? <><Icons.Indoor /> Techada</> : <><Icons.Outdoor /> Descubierta</>}
                       </span>
@@ -2206,11 +2214,47 @@ export default function ClubPanel() {
                 </div>
               </div>
 
-              {/* Operating Schedule Configuration — Direct Minimalist Inline Selector + 24hs Checkbox */}
+              {/* Duración del Turno (60, 90, 120 min) */}
               <div style={{ backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '14px 16px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#fc1c46', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Icons.Clock /> Duración de Cada Turno
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                  {[60, 90, 120].map(duration => (
+                    <button
+                      key={duration}
+                      type="button"
+                      onClick={() => setCourtSlotDurationInput(duration as 60 | 90 | 120)}
+                      style={{
+                        padding: '10px 8px',
+                        borderRadius: 10,
+                        border: courtSlotDurationInput === duration ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
+                        backgroundColor: courtSlotDurationInput === duration ? 'rgba(252,28,70,0.18)' : '#11131a',
+                        color: courtSlotDurationInput === duration ? '#ffffff' : '#9ca3af',
+                        fontWeight: 700,
+                        fontSize: 13,
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: 2,
+                      }}
+                    >
+                      <span>{duration} min</span>
+                      <span style={{ fontSize: 10, opacity: 0.7, fontWeight: 500 }}>
+                        {duration === 60 ? '1 hora' : duration === 90 ? '1h 30m' : '2 horas'}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Operating Schedule Configuration */}
+              <div style={{ backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: '#fc1c46', textTransform: 'uppercase', letterSpacing: '0.8px', display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <Icons.Clock /> Horarios Habilitados para Reserva en App
+                    <Icons.Clock /> Horario de Funcionamiento
                   </div>
 
                   {/* Clear Checkbox for 24Hs */}
@@ -2276,7 +2320,7 @@ export default function ClubPanel() {
                         boxSizing: 'border-box',
                       }}
                     >
-                      {['00:00', '06:00', '07:00', '07:30', '08:00', '08:30', '09:00', '09:30', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00'].map(t => (
+                      {['00:00', '00:30', '01:00', '01:30', '02:00', '06:00', '06:30', '07:00', '07:30', '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30'].map(t => (
                         <option key={t} value={t} style={{ backgroundColor: '#11131a', color: '#ffffff' }}>
                           {t} hs
                         </option>
