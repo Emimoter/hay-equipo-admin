@@ -332,6 +332,7 @@ export default function ClubPanel() {
 
   // Modal 1: "+ Nueva reserva / Bloquear"
   const [showModal, setShowModal] = useState(false);
+  const [isDirectCellSelection, setIsDirectCellSelection] = useState(false);
   const [modalReservationType, setModalReservationType] = useState<'RESERVED' | 'BLOCKED'>('RESERVED');
   const [modalBlockReason, setModalBlockReason] = useState('Mantenimiento / Uso del Club');
   const [modalCourt, setModalCourt] = useState('c-1');
@@ -1539,6 +1540,7 @@ export default function ClubPanel() {
                                   setModalPhone('');
                                   setModalSelectedPlayerId('CUSTOM');
                                   setModalReservationType('RESERVED');
+                                  setIsDirectCellSelection(true);
                                   setShowModal(true);
                                 }}
                                 title="Click para reservar o bloquear horario"
@@ -1662,7 +1664,10 @@ export default function ClubPanel() {
 
                   {/* BUTTON NUEVA RESERVA MANUAL */}
                   <button
-                    onClick={() => setShowModal(true)}
+                    onClick={() => {
+                      setIsDirectCellSelection(false);
+                      setShowModal(true);
+                    }}
                     style={{
                       width: '100%',
                       padding: '12px 16px',
@@ -2545,53 +2550,74 @@ export default function ClubPanel() {
                 </button>
               </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
-                  Cancha
-                </label>
-                <select
-                  value={modalCourt}
-                  onChange={e => handleModalCourtChange(e.target.value)}
-                  style={{
-                    width: '100%',
-                    backgroundColor: '#181b22',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: 10,
-                    padding: '10px 12px',
-                    color: '#ffffff',
-                    fontSize: 13.5,
-                  }}
-                >
-                  {courts.map(c => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
-              </div>
+              {isDirectCellSelection ? (
+                <div style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: 12,
+                  padding: '10px 14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#ffffff' }}>
+                    {courts.find(c => c.id === modalCourt)?.name}
+                  </div>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: '#fc1c46', backgroundColor: '#241217', border: '1px solid rgba(252,28,70,0.3)', padding: '3px 10px', borderRadius: 20 }}>
+                    {modalTime} hs
+                  </span>
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
+                      Cancha
+                    </label>
+                    <select
+                      value={modalCourt}
+                      onChange={e => handleModalCourtChange(e.target.value)}
+                      style={{
+                        width: '100%',
+                        backgroundColor: '#181b22',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        borderRadius: 10,
+                        padding: '10px 12px',
+                        color: '#ffffff',
+                        fontSize: 13.5,
+                      }}
+                    >
+                      {courts.map(c => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
-                  Horario Habilitado (Libre)
-                </label>
-                <select
-                  value={modalTime}
-                  onChange={e => setModalTime(e.target.value)}
-                  style={{
-                    width: '100%',
-                    backgroundColor: '#181b22',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: 10,
-                    padding: '10px 12px',
-                    color: '#ffffff',
-                    fontSize: 13.5,
-                  }}
-                >
-                  {getAvailableTimesForCourt(modalCourt).map(time => (
-                    <option key={time} value={time}>
-                      {time} hs (Disponible)
-                    </option>
-                  ))}
-                </select>
-              </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
+                      Horario Habilitado (Libre)
+                    </label>
+                    <select
+                      value={modalTime}
+                      onChange={e => setModalTime(e.target.value)}
+                      style={{
+                        width: '100%',
+                        backgroundColor: '#181b22',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        borderRadius: 10,
+                        padding: '10px 12px',
+                        color: '#ffffff',
+                        fontSize: 13.5,
+                      }}
+                    >
+                      {getAvailableTimesForCourt(modalCourt).map(time => (
+                        <option key={time} value={time}>
+                          {time} hs (Disponible)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              )}
 
               {modalReservationType === 'BLOCKED' ? (
                 <div>
