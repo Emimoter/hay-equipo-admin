@@ -84,6 +84,63 @@ const INITIAL_PLAYERS: PlayerRecord[] = [
 ];
 
 /* ────────────────────────────────────────────────────────────
+   Custom Vector Icons (No Unicode Emojis)
+   ──────────────────────────────────────────────────────────── */
+const Icons = {
+  Printer: () => (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle' }}><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+  ),
+  Edit: () => (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle' }}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+  ),
+  Clock: () => (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle' }}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+  ),
+  Indoor: () => (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle' }}><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+  ),
+  Outdoor: () => (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle' }}><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+  ),
+  Lighting: () => (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle' }}><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1.55.59 2.92 1.6 3.9.7.7 1.13 1.56 1.3 2.5"/></svg>
+  ),
+  NoLighting: () => (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle' }}><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  ),
+  Camera: () => (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle' }}><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+  ),
+  CameraOff: () => (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle' }}><line x1="1" y1="1" x2="23" y2="23"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/><polygon points="23 7 16 12 23 17 23 7"/></svg>
+  ),
+  Climate: () => (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle' }}><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/><line x1="4.93" y1="19.07" x2="19.07" y2="4.93"/></svg>
+  ),
+  Wind: () => (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle' }}><path d="M9.59 4.59A2 2 0 1 1 11 8H2"/><path d="M12.59 19.41A2 2 0 1 0 14 16H2"/><path d="M15.73 8.27A2.5 2.5 0 1 1 17.5 12H2"/></svg>
+  ),
+  Rain: () => (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle' }}><line x1="16" y1="13" x2="16" y2="21"/><line x1="8" y1="13" x2="8" y2="21"/><line x1="12" y1="15" x2="12" y2="23"/><path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/></svg>
+  ),
+  CloudOK: () => (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle' }}><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+  ),
+  SettingsSliders: () => (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle' }}><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+  ),
+  Trash: () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle' }}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+  ),
+  Save: () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle' }}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+  ),
+  Moon: () => (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle' }}><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  ),
+};
+
+/* ────────────────────────────────────────────────────────────
    Main Component
    ──────────────────────────────────────────────────────────── */
 
@@ -769,7 +826,7 @@ export default function ClubPanel() {
                   gap: 5,
                 }}
               >
-                <span>🖨️ Planilla</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Icons.Printer /> Planilla</span>
               </button>
 
               {/* Notification Bell */}
@@ -1251,7 +1308,7 @@ export default function ClubPanel() {
                             cursor: 'pointer',
                           }}
                         >
-                          ✏️ Editar
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Icons.Edit /> Editar</span>
                         </button>
                         <button
                           onClick={() => handleToggleCourtActive(court.id)}
@@ -1275,7 +1332,7 @@ export default function ClubPanel() {
                     <div style={{ backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.05)', padding: '10px 12px', borderRadius: 10 }}>
                       <div style={{ fontSize: 10, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Horarios Habilitados para Reserva</div>
                       <div style={{ fontSize: 14, fontWeight: 700, color: '#ffffff', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span>🕒 {court.openTime} hs a {court.closeTime} hs</span>
+                        <Icons.Clock /> <span>{court.openTime} hs a {court.closeTime} hs</span>
                       </div>
                     </div>
 
@@ -1287,20 +1344,20 @@ export default function ClubPanel() {
 
                     {/* Court Feature Pills */}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, fontSize: 11 }}>
-                      <span style={{ backgroundColor: court.indoor ? 'rgba(252,28,70,0.12)' : 'rgba(255,255,255,0.04)', color: court.indoor ? '#fc1c46' : '#9ca3af', border: court.indoor ? '1px solid rgba(252,28,70,0.25)' : '1px solid rgba(255,255,255,0.06)', padding: '4px 9px', borderRadius: 6, fontWeight: 600 }}>
-                        {court.indoor ? '🏠 Techada (Indoor)' : '☁ Descubierta (Outdoor)'}
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, backgroundColor: court.indoor ? 'rgba(252,28,70,0.12)' : 'rgba(255,255,255,0.04)', color: court.indoor ? '#fc1c46' : '#9ca3af', border: court.indoor ? '1px solid rgba(252,28,70,0.25)' : '1px solid rgba(255,255,255,0.06)', padding: '4px 9px', borderRadius: 6, fontWeight: 600 }}>
+                        {court.indoor ? <><Icons.Indoor /> Techada (Indoor)</> : <><Icons.Outdoor /> Descubierta (Outdoor)</>}
                       </span>
-                      <span style={{ backgroundColor: court.lighting ? 'rgba(252,28,70,0.12)' : 'rgba(255,255,255,0.04)', color: court.lighting ? '#fc1c46' : '#9ca3af', border: court.lighting ? '1px solid rgba(252,28,70,0.25)' : '1px solid rgba(255,255,255,0.06)', padding: '4px 9px', borderRadius: 6, fontWeight: 600 }}>
-                        {court.lighting ? '💡 Luz LED Pro' : '🌙 Sin Iluminación'}
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, backgroundColor: court.lighting ? 'rgba(252,28,70,0.12)' : 'rgba(255,255,255,0.04)', color: court.lighting ? '#fc1c46' : '#9ca3af', border: court.lighting ? '1px solid rgba(252,28,70,0.25)' : '1px solid rgba(255,255,255,0.06)', padding: '4px 9px', borderRadius: 6, fontWeight: 600 }}>
+                        {court.lighting ? <><Icons.Lighting /> Luz LED Pro</> : <><Icons.NoLighting /> Sin Iluminación</>}
                       </span>
                       {court.hasCameras && (
-                        <span style={{ backgroundColor: 'rgba(252,28,70,0.12)', color: '#fc1c46', border: '1px solid rgba(252,28,70,0.25)', padding: '4px 9px', borderRadius: 6, fontWeight: 600 }}>
-                          📹 Grabación HD
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, backgroundColor: 'rgba(252,28,70,0.12)', color: '#fc1c46', border: '1px solid rgba(252,28,70,0.25)', padding: '4px 9px', borderRadius: 6, fontWeight: 600 }}>
+                          <Icons.Camera /> Grabación HD
                         </span>
                       )}
                       {court.hasHeating && (
-                        <span style={{ backgroundColor: 'rgba(252,28,70,0.12)', color: '#fc1c46', border: '1px solid rgba(252,28,70,0.25)', padding: '4px 9px', borderRadius: 6, fontWeight: 600 }}>
-                          ❄️ Climatizada
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, backgroundColor: 'rgba(252,28,70,0.12)', color: '#fc1c46', border: '1px solid rgba(252,28,70,0.25)', padding: '4px 9px', borderRadius: 6, fontWeight: 600 }}>
+                          <Icons.Climate /> Climatizada
                         </span>
                       )}
                     </div>
@@ -1363,7 +1420,7 @@ export default function ClubPanel() {
                         <div>
                           <div style={{ fontWeight: 700, color: '#fff', fontSize: 15 }}>{court.name}</div>
                           <div style={{ fontSize: 11, color: '#8b92a0', marginTop: 2 }}>
-                            <span style={{ color: '#fc1c46', fontWeight: 600 }}>{court.sport}</span> · 🕒 {court.openTime} a {court.closeTime} hs
+                            <span style={{ color: '#fc1c46', fontWeight: 600 }}>{court.sport}</span> · <Icons.Clock /> {court.openTime} a {court.closeTime} hs
                           </div>
                         </div>
 
@@ -1382,15 +1439,17 @@ export default function ClubPanel() {
                             cursor: 'pointer',
                           }}
                         >
-                          {court.pausedForWeather ? '🌧️ Pausada Lluvia' : '☁ Clima OK'}
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                            {court.pausedForWeather ? <><Icons.Rain /> Pausada Lluvia</> : <><Icons.CloudOK /> Clima OK</>}
+                          </span>
                         </button>
                       </div>
 
                       {/* Slots List */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         {court.pausedForWeather ? (
-                          <div style={{ padding: '20px 10px', textAlign: 'center', color: '#eab308', fontSize: 12, backgroundColor: 'rgba(234, 179, 8, 0.08)', borderRadius: 10 }}>
-                            🌧️ Cancha descubierta pausada temporariamente por motivos climáticos.
+                          <div style={{ padding: '20px 10px', textAlign: 'center', color: '#eab308', fontSize: 12, backgroundColor: 'rgba(234, 179, 8, 0.08)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                            <Icons.Rain /> Cancha descubierta pausada temporariamente por motivos climáticos.
                           </div>
                         ) : (
                           courtSlots.map(s => (
@@ -1459,7 +1518,7 @@ export default function ClubPanel() {
                   type="text"
                   value={searchPlayer}
                   onChange={e => setSearchPlayer(e.target.value)}
-                  placeholder="🔍 Buscar jugador..."
+                  placeholder="Buscar jugador por nombre o teléfono..."
                   style={{
                     backgroundColor: '#16181e',
                     color: '#fff',
@@ -1781,7 +1840,7 @@ export default function ClubPanel() {
                 >
                   {getAvailableTimesForCourt(modalCourt).map(time => (
                     <option key={time} value={time}>
-                      🕒 {time} hs (Disponible)
+                      {time} hs (Disponible)
                     </option>
                   ))}
                 </select>
@@ -1974,8 +2033,8 @@ export default function ClubPanel() {
 
               {/* Court Features & Attributes Selection */}
               <div style={{ backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#fc1c46', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 2 }}>
-                  ⚙️ Características y Servicios de la Cancha
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#fc1c46', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Icons.SettingsSliders /> Características y Servicios de la Cancha
                 </div>
 
                 {/* Row 1: Techada vs Descubierta */}
@@ -1994,9 +2053,13 @@ export default function ClubPanel() {
                       fontSize: 12,
                       cursor: 'pointer',
                       transition: 'all 0.15s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
                     }}
                   >
-                    🏠 Techada (Indoor)
+                    <Icons.Indoor /> Techada (Indoor)
                   </button>
                   <button
                     type="button"
@@ -2012,9 +2075,13 @@ export default function ClubPanel() {
                       fontSize: 12,
                       cursor: 'pointer',
                       transition: 'all 0.15s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
                     }}
                   >
-                    ☁ Descubierta (Outdoor)
+                    <Icons.Outdoor /> Descubierta (Outdoor)
                   </button>
                 </div>
 
@@ -2034,9 +2101,13 @@ export default function ClubPanel() {
                       fontSize: 12,
                       cursor: 'pointer',
                       transition: 'all 0.15s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
                     }}
                   >
-                    💡 Con Iluminación LED
+                    <Icons.Lighting /> Con Iluminación LED
                   </button>
                   <button
                     type="button"
@@ -2052,9 +2123,13 @@ export default function ClubPanel() {
                       fontSize: 12,
                       cursor: 'pointer',
                       transition: 'all 0.15s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
                     }}
                   >
-                    🌙 Sin Iluminación
+                    <Icons.NoLighting /> Sin Iluminación
                   </button>
                 </div>
 
@@ -2074,9 +2149,13 @@ export default function ClubPanel() {
                       fontSize: 12,
                       cursor: 'pointer',
                       transition: 'all 0.15s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
                     }}
                   >
-                    📹 Con Cámaras (Grabación)
+                    <Icons.Camera /> Con Cámaras (Grabación)
                   </button>
                   <button
                     type="button"
@@ -2092,9 +2171,13 @@ export default function ClubPanel() {
                       fontSize: 12,
                       cursor: 'pointer',
                       transition: 'all 0.15s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
                     }}
                   >
-                    📷 Sin Cámaras
+                    <Icons.CameraOff /> Sin Cámaras
                   </button>
                 </div>
 
@@ -2114,9 +2197,13 @@ export default function ClubPanel() {
                       fontSize: 12,
                       cursor: 'pointer',
                       transition: 'all 0.15s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
                     }}
                   >
-                    ❄️ Climatizada (Aire/Calef)
+                    <Icons.Climate /> Climatizada (Aire/Calef)
                   </button>
                   <button
                     type="button"
@@ -2132,9 +2219,13 @@ export default function ClubPanel() {
                       fontSize: 12,
                       cursor: 'pointer',
                       transition: 'all 0.15s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
                     }}
                   >
-                    🌬️ Ventilación Natural
+                    <Icons.Wind /> Ventilación Natural
                   </button>
                 </div>
               </div>
@@ -2142,8 +2233,8 @@ export default function ClubPanel() {
               {/* Operating Schedule Configuration — Direct Minimalist Inline Selector + 24hs Checkbox */}
               <div style={{ backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '14px 16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#fc1c46', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
-                    🕒 Horarios Habilitados para Reserva en App
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#fc1c46', textTransform: 'uppercase', letterSpacing: '0.8px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Icons.Clock /> Horarios Habilitados para Reserva en App
                   </div>
 
                   {/* Clear Checkbox for 24Hs */}
@@ -2180,8 +2271,8 @@ export default function ClubPanel() {
                         cursor: 'pointer',
                       }}
                     />
-                    <span style={{ fontSize: 11.5, fontWeight: 700, color: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '#ffffff' : '#d1d5db' }}>
-                      🌙 Abierto 24 Horas
+                    <span style={{ fontSize: 11.5, fontWeight: 700, color: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '#ffffff' : '#d1d5db', display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <Icons.Moon /> Abierto 24 Horas
                     </span>
                   </label>
                 </div>
@@ -2211,7 +2302,7 @@ export default function ClubPanel() {
                     >
                       {['00:00', '06:00', '07:00', '07:30', '08:00', '08:30', '09:00', '09:30', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00'].map(t => (
                         <option key={t} value={t} style={{ backgroundColor: '#11131a', color: '#ffffff' }}>
-                          🕒 {t} hs
+                          {t} hs
                         </option>
                       ))}
                     </select>
@@ -2241,7 +2332,7 @@ export default function ClubPanel() {
                     >
                       {['18:00', '19:00', '19:30', '20:00', '20:30', '21:00', '21:30', '22:00', '22:30', '23:00', '23:30', '24:00', '01:00', '02:00'].map(t => (
                         <option key={t} value={t} style={{ backgroundColor: '#11131a', color: '#ffffff' }}>
-                          🕒 {t} hs
+                          {t} hs
                         </option>
                       ))}
                     </select>
@@ -2425,7 +2516,7 @@ export default function ClubPanel() {
                   >
                     {getAvailableTimesForCourt(editCourtId, editingSlot.id).map(time => (
                       <option key={time} value={time}>
-                        🕒 {time} hs {time === editingSlot.time ? '(Actual)' : '(Disponible)'}
+                        {time} hs {time === editingSlot.time ? '(Actual)' : '(Disponible)'}
                       </option>
                     ))}
                   </select>
@@ -2445,9 +2536,13 @@ export default function ClubPanel() {
                     fontSize: 13.5,
                     fontWeight: 700,
                     cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6,
                   }}
                 >
-                  💾 Guardar Cambios
+                  <Icons.Save /> Guardar Cambios
                 </button>
                 <button
                   type="button"
@@ -2462,9 +2557,13 @@ export default function ClubPanel() {
                     fontSize: 13.5,
                     fontWeight: 700,
                     cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6,
                   }}
                 >
-                  🗑️ Eliminar Reserva
+                  <Icons.Trash /> Eliminar Reserva
                 </button>
               </div>
             </form>
