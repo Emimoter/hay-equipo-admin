@@ -129,6 +129,20 @@ export default function ClubPanel() {
   const [courtCamerasInput, setCourtCamerasInput] = useState(true);
   const [courtHeatingInput, setCourtHeatingInput] = useState(false);
 
+  // Modal 4: Minimalist Pro Drum Time Picker
+  const [showTimePickerModal, setShowTimePickerModal] = useState(false);
+  const [timePickerTarget, setTimePickerTarget] = useState<'OPEN' | 'CLOSE' | null>(null);
+  const [pickerHour, setPickerHour] = useState('08');
+  const [pickerMinute, setPickerMinute] = useState('00');
+
+  const openTimePicker = (target: 'OPEN' | 'CLOSE', currentVal: string) => {
+    setTimePickerTarget(target);
+    const parts = (currentVal || '08:00').split(':');
+    setPickerHour(parts[0] || '08');
+    setPickerMinute(parts[1] || '00');
+    setShowTimePickerModal(true);
+  };
+
   // Modal 3: "Editar / Eliminar Reserva Existente"
   const [showEditReservationModal, setShowEditReservationModal] = useState(false);
   const [editingSlot, setEditingSlot] = useState<CourtSlot | null>(null);
@@ -2139,7 +2153,7 @@ export default function ClubPanel() {
                 </div>
               </div>
 
-              {/* Operating Schedule Configuration */}
+              {/* Operating Schedule Configuration with Minimalist Pro Time Picker */}
               <div style={{ backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '12px 14px' }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: '#fc1c46', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 8 }}>
                   🕒 Horarios Habilitados para Reserva en App
@@ -2147,43 +2161,71 @@ export default function ClubPanel() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                   <div>
                     <label style={{ display: 'block', fontSize: 10, color: '#9ca3af', marginBottom: 4 }}>Hora Apertura</label>
-                    <input
-                      type="text"
-                      value={courtOpenTimeInput}
-                      onChange={e => setCourtOpenTimeInput(e.target.value)}
-                      placeholder="08:00"
-                      required
+                    <button
+                      type="button"
+                      onClick={() => openTimePicker('OPEN', courtOpenTimeInput)}
                       style={{
                         width: '100%',
                         backgroundColor: '#11131a',
-                        border: '1px solid rgba(255,255,255,0.08)',
-                        borderRadius: 8,
-                        padding: '8px 10px',
+                        border: '1px solid rgba(252,28,70,0.3)',
+                        borderRadius: 10,
+                        padding: '10px 14px',
                         color: '#ffffff',
-                        fontSize: 13,
-                        boxSizing: 'border-box',
+                        fontSize: 16,
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                        transition: 'all 0.15s ease',
                       }}
-                    />
+                      onMouseEnter={e => {
+                        e.currentTarget.style.borderColor = '#fc1c46';
+                        e.currentTarget.style.backgroundColor = 'rgba(252,28,70,0.1)';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.borderColor = 'rgba(252,28,70,0.3)';
+                        e.currentTarget.style.backgroundColor = '#11131a';
+                      }}
+                    >
+                      <span>{courtOpenTimeInput}</span>
+                      <span style={{ fontSize: 11, color: '#fc1c46', fontWeight: 600 }}>🕒 Modificar</span>
+                    </button>
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: 10, color: '#9ca3af', marginBottom: 4 }}>Hora Cierre</label>
-                    <input
-                      type="text"
-                      value={courtCloseTimeInput}
-                      onChange={e => setCourtCloseTimeInput(e.target.value)}
-                      placeholder="23:30"
-                      required
+                    <button
+                      type="button"
+                      onClick={() => openTimePicker('CLOSE', courtCloseTimeInput)}
                       style={{
                         width: '100%',
                         backgroundColor: '#11131a',
-                        border: '1px solid rgba(255,255,255,0.08)',
-                        borderRadius: 8,
-                        padding: '8px 10px',
+                        border: '1px solid rgba(252,28,70,0.3)',
+                        borderRadius: 10,
+                        padding: '10px 14px',
                         color: '#ffffff',
-                        fontSize: 13,
-                        boxSizing: 'border-box',
+                        fontSize: 16,
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                        transition: 'all 0.15s ease',
                       }}
-                    />
+                      onMouseEnter={e => {
+                        e.currentTarget.style.borderColor = '#fc1c46';
+                        e.currentTarget.style.backgroundColor = 'rgba(252,28,70,0.1)';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.borderColor = 'rgba(252,28,70,0.3)';
+                        e.currentTarget.style.backgroundColor = '#11131a';
+                      }}
+                    >
+                      <span>{courtCloseTimeInput}</span>
+                      <span style={{ fontSize: 11, color: '#fc1c46', fontWeight: 600 }}>🕒 Modificar</span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -2405,8 +2447,222 @@ export default function ClubPanel() {
                 >
                   🗑️ Eliminar Reserva
                 </button>
+      {/* ────────────────────────────────────────────────────────────
+          MODAL 4: MINIMALIST PRO DRUM TIME PICKER
+          ──────────────────────────────────────────────────────────── */}
+      {showTimePickerModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.85)',
+          backdropFilter: 'blur(10px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 2000,
+          padding: 20,
+          animation: 'fadeInUp 0.2s ease-out',
+        }}>
+          <div style={{
+            width: '100%',
+            maxWidth: 360,
+            backgroundColor: '#11131a',
+            border: '1px solid rgba(252, 28, 70, 0.4)',
+            borderRadius: 24,
+            padding: '24px 22px',
+            boxShadow: '0 30px 80px rgba(0, 0, 0, 0.95), 0 0 40px rgba(252, 28, 70, 0.2)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 18,
+          }}>
+            {/* Header */}
+            <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#fc1c46', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                  SELECCIONAR HORARIO
+                </div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#ffffff', marginTop: 2 }}>
+                  {timePickerTarget === 'OPEN' ? 'Hora de Apertura' : 'Hora de Cierre'}
+                </div>
               </div>
-            </form>
+              <button
+                onClick={() => setShowTimePickerModal(false)}
+                style={{ backgroundColor: 'transparent', border: 'none', color: '#6b7280', fontSize: 18, cursor: 'pointer' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Quick Presets */}
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
+              {['08:00', '09:00', '14:00', '18:00', '22:30', '23:30', '00:00'].map(preset => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => {
+                    const [h, m] = preset.split(':');
+                    setPickerHour(h);
+                    setPickerMinute(m);
+                  }}
+                  style={{
+                    backgroundColor: `${pickerHour}:${pickerMinute}` === preset ? '#fc1c46' : '#181b22',
+                    color: `${pickerHour}:${pickerMinute}` === preset ? '#ffffff' : '#9ca3af',
+                    border: `${pickerHour}:${pickerMinute}` === preset ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: 20,
+                    padding: '4px 10px',
+                    fontSize: 11,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  {preset}
+                </button>
+              ))}
+            </div>
+
+            {/* iOS/watchOS Animated Drum Wheel Picker */}
+            <div style={{
+              position: 'relative',
+              width: '100%',
+              height: 180,
+              backgroundColor: '#0a0c10',
+              borderRadius: 16,
+              border: '1px solid rgba(255,255,255,0.06)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden',
+              boxShadow: 'inset 0 0 20px rgba(0,0,0,0.8)',
+            }}>
+              {/* Central Selection Highlight Bar */}
+              <div style={{
+                position: 'absolute',
+                top: '50%',
+                left: 12,
+                right: 12,
+                height: 48,
+                transform: 'translateY(-50%)',
+                backgroundColor: 'rgba(252, 28, 70, 0.15)',
+                borderTop: '1px solid rgba(252, 28, 70, 0.5)',
+                borderBottom: '1px solid rgba(252, 28, 70, 0.5)',
+                borderRadius: 10,
+                pointerEvents: 'none',
+                boxShadow: '0 0 15px rgba(252, 28, 70, 0.2)',
+              }} />
+
+              {/* Column 1: Hours Drum */}
+              <div style={{
+                flex: 1,
+                height: '100%',
+                overflowY: 'auto',
+                scrollSnapType: 'y mandatory',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                padding: '66px 0',
+                scrollbarWidth: 'none',
+              }}>
+                {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0')).map(h => (
+                  <div
+                    key={h}
+                    onClick={() => setPickerHour(h)}
+                    style={{
+                      height: 48,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: pickerHour === h ? 24 : 16,
+                      fontWeight: pickerHour === h ? 800 : 400,
+                      color: pickerHour === h ? '#ffffff' : 'rgba(255,255,255,0.3)',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                      scrollSnapAlign: 'center',
+                      userSelect: 'none',
+                    }}
+                  >
+                    {h} hs
+                  </div>
+                ))}
+              </div>
+
+              {/* Separator Colon */}
+              <div style={{
+                fontSize: 22,
+                fontWeight: 800,
+                color: '#fc1c46',
+                padding: '0 6px',
+              }}>
+                :
+              </div>
+
+              {/* Column 2: Minutes Drum */}
+              <div style={{
+                flex: 1,
+                height: '100%',
+                overflowY: 'auto',
+                scrollSnapType: 'y mandatory',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                padding: '66px 0',
+                scrollbarWidth: 'none',
+              }}>
+                {['00', '15', '30', '45'].map(m => (
+                  <div
+                    key={m}
+                    onClick={() => setPickerMinute(m)}
+                    style={{
+                      height: 48,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: pickerMinute === m ? 24 : 16,
+                      fontWeight: pickerMinute === m ? 800 : 400,
+                      color: pickerMinute === m ? '#ffffff' : 'rgba(255,255,255,0.3)',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                      scrollSnapAlign: 'center',
+                      userSelect: 'none',
+                    }}
+                  >
+                    {m} min
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Confirm Button */}
+            <button
+              type="button"
+              onClick={() => {
+                const selectedTime = `${pickerHour}:${pickerMinute}`;
+                if (timePickerTarget === 'OPEN') {
+                  setCourtOpenTimeInput(selectedTime);
+                } else if (timePickerTarget === 'CLOSE') {
+                  setCourtCloseTimeInput(selectedTime);
+                }
+                setShowTimePickerModal(false);
+              }}
+              style={{
+                width: '100%',
+                padding: '13px',
+                backgroundColor: '#fc1c46',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: 12,
+                fontSize: 14,
+                fontWeight: 700,
+                cursor: 'pointer',
+                boxShadow: '0 6px 20px -3px rgba(252, 28, 70, 0.4)',
+              }}
+            >
+              ✓ Confirmar {pickerHour}:{pickerMinute} hs
+            </button>
           </div>
         </div>
       )}
