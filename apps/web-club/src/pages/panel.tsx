@@ -262,6 +262,13 @@ export default function ClubPanel() {
     }
   };
 
+  // Check duplicate court name (case-insensitive)
+  const isDuplicateCourtName = useMemo(() => {
+    const trimmed = courtNameInput.trim().toLowerCase();
+    if (!trimmed) return false;
+    return courts.some(c => c.name.trim().toLowerCase() === trimmed && c.id !== editingCourtId);
+  }, [courtNameInput, courts, editingCourtId]);
+
   // Open Court Modal for Add or Edit
   const handleOpenCourtModal = (court?: CourtInfo) => {
     if (court) {
@@ -297,12 +304,18 @@ export default function ClubPanel() {
   // Save Court (Add or Edit)
   const handleSaveCourt = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!courtNameInput.trim()) return;
+    const trimmedName = courtNameInput.trim();
+    if (!trimmedName) return;
+
+    if (isDuplicateCourtName) {
+      alert(`⚠️ Ya existe una cancha registrada con el nombre "${trimmedName}". Por favor, ingresá un nombre diferente.`);
+      return;
+    }
 
     if (editingCourtId) {
       setCourts(prev => prev.map(c => c.id === editingCourtId ? {
         ...c,
-        name: courtNameInput.trim(),
+        name: trimmedName,
         sport: courtSportInput,
         surface: courtSurfaceInput,
         openTime: courtOpenTimeInput,
@@ -1980,7 +1993,7 @@ export default function ClubPanel() {
                   style={{
                     width: '100%',
                     backgroundColor: '#181b22',
-                    border: '1px solid rgba(255,255,255,0.08)',
+                    border: isDuplicateCourtName ? '1px solid #ef4444' : '1px solid rgba(255,255,255,0.08)',
                     borderRadius: 10,
                     padding: '10px 12px',
                     color: '#ffffff',
@@ -1988,6 +2001,11 @@ export default function ClubPanel() {
                     boxSizing: 'border-box',
                   }}
                 />
+                {isDuplicateCourtName && (
+                  <div style={{ color: '#ef4444', fontSize: 11.5, marginTop: 5, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    ⚠️ Ya existe una cancha con este nombre. Elegí otro nombre diferente.
+                  </div>
+                )}
               </div>
 
               <div>
@@ -2385,16 +2403,19 @@ export default function ClubPanel() {
 
               <button
                 type="submit"
+                disabled={isDuplicateCourtName}
                 style={{
                   marginTop: 8,
                   padding: '13px',
-                  backgroundColor: '#fc1c46',
-                  color: '#ffffff',
+                  backgroundColor: isDuplicateCourtName ? '#374151' : '#fc1c46',
+                  color: isDuplicateCourtName ? '#9ca3af' : '#ffffff',
                   border: 'none',
                   borderRadius: 12,
                   fontSize: 14,
                   fontWeight: 700,
-                  cursor: 'pointer',
+                  cursor: isDuplicateCourtName ? 'not-allowed' : 'pointer',
+                  opacity: isDuplicateCourtName ? 0.6 : 1,
+                  transition: 'all 0.15s ease',
                 }}
               >
                 Guardar Configuración de Cancha
