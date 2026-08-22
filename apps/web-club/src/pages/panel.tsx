@@ -59,8 +59,8 @@ interface PlayerRecord {
   category: string;
   sport: string;
   matchesPlayed: number;
-  reliability: number; // 1-5
-  playerTag: 'JUGADOR FRECUENTE' | 'ABONADO FIJO' | 'JUGADOR VIP';
+  reliability?: number; // 1-5
+  playerTag: 'JUGADOR FRECUENTE' | 'ABONADO FIJO' | 'JUGADOR VIP' | string;
 }
 
 // Master Operating Times List
@@ -248,6 +248,45 @@ export default function ClubPanel() {
   const handleDeleteFixedSlot = (id: string) => {
     setFixedSlots(prev => prev.filter(f => f.id !== id));
   };
+
+  // Add Client State (Tab 5)
+  const [showAddPlayerModal, setShowAddPlayerModal] = useState(false);
+  const [newPlayerName, setNewPlayerName] = useState('');
+  const [newPlayerPhone, setNewPlayerPhone] = useState('');
+  const [newPlayerCategory, setNewPlayerCategory] = useState('4ta Categoría');
+  const [newPlayerSport, setNewPlayerSport] = useState('Pádel');
+  const [newPlayerTag, setNewPlayerTag] = useState('ABONADO FIJO');
+
+  const handleAddPlayer = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPlayerName.trim()) return;
+    const newP: PlayerRecord = {
+      id: `p-${Date.now()}`,
+      name: newPlayerName.trim(),
+      phone: newPlayerPhone.trim() || '+54 9 11 0000-0000',
+      category: newPlayerCategory,
+      sport: newPlayerSport,
+      matchesPlayed: 1,
+      playerTag: newPlayerTag,
+    };
+    setPlayers(prev => [newP, ...prev]);
+    setShowAddPlayerModal(false);
+    setNewPlayerName('');
+    setNewPlayerPhone('');
+  };
+
+  // Live Client Search State (Modal 1)
+  const [clientSearchQuery, setClientSearchQuery] = useState('');
+  const [isClientSearchOpen, setIsClientSearchOpen] = useState(false);
+
+  const matchingSearchPlayers = useMemo(() => {
+    if (!clientSearchQuery.trim()) return players;
+    const q = clientSearchQuery.toLowerCase();
+    return players.filter(p =>
+      p.name.toLowerCase().includes(q) ||
+      p.phone.toLowerCase().includes(q)
+    );
+  }, [players, clientSearchQuery]);
 
   // Settings State
   const [mercadoPagoConnected, setMercadoPagoConnected] = useState(true);
@@ -1955,26 +1994,43 @@ export default function ClubPanel() {
               ═══════════════════════════════════════════════════════ */}
           {activeTab === 'PLAYERS' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
                 <div>
                   <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: 0 }}>Base de Jugadores & Clientes</h2>
-                  <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>Historial de partidos jugados por jugador.</p>
+                  <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>Gestión de clientes y abonados del club.</p>
                 </div>
-                <input
-                  type="text"
-                  value={searchPlayer}
-                  onChange={e => setSearchPlayer(e.target.value)}
-                  placeholder="Buscar jugador por nombre o teléfono..."
-                  style={{
-                    backgroundColor: '#16181e',
-                    color: '#fff',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: 10,
-                    padding: '8px 16px',
-                    fontSize: 13,
-                    width: 240,
-                  }}
-                />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <input
+                    type="text"
+                    value={searchPlayer}
+                    onChange={e => setSearchPlayer(e.target.value)}
+                    placeholder="Buscar por nombre o teléfono..."
+                    style={{
+                      backgroundColor: '#16181e',
+                      color: '#fff',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: 10,
+                      padding: '8px 16px',
+                      fontSize: 13,
+                      width: 220,
+                    }}
+                  />
+                  <button
+                    onClick={() => setShowAddPlayerModal(true)}
+                    style={{
+                      backgroundColor: '#fc1c46',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 10,
+                      padding: '9px 16px',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    + Agregar Cliente Recurrente
+                  </button>
+                </div>
               </div>
 
               <div style={{
@@ -2410,29 +2466,121 @@ export default function ClubPanel() {
                 </select>
               </div>
 
-              {/* Autocomplete from existing database */}
-              <div>
+              {/* Searchable Autocomplete Client Selector */}
+              <div style={{ position: 'relative' }}>
                 <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
-                  Seleccionar Cliente
+                  Buscar Cliente (Nombre, Apellido o Teléfono)
                 </label>
-                <select
-                  value={modalSelectedPlayerId}
-                  onChange={e => handleSelectPlayerInModal(e.target.value)}
-                  style={{
-                    width: '100%',
-                    backgroundColor: '#181b22',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: 10,
-                    padding: '10px 12px',
-                    color: '#ffffff',
-                    fontSize: 13.5,
-                  }}
-                >
-                  <option value="CUSTOM">Elegir cliente de la lista...</option>
-                  {players.map(p => (
-                    <option key={p.id} value={p.id}>{p.name} ({p.phone})</option>
-                  ))}
-                </select>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="text"
+                    value={clientSearchQuery}
+                    onChange={e => {
+                      setClientSearchQuery(e.target.value);
+                      setIsClientSearchOpen(true);
+                      setModalPlayer(e.target.value);
+                    }}
+                    onFocus={() => setIsClientSearchOpen(true)}
+                    placeholder="🔍 Tipeá para buscar por nombre, apellido o teléfono..."
+                    style={{
+                      width: '100%',
+                      backgroundColor: '#181b22',
+                      border: isClientSearchOpen ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: 10,
+                      padding: '10px 12px',
+                      color: '#ffffff',
+                      fontSize: 13.5,
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                  {clientSearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setClientSearchQuery('');
+                        setModalPlayer('');
+                        setModalPhone('');
+                        setIsClientSearchOpen(false);
+                      }}
+                      style={{
+                        position: 'absolute',
+                        right: 10,
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        color: '#6b7280',
+                        fontSize: 14,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+
+                {/* Autocomplete Popup List */}
+                {isClientSearchOpen && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    backgroundColor: '#161820',
+                    border: '1px solid rgba(252, 28, 70, 0.3)',
+                    borderRadius: 12,
+                    marginTop: 4,
+                    maxHeight: 180,
+                    overflowY: 'auto',
+                    zIndex: 1010,
+                    boxShadow: '0 15px 35px rgba(0,0,0,0.8)',
+                    padding: '6px',
+                  }}>
+                    {matchingSearchPlayers.length === 0 ? (
+                      <div style={{ padding: '10px 12px', fontSize: 12, color: '#9ca3af' }}>
+                        No se encontraron clientes. Podés ingresar un cliente nuevo abajo.
+                      </div>
+                    ) : (
+                      matchingSearchPlayers.map(p => (
+                        <div
+                          key={p.id}
+                          onClick={() => {
+                            setModalPlayer(p.name);
+                            setModalPhone(p.phone);
+                            setClientSearchQuery(`${p.name} (${p.phone})`);
+                            setIsClientSearchOpen(false);
+                          }}
+                          style={{
+                            padding: '8px 12px',
+                            borderRadius: 8,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            transition: 'all 0.12s ease',
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(252, 28, 70, 0.15)'}
+                          onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                        >
+                          <div>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: '#ffffff' }}>{p.name}</div>
+                            <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 1 }}>{p.phone}</div>
+                          </div>
+                          <span style={{
+                            fontSize: 9.5,
+                            fontWeight: 700,
+                            color: '#fc1c46',
+                            backgroundColor: 'rgba(252, 28, 70, 0.15)',
+                            padding: '2px 6px',
+                            borderRadius: 4,
+                          }}>
+                            {p.playerTag}
+                          </span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
               </div>
 
               <div>
@@ -3289,6 +3437,144 @@ export default function ClubPanel() {
                 }}
               >
                 Guardar Turno Fijo
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ────────────────────────────────────────────────────────────
+          MODAL: "+ AGREGAR CLIENTE RECURRENTE"
+          ──────────────────────────────────────────────────────────── */}
+      {showAddPlayerModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: 20,
+        }}>
+          <div style={{
+            width: '100%',
+            maxWidth: 480,
+            backgroundColor: '#12141a',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: 20,
+            padding: '26px 28px',
+            boxShadow: '0 25px 60px rgba(0, 0, 0, 0.9)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+              <div>
+                <h3 style={{ fontSize: 19, fontWeight: 700, color: '#ffffff', margin: 0 }}>
+                  Agregar Nuevo Cliente
+                </h3>
+                <div style={{ fontSize: 11, color: '#fc1c46', marginTop: 2 }}>Registrar cliente recurrente en la base del club</div>
+              </div>
+              <button
+                onClick={() => setShowAddPlayerModal(false)}
+                style={{ backgroundColor: 'transparent', border: 'none', color: '#6b7280', fontSize: 18, cursor: 'pointer' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleAddPlayer} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6 }}>
+                  Nombre y Apellido
+                </label>
+                <input
+                  type="text"
+                  value={newPlayerName}
+                  onChange={e => setNewPlayerName(e.target.value)}
+                  placeholder="ej. Gastón Edul"
+                  required
+                  style={{ width: '100%', backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '10px 12px', color: '#fff', fontSize: 13.5, boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6 }}>
+                  Teléfono de Contacto
+                </label>
+                <input
+                  type="text"
+                  value={newPlayerPhone}
+                  onChange={e => setNewPlayerPhone(e.target.value)}
+                  placeholder="ej. +54 9 11 8877-6655"
+                  required
+                  style={{ width: '100%', backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '10px 12px', color: '#fff', fontSize: 13.5, boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6 }}>
+                    Deporte Principal
+                  </label>
+                  <select
+                    value={newPlayerSport}
+                    onChange={e => setNewPlayerSport(e.target.value)}
+                    style={{ width: '100%', backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '10px 12px', color: '#fff', fontSize: 13.5 }}
+                  >
+                    <option value="Pádel">Pádel</option>
+                    <option value="Fútbol 5">Fútbol 5</option>
+                    <option value="Fútbol 7">Fútbol 7</option>
+                    <option value="Básquet">Básquet</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6 }}>
+                    Categoría / Nivel
+                  </label>
+                  <input
+                    type="text"
+                    value={newPlayerCategory}
+                    onChange={e => setNewPlayerCategory(e.target.value)}
+                    placeholder="ej. 4ta Categoría"
+                    style={{ width: '100%', backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '10px 12px', color: '#fff', fontSize: 13.5, boxSizing: 'border-box' }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6 }}>
+                  Etiqueta / Tipo de Cliente
+                </label>
+                <select
+                  value={newPlayerTag}
+                  onChange={e => setNewPlayerTag(e.target.value)}
+                  style={{ width: '100%', backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '10px 12px', color: '#fff', fontSize: 13.5 }}
+                >
+                  <option value="ABONADO FIJO">ABONADO FIJO</option>
+                  <option value="JUGADOR FRECUENTE">JUGADOR FRECUENTE</option>
+                  <option value="JUGADOR VIP">JUGADOR VIP</option>
+                </select>
+              </div>
+
+              <button
+                type="submit"
+                style={{
+                  marginTop: 8,
+                  padding: '13px',
+                  backgroundColor: '#fc1c46',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: 12,
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                Guardar Cliente
               </button>
             </form>
           </div>
