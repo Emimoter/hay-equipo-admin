@@ -1580,10 +1580,10 @@ export default function ClubPanel() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: 0 }}>
-                    Recaudación y Cobros ({dateFilter})
+                    Recaudación ({dateFilter})
                   </h2>
                   <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>
-                    Desglose financiero en tiempo real y estado de cobros de las reservas del club.
+                    Control de cobros y turnos del club.
                   </p>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -1605,44 +1605,31 @@ export default function ClubPanel() {
                 </div>
               </div>
 
-              {/* Top 3 KPI Financial Summary Cards Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
-                {/* Total Estimado */}
-                <div style={{ backgroundColor: '#14161c', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: '16px 20px' }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
-                    TOTAL ESTIMADO RECAUDADO
+              {/* SINGLE CLEAN KPI CARD: TOTAL COBRADO */}
+              <div style={{
+                backgroundColor: '#14161c',
+                border: '1px solid rgba(74, 222, 128, 0.25)',
+                borderRadius: 18,
+                padding: '20px 24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                background: 'linear-gradient(135deg, #14161c 0%, rgba(74, 222, 128, 0.05) 100%)',
+              }}>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#4ade80', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                    TOTAL COBRADO ({dateFilter.toUpperCase()})
                   </div>
-                  <div style={{ fontSize: 26, fontWeight: 700, color: '#ffffff', marginTop: 6 }}>
-                    {financialMetrics.formattedTotal}
-                  </div>
-                  <div style={{ fontSize: 11, color: '#6b7280', marginTop: 4 }}>
-                    Suma total de {financialMetrics.reservedCount} reservas confirmadas
-                  </div>
-                </div>
-
-                {/* Cobrado (100%) */}
-                <div style={{ backgroundColor: 'rgba(74, 222, 128, 0.08)', border: '1px solid rgba(74, 222, 128, 0.25)', borderRadius: 16, padding: '16px 20px' }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#4ade80', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
-                    COBRADO (100% SEÑA / PAGO)
-                  </div>
-                  <div style={{ fontSize: 26, fontWeight: 700, color: '#4ade80', marginTop: 6 }}>
+                  <div style={{ fontSize: 'clamp(28px, 3.5vh, 34px)', fontWeight: 800, color: '#ffffff', marginTop: 4, letterSpacing: '-0.5px' }}>
                     {financialMetrics.formattedPaid}
                   </div>
-                  <div style={{ fontSize: 11, color: '#4ade80', marginTop: 4, opacity: 0.8 }}>
-                    {financialMetrics.percentage}% de las reservas pagadas totalmente
-                  </div>
                 </div>
-
-                {/* Pendiente Mostrador */}
-                <div style={{ backgroundColor: 'rgba(252, 28, 70, 0.08)', border: '1px solid rgba(252, 28, 70, 0.25)', borderRadius: 16, padding: '16px 20px' }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#fc1c46', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
-                    PENDIENTE EN MOSTRADOR
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#ffffff' }}>
+                    {financialMetrics.reservedCount} turnos confirmados
                   </div>
-                  <div style={{ fontSize: 26, fontWeight: 700, color: '#fc1c46', marginTop: 6 }}>
-                    {financialMetrics.formattedPending}
-                  </div>
-                  <div style={{ fontSize: 11, color: '#fc1c46', marginTop: 4, opacity: 0.8 }}>
-                    Cobro pendiente al ingresar a la cancha
+                  <div style={{ fontSize: 11, color: '#4ade80', marginTop: 2, fontWeight: 600 }}>
+                    {financialMetrics.percentage}% cobrado
                   </div>
                 </div>
               </div>
