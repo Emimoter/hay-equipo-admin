@@ -1091,9 +1091,8 @@ export default function ClubPanel() {
                     <div style={{ fontSize: 'clamp(18px, 2.2vh, 22px)', fontWeight: 700, color: '#ffffff', lineHeight: 1 }}>
                       {financialMetrics.formattedTotal}
                     </div>
-                    <div style={{ fontSize: 11, color: '#4ade80', marginTop: 3, display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <span>{financialMetrics.percentage}% cobrado {dateFilter.toLowerCase()}</span>
-                      <span style={{ fontSize: 10, opacity: 0.6 }}>🔍 Ver detalle</span>
+                    <div style={{ fontSize: 11, color: '#8b92a0', marginTop: 3, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span>recaudación estimada ({dateFilter.toLowerCase()})</span>
                     </div>
                   </div>
                 </div>
