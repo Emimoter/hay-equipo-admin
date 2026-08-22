@@ -1292,7 +1292,6 @@ export default function ClubPanel() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       <div>
                         <div style={{ fontSize: 16, fontWeight: 700, color: '#ffffff' }}>{court.name}</div>
-                        <div style={{ fontSize: 12, color: '#8b92a0', marginTop: 4 }}>{court.surface}</div>
                       </div>
                       <div style={{ display: 'flex', gap: 6 }}>
                         <button
@@ -1983,52 +1982,28 @@ export default function ClubPanel() {
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
-                    Deporte
-                  </label>
-                  <select
-                    value={courtSportInput}
-                    onChange={e => setCourtSportInput(e.target.value)}
-                    style={{
-                      width: '100%',
-                      backgroundColor: '#181b22',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      borderRadius: 10,
-                      padding: '10px 12px',
-                      color: '#ffffff',
-                      fontSize: 13.5,
-                    }}
-                  >
-                    <option value="Pádel">Pádel</option>
-                    <option value="Fútbol 5">Fútbol 5</option>
-                    <option value="Fútbol 7">Fútbol 7</option>
-                    <option value="Tenis">Tenis</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
-                    Tipo de Superficie
-                  </label>
-                  <input
-                    type="text"
-                    value={courtSurfaceInput}
-                    onChange={e => setCourtSurfaceInput(e.target.value)}
-                    placeholder="ej. Césped Sintético"
-                    style={{
-                      width: '100%',
-                      backgroundColor: '#181b22',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      borderRadius: 10,
-                      padding: '10px 12px',
-                      color: '#ffffff',
-                      fontSize: 13.5,
-                      boxSizing: 'border-box',
-                    }}
-                  />
-                </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
+                  Deporte
+                </label>
+                <select
+                  value={courtSportInput}
+                  onChange={e => setCourtSportInput(e.target.value)}
+                  style={{
+                    width: '100%',
+                    backgroundColor: '#181b22',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: 10,
+                    padding: '10px 12px',
+                    color: '#ffffff',
+                    fontSize: 13.5,
+                  }}
+                >
+                  <option value="Pádel">Pádel</option>
+                  <option value="Fútbol 5">Fútbol 5</option>
+                  <option value="Fútbol 7">Fútbol 7</option>
+                  <option value="Tenis">Tenis</option>
+                </select>
               </div>
 
               {/* Court Features & Attributes Selection */}
