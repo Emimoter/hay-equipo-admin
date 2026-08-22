@@ -6,8 +6,21 @@ import { useRouter } from 'next/router';
    Types & Interfaces
    ──────────────────────────────────────────────────────────── */
 
-type NavTab = 'DASHBOARD' | 'COURTS' | 'REVENUE' | 'CALENDAR' | 'PLAYERS' | 'ANALYTICS' | 'SETTINGS';
+type NavTab = 'DASHBOARD' | 'COURTS' | 'REVENUE' | 'CALENDAR' | 'PLAYERS' | 'FIXED_SLOTS' | 'SETTINGS';
 type SlotStatus = 'RESERVED' | 'AVAILABLE' | 'FIXED' | 'MAINTENANCE';
+
+interface FixedSlot {
+  id: string;
+  courtId: string;
+  courtName: string;
+  sport: string;
+  dayOfWeek: string;
+  time: string;
+  playerName: string;
+  playerPhone: string;
+  price: number;
+  active: boolean;
+}
 
 interface CourtSlot {
   id: string;
@@ -159,6 +172,82 @@ export default function ClubPanel() {
   const [courts, setCourts] = useState<CourtInfo[]>(INITIAL_COURTS);
   const [players, setPlayers] = useState<PlayerRecord[]>(INITIAL_PLAYERS);
   const [searchPlayer, setSearchPlayer] = useState('');
+
+  // Turnos Fijos State
+  const [fixedSlots, setFixedSlots] = useState<FixedSlot[]>([
+    {
+      id: 'f1',
+      courtId: 'c1',
+      courtName: 'Cancha 1 — Panorámica WPT',
+      sport: 'Pádel',
+      dayOfWeek: 'Martes',
+      time: '20:00',
+      playerName: 'Escuela Pádel Adalberto',
+      playerPhone: '+54 9 11 9988-7766',
+      price: 48000,
+      active: true,
+    },
+    {
+      id: 'f2',
+      courtId: 'c3',
+      courtName: 'Cancha 3 — Master Climatizada',
+      sport: 'Pádel',
+      dayOfWeek: 'Jueves',
+      time: '21:00',
+      playerName: 'Torneo Nocturno Pádel',
+      playerPhone: '+54 9 11 1122-3344',
+      price: 42000,
+      active: true,
+    },
+    {
+      id: 'f3',
+      courtId: 'c4',
+      courtName: 'Cancha 4 — Fútbol 5 Forbex',
+      sport: 'Fútbol 5',
+      dayOfWeek: 'Viernes',
+      time: '21:30',
+      playerName: 'Grupo Los Viernes',
+      playerPhone: '+54 9 11 5566-7788',
+      price: 36000,
+      active: true,
+    },
+  ]);
+  const [showFixedSlotModal, setShowFixedSlotModal] = useState(false);
+  const [fixedCourtId, setFixedCourtId] = useState('c1');
+  const [fixedDayOfWeek, setFixedDayOfWeek] = useState('Martes');
+  const [fixedTime, setFixedTime] = useState('20:00');
+  const [fixedPlayerName, setFixedPlayerName] = useState('');
+  const [fixedPlayerPhone, setFixedPlayerPhone] = useState('');
+  const [fixedPrice, setFixedPrice] = useState(48000);
+
+  const handleAddFixedSlot = (e: React.FormEvent) => {
+    e.preventDefault();
+    const court = courts.find(c => c.id === fixedCourtId) || courts[0];
+    const newFixed: FixedSlot = {
+      id: `f-${Date.now()}`,
+      courtId: court.id,
+      courtName: court.name,
+      sport: court.sport,
+      dayOfWeek: fixedDayOfWeek,
+      time: fixedTime,
+      playerName: fixedPlayerName.trim() || 'Abonado Fijo',
+      playerPhone: fixedPlayerPhone.trim() || '+54 9 11 0000-0000',
+      price: fixedPrice || court.price || 45000,
+      active: true,
+    };
+    setFixedSlots(prev => [newFixed, ...prev]);
+    setShowFixedSlotModal(false);
+    setFixedPlayerName('');
+    setFixedPlayerPhone('');
+  };
+
+  const handleToggleFixedActive = (id: string) => {
+    setFixedSlots(prev => prev.map(f => f.id === id ? { ...f, active: !f.active } : f));
+  };
+
+  const handleDeleteFixedSlot = (id: string) => {
+    setFixedSlots(prev => prev.filter(f => f.id !== id));
+  };
 
   // Settings State
   const [mercadoPagoConnected, setMercadoPagoConnected] = useState(true);
@@ -801,17 +890,17 @@ export default function ClubPanel() {
                 </svg>
               </button>
 
-              {/* Tab 5: Analytics / Stats */}
+              {/* Tab 6: Turnos Fijos & Abonados */}
               <button
-                onClick={() => setActiveTab('ANALYTICS')}
-                title="Métricas & Ocupación"
+                onClick={() => setActiveTab('FIXED_SLOTS')}
+                title="Turnos Fijos & Abonados"
                 style={{
                   width: 40,
                   height: 40,
                   borderRadius: 12,
                   border: 'none',
-                  backgroundColor: activeTab === 'ANALYTICS' ? '#241217' : 'transparent',
-                  color: activeTab === 'ANALYTICS' ? '#fc1c46' : '#6b7280',
+                  backgroundColor: activeTab === 'FIXED_SLOTS' ? '#241217' : 'transparent',
+                  color: activeTab === 'FIXED_SLOTS' ? '#fc1c46' : '#6b7280',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -820,9 +909,10 @@ export default function ClubPanel() {
                 }}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="20" x2="18" y2="10" />
-                  <line x1="12" y1="20" x2="12" y2="4" />
-                  <line x1="6" y1="20" x2="6" y2="14" />
+                  <path d="M21 2v6h-6" />
+                  <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
+                  <path d="M3 22v-6h6" />
+                  <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
                 </svg>
               </button>
 
@@ -1939,30 +2029,148 @@ export default function ClubPanel() {
           )}
 
           {/* ═══════════════════════════════════════════════════════
-              VIEW 5: ANALYTICS & FINANZAS
+              VIEW 6: TURNOS FIJOS & ABONADOS
               ═══════════════════════════════════════════════════════ */}
-          {activeTab === 'ANALYTICS' && (
+          {activeTab === 'FIXED_SLOTS' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-              <div>
-                <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: 0 }}>Métricas & Rendimiento</h2>
-                <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>Análisis de ocupación por horario y facturación total del complejo.</p>
+              {/* Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+                <div>
+                  <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: 0 }}>
+                    Turnos Fijos & Abonados Semanales
+                  </h2>
+                  <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>
+                    Gestión y programación de turnos fijos recurrentes para los clientes del club.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowFixedSlotModal(true)}
+                  style={{
+                    backgroundColor: '#fc1c46',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 10,
+                    padding: '10px 18px',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  + Agendar Turno Fijo
+                </button>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
-                <div style={{ backgroundColor: '#14161c', padding: '20px', borderRadius: 18, border: '1px solid rgba(255,255,255,0.05)' }}>
-                  <div style={{ fontSize: 11, color: '#888', textTransform: 'uppercase' }}>Facturación Total del Mes</div>
-                  <div style={{ fontSize: 26, fontWeight: 700, color: '#fff', marginTop: 6 }}>$1.840.000</div>
-                  <div style={{ fontSize: 11, color: '#4ade80', marginTop: 4 }}>✓ Cobrado por Adelantado</div>
+              {/* KPI Summary Cards */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
+                <div style={{ backgroundColor: '#14161c', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: '16px 20px' }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+                    TOTAL TURNOS FIJOS
+                  </div>
+                  <div style={{ fontSize: 26, fontWeight: 700, color: '#ffffff', marginTop: 6 }}>
+                    {fixedSlots.length} fijos activos
+                  </div>
+                  <div style={{ fontSize: 11, color: '#6b7280', marginTop: 4 }}>
+                    Horarios reservados semanalmente
+                  </div>
                 </div>
-                <div style={{ backgroundColor: '#14161c', padding: '20px', borderRadius: 18, border: '1px solid rgba(255,255,255,0.05)' }}>
-                  <div style={{ fontSize: 11, color: '#888', textTransform: 'uppercase' }}>Tasa Ocupación Franja Pico</div>
-                  <div style={{ fontSize: 26, fontWeight: 700, color: '#fc1c46', marginTop: 6 }}>94.2%</div>
-                  <div style={{ fontSize: 11, color: '#888', marginTop: 4 }}>18:00 a 24:00 hs</div>
+
+                <div style={{ backgroundColor: 'rgba(74, 222, 128, 0.08)', border: '1px solid rgba(74, 222, 128, 0.25)', borderRadius: 16, padding: '16px 20px' }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#4ade80', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+                    INGRESO SEMANAL RECURRENTE
+                  </div>
+                  <div style={{ fontSize: 26, fontWeight: 700, color: '#4ade80', marginTop: 6 }}>
+                    ${fixedSlots.filter(f => f.active).reduce((acc, f) => acc + f.price, 0).toLocaleString()}
+                  </div>
+                  <div style={{ fontSize: 11, color: '#4ade80', marginTop: 4, opacity: 0.8 }}>
+                    Abonado semanalmente por clientes fijos
+                  </div>
                 </div>
-                <div style={{ backgroundColor: '#14161c', padding: '20px', borderRadius: 18, border: '1px solid rgba(255,255,255,0.05)' }}>
-                  <div style={{ fontSize: 11, color: '#888', textTransform: 'uppercase' }}>Ocupación Promedio Diario</div>
-                  <div style={{ fontSize: 26, fontWeight: 700, color: '#38bdf8', marginTop: 6 }}>88.5%</div>
-                  <div style={{ fontSize: 11, color: '#888', marginTop: 4 }}>Canchas de Pádel y Fútbol</div>
+              </div>
+
+              {/* Fixed Slots Grid */}
+              <div style={{ backgroundColor: '#14161c', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: 20 }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', marginBottom: 14 }}>
+                  Listado de Turnos Fijos Programados ({fixedSlots.length})
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12 }}>
+                  {fixedSlots.map(slot => (
+                    <div
+                      key={slot.id}
+                      style={{
+                        backgroundColor: '#181b22',
+                        border: slot.active ? '1px solid rgba(252, 28, 70, 0.3)' : '1px solid rgba(255,255,255,0.05)',
+                        borderRadius: 14,
+                        padding: 16,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        gap: 12,
+                      }}
+                    >
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                          <span style={{
+                            backgroundColor: '#241217',
+                            color: '#fc1c46',
+                            fontWeight: 800,
+                            fontSize: 11,
+                            padding: '4px 10px',
+                            borderRadius: 6,
+                            textTransform: 'uppercase',
+                          }}>
+                            Todos los {slot.dayOfWeek}s · {slot.time} hs
+                          </span>
+                          <button
+                            onClick={() => handleToggleFixedActive(slot.id)}
+                            style={{
+                              backgroundColor: slot.active ? 'rgba(74, 222, 128, 0.15)' : 'rgba(255,255,255,0.05)',
+                              color: slot.active ? '#4ade80' : '#6b7280',
+                              border: slot.active ? '1px solid rgba(74, 222, 128, 0.3)' : '1px solid rgba(255,255,255,0.1)',
+                              borderRadius: 6,
+                              padding: '3px 8px',
+                              fontSize: 10,
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            {slot.active ? '✓ Activo' : 'Pausado'}
+                          </button>
+                        </div>
+
+                        <div style={{ fontSize: 15, fontWeight: 700, color: '#ffffff' }}>
+                          {slot.playerName}
+                        </div>
+                        <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>
+                          {slot.courtName} <span style={{ fontSize: 10, color: '#fc1c46' }}>({slot.sport})</span>
+                        </div>
+                        <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>
+                          Contacto: {slot.playerPhone}
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 10 }}>
+                        <span style={{ fontSize: 15, fontWeight: 800, color: '#ffffff' }}>
+                          ${slot.price?.toLocaleString()} <span style={{ fontSize: 10, color: '#9ca3af', fontWeight: 400 }}>/ turno</span>
+                        </span>
+                        <button
+                          onClick={() => handleDeleteFixedSlot(slot.id)}
+                          style={{
+                            backgroundColor: 'transparent',
+                            color: '#ef4444',
+                            border: '1px solid rgba(239, 68, 68, 0.2)',
+                            borderRadius: 6,
+                            padding: '4px 8px',
+                            fontSize: 10,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Eliminar
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -2943,6 +3151,145 @@ export default function ClubPanel() {
                   <Icons.Trash /> Eliminar Reserva
                 </button>
               </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ────────────────────────────────────────────────────────────
+          MODAL: "+ AGENDAR NUEVO TURNO FIJO"
+          ──────────────────────────────────────────────────────────── */}
+      {showFixedSlotModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: 20,
+        }}>
+          <div style={{
+            width: '100%',
+            maxWidth: 480,
+            backgroundColor: '#12141a',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: 20,
+            padding: '26px 28px',
+            boxShadow: '0 25px 60px rgba(0, 0, 0, 0.9)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+              <div>
+                <h3 style={{ fontSize: 19, fontWeight: 700, color: '#ffffff', margin: 0 }}>
+                  Agendar Turno Fijo
+                </h3>
+                <div style={{ fontSize: 11, color: '#4ade80', marginTop: 2 }}>Programación semanal recurrente</div>
+              </div>
+              <button
+                onClick={() => setShowFixedSlotModal(false)}
+                style={{ backgroundColor: 'transparent', border: 'none', color: '#6b7280', fontSize: 18, cursor: 'pointer' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleAddFixedSlot} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6 }}>Cancha</label>
+                <select
+                  value={fixedCourtId}
+                  onChange={e => setFixedCourtId(e.target.value)}
+                  style={{ width: '100%', backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '10px 12px', color: '#fff', fontSize: 13.5 }}
+                >
+                  {courts.map(c => (
+                    <option key={c.id} value={c.id}>{c.name} ({c.sport})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6 }}>Día Semanal</label>
+                  <select
+                    value={fixedDayOfWeek}
+                    onChange={e => setFixedDayOfWeek(e.target.value)}
+                    style={{ width: '100%', backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '10px 12px', color: '#fff', fontSize: 13.5 }}
+                  >
+                    {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].map(d => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6 }}>Horario Fijo</label>
+                  <input
+                    type="text"
+                    value={fixedTime}
+                    onChange={e => setFixedTime(e.target.value)}
+                    placeholder="ej. 20:00"
+                    required
+                    style={{ width: '100%', backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '10px 12px', color: '#fff', fontSize: 13.5, boxSizing: 'border-box' }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6 }}>Nombre del Cliente / Grupo</label>
+                <input
+                  type="text"
+                  value={fixedPlayerName}
+                  onChange={e => setFixedPlayerName(e.target.value)}
+                  placeholder="ej. Escuela Pádel Adalberto"
+                  required
+                  style={{ width: '100%', backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '10px 12px', color: '#fff', fontSize: 13.5, boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6 }}>Teléfono de Contacto</label>
+                <input
+                  type="text"
+                  value={fixedPlayerPhone}
+                  onChange={e => setFixedPlayerPhone(e.target.value)}
+                  placeholder="ej. +54 9 11 9988-7766"
+                  required
+                  style={{ width: '100%', backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '10px 12px', color: '#fff', fontSize: 13.5, boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6 }}>Precio por Turno ($)</label>
+                <input
+                  type="number"
+                  value={fixedPrice}
+                  onChange={e => setFixedPrice(Number(e.target.value))}
+                  required
+                  style={{ width: '100%', backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '10px 12px', color: '#fff', fontSize: 13.5, boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <button
+                type="submit"
+                style={{
+                  marginTop: 8,
+                  padding: '13px',
+                  backgroundColor: '#fc1c46',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: 12,
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                Guardar Turno Fijo
+              </button>
             </form>
           </div>
         </div>
