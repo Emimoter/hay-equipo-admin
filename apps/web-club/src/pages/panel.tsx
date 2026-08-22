@@ -1085,18 +1085,25 @@ export default function ClubPanel() {
             justifyContent: 'space-between',
             flexWrap: 'wrap',
             gap: 10,
+            paddingBottom: 12,
+            borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+            marginBottom: 4,
           }}>
-            <div>
-              <h1 style={{
-                fontSize: 24,
-                fontWeight: 800,
-                color: '#ffffff',
-                margin: 0,
-                letterSpacing: '-0.6px',
-                lineHeight: 1.1,
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 7,
+                backgroundColor: '#16181e',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                borderRadius: 20,
+                padding: '6px 14px',
               }}>
-                {clubName}
-              </h1>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: '#4ade80', boxShadow: '0 0 8px #4ade80' }} />
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#ffffff', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                  {clubName}
+                </span>
+              </div>
             </div>
 
             {/* Middle: Dynamic Sport Filter Tabs (Only sports registered in current courts) */}
@@ -1221,7 +1228,16 @@ export default function ClubPanel() {
               VIEW 1: DASHBOARD
               ═══════════════════════════════════════════════════════ */}
           {activeTab === 'DASHBOARD' && (
-            <>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div>
+                <h1 style={{ fontSize: 22, fontWeight: 800, color: '#ffffff', margin: 0, letterSpacing: '-0.4px' }}>
+                  Panel de Gestión y Grilla de Canchas
+                </h1>
+                <p style={{ fontSize: 13, color: '#9ca3af', margin: '4px 0 0' }}>
+                  Estado de turnos del día y reservas en tiempo real.
+                </p>
+              </div>
+
               {/* TOP 3 METRIC KPI CARDS */}
               <section style={{
                 display: 'grid',
@@ -1616,7 +1632,7 @@ export default function ClubPanel() {
                   </button>
                 </div>
               </div>
-            </>
+            </div>
           )}
 
           {/* ═══════════════════════════════════════════════════════
