@@ -2685,6 +2685,10 @@ export default function ClubPanel() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
       {/* ────────────────────────────────────────────────────────────
           MODAL 4: "DETALLE DE RECAUDACIÓN Y COBROS EN TIEMPO REAL"
           ──────────────────────────────────────────────────────────── */}
