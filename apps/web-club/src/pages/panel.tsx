@@ -2027,7 +2027,7 @@ export default function ClubPanel() {
               {/* Autocomplete from existing database */}
               <div>
                 <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
-                  Seleccionar Jugador de Base de Datos
+                  Seleccionar Cliente
                 </label>
                 <select
                   value={modalSelectedPlayerId}
@@ -2042,7 +2042,7 @@ export default function ClubPanel() {
                     fontSize: 13.5,
                   }}
                 >
-                  <option value="CUSTOM">+ Tipear Nuevo Jugador Manualmente</option>
+                  <option value="CUSTOM">Elegir cliente de la lista...</option>
                   {players.map(p => (
                     <option key={p.id} value={p.id}>{p.name} ({p.phone})</option>
                   ))}
@@ -2051,7 +2051,7 @@ export default function ClubPanel() {
 
               <div>
                 <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
-                  Nombre del Jugador
+                  Nombre del Cliente
                 </label>
                 <input
                   type="text"
