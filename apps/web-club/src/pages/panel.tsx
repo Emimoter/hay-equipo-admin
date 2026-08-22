@@ -1344,14 +1344,14 @@ export default function ClubPanel() {
                     {/* Court Feature Pills */}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, fontSize: 11 }}>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, backgroundColor: court.indoor ? 'rgba(252,28,70,0.12)' : 'rgba(255,255,255,0.04)', color: court.indoor ? '#fc1c46' : '#9ca3af', border: court.indoor ? '1px solid rgba(252,28,70,0.25)' : '1px solid rgba(255,255,255,0.06)', padding: '4px 9px', borderRadius: 6, fontWeight: 600 }}>
-                        {court.indoor ? <><Icons.Indoor /> Techada (Indoor)</> : <><Icons.Outdoor /> Descubierta (Outdoor)</>}
+                        {court.indoor ? <><Icons.Indoor /> Techada</> : <><Icons.Outdoor /> Descubierta</>}
                       </span>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, backgroundColor: court.lighting ? 'rgba(252,28,70,0.12)' : 'rgba(255,255,255,0.04)', color: court.lighting ? '#fc1c46' : '#9ca3af', border: court.lighting ? '1px solid rgba(252,28,70,0.25)' : '1px solid rgba(255,255,255,0.06)', padding: '4px 9px', borderRadius: 6, fontWeight: 600 }}>
-                        {court.lighting ? <><Icons.Lighting /> Luz LED Pro</> : <><Icons.NoLighting /> Sin Iluminación</>}
+                        {court.lighting ? <><Icons.Lighting /> Con Iluminación</> : <><Icons.NoLighting /> Sin Iluminación</>}
                       </span>
                       {court.hasCameras && (
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, backgroundColor: 'rgba(252,28,70,0.12)', color: '#fc1c46', border: '1px solid rgba(252,28,70,0.25)', padding: '4px 9px', borderRadius: 6, fontWeight: 600 }}>
-                          <Icons.Camera /> Grabación HD
+                          <Icons.Camera /> Con Cámaras
                         </span>
                       )}
                       {court.hasHeating && (
@@ -2034,7 +2034,7 @@ export default function ClubPanel() {
                       gap: 6,
                     }}
                   >
-                    <Icons.Indoor /> Techada (Indoor)
+                    <Icons.Indoor /> Techada
                   </button>
                   <button
                     type="button"
@@ -2056,7 +2056,7 @@ export default function ClubPanel() {
                       gap: 6,
                     }}
                   >
-                    <Icons.Outdoor /> Descubierta (Outdoor)
+                    <Icons.Outdoor /> Descubierta
                   </button>
                 </div>
 
@@ -2082,7 +2082,7 @@ export default function ClubPanel() {
                       gap: 6,
                     }}
                   >
-                    <Icons.Lighting /> Con Iluminación LED
+                    <Icons.Lighting /> Con Iluminación
                   </button>
                   <button
                     type="button"
@@ -2130,7 +2130,7 @@ export default function ClubPanel() {
                       gap: 6,
                     }}
                   >
-                    <Icons.Camera /> Con Cámaras (Grabación)
+                    <Icons.Camera /> Con Cámaras
                   </button>
                   <button
                     type="button"
@@ -2178,7 +2178,7 @@ export default function ClubPanel() {
                       gap: 6,
                     }}
                   >
-                    <Icons.Climate /> Climatizada (Aire/Calef)
+                    <Icons.Climate /> Climatizada
                   </button>
                   <button
                     type="button"
