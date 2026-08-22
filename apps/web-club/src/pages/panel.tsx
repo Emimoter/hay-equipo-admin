@@ -2454,7 +2454,7 @@ export default function ClubPanel() {
       )}
 
       {/* ────────────────────────────────────────────────────────────
-          MODAL 4: MINIMALIST PRO DRUM TIME PICKER
+          MODAL 4: GOOGLE MATERIAL MINIMALIST PRO TIME SELECTOR
           ──────────────────────────────────────────────────────────── */}
       {showTimePickerModal && (
         <div style={{
@@ -2474,28 +2474,29 @@ export default function ClubPanel() {
         }}>
           <div style={{
             width: '100%',
-            maxWidth: 360,
+            maxWidth: 380,
             backgroundColor: '#11131a',
             border: '1px solid rgba(252, 28, 70, 0.4)',
             borderRadius: 24,
-            padding: '24px 22px',
+            padding: '24px 24px',
             boxShadow: '0 30px 80px rgba(0, 0, 0, 0.95), 0 0 40px rgba(252, 28, 70, 0.2)',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            gap: 18,
+            gap: 20,
           }}>
             {/* Header */}
             <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <div style={{ fontSize: 11, fontWeight: 700, color: '#fc1c46', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                  SELECCIONAR HORARIO
+                  CONFIGURAR HORARIO
                 </div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: '#ffffff', marginTop: 2 }}>
-                  {timePickerTarget === 'OPEN' ? 'Hora de Apertura' : 'Hora de Cierre'}
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#ffffff', marginTop: 2 }}>
+                  {timePickerTarget === 'OPEN' ? '🕒 Hora de Apertura' : '🕒 Hora de Cierre'}
                 </div>
               </div>
               <button
+                type="button"
                 onClick={() => setShowTimePickerModal(false)}
                 style={{ backgroundColor: 'transparent', border: 'none', color: '#6b7280', fontSize: 18, cursor: 'pointer' }}
               >
@@ -2503,143 +2504,218 @@ export default function ClubPanel() {
               </button>
             </div>
 
-            {/* Quick Presets */}
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
-              {['08:00', '09:00', '14:00', '18:00', '22:30', '23:30', '00:00'].map(preset => (
-                <button
-                  key={preset}
-                  type="button"
-                  onClick={() => {
-                    const [h, m] = preset.split(':');
-                    setPickerHour(h);
-                    setPickerMinute(m);
-                  }}
-                  style={{
-                    backgroundColor: `${pickerHour}:${pickerMinute}` === preset ? '#fc1c46' : '#181b22',
-                    color: `${pickerHour}:${pickerMinute}` === preset ? '#ffffff' : '#9ca3af',
-                    border: `${pickerHour}:${pickerMinute}` === preset ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: 20,
-                    padding: '4px 10px',
-                    fontSize: 11,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  {preset}
-                </button>
-              ))}
-            </div>
-
-            {/* iOS/watchOS Animated Drum Wheel Picker */}
+            {/* Google Material Large Digital Stepper Display */}
             <div style={{
-              position: 'relative',
-              width: '100%',
-              height: 180,
-              backgroundColor: '#0a0c10',
-              borderRadius: 16,
-              border: '1px solid rgba(255,255,255,0.06)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              overflow: 'hidden',
-              boxShadow: 'inset 0 0 20px rgba(0,0,0,0.8)',
+              gap: 16,
+              width: '100%',
+              backgroundColor: '#0a0c10',
+              padding: '16px 20px',
+              borderRadius: 20,
+              border: '1px solid rgba(255,255,255,0.06)',
             }}>
-              {/* Central Selection Highlight Bar */}
-              <div style={{
-                position: 'absolute',
-                top: '50%',
-                left: 12,
-                right: 12,
-                height: 48,
-                transform: 'translateY(-50%)',
-                backgroundColor: 'rgba(252, 28, 70, 0.15)',
-                borderTop: '1px solid rgba(252, 28, 70, 0.5)',
-                borderBottom: '1px solid rgba(252, 28, 70, 0.5)',
-                borderRadius: 10,
-                pointerEvents: 'none',
-                boxShadow: '0 0 15px rgba(252, 28, 70, 0.2)',
-              }} />
-
-              {/* Column 1: Hours Drum */}
-              <div style={{
-                flex: 1,
-                height: '100%',
-                overflowY: 'auto',
-                scrollSnapType: 'y mandatory',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                padding: '66px 0',
-                scrollbarWidth: 'none',
-              }}>
-                {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0')).map(h => (
-                  <div
-                    key={h}
-                    onClick={() => setPickerHour(h)}
-                    style={{
-                      height: 48,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: pickerHour === h ? 24 : 16,
-                      fontWeight: pickerHour === h ? 800 : 400,
-                      color: pickerHour === h ? '#ffffff' : 'rgba(255,255,255,0.3)',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                      scrollSnapAlign: 'center',
-                      userSelect: 'none',
-                    }}
-                  >
-                    {h} hs
-                  </div>
-                ))}
+              {/* Hour Control */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const h = (parseInt(pickerHour, 10) + 1) % 24;
+                    setPickerHour(String(h).padStart(2, '0'));
+                  }}
+                  style={{
+                    backgroundColor: '#181b22',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: 8,
+                    color: '#fc1c46',
+                    width: 44,
+                    height: 28,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    fontSize: 14,
+                    fontWeight: 800,
+                  }}
+                >
+                  ▲
+                </button>
+                <div style={{
+                  backgroundColor: 'rgba(252, 28, 70, 0.15)',
+                  border: '1px solid rgba(252, 28, 70, 0.4)',
+                  borderRadius: 14,
+                  width: 72,
+                  height: 64,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 32,
+                  fontWeight: 800,
+                  color: '#ffffff',
+                  boxShadow: '0 0 15px rgba(252, 28, 70, 0.2)',
+                }}>
+                  {pickerHour}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const h = (parseInt(pickerHour, 10) - 1 + 24) % 24;
+                    setPickerHour(String(h).padStart(2, '0'));
+                  }}
+                  style={{
+                    backgroundColor: '#181b22',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: 8,
+                    color: '#fc1c46',
+                    width: 44,
+                    height: 28,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    fontSize: 14,
+                    fontWeight: 800,
+                  }}
+                >
+                  ▼
+                </button>
+                <span style={{ fontSize: 10, color: '#8b92a0', fontWeight: 600 }}>HORAS</span>
               </div>
 
-              {/* Separator Colon */}
-              <div style={{
-                fontSize: 22,
-                fontWeight: 800,
-                color: '#fc1c46',
-                padding: '0 6px',
-              }}>
+              {/* Separator Dots */}
+              <div style={{ fontSize: 32, fontWeight: 800, color: '#fc1c46', lineHeight: 1, marginBottom: 16 }}>
                 :
               </div>
 
-              {/* Column 2: Minutes Drum */}
-              <div style={{
-                flex: 1,
-                height: '100%',
-                overflowY: 'auto',
-                scrollSnapType: 'y mandatory',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                padding: '66px 0',
-                scrollbarWidth: 'none',
-              }}>
-                {['00', '15', '30', '45'].map(m => (
-                  <div
-                    key={m}
-                    onClick={() => setPickerMinute(m)}
+              {/* Minute Control */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const mins = ['00', '15', '30', '45'];
+                    const idx = (mins.indexOf(pickerMinute) + 1) % mins.length;
+                    setPickerMinute(mins[idx]);
+                  }}
+                  style={{
+                    backgroundColor: '#181b22',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: 8,
+                    color: '#fc1c46',
+                    width: 44,
+                    height: 28,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    fontSize: 14,
+                    fontWeight: 800,
+                  }}
+                >
+                  ▲
+                </button>
+                <div style={{
+                  backgroundColor: 'rgba(252, 28, 70, 0.15)',
+                  border: '1px solid rgba(252, 28, 70, 0.4)',
+                  borderRadius: 14,
+                  width: 72,
+                  height: 64,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 32,
+                  fontWeight: 800,
+                  color: '#ffffff',
+                  boxShadow: '0 0 15px rgba(252, 28, 70, 0.2)',
+                }}>
+                  {pickerMinute}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const mins = ['00', '15', '30', '45'];
+                    const idx = (mins.indexOf(pickerMinute) - 1 + mins.length) % mins.length;
+                    setPickerMinute(mins[idx]);
+                  }}
+                  style={{
+                    backgroundColor: '#181b22',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: 8,
+                    color: '#fc1c46',
+                    width: 44,
+                    height: 28,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    fontSize: 14,
+                    fontWeight: 800,
+                  }}
+                >
+                  ▼
+                </button>
+                <span style={{ fontSize: 10, color: '#8b92a0', fontWeight: 600 }}>MINUTOS</span>
+              </div>
+            </div>
+
+            {/* Quick Presets Grid */}
+            <div style={{ width: '100%' }}>
+              <div style={{ fontSize: 10, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 8, textAlign: 'center' }}>
+                Horarios Frecuentes de Complejos
+              </div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
+                {['08:00', '09:00', '14:00', '18:00', '20:00', '22:30', '23:30', '00:00'].map(preset => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => {
+                      const [h, m] = preset.split(':');
+                      setPickerHour(h);
+                      setPickerMinute(m);
+                    }}
                     style={{
-                      height: 48,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: pickerMinute === m ? 24 : 16,
-                      fontWeight: pickerMinute === m ? 800 : 400,
-                      color: pickerMinute === m ? '#ffffff' : 'rgba(255,255,255,0.3)',
+                      backgroundColor: `${pickerHour}:${pickerMinute}` === preset ? '#fc1c46' : '#16181e',
+                      color: `${pickerHour}:${pickerMinute}` === preset ? '#ffffff' : '#9ca3af',
+                      border: `${pickerHour}:${pickerMinute}` === preset ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: 16,
+                      padding: '5px 11px',
+                      fontSize: 11.5,
+                      fontWeight: 600,
                       cursor: 'pointer',
                       transition: 'all 0.15s ease',
-                      scrollSnapAlign: 'center',
-                      userSelect: 'none',
                     }}
                   >
-                    {m} min
-                  </div>
+                    {preset}
+                  </button>
                 ))}
               </div>
+            </div>
+
+            {/* Native HTML5 Time Input Option for Direct Typing */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', backgroundColor: '#14161c', padding: '8px 12px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.05)' }}>
+              <span style={{ fontSize: 11, color: '#9ca3af' }}>⌨️ Escribir manual:</span>
+              <input
+                type="time"
+                value={`${pickerHour}:${pickerMinute}`}
+                onChange={e => {
+                  if (e.target.value) {
+                    const [h, m] = e.target.value.split(':');
+                    setPickerHour(h || '08');
+                    setPickerMinute(m || '00');
+                  }
+                }}
+                style={{
+                  backgroundColor: '#181b22',
+                  color: '#ffffff',
+                  border: '1px solid rgba(252,28,70,0.3)',
+                  borderRadius: 6,
+                  padding: '4px 8px',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  flex: 1,
+                }}
+              />
             </div>
 
             {/* Confirm Button */}
