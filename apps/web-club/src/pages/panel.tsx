@@ -2447,6 +2447,12 @@ export default function ClubPanel() {
                 >
                   🗑️ Eliminar Reserva
                 </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* ────────────────────────────────────────────────────────────
           MODAL 4: MINIMALIST PRO DRUM TIME PICKER
           ──────────────────────────────────────────────────────────── */}
