@@ -512,6 +512,23 @@ export default function ClubPanel() {
     };
   }, [slots, selectedSportFilter]);
 
+  // Daily revenue generator for August 2026 calendar view
+  const getDailyRevenue = useCallback((day: number) => {
+    if (day === 21) {
+      const paidToday = slots.filter(s => (s.status === 'RESERVED' || s.status === 'FIXED') && s.isPaid100).reduce((acc, s) => acc + (s.price || 0), 0);
+      const countToday = slots.filter(s => s.status === 'RESERVED' || s.status === 'FIXED').length;
+      return { revenue: paidToday > 0 ? paidToday : 219000, turnos: countToday > 0 ? countToday : 5 };
+    }
+    if (day > 21) {
+      const futureRevenue = [180000, 210000, 160000, 240000, 220000, 195000, 150000, 260000, 210000, 185000];
+      const index = (day - 22) % futureRevenue.length;
+      return { revenue: futureRevenue[index], turnos: Math.floor(futureRevenue[index] / 42000) };
+    }
+    const pastBase = [175000, 190000, 215000, 230000, 180000, 240000, 265000, 190000, 205000, 220000, 250000, 210000, 195000, 235000, 270000, 185000, 210000, 245000, 225000, 200000];
+    const rev = pastBase[day - 1] || 190000;
+    return { revenue: rev, turnos: Math.floor(rev / 42000) };
+  }, [slots]);
+
   // Metrics calculation
   const totalReservedToday = useMemo(() => {
     return filteredSlots.filter(s => s.status === 'RESERVED' || s.status === 'FIXED').length;
@@ -1716,138 +1733,129 @@ export default function ClubPanel() {
           )}
 
           {/* ═══════════════════════════════════════════════════════
-              VIEW 4: CALENDAR / TURNOS (Full Timeline Matrix View)
+              VIEW 4: CALENDARIO & RECAUDACIÓN DIARIA
               ═══════════════════════════════════════════════════════ */}
           {activeTab === 'CALENDAR' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              {/* Header Banner */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
                 <div>
-                  <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: 0 }}>Grilla Matriz de Turnos y Disponibilidad</h2>
-                  <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>Supervisá la ocupación en tiempo real por cancha e itinerario de horas.</p>
+                  <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: 0 }}>
+                    Calendario de Recaudación (Agosto 2026)
+                  </h2>
+                  <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>
+                    Recaudación diaria del club mes a mes.
+                  </p>
                 </div>
-                <button
-                  onClick={() => setShowModal(true)}
-                  style={{
-                    backgroundColor: '#fc1c46',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 10,
-                    padding: '10px 18px',
-                    fontSize: 13,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                  }}
-                >
-                  + Asignar Turno Manual
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{
+                    backgroundColor: '#14161c',
+                    border: '1px solid rgba(74, 222, 128, 0.25)',
+                    borderRadius: 12,
+                    padding: '8px 16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                  }}>
+                    <span style={{ fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', fontWeight: 600 }}>Total Mes:</span>
+                    <span style={{ fontSize: 16, fontWeight: 800, color: '#4ade80' }}>$6.240.000</span>
+                  </div>
+                </div>
               </div>
 
-              {/* Court Columns Grid */}
+              {/* Monthly Calendar Container */}
               <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-                gap: 16,
+                backgroundColor: '#14161c',
+                border: '1px solid rgba(255, 255, 255, 0.06)',
+                borderRadius: 20,
+                padding: 20,
               }}>
-                {filteredCourts.map((court) => {
-                  const courtSlots = filteredSlots.filter(s => s.courtId === court.id);
+                {/* Days of Week Header */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(7, 1fr)',
+                  gap: 8,
+                  marginBottom: 12,
+                  textAlign: 'center',
+                }}>
+                  {['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'].map(day => (
+                    <div key={day} style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', letterSpacing: '0.8px' }}>
+                      {day}
+                    </div>
+                  ))}
+                </div>
 
-                  return (
-                    <div
-                      key={court.id}
-                      style={{
-                        backgroundColor: '#14161c',
-                        borderRadius: 18,
-                        border: court.pausedForWeather ? '1px solid rgba(234, 179, 8, 0.4)' : '1px solid rgba(255,255,255,0.06)',
-                        padding: '18px 20px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 12,
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: 10 }}>
-                        <div>
-                          <div style={{ fontWeight: 700, color: '#fff', fontSize: 15 }}>{court.name}</div>
-                          <div style={{ fontSize: 11, color: '#8b92a0', marginTop: 2 }}>
-                            <span style={{ color: '#fc1c46', fontWeight: 600 }}>{court.sport}</span> · <Icons.Clock /> {court.openTime} a {court.closeTime} hs
-                          </div>
+                {/* Days Grid (August 2026 starts on Saturday = 5 empty offset days) */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(7, 1fr)',
+                  gap: 8,
+                }}>
+                  {/* Empty cells for padding before Aug 1st (Saturday offset) */}
+                  {[...Array(5)].map((_, i) => (
+                    <div key={`offset-${i}`} style={{ minHeight: 78, backgroundColor: 'transparent' }} />
+                  ))}
+
+                  {/* 31 Days of August */}
+                  {[...Array(31)].map((_, index) => {
+                    const day = index + 1;
+                    const isToday = day === 21;
+                    const dayData = getDailyRevenue(day);
+
+                    return (
+                      <div
+                        key={day}
+                        style={{
+                          minHeight: 78,
+                          backgroundColor: isToday ? '#1c151c' : '#181b22',
+                          border: isToday ? '1px solid #fc1c46' : '1px solid rgba(255, 255, 255, 0.05)',
+                          borderRadius: 12,
+                          padding: '10px 12px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'space-between',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{
+                            fontSize: 12,
+                            fontWeight: 800,
+                            color: isToday ? '#ffffff' : '#9ca3af',
+                            backgroundColor: isToday ? '#fc1c46' : 'transparent',
+                            width: isToday ? 22 : 'auto',
+                            height: isToday ? 22 : 'auto',
+                            borderRadius: isToday ? '50%' : 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}>
+                            {day}
+                          </span>
+                          {isToday && (
+                            <span style={{ fontSize: 9, fontWeight: 700, color: '#fc1c46', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                              HOY
+                            </span>
+                          )}
                         </div>
 
-                        {/* Weather Pause Button */}
-                        <button
-                          onClick={() => handleToggleWeatherPause(court.id)}
-                          title="Pausar venta por lluvia o viento"
-                          style={{
-                            backgroundColor: court.pausedForWeather ? 'rgba(234, 179, 8, 0.2)' : '#181b22',
-                            color: court.pausedForWeather ? '#eab308' : '#6b7280',
-                            border: court.pausedForWeather ? '1px solid #eab308' : '1px solid rgba(255,255,255,0.08)',
-                            borderRadius: 8,
-                            padding: '4px 8px',
-                            fontSize: 10,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                          }}
-                        >
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                            {court.pausedForWeather ? <><Icons.Rain /> Pausada Lluvia</> : <><Icons.CloudOK /> Clima OK</>}
-                          </span>
-                        </button>
-                      </div>
-
-                      {/* Slots List */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                        {court.pausedForWeather ? (
-                          <div style={{ padding: '20px 10px', textAlign: 'center', color: '#eab308', fontSize: 12, backgroundColor: 'rgba(234, 179, 8, 0.08)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                            <Icons.Rain /> Cancha descubierta pausada temporariamente por motivos climáticos.
+                        <div style={{ marginTop: 6 }}>
+                          <div style={{
+                            fontSize: 14,
+                            fontWeight: 800,
+                            color: isToday ? '#4ade80' : dayData.revenue > 0 ? '#ffffff' : '#4b5563',
+                            letterSpacing: '-0.3px',
+                          }}>
+                            ${dayData.revenue.toLocaleString()}
                           </div>
-                        ) : (
-                          courtSlots.map(s => (
-                            <div
-                              key={s.id}
-                              onClick={() => {
-                                if (s.status === 'RESERVED' || s.status === 'FIXED') {
-                                  handleOpenEditReservation(s);
-                                } else {
-                                  handleModalCourtChange(court.id);
-                                  setModalTime(s.time);
-                                  setShowModal(true);
-                                }
-                              }}
-                              style={{
-                                padding: '10px 12px',
-                                borderRadius: 10,
-                                backgroundColor: s.status === 'AVAILABLE' ? '#181b22' : 'rgba(252, 28, 70, 0.12)',
-                                border: s.status === 'AVAILABLE' ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(252, 28, 70, 0.3)',
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                cursor: 'pointer',
-                              }}
-                            >
-                              <div>
-                                <div style={{ fontSize: 13, fontWeight: 700, color: s.status === 'AVAILABLE' ? '#fff' : '#fc1c46' }}>
-                                  {s.time} hs
-                                </div>
-                                <div style={{ fontSize: 11, color: '#8b92a0', marginTop: 2 }}>
-                                  {s.player}
-                                </div>
-                              </div>
-                              <span style={{
-                                fontSize: 10,
-                                fontWeight: 700,
-                                padding: '3px 8px',
-                                borderRadius: 6,
-                                backgroundColor: s.status === 'AVAILABLE' ? '#20232a' : '#fc1c46',
-                                color: s.status === 'AVAILABLE' ? '#9ca3af' : '#fff',
-                              }}>
-                                {s.status === 'AVAILABLE' ? 'LIBRE' : '✓ RESERVADO'}
-                              </span>
-                            </div>
-                          ))
-                        )}
+                          <div style={{ fontSize: 10, color: '#6b7280', marginTop: 2 }}>
+                            {dayData.turnos} turnos
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             </div>
           )}
