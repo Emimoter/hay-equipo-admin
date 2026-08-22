@@ -894,7 +894,7 @@ export default function ClubPanel() {
   }
 
   return (
-    <div style={{
+    <div className="panel-viewport" style={{
       height: '100vh',
       maxHeight: '100vh',
       backgroundColor: '#07080a',
@@ -912,10 +912,107 @@ export default function ClubPanel() {
         <meta name="description" content="Panel de control en tiempo real para gestión de reservas de canchas" />
       </Head>
 
+      <style jsx global>{`
+        /* ── Mobile Panel Responsive Styles (max-width 768px) ── */
+        .panel-mobile-bottom-nav {
+          display: none;
+        }
+
+        @media (max-width: 768px) {
+          .panel-viewport {
+            padding: 0 !important;
+            height: 100dvh !important;
+            max-height: 100dvh !important;
+            overflow: hidden !important;
+            align-items: stretch !important;
+            justify-content: stretch !important;
+          }
+
+          .panel-app-shell {
+            width: 100% !important;
+            max-width: 100% !important;
+            height: 100dvh !important;
+            max-height: none !important;
+            border-radius: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
+            flex-direction: column !important;
+          }
+
+          .panel-desktop-sidebar {
+            display: none !important;
+          }
+
+          .panel-mobile-bottom-nav {
+            display: flex !important;
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            height: 60px !important;
+            background-color: #0b0c0f !important;
+            border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+            z-index: 950 !important;
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+            padding: 0 4px !important;
+            align-items: center !important;
+            justify-content: space-around !important;
+            box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.5) !important;
+          }
+
+          .panel-main-content {
+            padding: 12px 12px 76px 12px !important;
+            overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+          }
+
+          .panel-header-bar {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 8px !important;
+          }
+
+          .panel-sports-filter {
+            overflow-x: auto !important;
+            max-width: 100% !important;
+            white-space: nowrap !important;
+            -webkit-overflow-scrolling: touch !important;
+            padding-bottom: 2px !important;
+          }
+
+          .panel-matrix-container {
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+            width: 100% !important;
+            border-radius: 12px !important;
+          }
+
+          .panel-matrix-grid-inner {
+            min-width: 480px !important;
+          }
+
+          .panel-modal-backdrop {
+            padding: 0 !important;
+            align-items: flex-end !important;
+          }
+
+          .panel-modal-box {
+            max-width: 100% !important;
+            width: 100% !important;
+            border-radius: 20px 20px 0 0 !important;
+            max-height: 88vh !important;
+            overflow-y: auto !important;
+            padding: 20px 16px !important;
+            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.9) !important;
+          }
+        }
+      `}</style>
+
       {/* ═══════════════════════════════════════════════════════
           MAIN APP SHELL (Exact 3D Mockup Container — Fit 100vh)
           ═══════════════════════════════════════════════════════ */}
-      <div style={{
+      <div className="panel-app-shell" style={{
         width: '100%',
         maxWidth: 1220,
         height: 'calc(100vh - clamp(16px, 3vh, 32px))',
@@ -933,7 +1030,7 @@ export default function ClubPanel() {
         {/* ────────────────────────────────────────────────────────────
             LEFT SIDEBAR
             ──────────────────────────────────────────────────────────── */}
-        <aside style={{
+        <aside className="panel-desktop-sidebar" style={{
           width: 64,
           backgroundColor: '#0b0c0f',
           borderRight: '1px solid rgba(255, 255, 255, 0.05)',
@@ -1182,7 +1279,7 @@ export default function ClubPanel() {
         {/* ────────────────────────────────────────────────────────────
             MAIN CONTENT AREA
             ──────────────────────────────────────────────────────────── */}
-        <main style={{
+        <main className="panel-main-content" style={{
           flex: 1,
           padding: 'clamp(14px, 2vh, 20px) clamp(16px, 2vw, 26px)',
           display: 'flex',
@@ -1193,7 +1290,7 @@ export default function ClubPanel() {
         }}>
 
           {/* ── TOP HEADER BAR ── */}
-          <header style={{
+          <header className="panel-header-bar" style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -1221,7 +1318,7 @@ export default function ClubPanel() {
             </div>
 
             {/* Middle: Dynamic Sport Filter Tabs (Only sports registered in current courts) */}
-            <div style={{
+            <div className="panel-sports-filter" style={{
               display: 'flex',
               backgroundColor: '#16181e',
               padding: 3,
@@ -2716,13 +2813,101 @@ export default function ClubPanel() {
           </div>
         )}
 
+        {/* ────────────────────────────────────────────────────────────
+            MOBILE BOTTOM NAVIGATION BAR (Visible only on max-width 768px)
+            ──────────────────────────────────────────────────────────── */}
+        <nav className="panel-mobile-bottom-nav">
+          {[
+            { id: 'DASHBOARD', label: 'Inicio', icon: (active: boolean) => (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="3" width="7" height="7" rx="2" />
+                <rect x="14" y="3" width="7" height="7" rx="2" />
+                <rect x="3" y="14" width="7" height="7" rx="2" />
+                <rect x="14" y="14" width="7" height="7" rx="2" />
+              </svg>
+            )},
+            { id: 'CALENDAR', label: 'Matriz', icon: (active: boolean) => (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                <line x1="16" y1="2" x2="16" y2="6" />
+                <line x1="8" y1="2" x2="8" y2="6" />
+                <line x1="3" y1="10" x2="21" y2="10" />
+              </svg>
+            )},
+            { id: 'COURTS', label: 'Canchas', icon: (active: boolean) => (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            )},
+            { id: 'REVENUE', label: 'Cobros', icon: (active: boolean) => (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" />
+                <path d="M12 6v2m0 8v2" />
+              </svg>
+            )},
+            { id: 'PLAYERS', label: 'Clientes', icon: (active: boolean) => (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+            )},
+            { id: 'FIXED_SLOTS', label: 'Fijos', icon: (active: boolean) => (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 2l4 4-4 4" />
+                <path d="M3 11v-1a4 4 0 0 1 4-4h14" />
+                <path d="M7 22l-4-4 4-4" />
+                <path d="M21 13v1a4 4 0 0 1-4 4H3" />
+              </svg>
+            )},
+            { id: 'SETTINGS', label: 'Config', icon: (active: boolean) => (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+              </svg>
+            )},
+          ].map(tab => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as NavTab)}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 2,
+                  background: 'none',
+                  border: 'none',
+                  color: isActive ? '#fc1c46' : '#6b7280',
+                  padding: '4px 6px',
+                  cursor: 'pointer',
+                  minWidth: 46,
+                  flexShrink: 0,
+                  transition: 'color 0.15s ease',
+                }}
+              >
+                {tab.icon(isActive)}
+                <span style={{ fontSize: 9.5, fontWeight: isActive ? 800 : 500 }}>
+                  {tab.label}
+                </span>
+              </button>
+            );
+          })}
+        </nav>
+
       </div>
 
       {/* ────────────────────────────────────────────────────────────
           MODAL 1: "+ NUEVA RESERVA MANUAL"
           ──────────────────────────────────────────────────────────── */}
       {showModal && (
-        <div style={{
+        <div className="panel-modal-backdrop" style={{
           position: 'fixed',
           top: 0,
           left: 0,
@@ -2736,7 +2921,7 @@ export default function ClubPanel() {
           zIndex: 1000,
           padding: 20,
         }}>
-          <div style={{
+          <div className="panel-modal-box" style={{
             width: '100%',
             maxWidth: 480,
             backgroundColor: '#12141a',
@@ -3189,7 +3374,7 @@ export default function ClubPanel() {
           MODAL 2: "+ CONFIGURAR / EDITAR CANCHA Y HORARIOS"
           ──────────────────────────────────────────────────────────── */}
       {showCourtModal && (
-        <div style={{
+        <div className="panel-modal-backdrop" style={{
           position: 'fixed',
           top: 0,
           left: 0,
@@ -3203,7 +3388,7 @@ export default function ClubPanel() {
           zIndex: 1000,
           padding: 20,
         }}>
-          <div style={{
+          <div className="panel-modal-box" style={{
             width: '100%',
             maxWidth: 520,
             maxHeight: '90vh',
@@ -3679,7 +3864,7 @@ export default function ClubPanel() {
           MODAL 3: "EDITAR O ELIMINAR RESERVA EXISTENTE"
           ──────────────────────────────────────────────────────────── */}
       {showEditReservationModal && editingSlot && (
-        <div style={{
+        <div className="panel-modal-backdrop" style={{
           position: 'fixed',
           top: 0,
           left: 0,
@@ -3693,7 +3878,7 @@ export default function ClubPanel() {
           zIndex: 1000,
           padding: 20,
         }}>
-          <div style={{
+          <div className="panel-modal-box" style={{
             width: '100%',
             maxWidth: 480,
             backgroundColor: '#12141a',
@@ -3866,7 +4051,7 @@ export default function ClubPanel() {
           MODAL: "+ AGENDAR NUEVO TURNO FIJO"
           ──────────────────────────────────────────────────────────── */}
       {showFixedSlotModal && (
-        <div style={{
+        <div className="panel-modal-backdrop" style={{
           position: 'fixed',
           top: 0,
           left: 0,
@@ -3880,7 +4065,7 @@ export default function ClubPanel() {
           zIndex: 1000,
           padding: 20,
         }}>
-          <div style={{
+          <div className="panel-modal-box" style={{
             width: '100%',
             maxWidth: 480,
             backgroundColor: '#12141a',
