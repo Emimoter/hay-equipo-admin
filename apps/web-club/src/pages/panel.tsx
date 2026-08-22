@@ -6,7 +6,7 @@ import { useRouter } from 'next/router';
    Types & Interfaces
    ──────────────────────────────────────────────────────────── */
 
-type NavTab = 'DASHBOARD' | 'COURTS' | 'CALENDAR' | 'PLAYERS' | 'ANALYTICS' | 'SETTINGS';
+type NavTab = 'DASHBOARD' | 'COURTS' | 'REVENUE' | 'CALENDAR' | 'PLAYERS' | 'ANALYTICS' | 'SETTINGS';
 type SlotStatus = 'RESERVED' | 'AVAILABLE' | 'FIXED' | 'MAINTENANCE';
 
 interface CourtSlot {
@@ -392,6 +392,11 @@ export default function ClubPanel() {
     setEditingSlot(null);
   };
 
+  // Toggle Slot Payment Status (Paid / Unpaid)
+  const handleTogglePaymentStatus = (slotId: string) => {
+    setSlots(prev => prev.map(s => s.id === slotId ? { ...s, isPaid100: !s.isPaid100 } : s));
+  };
+
   // Toggle Court Active / Weather Pause
   const handleToggleCourtActive = (id: string) => {
     setCourts(prev => prev.map(c => c.id === id ? { ...c, active: !c.active } : c));
@@ -705,7 +710,32 @@ export default function ClubPanel() {
                 </svg>
               </button>
 
-              {/* Tab 3: Calendar / Slots */}
+              {/* Tab 3: Recaudación y Cobros del Día */}
+              <button
+                onClick={() => setActiveTab('REVENUE')}
+                title="Recaudación & Cobros del Día"
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 12,
+                  border: 'none',
+                  backgroundColor: activeTab === 'REVENUE' ? '#241217' : 'transparent',
+                  color: activeTab === 'REVENUE' ? '#fc1c46' : '#6b7280',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" />
+                  <path d="M12 6v2m0 8v2" />
+                </svg>
+              </button>
+
+              {/* Tab 4: Calendar / Slots */}
               <button
                 onClick={() => setActiveTab('CALENDAR')}
                 title="Matriz de Horarios & Turnos"
@@ -1545,7 +1575,183 @@ export default function ClubPanel() {
           )}
 
           {/* ═══════════════════════════════════════════════════════
-              VIEW 3: CALENDAR / TURNOS (Full Timeline Matrix View)
+              VIEW 3: RECAUDACIÓN Y COBROS DEL DÍA
+              ═══════════════════════════════════════════════════════ */}
+          {activeTab === 'REVENUE' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+              {/* Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: 0 }}>
+                    Recaudación y Cobros ({dateFilter})
+                  </h2>
+                  <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>
+                    Desglose financiero en tiempo real y estado de cobros de las reservas del club.
+                  </p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <button
+                    onClick={() => setShowModal(true)}
+                    style={{
+                      backgroundColor: '#fc1c46',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 10,
+                      padding: '10px 18px',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    + Nueva Reserva
+                  </button>
+                </div>
+              </div>
+
+              {/* Top 3 KPI Financial Summary Cards Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
+                {/* Total Estimado */}
+                <div style={{ backgroundColor: '#14161c', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: '16px 20px' }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+                    TOTAL ESTIMADO RECAUDADO
+                  </div>
+                  <div style={{ fontSize: 26, fontWeight: 700, color: '#ffffff', marginTop: 6 }}>
+                    {financialMetrics.formattedTotal}
+                  </div>
+                  <div style={{ fontSize: 11, color: '#6b7280', marginTop: 4 }}>
+                    Suma total de {financialMetrics.reservedCount} reservas confirmadas
+                  </div>
+                </div>
+
+                {/* Cobrado (100%) */}
+                <div style={{ backgroundColor: 'rgba(74, 222, 128, 0.08)', border: '1px solid rgba(74, 222, 128, 0.25)', borderRadius: 16, padding: '16px 20px' }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#4ade80', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+                    COBRADO (100% SEÑA / PAGO)
+                  </div>
+                  <div style={{ fontSize: 26, fontWeight: 700, color: '#4ade80', marginTop: 6 }}>
+                    {financialMetrics.formattedPaid}
+                  </div>
+                  <div style={{ fontSize: 11, color: '#4ade80', marginTop: 4, opacity: 0.8 }}>
+                    {financialMetrics.percentage}% de las reservas pagadas totalmente
+                  </div>
+                </div>
+
+                {/* Pendiente Mostrador */}
+                <div style={{ backgroundColor: 'rgba(252, 28, 70, 0.08)', border: '1px solid rgba(252, 28, 70, 0.25)', borderRadius: 16, padding: '16px 20px' }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#fc1c46', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+                    PENDIENTE EN MOSTRADOR
+                  </div>
+                  <div style={{ fontSize: 26, fontWeight: 700, color: '#fc1c46', marginTop: 6 }}>
+                    {financialMetrics.formattedPending}
+                  </div>
+                  <div style={{ fontSize: 11, color: '#fc1c46', marginTop: 4, opacity: 0.8 }}>
+                    Cobro pendiente al ingresar a la cancha
+                  </div>
+                </div>
+              </div>
+
+              {/* Detailed Reservations List for Revenue */}
+              <div style={{ backgroundColor: '#14161c', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: 20 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                  <h3 style={{ fontSize: 15, fontWeight: 700, color: '#fff', margin: 0 }}>
+                    Reservas que Entraron ({dateFilter}) — {financialMetrics.reservedCount} Turnos
+                  </h3>
+                  <div style={{ fontSize: 12, color: '#888' }}>
+                    Click en el badge para cambiar estado de cobro rápido
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {financialMetrics.activeReservedSlots.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '40px 20px', color: '#6b7280', fontSize: 13 }}>
+                      No hay reservas registradas para {dateFilter.toLowerCase()}.
+                    </div>
+                  ) : (
+                    financialMetrics.activeReservedSlots.map(slot => (
+                      <div
+                        key={slot.id}
+                        style={{
+                          backgroundColor: '#181b22',
+                          border: '1px solid rgba(255, 255, 255, 0.05)',
+                          borderRadius: 12,
+                          padding: '12px 16px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          flexWrap: 'wrap',
+                          gap: 12,
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                          <div style={{
+                            backgroundColor: '#241217',
+                            color: '#fc1c46',
+                            fontWeight: 700,
+                            fontSize: 12,
+                            padding: '6px 12px',
+                            borderRadius: 8,
+                          }}>
+                            {slot.time} hs
+                          </div>
+                          <div>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: '#ffffff' }}>
+                              {slot.courtName} <span style={{ fontSize: 11, color: '#9ca3af', fontWeight: 400 }}>({slot.sport})</span>
+                            </div>
+                            <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>
+                              Cliente: <strong style={{ color: '#fff' }}>{slot.player}</strong> {slot.phone && `· ${slot.phone}`}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                          <div style={{ fontSize: 16, fontWeight: 700, color: '#ffffff' }}>
+                            ${slot.price?.toLocaleString()}
+                          </div>
+
+                          <button
+                            onClick={() => handleTogglePaymentStatus(slot.id)}
+                            style={{
+                              backgroundColor: slot.isPaid100 ? 'rgba(74, 222, 128, 0.15)' : 'rgba(252, 28, 70, 0.15)',
+                              color: slot.isPaid100 ? '#4ade80' : '#fc1c46',
+                              border: slot.isPaid100 ? '1px solid rgba(74, 222, 128, 0.3)' : '1px solid rgba(252, 28, 70, 0.3)',
+                              borderRadius: 8,
+                              padding: '6px 12px',
+                              fontSize: 11,
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease',
+                            }}
+                            title="Click para cambiar estado de pago"
+                          >
+                            {slot.isPaid100 ? '✓ Pagado 100%' : 'Pendiente Mostrador'}
+                          </button>
+
+                          <button
+                            onClick={() => handleOpenEditReservation(slot)}
+                            style={{
+                              backgroundColor: '#20242f',
+                              color: '#9ca3af',
+                              border: '1px solid rgba(255, 255, 255, 0.08)',
+                              borderRadius: 8,
+                              padding: '6px 12px',
+                              fontSize: 11,
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            Editar
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ═══════════════════════════════════════════════════════
+              VIEW 4: CALENDAR / TURNOS (Full Timeline Matrix View)
               ═══════════════════════════════════════════════════════ */}
           {activeTab === 'CALENDAR' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
