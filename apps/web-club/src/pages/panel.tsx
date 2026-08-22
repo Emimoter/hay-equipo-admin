@@ -1577,32 +1577,13 @@ export default function ClubPanel() {
           {activeTab === 'REVENUE' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
               {/* Header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: 0 }}>
-                    Recaudación ({dateFilter})
-                  </h2>
-                  <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>
-                    Control de cobros y turnos del club.
-                  </p>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <button
-                    onClick={() => setShowModal(true)}
-                    style={{
-                      backgroundColor: '#fc1c46',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: 10,
-                      padding: '10px 18px',
-                      fontSize: 13,
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    + Nueva Reserva
-                  </button>
-                </div>
+              <div>
+                <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: 0 }}>
+                  Recaudación ({dateFilter})
+                </h2>
+                <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>
+                  Control de cobros y turnos del club.
+                </p>
               </div>
 
               {/* SINGLE CLEAN KPI CARD: TOTAL COBRADO */}
@@ -1629,7 +1610,7 @@ export default function ClubPanel() {
                     {financialMetrics.reservedCount} turnos confirmados
                   </div>
                   <div style={{ fontSize: 11, color: '#4ade80', marginTop: 2, fontWeight: 600 }}>
-                    {financialMetrics.percentage}% cobrado
+                    Recaudación activa
                   </div>
                 </div>
               </div>
