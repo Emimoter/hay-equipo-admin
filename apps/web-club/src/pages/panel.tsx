@@ -1434,7 +1434,7 @@ export default function ClubPanel() {
                     {/* Matrix Table Header: HORA | Cancha 1 | Cancha 2 | Cancha 3 | ... */}
                     <div style={{
                       display: 'grid',
-                      gridTemplateColumns: `0.7fr repeat(${Math.max(1, filteredCourts.length)}, 1fr)`,
+                      gridTemplateColumns: `0.7fr repeat(${Math.max(1, filteredCourts.length)}, minmax(0, 1fr))`,
                       gap: 8,
                       paddingBottom: 10,
                       borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
@@ -1460,7 +1460,7 @@ export default function ClubPanel() {
                           key={time}
                           style={{
                             display: 'grid',
-                            gridTemplateColumns: `0.7fr repeat(${Math.max(1, filteredCourts.length)}, 1fr)`,
+                            gridTemplateColumns: `0.7fr repeat(${Math.max(1, filteredCourts.length)}, minmax(0, 1fr))`,
                             gap: 8,
                             alignItems: 'center',
                           }}
@@ -1481,7 +1481,7 @@ export default function ClubPanel() {
                                 <div
                                   key={court.id}
                                   onClick={() => handleOpenEditReservation(slot)}
-                                  title={`Click para editar o eliminar reserva de ${slot.player}`}
+                                  title={`Reserva: ${slot.player}. Click para editar o eliminar.`}
                                   style={{
                                     backgroundColor: 'rgba(252, 28, 70, 0.15)',
                                     border: '1px solid rgba(252, 28, 70, 0.35)',
@@ -1489,14 +1489,16 @@ export default function ClubPanel() {
                                     padding: '6px 8px',
                                     cursor: 'pointer',
                                     transition: 'transform 0.1s ease',
+                                    overflow: 'hidden',
+                                    minWidth: 0,
                                   }}
                                   onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.02)')}
                                   onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
                                 >
-                                  <div style={{ fontSize: 11.5, fontWeight: 700, color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                  <div style={{ fontSize: 11.5, fontWeight: 700, color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>
                                     {slot.player}
                                   </div>
-                                  <div style={{ fontSize: 9.5, color: '#fc1c46', fontWeight: 600, marginTop: 1 }}>
+                                  <div style={{ fontSize: 9.5, color: '#fc1c46', fontWeight: 600, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                     ✓ Reservado
                                   </div>
                                 </div>
@@ -1516,14 +1518,16 @@ export default function ClubPanel() {
                                     padding: '6px 8px',
                                     cursor: 'pointer',
                                     transition: 'transform 0.1s ease',
+                                    overflow: 'hidden',
+                                    minWidth: 0,
                                   }}
                                   onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.02)')}
                                   onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
                                 >
-                                  <div style={{ fontSize: 11.5, fontWeight: 700, color: '#fef08a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                  <div style={{ fontSize: 11.5, fontWeight: 700, color: '#fef08a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>
                                     {slot.player}
                                   </div>
-                                  <div style={{ fontSize: 9.5, color: '#f59e0b', fontWeight: 600, marginTop: 1 }}>
+                                  <div style={{ fontSize: 9.5, color: '#f59e0b', fontWeight: 600, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                     Bloqueado
                                   </div>
                                 </div>
@@ -1551,6 +1555,8 @@ export default function ClubPanel() {
                                   padding: '6px 8px',
                                   cursor: 'pointer',
                                   transition: 'all 0.15s ease',
+                                  overflow: 'hidden',
+                                  minWidth: 0,
                                 }}
                                 onMouseEnter={e => {
                                   e.currentTarget.style.borderColor = 'rgba(252, 28, 70, 0.3)';
@@ -1561,7 +1567,7 @@ export default function ClubPanel() {
                                   e.currentTarget.style.backgroundColor = '#181b22';
                                 }}
                               >
-                                <div style={{ fontSize: 11, color: '#6b7280', textAlign: 'center' }}>
+                                <div style={{ fontSize: 11, color: '#6b7280', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                   Disponible
                                 </div>
                               </div>
