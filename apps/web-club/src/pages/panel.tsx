@@ -1293,93 +1293,118 @@ export default function ClubPanel() {
                 </button>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(310px, 1fr))', gap: 18 }}>
                 {filteredCourts.map(court => (
                   <div
                     key={court.id}
                     style={{
-                      backgroundColor: '#14161c',
-                      borderRadius: 18,
-                      border: '1px solid rgba(255,255,255,0.06)',
-                      padding: '22px',
+                      backgroundColor: '#16181e',
+                      borderRadius: 16,
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      padding: '18px 20px',
                       display: 'flex',
                       flexDirection: 'column',
                       gap: 14,
+                      justifyContent: 'space-between',
+                      boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
                     }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <div>
-                        <div style={{ fontSize: 16, fontWeight: 700, color: '#ffffff' }}>{court.name}</div>
-                      </div>
-                      <div style={{ display: 'flex', gap: 6 }}>
+                    {/* Top Row: Sport Badge & Status + Edit Button */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ backgroundColor: 'rgba(252,28,70,0.15)', color: '#fc1c46', fontSize: 10.5, fontWeight: 800, padding: '3px 8px', borderRadius: 6, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                          {court.sport}
+                        </span>
                         <button
-                          onClick={() => handleOpenCourtModal(court)}
-                          style={{
-                            backgroundColor: '#1e293b',
-                            color: '#38bdf8',
-                            border: 'none',
-                            borderRadius: 9999,
-                            padding: '4px 10px',
-                            fontSize: 11,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                          }}
-                        >
-                          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Icons.Edit /> Editar</span>
-                        </button>
-                        <button
+                          type="button"
                           onClick={() => handleToggleCourtActive(court.id)}
                           style={{
-                            backgroundColor: court.active ? '#1e293b' : '#33151b',
-                            color: court.active ? '#4ade80' : '#fc1c46',
+                            backgroundColor: 'transparent',
                             border: 'none',
-                            borderRadius: 9999,
-                            padding: '4px 10px',
-                            fontSize: 11,
-                            fontWeight: 600,
+                            color: court.active ? '#10b981' : '#6b7280',
+                            fontSize: 11.5,
+                            fontWeight: 700,
                             cursor: 'pointer',
+                            padding: 0,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 5,
                           }}
                         >
-                          {court.active ? '● Activa' : '○ Pausada'}
+                          <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: court.active ? '#10b981' : '#6b7280', boxShadow: court.active ? '0 0 6px #10b981' : 'none' }} />
+                          {court.active ? 'Activa' : 'Pausada'}
                         </button>
                       </div>
+
+                      <button
+                        onClick={() => handleOpenCourtModal(court)}
+                        style={{
+                          backgroundColor: 'rgba(255,255,255,0.04)',
+                          color: '#e2e8f0',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          borderRadius: 8,
+                          padding: '5px 11px',
+                          fontSize: 11.5,
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 5,
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        <Icons.Edit /> Editar
+                      </button>
                     </div>
 
-                    {/* Horarios Habilitados Tag */}
-                    <div style={{ backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.05)', padding: '10px 12px', borderRadius: 10 }}>
-                      <div style={{ fontSize: 10, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Horarios Habilitados para Reserva</div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: '#ffffff', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <Icons.Clock /> <span>{court.openTime} hs a {court.closeTime} hs</span>
+                    {/* Court Title */}
+                    <div>
+                      <h3 style={{ fontSize: 16.5, fontWeight: 700, color: '#ffffff', margin: 0, lineHeight: 1.3 }}>
+                        {court.name}
+                      </h3>
+                    </div>
+
+                    {/* Horarios Habilitados Banner */}
+                    <div style={{ backgroundColor: '#11131a', border: '1px solid rgba(255,255,255,0.05)', padding: '10px 12px', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ fontSize: 11, color: '#9ca3af', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <Icons.Clock /> Horario:
+                      </div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#ffffff' }}>
+                        {court.openTime} hs a {court.closeTime} hs
                       </div>
                     </div>
 
-                    {/* Precio Único de la Cancha */}
-                    <div style={{ backgroundColor: '#181b22', padding: '10px 14px', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <div style={{ fontSize: 11, color: '#888', textTransform: 'uppercase' }}>Precio por Turno</div>
-                      <div style={{ fontSize: 16, fontWeight: 700, color: '#fc1c46' }}>${court.price.toLocaleString()}</div>
-                    </div>
-
-                    {/* Court Feature Pills */}
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, fontSize: 11 }}>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, backgroundColor: 'rgba(255,255,255,0.06)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.1)', padding: '4px 9px', borderRadius: 6, fontWeight: 700 }}>
+                    {/* Court Feature Badges */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, backgroundColor: 'rgba(255,255,255,0.05)', color: '#d1d5db', border: '1px solid rgba(255,255,255,0.08)', padding: '4px 9px', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>
                         <Icons.Clock /> {court.slotDuration || 90} min / turno
                       </span>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, backgroundColor: court.indoor ? 'rgba(252,28,70,0.12)' : 'rgba(255,255,255,0.04)', color: court.indoor ? '#fc1c46' : '#9ca3af', border: court.indoor ? '1px solid rgba(252,28,70,0.25)' : '1px solid rgba(255,255,255,0.06)', padding: '4px 9px', borderRadius: 6, fontWeight: 600 }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, backgroundColor: court.indoor ? 'rgba(252,28,70,0.12)' : 'rgba(255,255,255,0.04)', color: court.indoor ? '#fc1c46' : '#9ca3af', border: court.indoor ? '1px solid rgba(252,28,70,0.25)' : '1px solid rgba(255,255,255,0.06)', padding: '4px 9px', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>
                         {court.indoor ? <><Icons.Indoor /> Techada</> : <><Icons.Outdoor /> Descubierta</>}
                       </span>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, backgroundColor: court.lighting ? 'rgba(252,28,70,0.12)' : 'rgba(255,255,255,0.04)', color: court.lighting ? '#fc1c46' : '#9ca3af', border: court.lighting ? '1px solid rgba(252,28,70,0.25)' : '1px solid rgba(255,255,255,0.06)', padding: '4px 9px', borderRadius: 6, fontWeight: 600 }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, backgroundColor: court.lighting ? 'rgba(252,28,70,0.12)' : 'rgba(255,255,255,0.04)', color: court.lighting ? '#fc1c46' : '#9ca3af', border: court.lighting ? '1px solid rgba(252,28,70,0.25)' : '1px solid rgba(255,255,255,0.06)', padding: '4px 9px', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>
                         {court.lighting ? <><Icons.Lighting /> Con Iluminación</> : <><Icons.NoLighting /> Sin Iluminación</>}
                       </span>
                       {court.hasCameras && (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, backgroundColor: 'rgba(252,28,70,0.12)', color: '#fc1c46', border: '1px solid rgba(252,28,70,0.25)', padding: '4px 9px', borderRadius: 6, fontWeight: 600 }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, backgroundColor: 'rgba(252,28,70,0.12)', color: '#fc1c46', border: '1px solid rgba(252,28,70,0.25)', padding: '4px 9px', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>
                           <Icons.Camera /> Con Cámaras
                         </span>
                       )}
                       {court.hasHeating && (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, backgroundColor: 'rgba(252,28,70,0.12)', color: '#fc1c46', border: '1px solid rgba(252,28,70,0.25)', padding: '4px 9px', borderRadius: 6, fontWeight: 600 }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, backgroundColor: 'rgba(252,28,70,0.12)', color: '#fc1c46', border: '1px solid rgba(252,28,70,0.25)', padding: '4px 9px', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>
                           <Icons.Climate /> Climatizada
                         </span>
                       )}
+                    </div>
+
+                    {/* Card Footer: Price per slot */}
+                    <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 2 }}>
+                      <span style={{ fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.6px', fontWeight: 600 }}>
+                        Precio por Turno
+                      </span>
+                      <span style={{ fontSize: 19, fontWeight: 800, color: '#fc1c46', letterSpacing: '-0.5px' }}>
+                        ${court.price.toLocaleString()}
+                      </span>
                     </div>
                   </div>
                 ))}
