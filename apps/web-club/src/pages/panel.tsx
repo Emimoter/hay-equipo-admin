@@ -2291,7 +2291,7 @@ export default function ClubPanel() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
               <div>
                 <h2 style={{ fontSize: 22, fontWeight: 800, color: '#ffffff', margin: 0, letterSpacing: '-0.4px' }}>Configuración del Club</h2>
-                <p style={{ fontSize: 13, color: '#9ca3af', margin: '4px 0 0' }}>Datos principales del club y política de cancelación.</p>
+                <p style={{ fontSize: 13, color: '#9ca3af', margin: '4px 0 0' }}>Datos principales del club.</p>
               </div>
 
               <div style={{ backgroundColor: '#14161c', padding: '24px', borderRadius: 20, border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -2313,46 +2313,6 @@ export default function ClubPanel() {
                     onChange={e => setClubAddress(e.target.value)}
                     style={{ width: '100%', backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '12px', color: '#fff', fontSize: 14 }}
                   />
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 16 }}>
-                  <div>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>Cobro Obligatorio para Reservar</div>
-                    <div style={{ fontSize: 12, color: '#888' }}>El sistema exige el pago total del turno para confirmar la reserva</div>
-                  </div>
-                  <button
-                    onClick={() => setMercadoPagoConnected(!mercadoPagoConnected)}
-                    style={{
-                      backgroundColor: mercadoPagoConnected ? '#1e293b' : '#241217',
-                      color: mercadoPagoConnected ? '#38bdf8' : '#fc1c46',
-                      border: 'none',
-                      borderRadius: 8,
-                      padding: '8px 14px',
-                      fontSize: 12,
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {mercadoPagoConnected ? '✓ Activo' : 'Inactivo'}
-                  </button>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 16 }}>
-                  <div>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>Política de Cancelación / Devolución</div>
-                    <div style={{ fontSize: 12, color: '#888' }}>Devolución automática si el jugador cancela con más de {cancellationWindowHours} horas de anticipación</div>
-                  </div>
-                  <select
-                    value={cancellationWindowHours}
-                    onChange={e => setCancellationWindowHours(Number(e.target.value))}
-                    style={{ backgroundColor: '#181b22', color: '#fff', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '6px 10px', fontSize: 12 }}
-                  >
-                    <option value={2}>2 horas</option>
-                    <option value={4}>4 horas</option>
-                    <option value={6}>6 horas</option>
-                    <option value={12}>12 horas</option>
-                    <option value={24}>24 horas</option>
-                  </select>
                 </div>
               </div>
             </div>
