@@ -7,7 +7,7 @@ import { useRouter } from 'next/router';
    ──────────────────────────────────────────────────────────── */
 
 type NavTab = 'DASHBOARD' | 'COURTS' | 'REVENUE' | 'CALENDAR' | 'PLAYERS' | 'FIXED_SLOTS' | 'SETTINGS';
-type SlotStatus = 'RESERVED' | 'AVAILABLE' | 'FIXED' | 'MAINTENANCE';
+type SlotStatus = 'RESERVED' | 'AVAILABLE' | 'FIXED' | 'MAINTENANCE' | 'BLOCKED';
 
 interface FixedSlot {
   id: string;
@@ -330,8 +330,10 @@ export default function ClubPanel() {
   const [cancellationWindowHours, setCancellationWindowHours] = useState(6);
   const [clubAddress, setClubAddress] = useState('Av. Del Libertador 4400, Palermo, CABA');
 
-  // Modal 1: "+ Nueva reserva"
+  // Modal 1: "+ Nueva reserva / Bloquear"
   const [showModal, setShowModal] = useState(false);
+  const [modalReservationType, setModalReservationType] = useState<'RESERVED' | 'BLOCKED'>('RESERVED');
+  const [modalBlockReason, setModalBlockReason] = useState('Mantenimiento / Uso del Club');
   const [modalCourt, setModalCourt] = useState('c-1');
   const [modalTime, setModalTime] = useState('21:00');
   const [modalSelectedPlayerId, setModalSelectedPlayerId] = useState<string>('CUSTOM');
@@ -583,10 +585,31 @@ export default function ClubPanel() {
     }
   };
 
-  // Add new reservation (Clean & Direct)
+  // Add new reservation or block slot
   const handleAddReservation = (e: React.FormEvent) => {
     e.preventDefault();
     const court = courts.find(c => c.id === modalCourt) || courts[0];
+
+    if (modalReservationType === 'BLOCKED') {
+      const reasonClean = modalBlockReason.trim() || 'Bloqueado (Mantenimiento)';
+      const blockedSlot: CourtSlot = {
+        id: `slot-${Date.now()}`,
+        courtId: court.id,
+        courtName: court.name,
+        sport: court.sport,
+        time: modalTime,
+        status: 'MAINTENANCE',
+        player: reasonClean,
+        price: 0,
+        isPaid100: false,
+      };
+      setSlots(prev => [blockedSlot, ...prev.filter(s => !(s.courtId === court.id && s.time === modalTime))]);
+      setShowModal(false);
+      setModalBlockReason('Mantenimiento / Uso del Club');
+      setModalReservationType('RESERVED');
+      return;
+    }
+
     const playerNameClean = modalPlayer.trim() || 'Reserva Directa';
     const playerPhoneClean = modalPhone.trim() || undefined;
 
@@ -619,12 +642,13 @@ export default function ClubPanel() {
       price: court.price,
       isPaid100: true,
     };
-    setSlots(prev => [newSlot, ...prev]);
+    setSlots(prev => [newSlot, ...prev.filter(s => !(s.courtId === court.id && s.time === modalTime))]);
     setShowModal(false);
     setModalPlayer('');
     setModalPhone('');
     setClientSearchQuery('');
     setClientSelectionMode('EXISTING');
+    setModalReservationType('RESERVED');
   };
 
   // Print Daily Roster
@@ -1449,6 +1473,7 @@ export default function ClubPanel() {
                           {filteredCourts.map((court) => {
                             const slot = filteredSlots.find(s => s.courtId === court.id && s.time === time);
                             const isReserved = slot && (slot.status === 'RESERVED' || slot.status === 'FIXED');
+                            const isBlocked = slot && (slot.status === 'MAINTENANCE' || slot.status === 'BLOCKED');
 
                             if (isReserved && slot) {
                               return (
@@ -1477,6 +1502,33 @@ export default function ClubPanel() {
                               );
                             }
 
+                            if (isBlocked && slot) {
+                              return (
+                                <div
+                                  key={court.id}
+                                  onClick={() => handleOpenEditReservation(slot)}
+                                  title={`Horario Bloqueado (${slot.player}). Click para desbloquear.`}
+                                  style={{
+                                    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                                    border: '1px solid rgba(245, 158, 11, 0.35)',
+                                    borderRadius: 8,
+                                    padding: '6px 8px',
+                                    cursor: 'pointer',
+                                    transition: 'transform 0.1s ease',
+                                  }}
+                                  onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.02)')}
+                                  onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+                                >
+                                  <div style={{ fontSize: 11.5, fontWeight: 700, color: '#fef08a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {slot.player}
+                                  </div>
+                                  <div style={{ fontSize: 9.5, color: '#f59e0b', fontWeight: 600, marginTop: 1 }}>
+                                    Bloqueado
+                                  </div>
+                                </div>
+                              );
+                            }
+
                             return (
                               <div
                                 key={court.id}
@@ -1486,9 +1538,10 @@ export default function ClubPanel() {
                                   setModalPlayer('');
                                   setModalPhone('');
                                   setModalSelectedPlayerId('CUSTOM');
+                                  setModalReservationType('RESERVED');
                                   setShowModal(true);
                                 }}
-                                title="Click para crear nueva reserva"
+                                title="Click para reservar o bloquear horario"
                                 style={{
                                   backgroundColor: '#181b22',
                                   border: '1px solid rgba(255, 255, 255, 0.04)',
@@ -2446,6 +2499,52 @@ export default function ClubPanel() {
             </div>
 
             <form onSubmit={handleAddReservation} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {/* Type Selector: Reservar Turno vs Bloquear Horario */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                backgroundColor: '#181b22',
+                borderRadius: 12,
+                padding: 4,
+                border: '1px solid rgba(255,255,255,0.06)',
+                marginBottom: 2,
+              }}>
+                <button
+                  type="button"
+                  onClick={() => setModalReservationType('RESERVED')}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: 9,
+                    border: 'none',
+                    backgroundColor: modalReservationType === 'RESERVED' ? '#241217' : 'transparent',
+                    color: modalReservationType === 'RESERVED' ? '#fc1c46' : '#9ca3af',
+                    fontWeight: 700,
+                    fontSize: 12,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  Reservar Turno
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setModalReservationType('BLOCKED')}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: 9,
+                    border: 'none',
+                    backgroundColor: modalReservationType === 'BLOCKED' ? '#292011' : 'transparent',
+                    color: modalReservationType === 'BLOCKED' ? '#f59e0b' : '#9ca3af',
+                    fontWeight: 700,
+                    fontSize: 12,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  Bloquear Horario
+                </button>
+              </div>
+
               <div>
                 <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
                   Cancha
@@ -2494,273 +2593,301 @@ export default function ClubPanel() {
                 </select>
               </div>
 
-              {/* Segmented Mode Selector: Buscar Existente vs Crear Nuevo */}
-              <div>
-                <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 8, letterSpacing: '1px' }}>
-                  Asignación de Cliente
-                </label>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  backgroundColor: '#181b22',
-                  borderRadius: 12,
-                  padding: 4,
-                  border: '1px solid rgba(255,255,255,0.06)',
-                  marginBottom: 12,
-                }}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setClientSelectionMode('EXISTING');
-                      setModalPlayer('');
-                      setModalPhone('');
-                    }}
+              {modalReservationType === 'BLOCKED' ? (
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
+                    Motivo o Razón del Bloqueo
+                  </label>
+                  <input
+                    type="text"
+                    value={modalBlockReason}
+                    onChange={e => setModalBlockReason(e.target.value)}
+                    placeholder="ej. Mantenimiento de Césped, Escuela de Menores, Clima"
+                    required
                     style={{
-                      padding: '8px 12px',
-                      borderRadius: 9,
-                      border: 'none',
-                      backgroundColor: clientSelectionMode === 'EXISTING' ? '#241217' : 'transparent',
-                      color: clientSelectionMode === 'EXISTING' ? '#fc1c46' : '#9ca3af',
-                      fontWeight: 700,
-                      fontSize: 12,
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
+                      width: '100%',
+                      backgroundColor: '#181b22',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: 10,
+                      padding: '10px 12px',
+                      color: '#ffffff',
+                      fontSize: 13.5,
+                      boxSizing: 'border-box',
                     }}
-                  >
-                    Buscar Existente
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setClientSelectionMode('NEW');
-                      setModalPlayer('');
-                      setModalPhone('');
-                    }}
-                    style={{
-                      padding: '8px 12px',
-                      borderRadius: 9,
-                      border: 'none',
-                      backgroundColor: clientSelectionMode === 'NEW' ? '#241217' : 'transparent',
-                      color: clientSelectionMode === 'NEW' ? '#fc1c46' : '#9ca3af',
-                      fontWeight: 700,
-                      fontSize: 12,
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                    }}
-                  >
-                    + Crear Nuevo Cliente
-                  </button>
+                  />
+                  <div style={{ fontSize: 11, color: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', padding: '8px 12px', borderRadius: 8, marginTop: 10 }}>
+                    Este horario quedará bloqueado en la grilla del club.
+                  </div>
                 </div>
+              ) : (
+                /* Segmented Mode Selector: Buscar Existente vs Crear Nuevo */
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 8, letterSpacing: '1px' }}>
+                    Asignación de Cliente
+                  </label>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    backgroundColor: '#181b22',
+                    borderRadius: 12,
+                    padding: 4,
+                    border: '1px solid rgba(255,255,255,0.06)',
+                    marginBottom: 12,
+                  }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setClientSelectionMode('EXISTING');
+                        setModalPlayer('');
+                        setModalPhone('');
+                      }}
+                      style={{
+                        padding: '8px 12px',
+                        borderRadius: 9,
+                        border: 'none',
+                        backgroundColor: clientSelectionMode === 'EXISTING' ? '#241217' : 'transparent',
+                        color: clientSelectionMode === 'EXISTING' ? '#fc1c46' : '#9ca3af',
+                        fontWeight: 700,
+                        fontSize: 12,
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      Buscar Existente
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setClientSelectionMode('NEW');
+                        setModalPlayer('');
+                        setModalPhone('');
+                      }}
+                      style={{
+                        padding: '8px 12px',
+                        borderRadius: 9,
+                        border: 'none',
+                        backgroundColor: clientSelectionMode === 'NEW' ? '#241217' : 'transparent',
+                        color: clientSelectionMode === 'NEW' ? '#fc1c46' : '#9ca3af',
+                        fontWeight: 700,
+                        fontSize: 12,
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      + Crear Nuevo Cliente
+                    </button>
+                  </div>
 
-                {clientSelectionMode === 'EXISTING' ? (
-                  <div style={{ position: 'relative' }}>
+                  {clientSelectionMode === 'EXISTING' ? (
                     <div style={{ position: 'relative' }}>
-                      <input
-                        type="text"
-                        value={clientSearchQuery}
-                        onChange={e => {
-                          setClientSearchQuery(e.target.value);
-                          setIsClientSearchOpen(true);
-                        }}
-                        onFocus={() => setIsClientSearchOpen(true)}
-                        placeholder="Tipeá nombre, apellido o teléfono..."
-                        style={{
-                          width: '100%',
-                          backgroundColor: '#181b22',
-                          border: isClientSearchOpen ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
-                          borderRadius: 10,
-                          padding: '10px 12px',
-                          color: '#ffffff',
-                          fontSize: 13.5,
-                          boxSizing: 'border-box',
-                        }}
-                      />
-                      {clientSearchQuery && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setClientSearchQuery('');
-                            setModalPlayer('');
-                            setModalPhone('');
-                            setIsClientSearchOpen(false);
+                      <div style={{ position: 'relative' }}>
+                        <input
+                          type="text"
+                          value={clientSearchQuery}
+                          onChange={e => {
+                            setClientSearchQuery(e.target.value);
+                            setIsClientSearchOpen(true);
                           }}
+                          onFocus={() => setIsClientSearchOpen(true)}
+                          placeholder="Tipeá nombre, apellido o teléfono..."
                           style={{
-                            position: 'absolute',
-                            right: 10,
-                            top: '50%',
-                            transform: 'translateY(-50%)',
-                            backgroundColor: 'transparent',
-                            border: 'none',
-                            color: '#6b7280',
-                            fontSize: 14,
-                            cursor: 'pointer',
+                            width: '100%',
+                            backgroundColor: '#181b22',
+                            border: isClientSearchOpen ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
+                            borderRadius: 10,
+                            padding: '10px 12px',
+                            color: '#ffffff',
+                            fontSize: 13.5,
+                            boxSizing: 'border-box',
                           }}
-                        >
-                          ✕
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Autocomplete Popup List */}
-                    {isClientSearchOpen && (
-                      <div style={{
-                        position: 'absolute',
-                        top: '100%',
-                        left: 0,
-                        right: 0,
-                        backgroundColor: '#161820',
-                        border: '1px solid rgba(252, 28, 70, 0.3)',
-                        borderRadius: 12,
-                        marginTop: 4,
-                        maxHeight: 180,
-                        overflowY: 'auto',
-                        zIndex: 1010,
-                        boxShadow: '0 15px 35px rgba(0,0,0,0.8)',
-                        padding: '6px',
-                      }}>
-                        {matchingSearchPlayers.length === 0 ? (
-                          <div style={{ padding: '10px 12px', textAlign: 'center' }}>
-                            <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 8 }}>
-                              No se encontró ningún cliente registrado con ese nombre o teléfono.
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setClientSelectionMode('NEW');
-                                setModalPlayer(clientSearchQuery);
-                                setIsClientSearchOpen(false);
-                              }}
-                              style={{
-                                backgroundColor: '#241217',
-                                color: '#fc1c46',
-                                border: '1px solid rgba(252, 28, 70, 0.3)',
-                                borderRadius: 8,
-                                padding: '6px 12px',
-                                fontSize: 12,
-                                fontWeight: 700,
-                                cursor: 'pointer',
-                              }}
-                            >
-                              + Crear nuevo cliente "{clientSearchQuery}"
-                            </button>
-                          </div>
-                        ) : (
-                          matchingSearchPlayers.map(p => (
-                            <div
-                              key={p.id}
-                              onClick={() => {
-                                setModalPlayer(p.name);
-                                setModalPhone(p.phone);
-                                setClientSearchQuery(`${p.name} (${p.phone})`);
-                                setIsClientSearchOpen(false);
-                              }}
-                              style={{
-                                padding: '8px 12px',
-                                borderRadius: 8,
-                                cursor: 'pointer',
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                transition: 'all 0.12s ease',
-                              }}
-                              onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(252, 28, 70, 0.15)'}
-                              onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                            >
-                              <div>
-                                <div style={{ fontSize: 13, fontWeight: 700, color: '#ffffff' }}>{p.name}</div>
-                                <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 1 }}>{p.phone}</div>
-                              </div>
-                              <span style={{
-                                fontSize: 9.5,
-                                fontWeight: 700,
-                                color: '#fc1c46',
-                                backgroundColor: 'rgba(252, 28, 70, 0.15)',
-                                padding: '2px 6px',
-                                borderRadius: 4,
-                              }}>
-                                {p.playerTag}
-                              </span>
-                            </div>
-                          ))
+                        />
+                        {clientSearchQuery && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setClientSearchQuery('');
+                              setModalPlayer('');
+                              setModalPhone('');
+                              setIsClientSearchOpen(false);
+                            }}
+                            style={{
+                              position: 'absolute',
+                              right: 10,
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              backgroundColor: 'transparent',
+                              border: 'none',
+                              color: '#6b7280',
+                              fontSize: 14,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            ✕
+                          </button>
                         )}
                       </div>
-                    )}
 
-                    {modalPlayer && (
-                      <div style={{
-                        marginTop: 8,
-                        backgroundColor: 'rgba(74, 222, 128, 0.1)',
-                        border: '1px solid rgba(74, 222, 128, 0.3)',
-                        borderRadius: 8,
-                        padding: '8px 12px',
-                        fontSize: 12,
-                        color: '#4ade80',
-                        fontWeight: 600,
-                      }}>
-                        ✓ Cliente seleccionado: <strong>{modalPlayer}</strong> {modalPhone && `(${modalPhone})`}
+                      {/* Autocomplete Popup List */}
+                      {isClientSearchOpen && (
+                        <div style={{
+                          position: 'absolute',
+                          top: '100%',
+                          left: 0,
+                          right: 0,
+                          backgroundColor: '#161820',
+                          border: '1px solid rgba(252, 28, 70, 0.3)',
+                          borderRadius: 12,
+                          marginTop: 4,
+                          maxHeight: 180,
+                          overflowY: 'auto',
+                          zIndex: 1010,
+                          boxShadow: '0 15px 35px rgba(0,0,0,0.8)',
+                          padding: '6px',
+                        }}>
+                          {matchingSearchPlayers.length === 0 ? (
+                            <div style={{ padding: '10px 12px', textAlign: 'center' }}>
+                              <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 8 }}>
+                                No se encontró ningún cliente registrado con ese nombre o teléfono.
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setClientSelectionMode('NEW');
+                                  setModalPlayer(clientSearchQuery);
+                                  setIsClientSearchOpen(false);
+                                }}
+                                style={{
+                                  backgroundColor: '#241217',
+                                  color: '#fc1c46',
+                                  border: '1px solid rgba(252, 28, 70, 0.3)',
+                                  borderRadius: 8,
+                                  padding: '6px 12px',
+                                  fontSize: 12,
+                                  fontWeight: 700,
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                + Crear nuevo cliente "{clientSearchQuery}"
+                              </button>
+                            </div>
+                          ) : (
+                            matchingSearchPlayers.map(p => (
+                              <div
+                                key={p.id}
+                                onClick={() => {
+                                  setModalPlayer(p.name);
+                                  setModalPhone(p.phone);
+                                  setClientSearchQuery(`${p.name} (${p.phone})`);
+                                  setIsClientSearchOpen(false);
+                                }}
+                                style={{
+                                  padding: '8px 12px',
+                                  borderRadius: 8,
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                  transition: 'all 0.12s ease',
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(252, 28, 70, 0.15)'}
+                                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                              >
+                                <div>
+                                  <div style={{ fontSize: 13, fontWeight: 700, color: '#ffffff' }}>{p.name}</div>
+                                  <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 1 }}>{p.phone}</div>
+                                </div>
+                                <span style={{
+                                  fontSize: 9.5,
+                                  fontWeight: 700,
+                                  color: '#fc1c46',
+                                  backgroundColor: 'rgba(252, 28, 70, 0.15)',
+                                  padding: '2px 6px',
+                                  borderRadius: 4,
+                                }}>
+                                  {p.playerTag}
+                                </span>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      )}
+
+                      {modalPlayer && (
+                        <div style={{
+                          marginTop: 8,
+                          backgroundColor: 'rgba(74, 222, 128, 0.1)',
+                          border: '1px solid rgba(74, 222, 128, 0.3)',
+                          borderRadius: 8,
+                          padding: '8px 12px',
+                          fontSize: 12,
+                          color: '#4ade80',
+                          fontWeight: 600,
+                        }}>
+                          ✓ Cliente seleccionado: <strong>{modalPlayer}</strong> {modalPhone && `(${modalPhone})`}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6 }}>
+                          Nombre y Apellido del Nuevo Cliente
+                        </label>
+                        <input
+                          type="text"
+                          value={modalPlayer}
+                          onChange={e => setModalPlayer(e.target.value)}
+                          placeholder="ej. Lautaro Martínez"
+                          required
+                          style={{
+                            width: '100%',
+                            backgroundColor: '#181b22',
+                            border: '1px solid rgba(255,255,255,0.08)',
+                            borderRadius: 10,
+                            padding: '10px 12px',
+                            color: '#ffffff',
+                            fontSize: 13.5,
+                            boxSizing: 'border-box',
+                          }}
+                        />
                       </div>
-                    )}
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    <div>
-                      <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6 }}>
-                        Nombre y Apellido del Nuevo Cliente
-                      </label>
-                      <input
-                        type="text"
-                        value={modalPlayer}
-                        onChange={e => setModalPlayer(e.target.value)}
-                        placeholder="ej. Lautaro Martínez"
-                        required
-                        style={{
-                          width: '100%',
-                          backgroundColor: '#181b22',
-                          border: '1px solid rgba(255,255,255,0.08)',
-                          borderRadius: 10,
-                          padding: '10px 12px',
-                          color: '#ffffff',
-                          fontSize: 13.5,
-                          boxSizing: 'border-box',
-                        }}
-                      />
+                      <div>
+                        <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6 }}>
+                          Teléfono de Contacto
+                        </label>
+                        <input
+                          type="text"
+                          value={modalPhone}
+                          onChange={e => setModalPhone(e.target.value)}
+                          placeholder="ej. +54 9 11 3322-1144"
+                          required
+                          style={{
+                            width: '100%',
+                            backgroundColor: '#181b22',
+                            border: '1px solid rgba(255,255,255,0.08)',
+                            borderRadius: 10,
+                            padding: '10px 12px',
+                            color: '#ffffff',
+                            fontSize: 13.5,
+                            boxSizing: 'border-box',
+                          }}
+                        />
+                      </div>
+                      <div style={{ fontSize: 11, color: '#fc1c46', backgroundColor: 'rgba(252,28,70,0.08)', border: '1px solid rgba(252,28,70,0.2)', padding: '6px 10px', borderRadius: 8 }}>
+                        Se creará y guardará automáticamente como cliente en la base del club.
+                      </div>
                     </div>
-                    <div>
-                      <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6 }}>
-                        Teléfono de Contacto
-                      </label>
-                      <input
-                        type="text"
-                        value={modalPhone}
-                        onChange={e => setModalPhone(e.target.value)}
-                        placeholder="ej. +54 9 11 3322-1144"
-                        required
-                        style={{
-                          width: '100%',
-                          backgroundColor: '#181b22',
-                          border: '1px solid rgba(255,255,255,0.08)',
-                          borderRadius: 10,
-                          padding: '10px 12px',
-                          color: '#ffffff',
-                          fontSize: 13.5,
-                          boxSizing: 'border-box',
-                        }}
-                      />
-                    </div>
-                    <div style={{ fontSize: 11, color: '#fc1c46', backgroundColor: 'rgba(252,28,70,0.08)', border: '1px solid rgba(252,28,70,0.2)', padding: '6px 10px', borderRadius: 8 }}>
-                      Se creará y guardará automáticamente como cliente en la base del club.
-                    </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
 
               <button
                 type="submit"
                 style={{
                   marginTop: 8,
                   padding: '13px',
-                  backgroundColor: '#fc1c46',
-                  color: '#ffffff',
+                  backgroundColor: modalReservationType === 'BLOCKED' ? '#f59e0b' : '#fc1c46',
+                  color: modalReservationType === 'BLOCKED' ? '#000000' : '#ffffff',
                   border: 'none',
                   borderRadius: 12,
                   fontSize: 14,
@@ -2768,7 +2895,7 @@ export default function ClubPanel() {
                   cursor: 'pointer',
                 }}
               >
-                Confirmar Reserva
+                {modalReservationType === 'BLOCKED' ? 'Bloquear Horario de Cancha' : 'Confirmar Reserva'}
               </button>
             </form>
           </div>
@@ -3295,9 +3422,9 @@ export default function ClubPanel() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
               <div>
                 <h3 style={{ fontSize: 19, fontWeight: 700, color: '#ffffff', margin: 0 }}>
-                  Gestionar Reserva
+                  {editingSlot.status === 'MAINTENANCE' || editingSlot.status === 'BLOCKED' ? 'Gestionar Horario Bloqueado' : 'Gestionar Reserva'}
                 </h3>
-                <div style={{ fontSize: 11, color: '#fc1c46', marginTop: 2 }}>
+                <div style={{ fontSize: 11, color: editingSlot.status === 'MAINTENANCE' || editingSlot.status === 'BLOCKED' ? '#f59e0b' : '#fc1c46', marginTop: 2 }}>
                   {editingSlot.courtName} · {editingSlot.time} hs
                 </div>
               </div>
@@ -3312,7 +3439,7 @@ export default function ClubPanel() {
             <form onSubmit={handleSaveEditReservation} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
                 <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
-                  Nombre del Jugador
+                  {editingSlot.status === 'MAINTENANCE' || editingSlot.status === 'BLOCKED' ? 'Motivo del Bloqueo' : 'Nombre del Jugador'}
                 </label>
                 <input
                   type="text"
@@ -3444,7 +3571,7 @@ export default function ClubPanel() {
                     gap: 6,
                   }}
                 >
-                  <Icons.Trash /> Eliminar Reserva
+                  <Icons.Trash /> {editingSlot.status === 'MAINTENANCE' || editingSlot.status === 'BLOCKED' ? 'Desbloquear Horario' : 'Eliminar Reserva'}
                 </button>
               </div>
             </form>
