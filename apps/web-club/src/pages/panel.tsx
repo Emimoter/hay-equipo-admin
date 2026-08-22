@@ -1707,7 +1707,7 @@ export default function ClubPanel() {
                             }}
                             title="Click para cambiar estado de pago"
                           >
-                            {slot.isPaid100 ? '✓ Pagado 100%' : 'Pendiente Mostrador'}
+                            {slot.isPaid100 ? '✓ Pagado' : 'Pendiente'}
                           </button>
 
                           <button
@@ -1963,7 +1963,7 @@ export default function ClubPanel() {
                 <div style={{ backgroundColor: '#14161c', padding: '20px', borderRadius: 18, border: '1px solid rgba(255,255,255,0.05)' }}>
                   <div style={{ fontSize: 11, color: '#888', textTransform: 'uppercase' }}>Facturación Total del Mes</div>
                   <div style={{ fontSize: 26, fontWeight: 700, color: '#fff', marginTop: 6 }}>$1.840.000</div>
-                  <div style={{ fontSize: 11, color: '#4ade80', marginTop: 4 }}>✓ 100% Cobrado por Adelantado</div>
+                  <div style={{ fontSize: 11, color: '#4ade80', marginTop: 4 }}>✓ Cobrado por Adelantado</div>
                 </div>
                 <div style={{ backgroundColor: '#14161c', padding: '20px', borderRadius: 18, border: '1px solid rgba(255,255,255,0.05)' }}>
                   <div style={{ fontSize: 11, color: '#888', textTransform: 'uppercase' }}>Tasa Ocupación Franja Pico</div>
@@ -2012,7 +2012,7 @@ export default function ClubPanel() {
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 16 }}>
                   <div>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>Cobro 100% Obligatorio para Reservar</div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>Cobro Obligatorio para Reservar</div>
                     <div style={{ fontSize: 12, color: '#888' }}>El sistema exige el pago total del turno para confirmar la reserva</div>
                   </div>
                   <button
@@ -2028,7 +2028,7 @@ export default function ClubPanel() {
                       cursor: 'pointer',
                     }}
                   >
-                    {mercadoPagoConnected ? '✓ Activo 100%' : 'Inactivo'}
+                    {mercadoPagoConnected ? '✓ Activo' : 'Inactivo'}
                   </button>
                 </div>
 
@@ -2093,7 +2093,7 @@ export default function ClubPanel() {
 
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#ffffff' }}>Nueva reserva 100% Pagada</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#ffffff' }}>Nueva reserva confirmada</span>
                 <span style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: '#4ade80', display: 'inline-block' }} />
                 <span style={{ fontSize: 10, color: '#6b7280' }}>· ahora</span>
               </div>
@@ -2154,7 +2154,7 @@ export default function ClubPanel() {
                 <h3 style={{ fontSize: 19, fontWeight: 700, color: '#ffffff', margin: 0 }}>
                   Nueva Reserva Manual
                 </h3>
-                <div style={{ fontSize: 11, color: '#4ade80', marginTop: 2 }}>✓ Pago 100% anticipado requerido</div>
+                <div style={{ fontSize: 11, color: '#4ade80', marginTop: 2 }}>✓ Pago anticipado requerido</div>
               </div>
               <button
                 onClick={() => setShowModal(false)}
@@ -2275,7 +2275,7 @@ export default function ClubPanel() {
                   cursor: 'pointer',
                 }}
               >
-                Confirmar Reserva (100% Pagada)
+                Confirmar Reserva
               </button>
             </form>
           </div>
