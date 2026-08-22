@@ -2139,38 +2139,51 @@ export default function ClubPanel() {
                 </div>
               </div>
 
-              {/* Operating Schedule Configuration — Direct Minimalist Inline Selector + 24hs Toggle */}
+              {/* Operating Schedule Configuration — Direct Minimalist Inline Selector + 24hs Checkbox */}
               <div style={{ backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '14px 16px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: '#fc1c46', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
                     🕒 Horarios Habilitados para Reserva en App
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const is24hs = courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00';
-                      if (is24hs) {
-                        setCourtOpenTimeInput('08:00');
-                        setCourtCloseTimeInput('23:30');
-                      } else {
-                        setCourtOpenTimeInput('00:00');
-                        setCourtCloseTimeInput('24:00');
-                      }
-                    }}
+
+                  {/* Clear Checkbox for 24Hs */}
+                  <label
                     style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
                       backgroundColor: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? 'rgba(252,28,70,0.18)' : '#11131a',
-                      color: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '#fc1c46' : '#9ca3af',
-                      border: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
+                      border: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.1)',
                       borderRadius: 8,
-                      padding: '4px 10px',
-                      fontSize: 11,
-                      fontWeight: 700,
+                      padding: '5px 12px',
                       cursor: 'pointer',
+                      userSelect: 'none',
                       transition: 'all 0.15s ease',
                     }}
                   >
-                    {(courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '✓ Abierto 24 Horas' : '🌙 Abierto 24hs'}
-                  </button>
+                    <input
+                      type="checkbox"
+                      checked={courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00'}
+                      onChange={e => {
+                        if (e.target.checked) {
+                          setCourtOpenTimeInput('00:00');
+                          setCourtCloseTimeInput('24:00');
+                        } else {
+                          setCourtOpenTimeInput('08:00');
+                          setCourtCloseTimeInput('23:30');
+                        }
+                      }}
+                      style={{
+                        accentColor: '#fc1c46',
+                        width: 16,
+                        height: 16,
+                        cursor: 'pointer',
+                      }}
+                    />
+                    <span style={{ fontSize: 11.5, fontWeight: 700, color: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '#ffffff' : '#d1d5db' }}>
+                      🌙 Abierto 24 Horas
+                    </span>
+                  </label>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -2178,18 +2191,20 @@ export default function ClubPanel() {
                   <div>
                     <label style={{ display: 'block', fontSize: 10, color: '#9ca3af', marginBottom: 4, textTransform: 'uppercase' }}>Hora Apertura</label>
                     <select
+                      disabled={courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00'}
                       value={courtOpenTimeInput}
                       onChange={e => setCourtOpenTimeInput(e.target.value)}
                       style={{
                         width: '100%',
-                        backgroundColor: '#11131a',
-                        border: '1px solid rgba(252, 28, 70, 0.4)',
+                        backgroundColor: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '#151720' : '#11131a',
+                        border: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(252, 28, 70, 0.4)',
                         borderRadius: 10,
                         padding: '10px 12px',
-                        color: '#ffffff',
+                        color: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '#6b7280' : '#ffffff',
                         fontSize: 15,
                         fontWeight: 700,
-                        cursor: 'pointer',
+                        cursor: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? 'not-allowed' : 'pointer',
+                        opacity: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? 0.5 : 1,
                         outline: 'none',
                         boxSizing: 'border-box',
                       }}
@@ -2206,18 +2221,20 @@ export default function ClubPanel() {
                   <div>
                     <label style={{ display: 'block', fontSize: 10, color: '#9ca3af', marginBottom: 4, textTransform: 'uppercase' }}>Hora Cierre</label>
                     <select
+                      disabled={courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00'}
                       value={courtCloseTimeInput}
                       onChange={e => setCourtCloseTimeInput(e.target.value)}
                       style={{
                         width: '100%',
-                        backgroundColor: '#11131a',
-                        border: '1px solid rgba(252, 28, 70, 0.4)',
+                        backgroundColor: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '#151720' : '#11131a',
+                        border: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(252, 28, 70, 0.4)',
                         borderRadius: 10,
                         padding: '10px 12px',
-                        color: '#ffffff',
+                        color: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '#6b7280' : '#ffffff',
                         fontSize: 15,
                         fontWeight: 700,
-                        cursor: 'pointer',
+                        cursor: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? 'not-allowed' : 'pointer',
+                        opacity: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? 0.5 : 1,
                         outline: 'none',
                         boxSizing: 'border-box',
                       }}
