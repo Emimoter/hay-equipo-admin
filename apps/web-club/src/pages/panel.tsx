@@ -1973,137 +1973,168 @@ export default function ClubPanel() {
               </div>
 
               {/* Court Features & Attributes Selection */}
-              <div style={{ backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '14px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#fc1c46', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+              <div style={{ backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#fc1c46', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 2 }}>
                   ⚙️ Características y Servicios de la Cancha
                 </div>
 
-                {/* Techada vs Descubierta */}
-                <div>
-                  <label style={{ display: 'block', fontSize: 10.5, color: '#9ca3af', marginBottom: 6, textTransform: 'uppercase' }}>
-                    Cubierta / Techo
-                  </label>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button
-                      type="button"
-                      onClick={() => setCourtIndoorInput(true)}
-                      style={{
-                        flex: 1,
-                        padding: '9px',
-                        borderRadius: 8,
-                        border: courtIndoorInput ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
-                        backgroundColor: courtIndoorInput ? 'rgba(252,28,70,0.15)' : 'rgba(255,255,255,0.02)',
-                        color: courtIndoorInput ? '#fc1c46' : '#9ca3af',
-                        fontWeight: 600,
-                        fontSize: 12,
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease',
-                      }}
-                    >
-                      🏠 Techada (Indoor)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setCourtIndoorInput(false)}
-                      style={{
-                        flex: 1,
-                        padding: '9px',
-                        borderRadius: 8,
-                        border: !courtIndoorInput ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
-                        backgroundColor: !courtIndoorInput ? 'rgba(252,28,70,0.15)' : 'rgba(255,255,255,0.02)',
-                        color: !courtIndoorInput ? '#fc1c46' : '#9ca3af',
-                        fontWeight: 600,
-                        fontSize: 12,
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease',
-                      }}
-                    >
-                      ☁ Descubierta (Outdoor)
-                    </button>
-                  </div>
-                </div>
-
-                {/* Iluminación */}
-                <div>
-                  <label style={{ display: 'block', fontSize: 10.5, color: '#9ca3af', marginBottom: 6, textTransform: 'uppercase' }}>
-                    Iluminación
-                  </label>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button
-                      type="button"
-                      onClick={() => setCourtLightingInput(true)}
-                      style={{
-                        flex: 1,
-                        padding: '9px',
-                        borderRadius: 8,
-                        border: courtLightingInput ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
-                        backgroundColor: courtLightingInput ? 'rgba(252,28,70,0.15)' : 'rgba(255,255,255,0.02)',
-                        color: courtLightingInput ? '#fc1c46' : '#9ca3af',
-                        fontWeight: 600,
-                        fontSize: 12,
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease',
-                      }}
-                    >
-                      💡 Con Iluminación LED
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setCourtLightingInput(false)}
-                      style={{
-                        flex: 1,
-                        padding: '9px',
-                        borderRadius: 8,
-                        border: !courtLightingInput ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
-                        backgroundColor: !courtLightingInput ? 'rgba(252,28,70,0.15)' : 'rgba(255,255,255,0.02)',
-                        color: !courtLightingInput ? '#fc1c46' : '#9ca3af',
-                        fontWeight: 600,
-                        fontSize: 12,
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease',
-                      }}
-                    >
-                      🌙 Sin Iluminación
-                    </button>
-                  </div>
-                </div>
-
-                {/* Extras: Cámaras de Grabación & Climatización */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                {/* Row 1: Techada vs Descubierta */}
+                <div style={{ display: 'flex', gap: 8 }}>
                   <button
                     type="button"
-                    onClick={() => setCourtCamerasInput(!courtCamerasInput)}
+                    onClick={() => setCourtIndoorInput(true)}
                     style={{
+                      flex: 1,
+                      padding: '9px',
+                      borderRadius: 8,
+                      border: courtIndoorInput ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
+                      backgroundColor: courtIndoorInput ? 'rgba(252,28,70,0.15)' : 'rgba(255,255,255,0.02)',
+                      color: courtIndoorInput ? '#fc1c46' : '#9ca3af',
+                      fontWeight: 600,
+                      fontSize: 12,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    🏠 Techada (Indoor)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCourtIndoorInput(false)}
+                    style={{
+                      flex: 1,
+                      padding: '9px',
+                      borderRadius: 8,
+                      border: !courtIndoorInput ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
+                      backgroundColor: !courtIndoorInput ? 'rgba(252,28,70,0.15)' : 'rgba(255,255,255,0.02)',
+                      color: !courtIndoorInput ? '#fc1c46' : '#9ca3af',
+                      fontWeight: 600,
+                      fontSize: 12,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    ☁ Descubierta (Outdoor)
+                  </button>
+                </div>
+
+                {/* Row 2: Con Iluminación vs Sin Iluminación */}
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    type="button"
+                    onClick={() => setCourtLightingInput(true)}
+                    style={{
+                      flex: 1,
+                      padding: '9px',
+                      borderRadius: 8,
+                      border: courtLightingInput ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
+                      backgroundColor: courtLightingInput ? 'rgba(252,28,70,0.15)' : 'rgba(255,255,255,0.02)',
+                      color: courtLightingInput ? '#fc1c46' : '#9ca3af',
+                      fontWeight: 600,
+                      fontSize: 12,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    💡 Con Iluminación LED
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCourtLightingInput(false)}
+                    style={{
+                      flex: 1,
+                      padding: '9px',
+                      borderRadius: 8,
+                      border: !courtLightingInput ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
+                      backgroundColor: !courtLightingInput ? 'rgba(252,28,70,0.15)' : 'rgba(255,255,255,0.02)',
+                      color: !courtLightingInput ? '#fc1c46' : '#9ca3af',
+                      fontWeight: 600,
+                      fontSize: 12,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    🌙 Sin Iluminación
+                  </button>
+                </div>
+
+                {/* Row 3: Con Cámaras vs Sin Cámaras */}
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    type="button"
+                    onClick={() => setCourtCamerasInput(true)}
+                    style={{
+                      flex: 1,
                       padding: '9px',
                       borderRadius: 8,
                       border: courtCamerasInput ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
                       backgroundColor: courtCamerasInput ? 'rgba(252,28,70,0.15)' : 'rgba(255,255,255,0.02)',
                       color: courtCamerasInput ? '#fc1c46' : '#9ca3af',
                       fontWeight: 600,
-                      fontSize: 11.5,
+                      fontSize: 12,
                       cursor: 'pointer',
                       transition: 'all 0.15s ease',
                     }}
                   >
-                    {courtCamerasInput ? '📹 Cámaras HD (Grabación)' : '📷 Sin Cámaras'}
+                    📹 Con Cámaras (Grabación)
                   </button>
-
                   <button
                     type="button"
-                    onClick={() => setCourtHeatingInput(!courtHeatingInput)}
+                    onClick={() => setCourtCamerasInput(false)}
                     style={{
+                      flex: 1,
+                      padding: '9px',
+                      borderRadius: 8,
+                      border: !courtCamerasInput ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
+                      backgroundColor: !courtCamerasInput ? 'rgba(252,28,70,0.15)' : 'rgba(255,255,255,0.02)',
+                      color: !courtCamerasInput ? '#fc1c46' : '#9ca3af',
+                      fontWeight: 600,
+                      fontSize: 12,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    📷 Sin Cámaras
+                  </button>
+                </div>
+
+                {/* Row 4: Climatizada vs Ventilación Natural */}
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    type="button"
+                    onClick={() => setCourtHeatingInput(true)}
+                    style={{
+                      flex: 1,
                       padding: '9px',
                       borderRadius: 8,
                       border: courtHeatingInput ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
                       backgroundColor: courtHeatingInput ? 'rgba(252,28,70,0.15)' : 'rgba(255,255,255,0.02)',
                       color: courtHeatingInput ? '#fc1c46' : '#9ca3af',
                       fontWeight: 600,
-                      fontSize: 11.5,
+                      fontSize: 12,
                       cursor: 'pointer',
                       transition: 'all 0.15s ease',
                     }}
                   >
-                    {courtHeatingInput ? '❄️ Climatizada (Aire/Calef)' : '🌬️ Ventilación Natural'}
+                    ❄️ Climatizada (Aire/Calef)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCourtHeatingInput(false)}
+                    style={{
+                      flex: 1,
+                      padding: '9px',
+                      borderRadius: 8,
+                      border: !courtHeatingInput ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
+                      backgroundColor: !courtHeatingInput ? 'rgba(252,28,70,0.15)' : 'rgba(255,255,255,0.02)',
+                      color: !courtHeatingInput ? '#fc1c46' : '#9ca3af',
+                      fontWeight: 600,
+                      fontSize: 12,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    🌬️ Ventilación Natural
                   </button>
                 </div>
               </div>
