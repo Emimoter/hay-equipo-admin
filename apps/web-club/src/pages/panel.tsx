@@ -1287,19 +1287,19 @@ export default function ClubPanel() {
 
                     {/* Court Feature Pills */}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, fontSize: 11 }}>
-                      <span style={{ backgroundColor: court.indoor ? 'rgba(56,189,248,0.12)' : 'rgba(255,255,255,0.05)', color: court.indoor ? '#38bdf8' : '#9ca3af', padding: '4px 9px', borderRadius: 6, fontWeight: 600 }}>
+                      <span style={{ backgroundColor: court.indoor ? 'rgba(252,28,70,0.12)' : 'rgba(255,255,255,0.04)', color: court.indoor ? '#fc1c46' : '#9ca3af', border: court.indoor ? '1px solid rgba(252,28,70,0.25)' : '1px solid rgba(255,255,255,0.06)', padding: '4px 9px', borderRadius: 6, fontWeight: 600 }}>
                         {court.indoor ? '🏠 Techada (Indoor)' : '☁ Descubierta (Outdoor)'}
                       </span>
-                      <span style={{ backgroundColor: court.lighting ? 'rgba(250,204,21,0.12)' : 'rgba(255,255,255,0.05)', color: court.lighting ? '#facc15' : '#9ca3af', padding: '4px 9px', borderRadius: 6, fontWeight: 600 }}>
+                      <span style={{ backgroundColor: court.lighting ? 'rgba(252,28,70,0.12)' : 'rgba(255,255,255,0.04)', color: court.lighting ? '#fc1c46' : '#9ca3af', border: court.lighting ? '1px solid rgba(252,28,70,0.25)' : '1px solid rgba(255,255,255,0.06)', padding: '4px 9px', borderRadius: 6, fontWeight: 600 }}>
                         {court.lighting ? '💡 Luz LED Pro' : '🌙 Sin Iluminación'}
                       </span>
                       {court.hasCameras && (
-                        <span style={{ backgroundColor: 'rgba(168,85,247,0.12)', color: '#c084fc', padding: '4px 9px', borderRadius: 6, fontWeight: 600 }}>
+                        <span style={{ backgroundColor: 'rgba(252,28,70,0.12)', color: '#fc1c46', border: '1px solid rgba(252,28,70,0.25)', padding: '4px 9px', borderRadius: 6, fontWeight: 600 }}>
                           📹 Grabación HD
                         </span>
                       )}
                       {court.hasHeating && (
-                        <span style={{ backgroundColor: 'rgba(249,115,22,0.12)', color: '#fb923c', padding: '4px 9px', borderRadius: 6, fontWeight: 600 }}>
+                        <span style={{ backgroundColor: 'rgba(252,28,70,0.12)', color: '#fc1c46', border: '1px solid rgba(252,28,70,0.25)', padding: '4px 9px', borderRadius: 6, fontWeight: 600 }}>
                           ❄️ Climatizada
                         </span>
                       )}
@@ -1974,7 +1974,7 @@ export default function ClubPanel() {
 
               {/* Court Features & Attributes Selection */}
               <div style={{ backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '14px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#fc1c46', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
                   ⚙️ Características y Servicios de la Cancha
                 </div>
 
@@ -1991,12 +1991,13 @@ export default function ClubPanel() {
                         flex: 1,
                         padding: '9px',
                         borderRadius: 8,
-                        border: courtIndoorInput ? '1px solid #38bdf8' : '1px solid rgba(255,255,255,0.08)',
-                        backgroundColor: courtIndoorInput ? 'rgba(56,189,248,0.15)' : 'transparent',
-                        color: courtIndoorInput ? '#38bdf8' : '#9ca3af',
+                        border: courtIndoorInput ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
+                        backgroundColor: courtIndoorInput ? 'rgba(252,28,70,0.15)' : 'rgba(255,255,255,0.02)',
+                        color: courtIndoorInput ? '#fc1c46' : '#9ca3af',
                         fontWeight: 600,
                         fontSize: 12,
                         cursor: 'pointer',
+                        transition: 'all 0.15s ease',
                       }}
                     >
                       🏠 Techada (Indoor)
@@ -2008,12 +2009,13 @@ export default function ClubPanel() {
                         flex: 1,
                         padding: '9px',
                         borderRadius: 8,
-                        border: !courtIndoorInput ? '1px solid #eab308' : '1px solid rgba(255,255,255,0.08)',
-                        backgroundColor: !courtIndoorInput ? 'rgba(234,179,8,0.15)' : 'transparent',
-                        color: !courtIndoorInput ? '#eab308' : '#9ca3af',
+                        border: !courtIndoorInput ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
+                        backgroundColor: !courtIndoorInput ? 'rgba(252,28,70,0.15)' : 'rgba(255,255,255,0.02)',
+                        color: !courtIndoorInput ? '#fc1c46' : '#9ca3af',
                         fontWeight: 600,
                         fontSize: 12,
                         cursor: 'pointer',
+                        transition: 'all 0.15s ease',
                       }}
                     >
                       ☁ Descubierta (Outdoor)
@@ -2034,12 +2036,13 @@ export default function ClubPanel() {
                         flex: 1,
                         padding: '9px',
                         borderRadius: 8,
-                        border: courtLightingInput ? '1px solid #facc15' : '1px solid rgba(255,255,255,0.08)',
-                        backgroundColor: courtLightingInput ? 'rgba(250,204,21,0.15)' : 'transparent',
-                        color: courtLightingInput ? '#facc15' : '#9ca3af',
+                        border: courtLightingInput ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
+                        backgroundColor: courtLightingInput ? 'rgba(252,28,70,0.15)' : 'rgba(255,255,255,0.02)',
+                        color: courtLightingInput ? '#fc1c46' : '#9ca3af',
                         fontWeight: 600,
                         fontSize: 12,
                         cursor: 'pointer',
+                        transition: 'all 0.15s ease',
                       }}
                     >
                       💡 Con Iluminación LED
@@ -2051,12 +2054,13 @@ export default function ClubPanel() {
                         flex: 1,
                         padding: '9px',
                         borderRadius: 8,
-                        border: !courtLightingInput ? '1px solid #6b7280' : '1px solid rgba(255,255,255,0.08)',
-                        backgroundColor: !courtLightingInput ? 'rgba(107,114,128,0.15)' : 'transparent',
-                        color: !courtLightingInput ? '#d1d5db' : '#9ca3af',
+                        border: !courtLightingInput ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
+                        backgroundColor: !courtLightingInput ? 'rgba(252,28,70,0.15)' : 'rgba(255,255,255,0.02)',
+                        color: !courtLightingInput ? '#fc1c46' : '#9ca3af',
                         fontWeight: 600,
                         fontSize: 12,
                         cursor: 'pointer',
+                        transition: 'all 0.15s ease',
                       }}
                     >
                       🌙 Sin Iluminación
@@ -2072,12 +2076,13 @@ export default function ClubPanel() {
                     style={{
                       padding: '9px',
                       borderRadius: 8,
-                      border: courtCamerasInput ? '1px solid #c084fc' : '1px solid rgba(255,255,255,0.08)',
-                      backgroundColor: courtCamerasInput ? 'rgba(192,132,252,0.15)' : 'transparent',
-                      color: courtCamerasInput ? '#c084fc' : '#9ca3af',
+                      border: courtCamerasInput ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
+                      backgroundColor: courtCamerasInput ? 'rgba(252,28,70,0.15)' : 'rgba(255,255,255,0.02)',
+                      color: courtCamerasInput ? '#fc1c46' : '#9ca3af',
                       fontWeight: 600,
                       fontSize: 11.5,
                       cursor: 'pointer',
+                      transition: 'all 0.15s ease',
                     }}
                   >
                     {courtCamerasInput ? '📹 Cámaras HD (Grabación)' : '📷 Sin Cámaras'}
@@ -2089,12 +2094,13 @@ export default function ClubPanel() {
                     style={{
                       padding: '9px',
                       borderRadius: 8,
-                      border: courtHeatingInput ? '1px solid #fb923c' : '1px solid rgba(255,255,255,0.08)',
-                      backgroundColor: courtHeatingInput ? 'rgba(251,146,60,0.15)' : 'transparent',
-                      color: courtHeatingInput ? '#fb923c' : '#9ca3af',
+                      border: courtHeatingInput ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
+                      backgroundColor: courtHeatingInput ? 'rgba(252,28,70,0.15)' : 'rgba(255,255,255,0.02)',
+                      color: courtHeatingInput ? '#fc1c46' : '#9ca3af',
                       fontWeight: 600,
                       fontSize: 11.5,
                       cursor: 'pointer',
+                      transition: 'all 0.15s ease',
                     }}
                   >
                     {courtHeatingInput ? '❄️ Climatizada (Aire/Calef)' : '🌬️ Ventilación Natural'}
