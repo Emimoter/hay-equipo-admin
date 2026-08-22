@@ -441,6 +441,12 @@ export default function ClubPanel() {
     window.print();
   };
 
+  // Dynamic Sport Filter List (Only show sports that exist in the club's configured courts)
+  const availableSportFilters = useMemo(() => {
+    const existingSports = Array.from(new Set(courts.map(c => c.sport.toUpperCase())));
+    return ['TODOS', ...existingSports];
+  }, [courts]);
+
   // Filtered Courts & Slots by Sport Filter
   const filteredCourts = useMemo(() => {
     if (selectedSportFilter === 'TODOS') return courts;
@@ -796,7 +802,7 @@ export default function ClubPanel() {
               </div>
             </div>
 
-            {/* Middle: Sport Filter Tabs */}
+            {/* Middle: Dynamic Sport Filter Tabs (Only sports registered in current courts) */}
             <div style={{
               display: 'flex',
               backgroundColor: '#16181e',
@@ -804,7 +810,7 @@ export default function ClubPanel() {
               borderRadius: 10,
               border: '1px solid rgba(255,255,255,0.06)',
             }}>
-              {['TODOS', 'PÁDEL', 'FÚTBOL 5', 'FÚTBOL 7', 'TENIS', 'BÁSQUET'].map(sport => (
+              {availableSportFilters.map(sport => (
                 <button
                   key={sport}
                   onClick={() => setSelectedSportFilter(sport)}
