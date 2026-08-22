@@ -276,6 +276,7 @@ export default function ClubPanel() {
   };
 
   // Live Client Search State (Modal 1)
+  const [clientSelectionMode, setClientSelectionMode] = useState<'EXISTING' | 'NEW'>('EXISTING');
   const [clientSearchQuery, setClientSearchQuery] = useState('');
   const [isClientSearchOpen, setIsClientSearchOpen] = useState(false);
 
@@ -550,6 +551,26 @@ export default function ClubPanel() {
   const handleAddReservation = (e: React.FormEvent) => {
     e.preventDefault();
     const court = courts.find(c => c.id === modalCourt) || courts[0];
+    const playerNameClean = modalPlayer.trim() || 'Reserva Directa';
+    const playerPhoneClean = modalPhone.trim() || undefined;
+
+    // Automatically register new player in database if created in 'NEW' mode
+    if (clientSelectionMode === 'NEW' && playerNameClean !== 'Reserva Directa') {
+      const existing = players.find(p => p.name.toLowerCase() === playerNameClean.toLowerCase());
+      if (!existing) {
+        const newPlayerRecord: PlayerRecord = {
+          id: `p-${Date.now()}`,
+          name: playerNameClean,
+          phone: playerPhoneClean || '+54 9 11 0000-0000',
+          category: 'General',
+          sport: court.sport,
+          matchesPlayed: 1,
+          playerTag: 'JUGADOR FRECUENTE',
+        };
+        setPlayers(prev => [newPlayerRecord, ...prev]);
+      }
+    }
+
     const newSlot: CourtSlot = {
       id: `slot-${Date.now()}`,
       courtId: court.id,
@@ -557,8 +578,8 @@ export default function ClubPanel() {
       sport: court.sport,
       time: modalTime,
       status: 'RESERVED',
-      player: modalPlayer.trim() || 'Reserva Directa',
-      phone: modalPhone.trim() || undefined,
+      player: playerNameClean,
+      phone: playerPhoneClean,
       price: court.price,
       isPaid100: true,
     };
@@ -566,7 +587,8 @@ export default function ClubPanel() {
     setShowModal(false);
     setModalPlayer('');
     setModalPhone('');
-    setModalSelectedPlayerId('CUSTOM');
+    setClientSearchQuery('');
+    setClientSelectionMode('EXISTING');
   };
 
   // Print Daily Roster
@@ -2466,144 +2488,264 @@ export default function ClubPanel() {
                 </select>
               </div>
 
-              {/* Searchable Autocomplete Client Selector */}
-              <div style={{ position: 'relative' }}>
-                <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
-                  Buscar Cliente (Nombre, Apellido o Teléfono)
+              {/* Segmented Mode Selector: Buscar Existente vs Crear Nuevo */}
+              <div>
+                <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 8, letterSpacing: '1px' }}>
+                  Asignación de Cliente
                 </label>
-                <div style={{ position: 'relative' }}>
-                  <input
-                    type="text"
-                    value={clientSearchQuery}
-                    onChange={e => {
-                      setClientSearchQuery(e.target.value);
-                      setIsClientSearchOpen(true);
-                      setModalPlayer(e.target.value);
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  backgroundColor: '#181b22',
+                  borderRadius: 12,
+                  padding: 4,
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  marginBottom: 12,
+                }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setClientSelectionMode('EXISTING');
+                      setModalPlayer('');
+                      setModalPhone('');
                     }}
-                    onFocus={() => setIsClientSearchOpen(true)}
-                    placeholder="🔍 Tipeá para buscar por nombre, apellido o teléfono..."
                     style={{
-                      width: '100%',
-                      backgroundColor: '#181b22',
-                      border: isClientSearchOpen ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
-                      borderRadius: 10,
-                      padding: '10px 12px',
-                      color: '#ffffff',
-                      fontSize: 13.5,
-                      boxSizing: 'border-box',
+                      padding: '8px 12px',
+                      borderRadius: 9,
+                      border: 'none',
+                      backgroundColor: clientSelectionMode === 'EXISTING' ? '#241217' : 'transparent',
+                      color: clientSelectionMode === 'EXISTING' ? '#fc1c46' : '#9ca3af',
+                      fontWeight: 700,
+                      fontSize: 12,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
                     }}
-                  />
-                  {clientSearchQuery && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setClientSearchQuery('');
-                        setModalPlayer('');
-                        setModalPhone('');
-                        setIsClientSearchOpen(false);
-                      }}
-                      style={{
-                        position: 'absolute',
-                        right: 10,
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        backgroundColor: 'transparent',
-                        border: 'none',
-                        color: '#6b7280',
-                        fontSize: 14,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      ✕
-                    </button>
-                  )}
+                  >
+                    🔍 Buscar Existente
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setClientSelectionMode('NEW');
+                      setModalPlayer('');
+                      setModalPhone('');
+                    }}
+                    style={{
+                      padding: '8px 12px',
+                      borderRadius: 9,
+                      border: 'none',
+                      backgroundColor: clientSelectionMode === 'NEW' ? '#241217' : 'transparent',
+                      color: clientSelectionMode === 'NEW' ? '#fc1c46' : '#9ca3af',
+                      fontWeight: 700,
+                      fontSize: 12,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    ➕ Crear Nuevo Cliente
+                  </button>
                 </div>
 
-                {/* Autocomplete Popup List */}
-                {isClientSearchOpen && (
-                  <div style={{
-                    position: 'absolute',
-                    top: '100%',
-                    left: 0,
-                    right: 0,
-                    backgroundColor: '#161820',
-                    border: '1px solid rgba(252, 28, 70, 0.3)',
-                    borderRadius: 12,
-                    marginTop: 4,
-                    maxHeight: 180,
-                    overflowY: 'auto',
-                    zIndex: 1010,
-                    boxShadow: '0 15px 35px rgba(0,0,0,0.8)',
-                    padding: '6px',
-                  }}>
-                    {matchingSearchPlayers.length === 0 ? (
-                      <div style={{ padding: '10px 12px', fontSize: 12, color: '#9ca3af' }}>
-                        No se encontraron clientes. Podés ingresar un cliente nuevo abajo.
-                      </div>
-                    ) : (
-                      matchingSearchPlayers.map(p => (
-                        <div
-                          key={p.id}
+                {clientSelectionMode === 'EXISTING' ? (
+                  <div style={{ position: 'relative' }}>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type="text"
+                        value={clientSearchQuery}
+                        onChange={e => {
+                          setClientSearchQuery(e.target.value);
+                          setIsClientSearchOpen(true);
+                        }}
+                        onFocus={() => setIsClientSearchOpen(true)}
+                        placeholder="🔍 Tipeá nombre, apellido o teléfono..."
+                        style={{
+                          width: '100%',
+                          backgroundColor: '#181b22',
+                          border: isClientSearchOpen ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
+                          borderRadius: 10,
+                          padding: '10px 12px',
+                          color: '#ffffff',
+                          fontSize: 13.5,
+                          boxSizing: 'border-box',
+                        }}
+                      />
+                      {clientSearchQuery && (
+                        <button
+                          type="button"
                           onClick={() => {
-                            setModalPlayer(p.name);
-                            setModalPhone(p.phone);
-                            setClientSearchQuery(`${p.name} (${p.phone})`);
+                            setClientSearchQuery('');
+                            setModalPlayer('');
+                            setModalPhone('');
                             setIsClientSearchOpen(false);
                           }}
                           style={{
-                            padding: '8px 12px',
-                            borderRadius: 8,
+                            position: 'absolute',
+                            right: 10,
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            backgroundColor: 'transparent',
+                            border: 'none',
+                            color: '#6b7280',
+                            fontSize: 14,
                             cursor: 'pointer',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            transition: 'all 0.12s ease',
                           }}
-                          onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(252, 28, 70, 0.15)'}
-                          onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                         >
-                          <div>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: '#ffffff' }}>{p.name}</div>
-                            <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 1 }}>{p.phone}</div>
+                          ✕
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Autocomplete Popup List */}
+                    {isClientSearchOpen && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        backgroundColor: '#161820',
+                        border: '1px solid rgba(252, 28, 70, 0.3)',
+                        borderRadius: 12,
+                        marginTop: 4,
+                        maxHeight: 180,
+                        overflowY: 'auto',
+                        zIndex: 1010,
+                        boxShadow: '0 15px 35px rgba(0,0,0,0.8)',
+                        padding: '6px',
+                      }}>
+                        {matchingSearchPlayers.length === 0 ? (
+                          <div style={{ padding: '10px 12px', textAlign: 'center' }}>
+                            <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 8 }}>
+                              No se encontró ningún cliente registrado con ese nombre o teléfono.
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setClientSelectionMode('NEW');
+                                setModalPlayer(clientSearchQuery);
+                                setIsClientSearchOpen(false);
+                              }}
+                              style={{
+                                backgroundColor: '#241217',
+                                color: '#fc1c46',
+                                border: '1px solid rgba(252, 28, 70, 0.3)',
+                                borderRadius: 8,
+                                padding: '6px 12px',
+                                fontSize: 12,
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              ➕ Crear nuevo cliente "{clientSearchQuery}"
+                            </button>
                           </div>
-                          <span style={{
-                            fontSize: 9.5,
-                            fontWeight: 700,
-                            color: '#fc1c46',
-                            backgroundColor: 'rgba(252, 28, 70, 0.15)',
-                            padding: '2px 6px',
-                            borderRadius: 4,
-                          }}>
-                            {p.playerTag}
-                          </span>
-                        </div>
-                      ))
+                        ) : (
+                          matchingSearchPlayers.map(p => (
+                            <div
+                              key={p.id}
+                              onClick={() => {
+                                setModalPlayer(p.name);
+                                setModalPhone(p.phone);
+                                setClientSearchQuery(`${p.name} (${p.phone})`);
+                                setIsClientSearchOpen(false);
+                              }}
+                              style={{
+                                padding: '8px 12px',
+                                borderRadius: 8,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                transition: 'all 0.12s ease',
+                              }}
+                              onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(252, 28, 70, 0.15)'}
+                              onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                            >
+                              <div>
+                                <div style={{ fontSize: 13, fontWeight: 700, color: '#ffffff' }}>{p.name}</div>
+                                <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 1 }}>{p.phone}</div>
+                              </div>
+                              <span style={{
+                                fontSize: 9.5,
+                                fontWeight: 700,
+                                color: '#fc1c46',
+                                backgroundColor: 'rgba(252, 28, 70, 0.15)',
+                                padding: '2px 6px',
+                                borderRadius: 4,
+                              }}>
+                                {p.playerTag}
+                              </span>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+
+                    {modalPlayer && (
+                      <div style={{
+                        marginTop: 8,
+                        backgroundColor: 'rgba(74, 222, 128, 0.1)',
+                        border: '1px solid rgba(74, 222, 128, 0.3)',
+                        borderRadius: 8,
+                        padding: '8px 12px',
+                        fontSize: 12,
+                        color: '#4ade80',
+                        fontWeight: 600,
+                      }}>
+                        ✓ Cliente seleccionado: <strong>{modalPlayer}</strong> {modalPhone && `(${modalPhone})`}
+                      </div>
                     )}
                   </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6 }}>
+                        Nombre y Apellido del Nuevo Cliente
+                      </label>
+                      <input
+                        type="text"
+                        value={modalPlayer}
+                        onChange={e => setModalPlayer(e.target.value)}
+                        placeholder="ej. Lautaro Martínez"
+                        required
+                        style={{
+                          width: '100%',
+                          backgroundColor: '#181b22',
+                          border: '1px solid rgba(255,255,255,0.08)',
+                          borderRadius: 10,
+                          padding: '10px 12px',
+                          color: '#ffffff',
+                          fontSize: 13.5,
+                          boxSizing: 'border-box',
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6 }}>
+                        Teléfono de Contacto
+                      </label>
+                      <input
+                        type="text"
+                        value={modalPhone}
+                        onChange={e => setModalPhone(e.target.value)}
+                        placeholder="ej. +54 9 11 3322-1144"
+                        required
+                        style={{
+                          width: '100%',
+                          backgroundColor: '#181b22',
+                          border: '1px solid rgba(255,255,255,0.08)',
+                          borderRadius: 10,
+                          padding: '10px 12px',
+                          color: '#ffffff',
+                          fontSize: 13.5,
+                          boxSizing: 'border-box',
+                        }}
+                      />
+                    </div>
+                    <div style={{ fontSize: 11, color: '#fc1c46', backgroundColor: 'rgba(252,28,70,0.08)', border: '1px solid rgba(252,28,70,0.2)', padding: '6px 10px', borderRadius: 8 }}>
+                      ✨ Se creará y guardará automáticamente como cliente en la base del club.
+                    </div>
+                  </div>
                 )}
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
-                  Nombre del Cliente
-                </label>
-                <input
-                  type="text"
-                  value={modalPlayer}
-                  onChange={e => setModalPlayer(e.target.value)}
-                  placeholder="ej. Lautaro Martínez"
-                  required
-                  style={{
-                    width: '100%',
-                    backgroundColor: '#181b22',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: 10,
-                    padding: '10px 12px',
-                    color: '#ffffff',
-                    fontSize: 13.5,
-                    boxSizing: 'border-box',
-                  }}
-                />
               </div>
 
               <button
