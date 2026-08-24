@@ -1016,6 +1016,29 @@ export default function ClubPanel() {
             grid-template-columns: 1fr !important;
             gap: 10px !important;
           }
+
+          .panel-monthly-calendar-container {
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+            padding: 12px !important;
+            border-radius: 14px !important;
+          }
+
+          .panel-monthly-calendar-inner {
+            min-width: 580px !important;
+          }
+
+          .panel-calendar-day-card {
+            min-height: 66px !important;
+            padding: 8px 8px !important;
+          }
+
+          .panel-calendar-day-amount {
+            font-size: 12px !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+          }
         }
       `}</style>
 
@@ -2383,97 +2406,103 @@ export default function ClubPanel() {
               </div>
 
               {/* Monthly Calendar Container */}
-              <div style={{
+              <div className="panel-monthly-calendar-container" style={{
                 backgroundColor: '#14161c',
                 border: '1px solid rgba(255, 255, 255, 0.06)',
                 borderRadius: 20,
                 padding: 20,
               }}>
-                {/* Days of Week Header */}
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(7, 1fr)',
-                  gap: 8,
-                  marginBottom: 12,
-                  textAlign: 'center',
-                }}>
-                  {['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'].map(day => (
-                    <div key={day} style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', letterSpacing: '0.8px' }}>
-                      {day}
-                    </div>
-                  ))}
-                </div>
-
-                {/* Days Grid (August 2026 starts on Saturday = 5 empty offset days) */}
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(7, 1fr)',
-                  gap: 8,
-                }}>
-                  {/* Empty cells for padding before Aug 1st (Saturday offset) */}
-                  {[...Array(5)].map((_, i) => (
-                    <div key={`offset-${i}`} style={{ minHeight: 78, backgroundColor: 'transparent' }} />
-                  ))}
-
-                  {/* 31 Days of August */}
-                  {[...Array(31)].map((_, index) => {
-                    const day = index + 1;
-                    const isToday = day === 21;
-                    const dayData = getDailyRevenue(day);
-
-                    return (
-                      <div
-                        key={day}
-                        style={{
-                          minHeight: 78,
-                          backgroundColor: isToday ? '#1c151c' : '#181b22',
-                          border: isToday ? '1px solid #fc1c46' : '1px solid rgba(255, 255, 255, 0.05)',
-                          borderRadius: 12,
-                          padding: '10px 12px',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          justifyContent: 'space-between',
-                          transition: 'all 0.15s ease',
-                        }}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{
-                            fontSize: 12,
-                            fontWeight: 800,
-                            color: isToday ? '#ffffff' : '#9ca3af',
-                            backgroundColor: isToday ? '#fc1c46' : 'transparent',
-                            width: isToday ? 22 : 'auto',
-                            height: isToday ? 22 : 'auto',
-                            borderRadius: isToday ? '50%' : 0,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}>
-                            {day}
-                          </span>
-                          {isToday && (
-                            <span style={{ fontSize: 9, fontWeight: 700, color: '#fc1c46', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                              HOY
-                            </span>
-                          )}
-                        </div>
-
-                        <div style={{ marginTop: 6 }}>
-                          <div style={{
-                            fontSize: 14,
-                            fontWeight: 800,
-                            color: isToday ? '#4ade80' : dayData.revenue > 0 ? '#ffffff' : '#4b5563',
-                            letterSpacing: '-0.3px',
-                          }}>
-                            ${dayData.revenue.toLocaleString()}
-                          </div>
-                          <div style={{ fontSize: 10, color: '#6b7280', marginTop: 2 }}>
-                            {dayData.turnos} turnos
-                          </div>
-                        </div>
+                <div className="panel-monthly-calendar-inner">
+                  {/* Days of Week Header */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(7, 1fr)',
+                    gap: 8,
+                    marginBottom: 12,
+                    textAlign: 'center',
+                  }}>
+                    {['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'].map(day => (
+                      <div key={day} style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', letterSpacing: '0.8px' }}>
+                        {day}
                       </div>
-                    );
-                  })}
+                    ))}
+                  </div>
+
+                  {/* Days Grid (August 2026 starts on Saturday = 5 empty offset days) */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(7, 1fr)',
+                    gap: 8,
+                  }}>
+                    {/* Empty cells for padding before Aug 1st (Saturday offset) */}
+                    {[...Array(5)].map((_, i) => (
+                      <div key={`offset-${i}`} style={{ minHeight: 78, backgroundColor: 'transparent' }} />
+                    ))}
+
+                    {/* 31 Days of August */}
+                    {[...Array(31)].map((_, index) => {
+                      const day = index + 1;
+                      const isToday = day === 21;
+                      const dayData = getDailyRevenue(day);
+
+                      return (
+                        <div
+                          key={day}
+                          className="panel-calendar-day-card"
+                          style={{
+                            minHeight: 78,
+                            backgroundColor: isToday ? '#1c151c' : '#181b22',
+                            border: isToday ? '1px solid #fc1c46' : '1px solid rgba(255, 255, 255, 0.05)',
+                            borderRadius: 12,
+                            padding: '10px 12px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'space-between',
+                            transition: 'all 0.15s ease',
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{
+                              fontSize: 12,
+                              fontWeight: 800,
+                              color: isToday ? '#ffffff' : '#9ca3af',
+                              backgroundColor: isToday ? '#fc1c46' : 'transparent',
+                              width: isToday ? 22 : 'auto',
+                              height: isToday ? 22 : 'auto',
+                              borderRadius: isToday ? '50%' : 0,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}>
+                              {day}
+                            </span>
+                            {isToday && (
+                              <span style={{ fontSize: 9, fontWeight: 700, color: '#fc1c46', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                HOY
+                              </span>
+                            )}
+                          </div>
+
+                          <div style={{ marginTop: 6, overflow: 'hidden' }}>
+                            <div className="panel-calendar-day-amount" style={{
+                              fontSize: 14,
+                              fontWeight: 800,
+                              color: isToday ? '#4ade80' : dayData.revenue > 0 ? '#ffffff' : '#4b5563',
+                              letterSpacing: '-0.3px',
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                            }}>
+                              ${dayData.revenue.toLocaleString()}
+                            </div>
+                            <div style={{ fontSize: 10, color: '#6b7280', marginTop: 2 }}>
+                              {dayData.turnos} turnos
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             </div>
