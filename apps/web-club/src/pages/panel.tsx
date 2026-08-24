@@ -838,6 +838,15 @@ export default function ClubPanel() {
     return filteredCourts.filter(c => c.active && !c.pausedForWeather).length;
   }, [filteredCourts]);
 
+  // Dynamic operating times list for the matrix grid
+  const matrixOperatingTimes = useMemo(() => {
+    const times = new Set(ALL_OPERATING_TIMES);
+    filteredSlots.forEach(s => {
+      if (s.time) times.add(s.time);
+    });
+    return Array.from(times).sort((a, b) => a.localeCompare(b));
+  }, [filteredSlots]);
+
   // Dynamic Real-Time Occupancy Curve & Peak Hour Metrics
   const occupancyMetrics = useMemo(() => {
     const checkTimes = ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00', '22:00', '24:00'];
@@ -1836,7 +1845,7 @@ export default function ClubPanel() {
 
                     {/* Matrix Table Rows: Operating Hours */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10 }}>
-                      {['16:30', '18:00', '19:30', '21:00', '22:30'].map((time) => (
+                      {matrixOperatingTimes.map((time) => (
                         <div
                           key={time}
                           style={{
@@ -1856,6 +1865,11 @@ export default function ClubPanel() {
                             const slot = filteredSlots.find(s => s.courtId === court.id && s.time === time);
                             const isReserved = slot && (slot.status === 'RESERVED' || slot.status === 'FIXED');
                             const isBlocked = slot && (slot.status === 'MAINTENANCE' || slot.status === 'BLOCKED');
+
+                            const openH = court.openTime ? parseInt(court.openTime.split(':')[0], 10) : 0;
+                            const closeH = court.closeTime ? (court.closeTime === '24:00' || court.closeTime === '00:00' ? 24 : parseInt(court.closeTime.split(':')[0], 10)) : 24;
+                            const timeH = parseInt(time.split(':')[0], 10);
+                            const isOpen = timeH >= openH && timeH < closeH;
 
                             if (isReserved && slot) {
                               return (
@@ -1911,6 +1925,29 @@ export default function ClubPanel() {
                                   <div style={{ fontSize: 9.5, color: '#f59e0b', fontWeight: 600, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                     Bloqueado
                                   </div>
+                                </div>
+                              );
+                            }
+
+                            if (!isOpen && !slot) {
+                              return (
+                                <div
+                                  key={court.id}
+                                  style={{
+                                    backgroundColor: 'rgba(255, 255, 255, 0.015)',
+                                    border: '1px dashed rgba(255, 255, 255, 0.04)',
+                                    borderRadius: 8,
+                                    padding: '6px 8px',
+                                    color: '#4b5563',
+                                    fontSize: 10,
+                                    fontWeight: 600,
+                                    textAlign: 'center',
+                                    userSelect: 'none',
+                                    opacity: 0.5,
+                                  }}
+                                  title={`Fuera del horario de atención (${court.openTime} - ${court.closeTime} hs)`}
+                                >
+                                  Cerrado
                                 </div>
                               );
                             }
