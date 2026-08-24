@@ -1006,6 +1006,16 @@ export default function ClubPanel() {
             padding: 20px 16px !important;
             box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.9) !important;
           }
+
+          .panel-dashboard-split {
+            grid-template-columns: 1fr !important;
+            gap: 16px !important;
+          }
+
+          .panel-kpi-row {
+            grid-template-columns: 1fr !important;
+            gap: 10px !important;
+          }
         }
       `}</style>
 
@@ -1612,7 +1622,7 @@ export default function ClubPanel() {
               </div>
 
               {/* TOP 3 METRIC KPI CARDS */}
-              <section style={{
+              <section className="panel-kpi-row" style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
                 gap: 12,
@@ -1748,7 +1758,7 @@ export default function ClubPanel() {
               </section>
 
               {/* MAIN SPLIT GRID (HORARIOS + ACTIVIDAD) */}
-              <div style={{
+              <div className="panel-dashboard-split" style={{
                 display: 'grid',
                 gridTemplateColumns: '1.7fr 1fr',
                 gap: 14,
