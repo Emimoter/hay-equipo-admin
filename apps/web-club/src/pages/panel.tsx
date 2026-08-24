@@ -1048,6 +1048,18 @@ export default function ClubPanel() {
             overflow: hidden !important;
             text-overflow: ellipsis !important;
           }
+
+          .panel-notification-dropdown {
+            position: fixed !important;
+            top: 64px !important;
+            left: 12px !important;
+            right: 12px !important;
+            width: auto !important;
+            max-width: calc(100vw - 24px) !important;
+            max-height: 80vh !important;
+            z-index: 10000 !important;
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.95) !important;
+          }
         }
       `}</style>
 
@@ -1461,11 +1473,11 @@ export default function ClubPanel() {
                 {showNotificationDropdown && (
                   <>
                     <div
-                      style={{ position: 'fixed', inset: 0, zIndex: 990 }}
+                      style={{ position: 'fixed', inset: 0, zIndex: 9999 }}
                       onClick={() => setShowNotificationDropdown(false)}
                     />
                     
-                    <div style={{
+                    <div className="panel-notification-dropdown" style={{
                       position: 'absolute',
                       right: 0,
                       top: 'calc(100% + 8px)',
@@ -1474,7 +1486,7 @@ export default function ClubPanel() {
                       border: '1px solid rgba(255, 255, 255, 0.1)',
                       borderRadius: 16,
                       boxShadow: '0 20px 50px rgba(0, 0, 0, 0.85)',
-                      zIndex: 1000,
+                      zIndex: 10000,
                       overflow: 'hidden',
                       display: 'flex',
                       flexDirection: 'column',
