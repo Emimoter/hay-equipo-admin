@@ -120,3 +120,14 @@ export async function getCourtsFirestore(clubId: string) {
     return INITIAL_COURTS.filter(c => c.clubId === clubId);
   }
 }
+
+// 4. Update User Wallet Balance
+export async function updateUserWalletBalance(uid: string, newBalance: number): Promise<boolean> {
+  try {
+    const userRef = doc(dbFirestore, 'users', uid);
+    await setDoc(userRef, { walletBalance: newBalance }, { merge: true });
+    return true;
+  } catch {
+    return false;
+  }
+}

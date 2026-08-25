@@ -3,6 +3,7 @@ import {
   auth,
   googleProvider,
   syncUserProfile,
+  updateUserWalletBalance,
   UserProfile
 } from '../services/firebase';
 import {
@@ -24,6 +25,8 @@ interface AuthContextType {
   registerWithEmail: (email: string, pass: string, fullName: string, phone?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  creditWallet: (amount: number, reason?: string) => Promise<number>;
+  debitWallet: (amount: number) => Promise<number>;
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -128,6 +131,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUserProfile(null);
   };
 
+  const creditWallet = async (amount: number, reason = 'Reembolso por sala cancelada') => {
+    const current = userProfile?.walletBalance || 0;
+    const newBalance = current + amount;
+    if (userProfile) {
+      const updated = { ...userProfile, walletBalance: newBalance };
+      setUserProfile(updated);
+      if (user?.uid) {
+        await updateUserWalletBalance(user.uid, newBalance);
+      }
+    }
+    return newBalance;
+  };
+
+  const debitWallet = async (amount: number) => {
+    const current = userProfile?.walletBalance || 0;
+    const newBalance = Math.max(0, current - amount);
+    if (userProfile) {
+      const updated = { ...userProfile, walletBalance: newBalance };
+      setUserProfile(updated);
+      if (user?.uid) {
+        await updateUserWalletBalance(user.uid, newBalance);
+      }
+    }
+    return newBalance;
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -138,7 +167,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loginWithEmail,
         registerWithEmail,
         logout,
-        refreshProfile
+        refreshProfile,
+        creditWallet,
+        debitWallet
       }}
     >
       {children}

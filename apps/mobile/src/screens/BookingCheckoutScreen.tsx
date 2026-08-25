@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import Svg, { Rect, Line, Circle } from 'react-native-svg';
 import { colors, typography, formatCurrency } from '../components/theme';
-import { MapPinIcon, ShieldCheckIcon, ZapIcon } from '../components/AppIcons';
+import { MapPinIcon, ShieldCheckIcon, ZapIcon, WalletIcon, CheckCircleIcon } from '../components/AppIcons';
 import { mobileApi } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import { TimeSlot, Booking } from '@hay-equipo/contracts';
 
 interface BookingCheckoutScreenProps {
@@ -19,8 +20,10 @@ export const BookingCheckoutScreen: React.FC<BookingCheckoutScreenProps> = ({
   onNavigateSuccess,
   onNavigateSplit
 }) => {
+  const { userProfile, debitWallet } = useAuth();
   const [paymentType, setPaymentType] = useState<'FULL' | 'SPLIT'>('FULL');
   const [playerCount, setPlayerCount] = useState<number>(4);
+  const [useWalletBalance, setUseWalletBalance] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [mpProcessingModal, setMpProcessingModal] = useState<boolean>(false);
 
@@ -28,15 +31,20 @@ export const BookingCheckoutScreen: React.FC<BookingCheckoutScreenProps> = ({
   const grandTotal = slot.price + serviceFee;
   const perPersonAmount = Math.round(grandTotal / playerCount);
 
+  const basePayable = paymentType === 'FULL' ? grandTotal : perPersonAmount;
+  const userWallet = userProfile?.walletBalance || 0;
+  const walletDiscount = (useWalletBalance && userWallet > 0) ? Math.min(userWallet, basePayable) : 0;
+  const finalPayable = Math.max(0, basePayable - walletDiscount);
+
   const handleCheckout = async () => {
     setLoading(true);
     const holdRes = await mobileApi.holdBooking({
       courtId: slot.courtId,
       date: slot.date,
       startTime: slot.startTime,
-      userId: 'usr-emi',
-      userName: 'Emiliano',
-      userPhone: '+5491155550001',
+      userId: userProfile?.uid || 'usr-emi',
+      userName: userProfile?.displayName || 'Emiliano',
+      userPhone: userProfile?.phone || '+5491155550001',
       paymentType,
       splitPlayerCount: paymentType === 'SPLIT' ? playerCount : undefined
     });
@@ -46,6 +54,11 @@ export const BookingCheckoutScreen: React.FC<BookingCheckoutScreenProps> = ({
     if (!holdRes.success || !holdRes.booking) {
       Alert.alert('No se pudo reservar', holdRes.error || 'El turno ya fue ocupado');
       return;
+    }
+
+    // If wallet balance was used, debit it now
+    if (walletDiscount > 0) {
+      await debitWallet(walletDiscount);
     }
 
     // Open Mercado Pago Simulation Modal
@@ -184,6 +197,32 @@ export const BookingCheckoutScreen: React.FC<BookingCheckoutScreenProps> = ({
         </View>
       ) : null}
 
+      {/* Wallet Balance Apply Option */}
+      {userWallet > 0 ? (
+        <TouchableOpacity
+          style={[styles.walletApplyCard, useWalletBalance && styles.walletApplyCardActive]}
+          onPress={() => setUseWalletBalance(!useWalletBalance)}
+          activeOpacity={0.8}
+        >
+          <View style={styles.walletApplyLeft}>
+            <View style={styles.walletIconCircle}>
+              <WalletIcon size={18} color={useWalletBalance ? '#22c55e' : '#fc1c46'} />
+            </View>
+            <View style={{ flex: 1, marginLeft: 10 }}>
+              <Text style={styles.walletApplyTitle}>Usar Saldo de Billetera</Text>
+              <Text style={styles.walletApplySubtitle}>
+                Tenés {formatCurrency(userWallet)} disponible para descontar
+              </Text>
+            </View>
+          </View>
+          <View style={[styles.checkboxCircle, useWalletBalance && styles.checkboxCircleActive]}>
+            {useWalletBalance ? (
+              <CheckCircleIcon size={18} color="#22c55e" strokeWidth={2.5} />
+            ) : null}
+          </View>
+        </TouchableOpacity>
+      ) : null}
+
       {/* Price Breakdown */}
       <View style={styles.breakdownCard}>
         <View style={styles.breakdownRow}>
@@ -194,13 +233,23 @@ export const BookingCheckoutScreen: React.FC<BookingCheckoutScreenProps> = ({
           <Text style={styles.breakdownLabel}>Cargo de servicio Hay Equipo</Text>
           <Text style={styles.breakdownValue}>{formatCurrency(serviceFee)}</Text>
         </View>
+        {walletDiscount > 0 ? (
+          <View style={styles.breakdownRow}>
+            <Text style={{ color: '#22c55e', fontSize: 13, fontWeight: '700' }}>
+              Descuento Billetera Hay Equipo
+            </Text>
+            <Text style={{ color: '#22c55e', fontSize: 13, fontWeight: '800' }}>
+              - {formatCurrency(walletDiscount)}
+            </Text>
+          </View>
+        ) : null}
         <View style={styles.divider} />
         <View style={styles.breakdownRow}>
           <Text style={styles.totalLabel}>
             {paymentType === 'FULL' ? 'Total a Pagar' : 'Tu Cuota a Pagar'}
           </Text>
           <Text style={styles.totalValue}>
-            {paymentType === 'FULL' ? formatCurrency(grandTotal) : `${formatCurrency(perPersonAmount)} (tu parte)`}
+            {formatCurrency(finalPayable)}
           </Text>
         </View>
       </View>
@@ -216,8 +265,8 @@ export const BookingCheckoutScreen: React.FC<BookingCheckoutScreenProps> = ({
         ) : (
           <Text style={styles.payButtonText}>
             {paymentType === 'FULL'
-              ? `Pagar Total · ${formatCurrency(grandTotal)}`
-              : `Abonar Mi Parte y Abrir Sala · ${formatCurrency(perPersonAmount)}`}
+              ? `Pagar Total · ${formatCurrency(finalPayable)}`
+              : `Abonar Mi Parte y Abrir Sala · ${formatCurrency(finalPayable)}`}
           </Text>
         )}
       </TouchableOpacity>
@@ -456,6 +505,57 @@ const styles = StyleSheet.create({
     fontSize: 11.5,
     marginTop: 8,
     lineHeight: 16
+  },
+  walletApplyCard: {
+    backgroundColor: '#0f1422',
+    borderWidth: 1.5,
+    borderColor: '#242b3d',
+    borderRadius: 14,
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16
+  },
+  walletApplyCardActive: {
+    backgroundColor: 'rgba(34, 197, 94, 0.08)',
+    borderColor: '#22c55e'
+  },
+  walletApplyLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1
+  },
+  walletIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(252, 28, 70, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  walletApplyTitle: {
+    color: colors.textPrimary,
+    fontSize: 13.5,
+    fontWeight: '800'
+  },
+  walletApplySubtitle: {
+    color: colors.textSecondary,
+    fontSize: 11.5,
+    marginTop: 2
+  },
+  checkboxCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: colors.cardBorder,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  checkboxCircleActive: {
+    borderColor: '#22c55e',
+    backgroundColor: 'rgba(34, 197, 94, 0.2)'
   },
   breakdownCard: {
     backgroundColor: colors.card,

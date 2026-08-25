@@ -169,10 +169,11 @@ export class BookingEngineService {
             id: `part_org_${Date.now()}`,
             splitPaymentId: `sp_${bookingId}`,
             userId: params.userId,
-            name: `${params.userName} (Organizador)`,
+            name: params.userName.replace(/\s*\(Organizador\)/gi, ''),
             phone: params.userPhone,
             amount: shareAmount,
             status: 'PAID',
+            isOrganizer: true,
             paidAt: new Date().toISOString()
           },
           ...Array.from({ length: count - 1 }, (_, i) => ({
@@ -180,6 +181,7 @@ export class BookingEngineService {
             splitPaymentId: `sp_${bookingId}`,
             name: `Jugador ${i + 2}`,
             amount: shareAmount,
+            isOrganizer: false,
             status: 'PENDING' as const
           }))
         ]
@@ -198,14 +200,18 @@ export class BookingEngineService {
 
     const booking = db.bookings.find(b => b.id === split.bookingId);
     const paidParticipants = split.participants.filter(p => p.status === 'PAID');
+    const pendingParticipants = split.participants.filter(p => p.status === 'PENDING');
     const totalCollected = paidParticipants.reduce((sum, p) => sum + p.amount, 0);
+    const remainingAmount = pendingParticipants.reduce((sum, p) => sum + p.amount, 0);
     const isComplete = paidParticipants.length === split.sharesCount;
 
     return {
       split,
       booking,
       totalCollected,
+      remainingAmount,
       paidCount: paidParticipants.length,
+      pendingCount: pendingParticipants.length,
       totalSlots: split.sharesCount,
       isComplete
     };
@@ -262,6 +268,83 @@ export class BookingEngineService {
       isComplete: allPaid,
       booking,
       split
+    };
+  }
+
+  /**
+   * Host covers all remaining pending quotas to immediately confirm the booking.
+   */
+  public payRemainingSplitShares(shareToken: string, payerName = 'Organizador'): {
+    success: boolean;
+    coveredCount: number;
+    coveredAmount: number;
+    booking?: Booking;
+    split?: any;
+    error?: string;
+  } {
+    const split = db.splitPayments.find(s => s.shareToken === shareToken);
+    if (!split) return { success: false, coveredCount: 0, coveredAmount: 0, error: 'Sala no encontrada' };
+
+    const pending = split.participants.filter(p => p.status === 'PENDING');
+    let coveredAmount = 0;
+
+    pending.forEach((p, idx) => {
+      p.status = 'PAID';
+      p.name = p.name ? `${p.name} (Cubierto)` : `Jugador ${split.participants.indexOf(p) + 1} (Cubierto)`;
+      p.paidAt = new Date().toISOString();
+      p.mpPaymentId = `mp_cover_${Date.now()}_${idx}`;
+      coveredAmount += p.amount;
+    });
+
+    split.status = 'APPROVED';
+    const booking = this.confirmBooking(split.bookingId);
+
+    return {
+      success: true,
+      coveredCount: pending.length,
+      coveredAmount,
+      booking: booking || undefined,
+      split
+    };
+  }
+
+  /**
+   * Cancels split waiting room due to timeout and issues in-app wallet refunds
+   * to all participants who already deposited.
+   */
+  public cancelSplitAndRefundToWallet(shareToken: string): {
+    success: boolean;
+    booking?: Booking;
+    totalRefunded: number;
+    refundedParticipants: Array<{ id: string; name: string; amount: number; isOrganizer: boolean }>;
+    error?: string;
+  } {
+    const split = db.splitPayments.find(s => s.shareToken === shareToken);
+    if (!split) return { success: false, totalRefunded: 0, refundedParticipants: [], error: 'Sala no encontrada' };
+
+    const booking = db.bookings.find(b => b.id === split.bookingId);
+    if (booking) {
+      booking.status = 'CANCELLED';
+      booking.paymentStatus = 'REFUNDED';
+      // Release court lock
+      redisLock.releaseCourtHold(booking.courtId, booking.date, booking.startTime, booking.userId);
+    }
+
+    split.status = 'CANCELLED';
+
+    const paidParticipants = split.participants.filter(p => p.status === 'PAID');
+    const totalRefunded = paidParticipants.reduce((sum, p) => sum + p.amount, 0);
+
+    return {
+      success: true,
+      booking,
+      totalRefunded,
+      refundedParticipants: paidParticipants.map(p => ({
+        id: p.id,
+        name: p.name,
+        amount: p.amount,
+        isOrganizer: !!p.isOrganizer
+      }))
     };
   }
 

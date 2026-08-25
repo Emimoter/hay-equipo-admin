@@ -113,6 +113,42 @@ describe('Hay Equipo Core Booking Engine & Flow Tests', () => {
     assert(pay4.success && pay4.isComplete, 'Participant 4 paid, room is complete (4/4)');
     assert.strictEqual(pay4.booking?.status, 'CONFIRMED', 'Booking automatically confirmed when 100% paid');
     assert.strictEqual(pay4.booking?.paymentStatus, 'APPROVED', 'Payment status is APPROVED');
+
+    // Test Host Covers Remaining Quotas
+    const holdCover = bookingEngine.holdSlot({
+      courtId: 'court-belgrano-p2',
+      date: testDate,
+      startTime: '20:00',
+      userId: 'usr-org-cover',
+      userName: 'Org Cover',
+      userPhone: '+5491100000004',
+      paymentType: 'SPLIT',
+      splitPlayerCount: 4
+    });
+    const coverToken = holdCover.booking!.splitToken!;
+    const coverRes = bookingEngine.payRemainingSplitShares(coverToken, 'Org Cover');
+    assert(coverRes.success && coverRes.coveredCount === 3, 'Covered 3 remaining slots');
+    assert.strictEqual(coverRes.booking?.status, 'CONFIRMED', 'Booking confirmed after host covered remaining');
+
+    // Test Host Cancels and receives Wallet Refund
+    const holdCancel = bookingEngine.holdSlot({
+      courtId: 'court-belgrano-p1',
+      date: '2026-08-30',
+      startTime: '22:00',
+      userId: 'usr-org-cancel',
+      userName: 'Org Cancel',
+      userPhone: '+5491100000004',
+      paymentType: 'SPLIT',
+      splitPlayerCount: 4
+    });
+    const cancelToken = holdCancel.booking!.splitToken!;
+    // One friend paid before cancel
+    bookingEngine.paySplitShare({ shareToken: cancelToken, playerName: 'Amigo 1' });
+    const cancelRes = bookingEngine.cancelSplitAndRefundToWallet(cancelToken);
+    assert(cancelRes.success, 'Cancelled successfully');
+    assert.strictEqual(cancelRes.booking?.status, 'CANCELLED', 'Booking is cancelled');
+    assert.strictEqual(cancelRes.refundedParticipants.length, 2, '2 players refunded (Org + Amigo 1)');
+    assert(cancelRes.totalRefunded > 0, 'Total refunded amount is greater than 0');
   });
 
   test('5. Fixed Slot Subscription generates weekly occurrences with discounts', () => {

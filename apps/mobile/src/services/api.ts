@@ -355,7 +355,9 @@ export class MobileApiService {
 
     const booking = memoryBookings.find(b => b.id === split.bookingId);
     const paidParticipants = split.participants.filter((p: any) => p.status === 'PAID');
+    const pendingParticipants = split.participants.filter((p: any) => p.status === 'PENDING');
     const totalCollected = paidParticipants.reduce((sum: number, p: any) => sum + p.amount, 0);
+    const remainingAmount = pendingParticipants.reduce((sum: number, p: any) => sum + p.amount, 0);
     const isComplete = paidParticipants.length === split.sharesCount;
 
     return {
@@ -365,7 +367,9 @@ export class MobileApiService {
         booking,
         participants: split.participants,
         totalCollected,
+        remainingAmount,
         paidCount: paidParticipants.length,
+        pendingCount: pendingParticipants.length,
         totalSlots: split.sharesCount,
         isComplete
       }
@@ -419,6 +423,86 @@ export class MobileApiService {
       isComplete: allPaid,
       booking,
       split
+    };
+  }
+
+  public async payRemainingSplitShares(token: string, payerName = 'Organizador'): Promise<any> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/split/${token}/cover-remaining`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payerName })
+      });
+      const data = await res.json();
+      if (data.success) return data;
+    } catch {
+      // Fallback
+    }
+
+    const split = memorySplitRooms.get(token);
+    if (!split) return { success: false, error: 'Sala no encontrada' };
+
+    const pending = split.participants.filter((p: any) => p.status === 'PENDING');
+    let coveredAmount = 0;
+
+    pending.forEach((p: any, idx: number) => {
+      p.status = 'PAID';
+      p.name = p.name ? `${p.name} (Cubierto)` : `Jugador ${split.participants.indexOf(p) + 1} (Cubierto)`;
+      p.paidAt = new Date().toISOString();
+      coveredAmount += p.amount;
+    });
+
+    split.status = 'APPROVED';
+    const booking = memoryBookings.find(b => b.id === split.bookingId);
+    if (booking) {
+      booking.status = 'CONFIRMED';
+      booking.paymentStatus = 'APPROVED';
+    }
+
+    return {
+      success: true,
+      coveredCount: pending.length,
+      coveredAmount,
+      booking,
+      split
+    };
+  }
+
+  public async cancelSplitAndRefundToWallet(token: string): Promise<any> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/split/${token}/cancel-refund`, {
+        method: 'POST'
+      });
+      const data = await res.json();
+      if (data.success) return data;
+    } catch {
+      // Fallback
+    }
+
+    const split = memorySplitRooms.get(token);
+    if (!split) return { success: false, totalRefunded: 0, refundedParticipants: [], error: 'Sala no encontrada' };
+
+    const booking = memoryBookings.find(b => b.id === split.bookingId);
+    if (booking) {
+      booking.status = 'CANCELLED';
+      booking.paymentStatus = 'REFUNDED';
+    }
+
+    split.status = 'CANCELLED';
+
+    const paidParticipants = split.participants.filter((p: any) => p.status === 'PAID');
+    const totalRefunded = paidParticipants.reduce((sum: number, p: any) => sum + p.amount, 0);
+
+    return {
+      success: true,
+      booking,
+      totalRefunded,
+      refundedParticipants: paidParticipants.map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        amount: p.amount,
+        isOrganizer: !!p.isOrganizer
+      }))
     };
   }
 

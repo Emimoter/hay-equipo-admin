@@ -11,7 +11,8 @@ import {
   TextInput,
   ActivityIndicator,
   Animated,
-  Easing
+  Easing,
+  Alert
 } from 'react-native';
 import { colors, typography, formatCurrency } from '../components/theme';
 import {
@@ -26,9 +27,12 @@ import {
   CheckCircleIcon,
   ZapIcon,
   ArrowRightIcon,
-  CloseIcon
+  CloseIcon,
+  ShieldCheckIcon,
+  WalletIcon
 } from '../components/AppIcons';
 import { mobileApi } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import { Booking } from '@hay-equipo/contracts';
 
 interface SplitInvitationScreenProps {
@@ -42,6 +46,7 @@ export const SplitInvitationScreen: React.FC<SplitInvitationScreenProps> = ({
   onNavigateHome,
   onNavigateMyBookings
 }) => {
+  const { userProfile, creditWallet } = useAuth();
   const [splitData, setSplitData] = useState<any>(null);
   const [timeLeft, setTimeLeft] = useState<number>(600);
   const [isSimulating, setIsSimulating] = useState<boolean>(false);
@@ -49,6 +54,11 @@ export const SplitInvitationScreen: React.FC<SplitInvitationScreenProps> = ({
   const [showSimulateModal, setShowSimulateModal] = useState<boolean>(false);
   const [friendNameInput, setFriendNameInput] = useState<string>('');
   const [selectedSlotForSim, setSelectedSlotForSim] = useState<any>(null);
+
+  // Host Rescue & Timeout States
+  const [showTimeoutModal, setShowTimeoutModal] = useState<boolean>(false);
+  const [refundSuccessModal, setRefundSuccessModal] = useState<boolean>(false);
+  const [refundInfo, setRefundInfo] = useState<{ amount: number; newWalletBalance: number } | null>(null);
 
   const pulseAnim = useState(new Animated.Value(1))[0];
 
@@ -77,12 +87,27 @@ export const SplitInvitationScreen: React.FC<SplitInvitationScreenProps> = ({
     }
   }, [booking]);
 
+  // Countdown timer with automatic timeout trigger
   useEffect(() => {
     const timer = setInterval(() => {
-      setTimeLeft(prev => (prev > 0 ? prev - 1 : 0));
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          // When timer hits 0 and game is not complete, trigger timeout modal
+          return 0;
+        }
+        return prev - 1;
+      });
     }, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // When timeLeft becomes 0, open rescue modal if room is incomplete
+  useEffect(() => {
+    if (timeLeft === 0 && splitData && !splitData.isComplete) {
+      setShowTimeoutModal(true);
+    }
+  }, [timeLeft, splitData]);
 
   const loadSplit = async () => {
     if (!booking.splitToken) return;
@@ -96,7 +121,10 @@ export const SplitInvitationScreen: React.FC<SplitInvitationScreenProps> = ({
   const shareUrl = `https://hayequipo.com/split/${shareToken}`;
   const totalSlots = splitData?.totalSlots || 4;
   const paidCount = splitData?.paidCount || 1;
+  const pendingCount = splitData?.pendingCount || (totalSlots - paidCount);
   const perShare = splitData?.participants?.[0]?.amount || Math.round(booking.totalPrice / totalSlots);
+  const totalCollected = splitData?.totalCollected || (paidCount * perShare);
+  const remainingAmount = splitData?.remainingAmount || (pendingCount * perShare);
   const progressPercent = Math.min(100, Math.round((paidCount / totalSlots) * 100));
   const isComplete = splitData?.isComplete || paidCount === totalSlots;
 
@@ -152,6 +180,40 @@ export const SplitInvitationScreen: React.FC<SplitInvitationScreenProps> = ({
 
     await loadSplit();
     setIsSimulating(false);
+  };
+
+  // Host Rescue Option 1: Cover all remaining quotas
+  const handleCoverRemaining = async () => {
+    setIsSimulating(true);
+    const res = await mobileApi.payRemainingSplitShares(shareToken, userProfile?.displayName || 'Organizador');
+    await loadSplit();
+    setIsSimulating(false);
+    setShowTimeoutModal(false);
+  };
+
+  // Host Rescue Option 2: Cancel split and refund deposited quotas to In-App Wallet
+  const handleCancelAndRefund = async () => {
+    setIsSimulating(true);
+    const res = await mobileApi.cancelSplitAndRefundToWallet(shareToken);
+    setIsSimulating(false);
+    setShowTimeoutModal(false);
+
+    if (res.success) {
+      // Credit wallet of host with their share / collected amount
+      const refunded = res.totalRefunded || perShare;
+      const newBal = await creditWallet(refunded, `Devolución sala ${shareToken} cancelada`);
+      setRefundInfo({
+        amount: refunded,
+        newWalletBalance: newBal
+      });
+      setRefundSuccessModal(true);
+    }
+  };
+
+  // Host Rescue Option 3: Extend timer by 5 minutes
+  const handleExtend5Min = () => {
+    setTimeLeft(prev => prev + 300);
+    setShowTimeoutModal(false);
   };
 
   const renderSportIcon = () => {
@@ -251,6 +313,7 @@ export const SplitInvitationScreen: React.FC<SplitInvitationScreenProps> = ({
         {splitData?.participants?.map((participant: any, index: number) => {
           const isPaid = participant.status === 'PAID';
           const isOrg = participant.isOrganizer || index === 0;
+          const cleanName = (participant.name || `Jugador ${index + 1}`).replace(/\s*\(Organizador\)/gi, '');
 
           return (
             <View
@@ -274,9 +337,9 @@ export const SplitInvitationScreen: React.FC<SplitInvitationScreenProps> = ({
               </View>
 
               <View style={styles.slotCenterInfo}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <View style={styles.slotNameRow}>
                   <Text style={[styles.slotPlayerName, isPaid && styles.slotPlayerNamePaid]}>
-                    {participant.name || `Jugador ${index + 1}`}
+                    {cleanName}
                   </Text>
                   {isOrg && (
                     <View style={styles.orgTag}>
@@ -291,18 +354,20 @@ export const SplitInvitationScreen: React.FC<SplitInvitationScreenProps> = ({
                 </Text>
               </View>
 
-              {isPaid ? (
-                <View style={styles.badgePaid}>
-                  <Text style={styles.badgePaidText}>PAGADO</Text>
-                </View>
-              ) : (
-                <TouchableOpacity
-                  style={styles.simulateFriendBtn}
-                  onPress={() => handleOpenSlotSimulation(participant)}
-                >
-                  <Text style={styles.simulateFriendBtnText}>Pagar Cuota</Text>
-                </TouchableOpacity>
-              )}
+              <View style={styles.slotActionCol}>
+                {isPaid ? (
+                  <View style={styles.badgePaid}>
+                    <Text style={styles.badgePaidText}>PAGADO</Text>
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    style={styles.simulateFriendBtn}
+                    onPress={() => handleOpenSlotSimulation(participant)}
+                  >
+                    <Text style={styles.simulateFriendBtnText}>Pagar Cuota</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
           );
         })}
@@ -320,7 +385,7 @@ export const SplitInvitationScreen: React.FC<SplitInvitationScreenProps> = ({
             <TouchableOpacity style={styles.copyLinkBtn} onPress={handleCopyLink}>
               <LinkIcon size={14} color="#ffffff" strokeWidth={2} />
               <Text style={styles.copyLinkBtnText}>
-                {copiedLink ? '¡Enlace Copiado!' : 'Copiar Enlace de Sala'}
+                {copiedLink ? '¡Enlace Copiado!' : 'Copiar Enlace'}
               </Text>
             </TouchableOpacity>
 
@@ -337,6 +402,25 @@ export const SplitInvitationScreen: React.FC<SplitInvitationScreenProps> = ({
                   <Text style={styles.demoSimulateBtnText}>Simular Todos</Text>
                 </>
               )}
+            </TouchableOpacity>
+          </View>
+
+          {/* Host Rescue & Timeout Buttons */}
+          <View style={styles.rescueActionsRow}>
+            <TouchableOpacity
+              style={styles.rescueOptionsBtn}
+              onPress={() => setShowTimeoutModal(true)}
+            >
+              <ShieldCheckIcon size={15} color="#38bdf8" strokeWidth={2} />
+              <Text style={styles.rescueOptionsBtnText}>¿Qué pasa si no pagan? / Opciones</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.demoTimeoutBtn}
+              onPress={() => setTimeLeft(0)}
+            >
+              <ClockIcon size={13} color="#ef4444" strokeWidth={2} />
+              <Text style={styles.demoTimeoutBtnText}>Simular Fin de Tiempo</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -365,7 +449,7 @@ export const SplitInvitationScreen: React.FC<SplitInvitationScreenProps> = ({
         </View>
       )}
 
-      {/* Modal for Simulating Individual Friend Payment */}
+      {/* Modal 1: Simular Pago de Amigo */}
       <Modal
         visible={showSimulateModal}
         transparent
@@ -409,6 +493,136 @@ export const SplitInvitationScreen: React.FC<SplitInvitationScreenProps> = ({
                 <Text style={styles.modalConfirmBtnText}>Confirmar Pago de Amigo</Text>
               )}
             </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal 2: Host Timeout Resolution & Protection Modal */}
+      <Modal
+        visible={showTimeoutModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowTimeoutModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.rescueModalCard}>
+            <View style={styles.rescueModalHeader}>
+              <View style={styles.rescueWarningIcon}>
+                <ClockIcon size={24} color="#f59e0b" strokeWidth={2.2} />
+              </View>
+              <View style={{ flex: 1, marginLeft: 12 }}>
+                <Text style={styles.rescueModalTitle}>
+                  {timeLeft === 0 ? '¡Tiempo de Sala Agotado!' : 'Gestión de Sala de Espera'}
+                </Text>
+                <Text style={styles.rescueModalSubtitle}>
+                  {paidCount} de {totalSlots} cuotas abonadas ({formatCurrency(totalCollected)})
+                </Text>
+              </View>
+              <TouchableOpacity onPress={() => setShowTimeoutModal(false)}>
+                <CloseIcon size={20} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.rescueModalBody}>
+              {timeLeft === 0
+                ? `El tiempo de bloqueo de la cancha finalizó con ${formatCurrency(remainingAmount)} pendientes. Como organizador, tenés estas opciones antes de liberar la cancha:`
+                : `Si algún jugador tarda en pagar, como organizador tenés control total sobre el partido:`}
+            </Text>
+
+            {/* Option A: Host Covers Remaining */}
+            <TouchableOpacity
+              style={styles.rescueOptionCardPrimary}
+              onPress={handleCoverRemaining}
+              disabled={isSimulating}
+            >
+              <View style={styles.rescueOptionTopRow}>
+                <Text style={styles.rescueOptionTitlePrimary}>
+                  💳 Cubrir Faltante ({formatCurrency(remainingAmount)}) y Confirmar Cancha
+                </Text>
+              </View>
+              <Text style={styles.rescueOptionDescPrimary}>
+                Abonás las {pendingCount} cuotas restantes. La cancha se confirma de inmediato en el club y tus amigos te transfieren luego.
+              </Text>
+            </TouchableOpacity>
+
+            {/* Option B: Cancel and Refund to Wallet */}
+            <TouchableOpacity
+              style={styles.rescueOptionCardSecondary}
+              onPress={handleCancelAndRefund}
+              disabled={isSimulating}
+            >
+              <View style={styles.rescueOptionTopRow}>
+                <Text style={styles.rescueOptionTitleSecondary}>
+                  💸 Cancelar Turno y Devolver a Billetera ({formatCurrency(totalCollected)})
+                </Text>
+              </View>
+              <Text style={styles.rescueOptionDescSecondary}>
+                La reserva se cancela y se te acredita el 100% de lo abonado a tu Saldo de Billetera Hay Equipo para usar en futuros turnos.
+              </Text>
+            </TouchableOpacity>
+
+            {/* Option C: Extend 5 minutes */}
+            <TouchableOpacity
+              style={styles.rescueOptionCardGrace}
+              onPress={handleExtend5Min}
+            >
+              <Text style={styles.rescueOptionTitleGrace}>
+                ⏱️ Pedir +5 Minutos Extra de Tolerancia
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal 3: Wallet Refund Success Notification */}
+      <Modal
+        visible={refundSuccessModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setRefundSuccessModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.refundSuccessCard}>
+            <View style={styles.refundSuccessIconCircle}>
+              <WalletIcon size={38} color="#22c55e" />
+            </View>
+
+            <Text style={styles.refundSuccessTitle}>¡SALDO ACREDITADO!</Text>
+            <Text style={styles.refundSuccessAmount}>
+              +{formatCurrency(refundInfo?.amount || perShare)}
+            </Text>
+            <Text style={styles.refundSuccessDesc}>
+              El dinero fue devuelto con éxito a tu Billetera Hay Equipo. Podés usarlo para pagar total o parcialmente cualquier próximo turno.
+            </Text>
+
+            <View style={styles.walletBalanceBadge}>
+              <Text style={styles.walletBalanceBadgeLabel}>Saldo total en tu billetera:</Text>
+              <Text style={styles.walletBalanceBadgeVal}>
+                {formatCurrency(refundInfo?.newWalletBalance || userProfile?.walletBalance || 0)}
+              </Text>
+            </View>
+
+            <View style={styles.refundNavCol}>
+              <TouchableOpacity
+                style={styles.primaryNavBtn}
+                onPress={() => {
+                  setRefundSuccessModal(false);
+                  onNavigateMyBookings();
+                }}
+              >
+                <Text style={styles.primaryNavBtnText}>Ver Mis Reservas</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.secondaryNavBtn}
+                onPress={() => {
+                  setRefundSuccessModal(false);
+                  onNavigateHome();
+                }}
+              >
+                <Text style={styles.secondaryNavBtnText}>Volver al Inicio</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -653,6 +867,12 @@ const styles = StyleSheet.create({
   slotCenterInfo: {
     flex: 1
   },
+  slotNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexWrap: 'wrap'
+  },
   slotPlayerName: {
     color: colors.textPrimary,
     fontSize: 14,
@@ -665,7 +885,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(252, 28, 70, 0.15)',
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 4
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(252, 28, 70, 0.3)'
   },
   orgTagText: {
     color: colors.primary,
@@ -676,6 +898,9 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: 11,
     marginTop: 2
+  },
+  slotActionCol: {
+    marginLeft: 8
   },
   badgePaid: {
     backgroundColor: 'rgba(34, 197, 94, 0.15)',
@@ -749,7 +974,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     paddingVertical: 12,
     borderRadius: 12,
     gap: 6
@@ -758,6 +983,45 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontSize: 12,
     fontWeight: '800'
+  },
+  rescueActionsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 4
+  },
+  rescueOptionsBtn: {
+    flex: 1.2,
+    backgroundColor: '#0c1322',
+    borderWidth: 1,
+    borderColor: '#1e3050',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 10,
+    gap: 6
+  },
+  rescueOptionsBtnText: {
+    color: '#38bdf8',
+    fontSize: 11,
+    fontWeight: '700'
+  },
+  demoTimeoutBtn: {
+    flex: 1,
+    backgroundColor: 'rgba(239, 68, 68, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.3)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 10,
+    gap: 6
+  },
+  demoTimeoutBtnText: {
+    color: '#ef4444',
+    fontSize: 11,
+    fontWeight: '700'
   },
   celebrationCard: {
     backgroundColor: '#0a1610',
@@ -816,7 +1080,7 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
     justifyContent: 'center',
     padding: 20
   },
@@ -867,5 +1131,159 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 14,
     fontWeight: '800'
+  },
+  rescueModalCard: {
+    backgroundColor: '#0d121c',
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: '#f59e0b',
+    padding: 20
+  },
+  rescueModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12
+  },
+  rescueWarningIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  rescueModalTitle: {
+    color: '#f59e0b',
+    fontSize: 16,
+    fontWeight: '900'
+  },
+  rescueModalSubtitle: {
+    color: colors.textPrimary,
+    fontSize: 12,
+    fontWeight: '700',
+    marginTop: 2
+  },
+  rescueModalBody: {
+    color: colors.textSecondary,
+    fontSize: 12.5,
+    lineHeight: 17,
+    marginBottom: 16
+  },
+  rescueOptionCardPrimary: {
+    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+    borderWidth: 1.5,
+    borderColor: '#22c55e',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 10
+  },
+  rescueOptionTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center'
+  },
+  rescueOptionTitlePrimary: {
+    color: '#22c55e',
+    fontSize: 13.5,
+    fontWeight: '800'
+  },
+  rescueOptionDescPrimary: {
+    color: '#a7f3d0',
+    fontSize: 11.5,
+    marginTop: 4,
+    lineHeight: 16
+  },
+  rescueOptionCardSecondary: {
+    backgroundColor: 'rgba(56, 189, 248, 0.08)',
+    borderWidth: 1.5,
+    borderColor: '#38bdf8',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 10
+  },
+  rescueOptionTitleSecondary: {
+    color: '#38bdf8',
+    fontSize: 13.5,
+    fontWeight: '800'
+  },
+  rescueOptionDescSecondary: {
+    color: '#bae6fd',
+    fontSize: 11.5,
+    marginTop: 4,
+    lineHeight: 16
+  },
+  rescueOptionCardGrace: {
+    backgroundColor: '#161c2b',
+    borderWidth: 1,
+    borderColor: '#29354d',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center'
+  },
+  rescueOptionTitleGrace: {
+    color: colors.textPrimary,
+    fontSize: 12.5,
+    fontWeight: '700'
+  },
+  refundSuccessCard: {
+    backgroundColor: '#0a1610',
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: '#22c55e',
+    padding: 24,
+    alignItems: 'center'
+  },
+  refundSuccessIconCircle: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14
+  },
+  refundSuccessTitle: {
+    color: '#22c55e',
+    fontSize: 18,
+    fontWeight: '900',
+    letterSpacing: 0.5
+  },
+  refundSuccessAmount: {
+    color: '#ffffff',
+    fontSize: 32,
+    fontWeight: '900',
+    marginVertical: 4
+  },
+  refundSuccessDesc: {
+    color: '#a7f3d0',
+    fontSize: 13,
+    textAlign: 'center',
+    lineHeight: 18,
+    marginBottom: 16
+  },
+  walletBalanceBadge: {
+    backgroundColor: '#122319',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(34, 197, 94, 0.4)',
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: 20
+  },
+  walletBalanceBadgeLabel: {
+    color: '#86efac',
+    fontSize: 11,
+    fontWeight: '600'
+  },
+  walletBalanceBadgeVal: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: '800',
+    marginTop: 2
+  },
+  refundNavCol: {
+    width: '100%',
+    gap: 10
   }
 });

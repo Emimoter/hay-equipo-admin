@@ -34,7 +34,8 @@ export const PaymentStatusEnum = z.enum([
   "APPROVED",
   "REJECTED",
   "REFUNDED",
-  "PARTIALLY_PAID"
+  "PARTIALLY_PAID",
+  "CANCELLED"
 ]);
 export type PaymentStatus = z.infer<typeof PaymentStatusEnum>;
 
@@ -180,6 +181,7 @@ export const SplitParticipantSchema = z.object({
   phone: z.string().optional(),
   amount: z.number(),
   status: z.enum(["PENDING", "PAID", "REFUNDED"]),
+  isOrganizer: z.boolean().optional(),
   paidAt: z.string().optional(),
   mpPaymentId: z.string().optional()
 });

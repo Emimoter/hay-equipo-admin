@@ -272,3 +272,11 @@ export const ArrowRightIcon: React.FC<IconProps> = ({ color = '#ffffff', size = 
     <Polyline points="12 5 19 12 12 19" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
   </Svg>
 );
+
+export const WalletIcon: React.FC<IconProps> = ({ color = '#fc1c46', size = 20, strokeWidth = 2 }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Rect x="2" y="5" width="20" height="14" rx="3" stroke={color} strokeWidth={strokeWidth} />
+    <Line x1="2" y1="10" x2="22" y2="10" stroke={color} strokeWidth={strokeWidth * 0.9} />
+    <Circle cx="17" cy="14.5" r="1.2" fill={color} />
+  </Svg>
+);
