@@ -31,47 +31,51 @@ export function clubSupportsSport(club: any, sport?: string): boolean {
   if (!sport || sport === 'ALL') return true;
   const s = sport.toUpperCase().trim();
 
-  // 1. Check if INITIAL_COURTS has courts for this club ID or slug
+  // 1. Check explicit club.sports array (primary source of truth)
+  if (Array.isArray(club.sports) && club.sports.length > 0) {
+    const sportsUpper = club.sports.map((sp: string) => sp.toUpperCase());
+    if (s === 'PADEL') return sportsUpper.includes('PADEL');
+    if (s === 'FUTBOL_5') return sportsUpper.includes('FUTBOL_5') || sportsUpper.includes('FUTBOL');
+    if (s === 'FUTBOL_7') return sportsUpper.includes('FUTBOL_7');
+    if (s === 'FUTBOL') return sportsUpper.some((sp: string) => sp.startsWith('FUTBOL'));
+    if (s === 'TENIS') return sportsUpper.includes('TENIS');
+    if (s === 'PICKLEBALL') return sportsUpper.includes('PICKLEBALL');
+    return sportsUpper.includes(s);
+  }
+
+  // 2. Check if INITIAL_COURTS has courts for this club ID or slug
   const clubCourts = INITIAL_COURTS.filter((c: any) => c.clubId === club.id || c.clubId === club.slug);
   if (clubCourts.length > 0) {
     return clubCourts.some((court: any) => {
       const cSport = court.sportType.toUpperCase();
       if (s === 'PADEL') return cSport === 'PADEL';
-      if (s === 'FUTBOL_5' || s === 'FUTBOL') return cSport === 'FUTBOL_5' || cSport === 'FUTBOL';
+      if (s === 'FUTBOL_5') return cSport === 'FUTBOL_5' || cSport === 'FUTBOL';
       if (s === 'FUTBOL_7') return cSport === 'FUTBOL_7';
       if (s === 'FUTBOL_8') return cSport === 'FUTBOL_8';
       if (s === 'FUTBOL_11') return cSport === 'FUTBOL_11';
+      if (s === 'FUTBOL') return cSport.startsWith('FUTBOL');
       if (s === 'TENIS') return cSport === 'TENIS';
       if (s === 'PICKLEBALL') return cSport === 'PICKLEBALL';
       return cSport === s;
     });
   }
 
-  // 2. Check if club.sports array exists
-  if (Array.isArray(club.sports) && club.sports.length > 0) {
-    const sportsUpper = club.sports.map((sp: string) => sp.toUpperCase());
-    if (s === 'PADEL') return sportsUpper.includes('PADEL');
-    if (s === 'FUTBOL_5' || s === 'FUTBOL') return sportsUpper.includes('FUTBOL') || sportsUpper.includes('FUTBOL_5');
-    if (s === 'FUTBOL_7') return sportsUpper.includes('FUTBOL_7');
-    if (s === 'TENIS') return sportsUpper.includes('TENIS');
-    return sportsUpper.includes(s);
-  }
-
-  // 3. Robust keyword matching from name & description
+  // 3. Fallback keyword matching from name & description
   const nameLower = (club.name || '').toLowerCase();
   const descLower = (club.description || '').toLowerCase();
   const fullText = `${nameLower} ${descLower}`;
 
-  const isTennis = fullText.includes('tenis') || fullText.includes('nautico') || fullText.includes('náutico') || fullText.includes('edison') || fullText.includes('lawn') || fullText.includes('once unidos') || fullText.includes('ladrillo');
+  const isTennis = fullText.includes('tenis') || fullText.includes('nautico') || fullText.includes('náutico') || fullText.includes('edison') || fullText.includes('lawn') || fullText.includes('ladrillo');
   const isFutbol7 = fullText.includes('fútbol 7') || fullText.includes('futbol 7') || fullText.includes('f7') || fullText.includes('catonio') || fullText.includes('área 7') || fullText.includes('area 7') || fullText.includes('telefonos') || fullText.includes('teléfonos');
   const isFutbol5 = fullText.includes('fútbol 5') || fullText.includes('futbol 5') || fullText.includes('f5') || fullText.includes('papi') || fullText.includes('potrero') || fullText.includes('balón 5') || fullText.includes('luro 5102') || fullText.includes('américa') || fullText.includes('america');
-  const isFutbolGeneric = fullText.includes('fútbol') || fullText.includes('futbol') || fullText.includes('canchas de césped') || fullText.includes('complejo');
+  const isFutbolGeneric = fullText.includes('fútbol') || fullText.includes('futbol');
   const isPadel = fullText.includes('pádel') || fullText.includes('padel') || fullText.includes('cristal') || fullText.includes('blindex') || fullText.includes('panorámica') || fullText.includes('laverde') || fullText.includes('arena') || fullText.includes('naranjos') || fullText.includes('match point') || fullText.includes('trebi') || fullText.includes('house');
 
   if (s === 'TENIS') return isTennis;
   if (s === 'FUTBOL_7') return isFutbol7;
-  if (s === 'FUTBOL_5' || s === 'FUTBOL') return isFutbol5 || (isFutbolGeneric && !fullText.includes('catonio'));
-  if (s === 'PADEL') return isPadel || (!isTennis && !fullText.includes('catonio') && !fullText.includes('luro 5102') && !fullText.includes('américa'));
+  if (s === 'FUTBOL_5') return isFutbol5 || (isFutbolGeneric && !isFutbol7);
+  if (s === 'FUTBOL') return isFutbol5 || isFutbol7 || isFutbolGeneric;
+  if (s === 'PADEL') return isPadel || (!isTennis && !isFutbol5 && !isFutbol7);
 
   return false;
 }

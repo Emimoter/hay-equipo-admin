@@ -110,6 +110,7 @@ export const ClubSchema = z.object({
   openingTime: z.string().default("08:00"),
   closingTime: z.string().default("00:00"),
   minPrice: z.number().default(0),
+  sports: z.array(z.string()).optional(),
   active: z.boolean().default(true)
 });
 export type Club = z.infer<typeof ClubSchema>;
