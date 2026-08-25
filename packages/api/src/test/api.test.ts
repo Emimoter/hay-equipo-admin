@@ -9,7 +9,7 @@ describe('Hay Equipo Core Booking Engine & Flow Tests', () => {
   const testDate = '2026-09-01';
 
   test('1. Generates correct availability slots for court', () => {
-    const courtId = 'court-arena-1';
+    const courtId = 'court-arena-wpt-1';
     const slots = bookingEngine.generateSlotsForCourt(courtId, testDate);
     assert(slots.length > 0, 'Should generate discrete slots');
     assert(slots[0].startTime === '08:00', 'First slot starts at opening time 08:00');
@@ -17,7 +17,7 @@ describe('Hay Equipo Core Booking Engine & Flow Tests', () => {
   });
 
   test('2. Atomic Hold Lock prevents double-booking on the same slot', () => {
-    const courtId = 'court-arena-2';
+    const courtId = 'court-arena-indoor-2';
     const startTime = '20:00';
     const userId1 = 'usr-player-1';
     const userId2 = 'usr-player-2';
@@ -53,7 +53,7 @@ describe('Hay Equipo Core Booking Engine & Flow Tests', () => {
   });
 
   test('3. Mercado Pago preference creation and booking confirmation', async () => {
-    const courtId = 'court-arena-3';
+    const courtId = 'court-arena-indoor-3';
     const hold = bookingEngine.holdSlot({
       courtId,
       date: testDate,
@@ -106,7 +106,7 @@ describe('Hay Equipo Core Booking Engine & Flow Tests', () => {
   });
 
   test('5. Fixed Slot Subscription generates weekly occurrences with discounts', () => {
-    const court = db.courts.find(c => c.id === 'court-belgrano-f5-1')!;
+    const court = db.courts.find(c => c.id === 'court-cantera-f5-a')!;
     const durationMonths = 3;
     const initialCount = db.fixedSlotSubscriptions.length;
 

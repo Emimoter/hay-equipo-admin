@@ -1,5 +1,6 @@
 import { Sport, Club, Court, Booking, SplitPayment, FixedSlotSubscription, RecurringOccurrence, SportType } from '@hay-equipo/contracts';
 import { MDP_REAL_CLUBS, MDP_REAL_COURTS } from './mdp_clubs';
+import { REALISTIC_ARG_CLUBS, REALISTIC_ARG_COURTS } from './realistic_seed';
 
 export * from './realistic_seed';
 export * from './mdp_clubs';
@@ -18,9 +19,9 @@ export const INITIAL_SPORTS: Sport[] = [
   { id: 'sp-squash', name: 'Squash', slug: 'squash', icon: 'tennisball', defaultDurationMinutes: 45, active: true }
 ];
 
-export const INITIAL_CLUBS: Club[] = MDP_REAL_CLUBS;
+export const INITIAL_CLUBS: Club[] = [...REALISTIC_ARG_CLUBS, ...MDP_REAL_CLUBS];
 
-export const INITIAL_COURTS: Court[] = MDP_REAL_COURTS;
+export const INITIAL_COURTS: Court[] = [...REALISTIC_ARG_COURTS, ...MDP_REAL_COURTS];
 
 // In-Memory Database Store for stateful simulation with seed data
 class DatabaseStore {
