@@ -15,6 +15,7 @@ import { ProfileScreen } from './src/screens/ProfileScreen';
 import { TimeSlot, Booking } from '@hay-equipo/contracts';
 import { HomeIcon, SearchIcon, CalendarIcon, WalletIcon, ProfileIcon } from './src/components/NavIcons';
 import { requestLocationPermissions, getRealUserLocation } from './src/services/location';
+import { mobileApi } from './src/services/api';
 
 type TabType = 'HOME' | 'SEARCH' | 'BOOKINGS' | 'PAYMENTS' | 'PROFILE';
 
@@ -69,6 +70,22 @@ function MainAppContent() {
     setActiveTab('BOOKINGS');
   };
 
+  const openDemoSplitLobby = async () => {
+    const holdRes = await mobileApi.holdBooking({
+      courtId: 'court-club-360-padel-padel-1',
+      date: '2026-08-28',
+      startTime: '20:00',
+      userId: 'usr-emi',
+      userName: 'Emiliano (Organizador)',
+      userPhone: '+5491155550001',
+      paymentType: 'SPLIT',
+      splitPlayerCount: 4
+    });
+    if (holdRes.booking) {
+      navigateToSplit(holdRes.booking);
+    }
+  };
+
   if (showAuthModal) {
     return <AuthScreen onSuccess={() => setShowAuthModal(false)} />;
   }
@@ -121,6 +138,7 @@ function MainAppContent() {
             onNavigateCheckout={navigateToCheckout}
             onNavigateFixedSlots={() => handleTabChange('PAYMENTS')}
             onNavigateProfile={() => handleTabChange('PROFILE')}
+            onNavigateDemoSplit={openDemoSplitLobby}
           />
         );
       case 'SEARCH':

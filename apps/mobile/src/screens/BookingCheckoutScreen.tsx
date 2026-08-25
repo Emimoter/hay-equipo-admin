@@ -65,6 +65,24 @@ export const BookingCheckoutScreen: React.FC<BookingCheckoutScreenProps> = ({
     }, 1200);
   };
 
+  const handleDirectDemoSplit = async () => {
+    setLoading(true);
+    const holdRes = await mobileApi.holdBooking({
+      courtId: slot.courtId,
+      date: slot.date,
+      startTime: slot.startTime,
+      userId: 'usr-emi',
+      userName: 'Emiliano',
+      userPhone: '+5491155550001',
+      paymentType: 'SPLIT',
+      splitPlayerCount: playerCount
+    });
+    setLoading(false);
+    if (holdRes.booking) {
+      onNavigateSplit(holdRes.booking);
+    }
+  };
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Top Header */}
@@ -130,14 +148,14 @@ export const BookingCheckoutScreen: React.FC<BookingCheckoutScreenProps> = ({
         >
           <View style={styles.splitBadge}>
             <ZapIcon size={10} color="#fc1c46" strokeWidth={2.5} />
-            <Text style={[styles.splitBadgeText, { marginLeft: 3 }]}>MÁS ELEGIDO</Text>
+            <Text style={[styles.splitBadgeText, { marginLeft: 3 }]}>SALA DE ESPERA</Text>
           </View>
           <View style={styles.radioRow}>
             <View style={[styles.radioCircle, paymentType === 'SPLIT' && styles.radioCircleActive]} />
-            <Text style={styles.paymentOptionTitle}>Dividir entre jugadores (Split)</Text>
+            <Text style={styles.paymentOptionTitle}>Dividir entre jugadores (Split Lobby)</Text>
           </View>
           <Text style={styles.paymentOptionSubtitle}>
-            Pagás tu parte ({formatCurrency(perPersonAmount)}) y compartís un enlace por WhatsApp para que tus amigos paguen la suya.
+            Abonás tu parte ({formatCurrency(perPersonAmount)}), se abre la sala de espera y tus amigos pagan la suya por WhatsApp.
           </Text>
           <Text style={styles.splitHighlight}>{formatCurrency(perPersonAmount)} / persona</Text>
         </TouchableOpacity>
@@ -146,7 +164,7 @@ export const BookingCheckoutScreen: React.FC<BookingCheckoutScreenProps> = ({
       {/* Player Count Selector for Split */}
       {paymentType === 'SPLIT' ? (
         <View style={styles.splitConfigCard}>
-          <Text style={styles.splitConfigTitle}>Cantidad de jugadores:</Text>
+          <Text style={styles.splitConfigTitle}>Cantidad de jugadores en la sala:</Text>
           <View style={styles.playerCountRow}>
             {[2, 4, 8, 10, 14].map(num => (
               <TouchableOpacity
@@ -160,10 +178,13 @@ export const BookingCheckoutScreen: React.FC<BookingCheckoutScreenProps> = ({
               </TouchableOpacity>
             ))}
           </View>
+          <Text style={styles.splitHelpText}>
+            Cada jugador pagará {formatCurrency(perPersonAmount)}. La cancha se confirmará en el club una vez que todos abonen.
+          </Text>
         </View>
       ) : null}
 
-      {/* Pricing Breakdown */}
+      {/* Price Breakdown */}
       <View style={styles.breakdownCard}>
         <View style={styles.breakdownRow}>
           <Text style={styles.breakdownLabel}>Alquiler de Cancha</Text>
@@ -175,7 +196,9 @@ export const BookingCheckoutScreen: React.FC<BookingCheckoutScreenProps> = ({
         </View>
         <View style={styles.divider} />
         <View style={styles.breakdownRow}>
-          <Text style={styles.totalLabel}>Total a Pagar</Text>
+          <Text style={styles.totalLabel}>
+            {paymentType === 'FULL' ? 'Total a Pagar' : 'Tu Cuota a Pagar'}
+          </Text>
           <Text style={styles.totalValue}>
             {paymentType === 'FULL' ? formatCurrency(grandTotal) : `${formatCurrency(perPersonAmount)} (tu parte)`}
           </Text>
@@ -192,10 +215,26 @@ export const BookingCheckoutScreen: React.FC<BookingCheckoutScreenProps> = ({
           <ActivityIndicator color={colors.background} />
         ) : (
           <Text style={styles.payButtonText}>
-            Pagar con Mercado Pago · {paymentType === 'FULL' ? formatCurrency(grandTotal) : formatCurrency(perPersonAmount)}
+            {paymentType === 'FULL'
+              ? `Pagar Total · ${formatCurrency(grandTotal)}`
+              : `Abonar Mi Parte y Abrir Sala · ${formatCurrency(perPersonAmount)}`}
           </Text>
         )}
       </TouchableOpacity>
+
+      {/* Provisional Direct Button to open Split Lobby instantly */}
+      {paymentType === 'SPLIT' && (
+        <TouchableOpacity
+          style={styles.directDemoBtn}
+          onPress={handleDirectDemoSplit}
+          disabled={loading}
+        >
+          <ZapIcon size={14} color="#fc1c46" strokeWidth={2.2} />
+          <Text style={styles.directDemoBtnText}>
+            ⚡ Abrir Sala de Espera Directamente (Demo)
+          </Text>
+        </TouchableOpacity>
+      )}
 
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 14 }}>
         <ShieldCheckIcon size={13} color="#10B981" strokeWidth={2} />
@@ -412,6 +451,12 @@ const styles = StyleSheet.create({
   playerCountBtnTextActive: {
     color: colors.background
   },
+  splitHelpText: {
+    color: colors.textMuted,
+    fontSize: 11.5,
+    marginTop: 8,
+    lineHeight: 16
+  },
   breakdownCard: {
     backgroundColor: colors.card,
     borderRadius: 14,
@@ -449,12 +494,29 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
-    marginBottom: 12
+    marginBottom: 10
   },
   payButtonText: {
     color: colors.background,
     fontWeight: '800',
     fontSize: 16
+  },
+  directDemoBtn: {
+    backgroundColor: 'rgba(252, 28, 70, 0.1)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(252, 28, 70, 0.4)',
+    paddingVertical: 14,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 12
+  },
+  directDemoBtnText: {
+    color: colors.primary,
+    fontWeight: '800',
+    fontSize: 14
   },
   guaranteeText: {
     color: colors.textMuted,

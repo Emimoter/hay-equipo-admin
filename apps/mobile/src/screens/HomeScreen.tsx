@@ -38,6 +38,7 @@ interface HomeScreenProps {
   onNavigateCheckout: (slot: TimeSlot) => void;
   onNavigateFixedSlots: () => void;
   onNavigateProfile: () => void;
+  onNavigateDemoSplit?: () => void;
 }
 
 const SPORTS_CATEGORIES = [
@@ -54,6 +55,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   onNavigateCheckout,
   onNavigateFixedSlots,
   onNavigateProfile,
+  onNavigateDemoSplit,
 }) => {
   const { userProfile, user } = useAuth();
   const [selectedSport, setSelectedSport] = useState<string>('PADEL');
@@ -251,6 +253,37 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </View>
         </View>
       </TouchableOpacity>
+
+      {/* ═══════════════════════════════════════════════════════
+          BANNER DEMO: SALA DE ESPERA / SPLIT LOBBY (PROVISIONAL)
+          ═══════════════════════════════════════════════════════ */}
+      {onNavigateDemoSplit && (
+        <TouchableOpacity
+          activeOpacity={0.88}
+          style={styles.demoLobbyBanner}
+          onPress={onNavigateDemoSplit}
+        >
+          <View style={styles.demoLobbyLeft}>
+            <View style={styles.demoLobbyIconCircle}>
+              <UsersIcon size={20} color="#fc1c46" strokeWidth={2.2} />
+            </View>
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={styles.demoLobbyTitle}>🎮 Probar Sala de Espera</Text>
+                <View style={styles.demoLobbyBadge}>
+                  <Text style={styles.demoLobbyBadgeText}>DEMO</Text>
+                </View>
+              </View>
+              <Text style={styles.demoLobbySubtitle}>
+                Mirá en vivo el lobby de jugadores, cuotas y confirmación automática.
+              </Text>
+            </View>
+          </View>
+          <View style={styles.demoLobbyArrowCircle}>
+            <Text style={styles.demoLobbyArrowText}>→</Text>
+          </View>
+        </TouchableOpacity>
+      )}
 
       {/* ═══════════════════════════════════════════════════════
           SECTION: PARA JUGAR HOY (TURNOS LIBRES INMEDIATOS)
@@ -986,5 +1019,71 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     fontFamily: fonts.bold,
+  },
+  demoLobbyBanner: {
+    backgroundColor: '#121724',
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: 'rgba(252, 28, 70, 0.35)',
+    padding: 16,
+    marginBottom: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  demoLobbyLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  demoLobbyIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(252, 28, 70, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(252, 28, 70, 0.3)',
+  },
+  demoLobbyTitle: {
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: '800',
+    fontFamily: fonts.headingBold,
+  },
+  demoLobbyBadge: {
+    backgroundColor: 'rgba(252, 28, 70, 0.2)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#fc1c46',
+  },
+  demoLobbyBadgeText: {
+    color: '#fc1c46',
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  demoLobbySubtitle: {
+    color: '#94a3b8',
+    fontSize: 11.5,
+    marginTop: 2,
+    lineHeight: 16,
+  },
+  demoLobbyArrowCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#1e2638',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
+  },
+  demoLobbyArrowText: {
+    color: '#fc1c46',
+    fontSize: 16,
+    fontWeight: '800',
   },
 });
