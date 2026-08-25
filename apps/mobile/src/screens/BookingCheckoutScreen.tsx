@@ -136,7 +136,7 @@ export const BookingCheckoutScreen: React.FC<BookingCheckoutScreenProps> = ({
       </View>
 
       {/* Player Count Selector for Split */}
-      {paymentType === 'SPLIT' && (
+      {paymentType === 'SPLIT' ? (
         <View style={styles.splitConfigCard}>
           <Text style={styles.splitConfigTitle}>Cantidad de jugadores:</Text>
           <View style={styles.playerCountRow}>
@@ -153,7 +153,7 @@ export const BookingCheckoutScreen: React.FC<BookingCheckoutScreenProps> = ({
             ))}
           </View>
         </View>
-      )}
+      ) : null}
 
       {/* Pricing Breakdown */}
       <View style={styles.breakdownCard}>
@@ -192,7 +192,7 @@ export const BookingCheckoutScreen: React.FC<BookingCheckoutScreenProps> = ({
       <Text style={styles.guaranteeText}>🔒 Pago 100% seguro y encriptado con Mercado Pago</Text>
 
       {/* Simulated MP Checkout Modal Overlay */}
-      {mpProcessingModal && (
+      {mpProcessingModal ? (
         <View style={styles.mpModalOverlay}>
           <View style={styles.mpModalCard}>
             <Text style={{ fontSize: 32, marginBottom: 12 }}>💳</Text>
@@ -202,7 +202,7 @@ export const BookingCheckoutScreen: React.FC<BookingCheckoutScreenProps> = ({
             <Text style={styles.mpModalHint}>Acreditación instantánea</Text>
           </View>
         </View>
-      )}
+      ) : null}
     </ScrollView>
   );
 };

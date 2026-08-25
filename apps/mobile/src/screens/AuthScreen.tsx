@@ -89,9 +89,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
         </View>
 
         {/* Form Fields */}
-        {isRegister && (
-          <div>
-            <label style={{ display: 'none' }}>Nombre</label>
+        {isRegister ? (
+          <View>
             <Text style={styles.fieldLabel}>Nombre y Apellido</Text>
             <TextInput
               style={styles.input}
@@ -110,8 +109,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
               value={phone}
               onChangeText={setPhone}
             />
-          </div>
-        )}
+          </View>
+        ) : null}
 
         <Text style={styles.fieldLabel}>Correo Electrónico</Text>
         <TextInput

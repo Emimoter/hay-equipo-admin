@@ -1,4 +1,6 @@
 import { Sport, Club, Court, TimeSlot, Booking, SplitPayment, FixedSlotSubscription, RecurringOccurrence } from '@hay-equipo/contracts';
+import { INITIAL_CLUBS, INITIAL_COURTS } from '@hay-equipo/db';
+import { getClubsFirestore, getCourtsFirestore } from './firebase';
 
 const API_BASE_URL = 'http://localhost:4000/api';
 
@@ -21,6 +23,30 @@ export class MobileApiService {
   }
 
   public async getClubs(sport?: string): Promise<Club[]> {
+    // 1. Primary source: Firebase Firestore (Live sync with Panel)
+    try {
+      const firestoreClubs = await getClubsFirestore();
+      if (firestoreClubs && firestoreClubs.length > 0) {
+        if (sport) {
+          const sportUpper = sport.toUpperCase();
+          return firestoreClubs.filter((c: any) => {
+            if (c.active === false) return false;
+            if (sportUpper === 'PADEL') {
+              return c.name.toLowerCase().includes('pádel') || c.name.toLowerCase().includes('padel') || (c.description && c.description.toLowerCase().includes('padel')) || true;
+            }
+            if (sportUpper.includes('FUTBOL')) {
+              return c.name.toLowerCase().includes('fútbol') || c.name.toLowerCase().includes('futbol') || c.name.toLowerCase().includes('7') || c.name.toLowerCase().includes('5');
+            }
+            return true;
+          });
+        }
+        return firestoreClubs;
+      }
+    } catch (e) {
+      console.log('Error loading clubs from firestore:', e);
+    }
+
+    // 2. Secondary source: Local HTTP API
     try {
       const url = sport ? `${API_BASE_URL}/clubs?sport=${sport}` : `${API_BASE_URL}/clubs`;
       const res = await fetch(url);
@@ -28,141 +54,23 @@ export class MobileApiService {
       if (data.data && data.data.length > 0) return data.data;
     } catch {}
 
-    // Fallback High-Quality Clubs in Buenos Aires with exact coordinates
-    const fallbackClubs: Club[] = [
-      {
-        id: 'club-1',
-        name: 'Club Padel Center',
-        slug: 'club-padel-center',
-        description: '4 canchas panorámicas de última generación con césped texturado y vestuarios premium.',
-        address: 'Av. Juan B. Justo 2800, Palermo',
-        city: 'CABA',
-        province: 'Buenos Aires',
-        latitude: -34.5885,
-        longitude: -58.4350,
-        phone: '+54 9 11 4455-8899',
-        whatsapp: '+54 9 11 4455-8899',
-        rating: 4.9,
-        reviewCount: 142,
-        images: ['https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop&q=80'],
-        amenities: {
-          parking: true,
-          showers: true,
-          lockerRooms: true,
-          buffet: true,
-          grill: false,
-          wifi: true,
-          equipmentRental: true,
-          covered: true,
-          lighting: true,
-        },
-        openingTime: '08:00',
-        closingTime: '00:00',
-        minPrice: 18000,
-        active: true,
-      },
-      {
-        id: 'club-2',
-        name: 'Complejo Deportivo Norte',
-        slug: 'complejo-deportivo-norte',
-        description: 'Canchas de fútbol 5 y 7 sintético Pro FIFA y 2 canchas de pádel techadas.',
-        address: 'Av. Cabildo 3100, Belgrano',
-        city: 'CABA',
-        province: 'Buenos Aires',
-        latitude: -34.5610,
-        longitude: -58.4590,
-        phone: '+54 9 11 5566-7788',
-        whatsapp: '+54 9 11 5566-7788',
-        rating: 4.8,
-        reviewCount: 98,
-        images: ['https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&auto=format&fit=crop&q=80'],
-        amenities: {
-          parking: true,
-          showers: true,
-          lockerRooms: true,
-          buffet: true,
-          grill: true,
-          wifi: true,
-          equipmentRental: true,
-          covered: false,
-          lighting: true,
-        },
-        openingTime: '09:00',
-        closingTime: '01:00',
-        minPrice: 24000,
-        active: true,
-      },
-      {
-        id: 'club-3',
-        name: 'Palermo Tenis & Padel Hub',
-        slug: 'palermo-tenis-padel-hub',
-        description: 'Canchas de tenis de polvo de ladrillo y pádel blindex en el corazón de Palermo Soho.',
-        address: 'Honduras 4900, Palermo Soho',
-        city: 'CABA',
-        province: 'Buenos Aires',
-        latitude: -34.5930,
-        longitude: -58.4280,
-        phone: '+54 9 11 6677-8899',
-        whatsapp: '+54 9 11 6677-8899',
-        rating: 4.7,
-        reviewCount: 86,
-        images: ['https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=800&auto=format&fit=crop&q=80'],
-        amenities: {
-          parking: false,
-          showers: true,
-          lockerRooms: true,
-          buffet: true,
-          grill: false,
-          wifi: true,
-          equipmentRental: true,
-          covered: true,
-          lighting: true,
-        },
-        openingTime: '08:00',
-        closingTime: '23:30',
-        minPrice: 16000,
-        active: true,
-      },
-      {
-        id: 'club-4',
-        name: 'La Cantera Padel Club',
-        slug: 'la-cantera-padel-club',
-        description: '3 canchas full panorámicas techadas con iluminación LED de alta potencia.',
-        address: 'Av. Corrientes 5400, Villa Crespo',
-        city: 'CABA',
-        province: 'Buenos Aires',
-        latitude: -34.5980,
-        longitude: -58.4410,
-        phone: '+54 9 11 3344-5566',
-        whatsapp: '+54 9 11 3344-5566',
-        rating: 4.9,
-        reviewCount: 115,
-        images: ['https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop&q=80'],
-        amenities: {
-          parking: true,
-          showers: true,
-          lockerRooms: true,
-          buffet: true,
-          grill: false,
-          wifi: true,
-          equipmentRental: true,
-          covered: true,
-          lighting: true,
-        },
-        openingTime: '08:00',
-        closingTime: '00:00',
-        minPrice: 22000,
-        active: true,
-      },
-    ];
-
-    return fallbackClubs;
+    // 3. Guaranteed Local Fallback
+    return INITIAL_CLUBS;
   }
 
   public async getClubDetails(clubId: string): Promise<(Club & { courts: Court[] }) | null> {
     const clubs = await this.getClubs();
     const club = clubs.find(c => c.id === clubId) || clubs[0];
     if (!club) return null;
+
+    try {
+      const courts = await getCourtsFirestore(club.id);
+      if (courts && courts.length > 0) {
+        return { ...club, courts };
+      }
+    } catch (e) {
+      console.log('Error fetching courts from firestore:', e);
+    }
 
     const mockCourts: Court[] = [
       {
@@ -214,6 +122,56 @@ export class MobileApiService {
     date?: string;
     timeFrom?: string;
   }): Promise<TimeSlot[]> {
+    const today = params.date || new Date().toISOString().split('T')[0];
+
+    // 1. Primary source: Generate real availability slots dynamically from Firebase real clubs & courts
+    try {
+      const clubs = await getClubsFirestore();
+      const slots: TimeSlot[] = [];
+      const times = ['18:00', '19:30', '21:00', '22:30'];
+
+      for (const club of clubs.slice(0, 10)) {
+        const courts = await getCourtsFirestore(club.id);
+        for (const court of courts) {
+          if (params.sport) {
+            const sportUpper = params.sport.toUpperCase();
+            const isPadel = sportUpper === 'PADEL' && court.sportType === 'PADEL';
+            const isFutbol = sportUpper.includes('FUTBOL') && court.sportType.includes('FUTBOL');
+            if (!isPadel && !isFutbol) continue;
+          }
+
+          for (const t of times) {
+            const [h, m] = t.split(':').map(Number);
+            const duration = court.durationMinutes || 90;
+            const totalM = h * 60 + m + duration;
+            const endH = Math.floor(totalM / 60) % 24;
+            const endM = totalM % 60;
+            const endTimeStr = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
+
+            slots.push({
+              courtId: court.id,
+              courtName: court.name,
+              clubId: club.id,
+              clubName: club.name,
+              sportType: court.sportType as any,
+              date: today,
+              startTime: t,
+              endTime: endTimeStr,
+              durationMinutes: duration,
+              price: court.pricePerHour || club.minPrice || 25000,
+              fixedSlotPrice: Math.round((court.pricePerHour || club.minPrice || 25000) * (1 - (court.priceFixedSlotDiscount || 0.12))),
+              status: 'AVAILABLE',
+            });
+          }
+        }
+      }
+
+      if (slots.length > 0) return slots;
+    } catch (e) {
+      console.log('Error generating slots from firebase:', e);
+    }
+
+    // 2. Secondary source: Local HTTP API
     try {
       const query = new URLSearchParams();
       if (params.sport) query.append('sport', params.sport);
@@ -225,82 +183,7 @@ export class MobileApiService {
       if (data.data && data.data.length > 0) return data.data;
     } catch {}
 
-    const today = params.date || new Date().toISOString().split('T')[0];
-
-    const fallbackSlots: TimeSlot[] = [
-      {
-        courtId: 'court-1-1',
-        courtName: 'Cancha 1 (Panorámica)',
-        clubId: 'club-1',
-        clubName: 'Club Padel Center',
-        sportType: 'PADEL',
-        date: today,
-        startTime: '19:00',
-        endTime: '20:30',
-        durationMinutes: 90,
-        price: 18000,
-        fixedSlotPrice: 15300,
-        status: 'AVAILABLE',
-      },
-      {
-        courtId: 'court-1-2',
-        courtName: 'Cancha 2 (Blindex Cristal)',
-        clubId: 'club-1',
-        clubName: 'Club Padel Center',
-        sportType: 'PADEL',
-        date: today,
-        startTime: '20:30',
-        endTime: '22:00',
-        durationMinutes: 90,
-        price: 20000,
-        fixedSlotPrice: 17000,
-        status: 'AVAILABLE',
-      },
-      {
-        courtId: 'court-2-1',
-        courtName: 'Cancha Fútbol 5 Sintético',
-        clubId: 'club-2',
-        clubName: 'Complejo Deportivo Norte',
-        sportType: 'FUTBOL_5',
-        date: today,
-        startTime: '21:00',
-        endTime: '22:00',
-        durationMinutes: 60,
-        price: 24000,
-        fixedSlotPrice: 21600,
-        status: 'AVAILABLE',
-      },
-      {
-        courtId: 'court-3-1',
-        courtName: 'Cancha Tenis Polvo 1',
-        clubId: 'club-3',
-        clubName: 'Palermo Tenis & Padel Hub',
-        sportType: 'TENIS',
-        date: today,
-        startTime: '18:30',
-        endTime: '20:00',
-        durationMinutes: 90,
-        price: 16000,
-        fixedSlotPrice: 13600,
-        status: 'AVAILABLE',
-      },
-      {
-        courtId: 'court-4-1',
-        courtName: 'Cancha Panorámica Techada 3',
-        clubId: 'club-4',
-        clubName: 'La Cantera Padel Club',
-        sportType: 'PADEL',
-        date: today,
-        startTime: '22:00',
-        endTime: '23:30',
-        durationMinutes: 90,
-        price: 22000,
-        fixedSlotPrice: 18700,
-        status: 'AVAILABLE',
-      },
-    ];
-
-    return fallbackSlots;
+    return [];
   }
 
   public async holdBooking(params: {

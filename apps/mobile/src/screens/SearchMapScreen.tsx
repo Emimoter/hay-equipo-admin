@@ -8,10 +8,11 @@ import {
   ScrollView,
   Dimensions,
   Platform,
+  Image,
 } from 'react-native';
-import { WebView } from 'react-native-webview';
-import * as Location from 'expo-location';
-import Svg, { Circle, Line, Rect } from 'react-native-svg';
+import WebView from 'react-native-webview';
+import Svg, { Circle, Line, Path } from 'react-native-svg';
+import { LEAFLET_CSS, LEAFLET_JS } from '../services/leafletBundle';
 import { colors, fonts, formatCurrency } from '../components/theme';
 import {
   PadelIcon,
@@ -33,6 +34,22 @@ import { TimeSlot, Club } from '@hay-equipo/contracts';
 
 const { width, height } = Dimensions.get('window');
 
+const DARK_MAP_STYLE = [
+  { elementType: "geometry", stylers: [{ color: "#0d1117" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#8b949e" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#0d1117" }] },
+  { featureType: "administrative", elementType: "geometry", stylers: [{ color: "#161b22" }] },
+  { featureType: "landscape", elementType: "geometry", stylers: [{ color: "#090d13" }] },
+  { featureType: "poi", elementType: "geometry", stylers: [{ color: "#161b22" }] },
+  { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#6e7681" }] },
+  { featureType: "road", elementType: "geometry", stylers: [{ color: "#21262d" }] },
+  { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#0d1117" }] },
+  { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#8b949e" }] },
+  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#30363d" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#050914" }] },
+  { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#388bfd" }] }
+];
+
 interface SearchMapScreenProps {
   initialSport?: string;
   onNavigateCheckout: (slot: TimeSlot) => void;
@@ -44,7 +61,8 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
   onNavigateCheckout,
   onNavigateClub,
 }) => {
-  const webViewRef = useRef<WebView | null>(null);
+  const webViewRef = useRef<WebView>(null);
+  const [viewMode, setViewMode] = useState<'LIST' | 'MAP'>('MAP');
   const [sport, setSport] = useState<string>(initialSport);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [timeFilter, setTimeFilter] = useState<string>('20:00');
@@ -53,7 +71,6 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
   const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
   const [userLocation, setUserLocation] = useState<UserLocationState>(DEFAULT_LOCATION);
 
-  // Request real GPS Location on mount
   useEffect(() => {
     requestUserLocation();
   }, []);
@@ -62,7 +79,6 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
     try {
       const loc = await getRealUserLocation();
       setUserLocation(loc);
-      sendCoordsToMap(loc.latitude, loc.longitude, 15);
     } catch (e) {
       console.log('Location request error:', e);
     }
@@ -79,8 +95,10 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
       mobileApi.searchAvailability({ sport, date: today, timeFrom: timeFilter }),
     ]);
 
-    // Adapt club coordinates so there are always clubs around the user's current GPS location
     const adaptedClubs = clubsData.map((c, i) => {
+      if (c.latitude && c.longitude && c.latitude !== 0) {
+        return c;
+      }
       const offsets = [
         { lat: 0.005, lng: -0.006 },
         { lat: 0.009, lng: 0.007 },
@@ -101,8 +119,6 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
     if (adaptedClubs.length > 0 && !selectedClub) {
       setSelectedClub(adaptedClubs[0]);
     }
-
-    updateMapMarkers(adaptedClubs, selectedClub?.id || adaptedClubs[0]?.id);
   };
 
   const getActiveSlotForClub = (clubId: string) => {
@@ -111,798 +127,671 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
 
   const handleSelectClub = (club: Club) => {
     setSelectedClub(club);
-    sendCoordsToMap(club.latitude, club.longitude, 16);
-    updateMapMarkers(clubs, club.id);
+    webViewRef.current?.injectJavaScript(`
+      if (window.selectClubById) {
+        window.selectClubById("${club.id}");
+      }
+      true;
+    `);
   };
 
   const centerOnUser = () => {
-    sendCoordsToMap(userLocation.latitude, userLocation.longitude, 15);
+    webViewRef.current?.injectJavaScript(`
+      if (window.flyToUser) {
+        window.flyToUser(${userLocation.latitude}, ${userLocation.longitude});
+      }
+      true;
+    `);
   };
 
-  const sendCoordsToMap = (lat: number, lng: number, zoom = 15) => {
-    if (webViewRef.current) {
-      const script = `
-        if (window.map) {
-          window.map.flyTo([${lat}, ${lng}], ${zoom}, { animate: true, duration: 1.0 });
-          if (window.userMarker) {
-            window.userMarker.setLatLng([${userLocation.latitude}, ${userLocation.longitude}]);
-          }
-        }
-        true;
-      `;
-      webViewRef.current.injectJavaScript(script);
-    }
-  };
-
-  const updateMapMarkers = (clubsList: Club[], activeId?: string) => {
-    if (webViewRef.current) {
-      const dataStr = JSON.stringify(
-        clubsList.map(c => ({
-          id: c.id,
-          name: c.name,
-          lat: c.latitude,
-          lng: c.longitude,
-          price: c.minPrice,
-          sport: c.name.toLowerCase().includes('padel') ? 'PADEL' : 'FUTBOL',
-          isActive: c.id === activeId,
-        }))
-      );
-
-      const script = `
-        if (window.setClubMarkers) {
-          window.setClubMarkers(${dataStr});
-        }
-        true;
-      `;
-      webViewRef.current.injectJavaScript(script);
-    }
-  };
-
-  const handleWebViewMessage = (event: any) => {
+  const onWebViewMessage = (event: any) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
       if (data.type === 'SELECT_CLUB') {
-        const found = clubs.find(c => c.id === data.clubId);
-        if (found) {
-          setSelectedClub(found);
-          updateMapMarkers(clubs, found.id);
+        const club = clubs.find(c => c.id === data.clubId);
+        if (club) {
+          setSelectedClub(club);
         }
-      } else if (data.type === 'MAP_READY') {
-        updateMapMarkers(clubs, selectedClub?.id);
-        sendCoordsToMap(userLocation.latitude, userLocation.longitude, 15);
       }
-    } catch (err) {
-      console.log('Error parsing webview message:', err);
+    } catch (e) {
+      console.log('Error parsing WebView message:', e);
     }
   };
 
-  // Leaflet Dark Mode Real Map HTML Template
-  const mapHtml = `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-        <style>
-          * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-          html, body, #map { width: 100%; height: 100%; background: #07080a; }
-          
-          /* Custom User Pulse Pin */
-          .user-pulse-marker {
-            position: relative;
-            width: 44px;
-            height: 44px;
-          }
-          .user-pulse-ring {
-            position: absolute;
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            background: rgba(252, 28, 70, 0.35);
-            border: 1.5px solid #fc1c46;
-            animation: pulse 2s infinite ease-out;
-          }
-          .user-dot {
-            position: absolute;
-            top: 12px;
-            left: 12px;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: #fc1c46;
-            border: 3px solid #ffffff;
-            box-shadow: 0 0 14px rgba(252, 28, 70, 0.9);
-          }
-          @keyframes pulse {
-            0% { transform: scale(0.6); opacity: 1; }
-            100% { transform: scale(1.9); opacity: 0; }
-          }
+  const filteredClubs = clubs.filter(c => 
+    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.city.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-          /* Club Price Badges */
-          .custom-pin-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            cursor: pointer;
-            transform: translate(-50%, -100%);
-          }
-          .custom-pin-pill {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            padding: 6px 11px;
-            border-radius: 16px;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            font-size: 12px;
-            font-weight: 700;
-            white-space: nowrap;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.7);
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-          }
-          .custom-pin-pill.inactive {
-            background: #141720;
-            color: #f0f2f5;
-            border: 1px solid rgba(255,255,255,0.14);
-          }
-          .custom-pin-pill.active {
-            background: #fc1c46;
-            color: #ffffff;
-            border: 1.5px solid #ffffff;
-            transform: scale(1.12);
-            box-shadow: 0 0 20px rgba(252, 28, 70, 0.85);
-          }
-          .custom-pin-arrow {
-            width: 0;
-            height: 0;
-            border-left: 6px solid transparent;
-            border-right: 6px solid transparent;
-            margin-top: -1px;
-          }
-          .custom-pin-arrow.inactive {
-            border-top: 6px solid #141720;
-          }
-          .custom-pin-arrow.active {
-            border-top: 7px solid #fc1c46;
-          }
-          
-          /* Hide Leaflet default controls to fit our custom floating UI */
-          .leaflet-control-container .leaflet-top,
-          .leaflet-control-container .leaflet-bottom {
-            display: none;
-          }
-        </style>
-      </head>
-      <body>
-        <div id="map"></div>
-        <script>
-          var map = L.map('map', {
-            zoomControl: false,
-            attributionControl: false
-          }).setView([${userLocation.latitude}, ${userLocation.longitude}], 15);
+  const generateMapHtml = () => {
+    const clubsToRender = filteredClubs.length > 0 ? filteredClubs : clubs;
+    const clubsJson = JSON.stringify(
+      clubsToRender.map(c => {
+        const isPadel = c.name.toLowerCase().includes('padel') || c.name.toLowerCase().includes('pádel');
+        const sportIcon = isPadel ? '🎾' : '⚽';
+        const cleanName = c.name.split('-')[0].replace(/Complejo/gi, '').replace(/Canchas de/gi, '').trim();
+        return {
+          id: c.id,
+          name: cleanName,
+          lat: c.latitude,
+          lng: c.longitude,
+          sportIcon,
+          price: c.minPrice || 0,
+        };
+      })
+    );
 
-          // CartoDB Dark Matter Tiles
-          L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            maxZoom: 19,
-            subdomains: 'abcd',
-          }).addTo(map);
+    return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <style>
+    ${LEAFLET_CSS}
+    * { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background-color: #0b0f19;
+      overflow: hidden;
+    }
+    #map {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #0b0f19;
+    }
+    .custom-pin {
+      display: inline-flex;
+      align-items: center;
+      background-color: #0f172a;
+      color: #ffffff;
+      padding: 5px 10px;
+      border-radius: 18px;
+      border: 1.5px solid rgba(255,255,255,0.3);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.6);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .custom-pin.active {
+      background-color: #fc1c46;
+      border-color: #ffffff;
+      transform: scale(1.15);
+      box-shadow: 0 4px 18px rgba(252,28,70,0.8);
+    }
+    .user-pulse-dot {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #fc1c46;
+      border: 3px solid #ffffff;
+      box-shadow: 0 0 14px rgba(252, 28, 70, 1);
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script>
+    window.onerror = function(msg, url, line) {
+      if (window.ReactNativeWebView) {
+        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'LOG', msg: 'JS ERR: ' + msg + ' (' + line + ')' }));
+      }
+    };
 
-          // User Pulse Marker
-          var userIcon = L.divIcon({
-            className: 'user-marker-icon',
-            html: '<div class="user-pulse-marker"><div class="user-pulse-ring"></div><div class="user-dot"></div></div>',
-            iconSize: [44, 44],
-            iconAnchor: [22, 22]
-          });
-          var userMarker = L.marker([${userLocation.latitude}, ${userLocation.longitude}], { icon: userIcon, zIndexOffset: 500 }).addTo(map);
+    ${LEAFLET_JS}
 
-          // Dynamic Club Markers Group
-          var clubsLayerGroup = L.layerGroup().addTo(map);
+    var map = L.map('map', {
+      zoomControl: false,
+      attributionControl: false
+    }).setView([${userLocation.latitude}, ${userLocation.longitude}], 14);
 
-          window.setClubMarkers = function(clubsData) {
-            clubsLayerGroup.clearLayers();
-            clubsData.forEach(function(club) {
-              var isAct = club.isActive;
-              var html = '<div class="custom-pin-container" onclick="selectClub(\\'' + club.id + '\\')">' +
-                '<div class="custom-pin-pill ' + (isAct ? 'active' : 'inactive') + '">' +
-                  '<span>' + club.sport + '</span>' +
-                  '<span>$' + club.price.toLocaleString('es-AR') + '</span>' +
-                '</div>' +
-                '<div class="custom-pin-arrow ' + (isAct ? 'active' : 'inactive') + '"></div>' +
-              '</div>';
+    // Google Maps Tile Layer
+    L.tileLayer('https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+      maxZoom: 20,
+      subdomains: ['0', '1', '2', '3']
+    }).addTo(map);
 
-              var icon = L.divIcon({
-                className: 'club-custom-icon',
-                html: html,
-                iconSize: [90, 40],
-                iconAnchor: [45, 40]
-              });
+    // User Location Pin
+    var userIcon = L.divIcon({
+      className: 'user-icon-container',
+      html: '<div class="user-pulse-dot"></div>',
+      iconSize: [22, 22],
+      iconAnchor: [11, 11]
+    });
+    L.marker([${userLocation.latitude}, ${userLocation.longitude}], { icon: userIcon, zIndexOffset: 500 }).addTo(map);
 
-              var m = L.marker([club.lat, club.lng], { 
-                icon: icon, 
-                zIndexOffset: isAct ? 1000 : 100 
-              });
-              
-              m.on('click', function() {
-                selectClub(club.id);
-              });
-              
-              clubsLayerGroup.addLayer(m);
-            });
-          };
+    var clubsData = ${clubsJson};
+    var currentActiveId = "${selectedClub?.id || ''}";
+    var clubsGroup = L.layerGroup().addTo(map);
 
-          function selectClub(clubId) {
-            if (window.ReactNativeWebView) {
-              window.ReactNativeWebView.postMessage(JSON.stringify({
-                type: 'SELECT_CLUB',
-                clubId: clubId
-              }));
-            }
+    function buildClubIcon(club, isActive) {
+      return L.divIcon({
+        className: 'club-pin-container',
+        html: '<div class="custom-pin ' + (isActive ? 'active' : '') + '">' +
+                '<span style="margin-right:4px;">' + club.sportIcon + '</span>' +
+                '<span>' + club.name + '</span>' +
+                '<span style="margin-left:5px;color:#ff6b8b;font-weight:800;background:rgba(0,0,0,0.4);padding:1px 5px;border-radius:4px;font-size:10px;">$' + Number(club.price).toLocaleString('es-AR') + '</span>' +
+              '</div>',
+        iconSize: [140, 30],
+        iconAnchor: [70, 15]
+      });
+    }
+
+    function renderMarkers() {
+      clubsGroup.clearLayers();
+      clubsData.forEach(function(club) {
+        var isAct = club.id === currentActiveId;
+        var marker = L.marker([club.lat, club.lng], {
+          icon: buildClubIcon(club, isAct),
+          zIndexOffset: isAct ? 1000 : 100
+        });
+        marker.on('click', function(e) {
+          L.DomEvent.stopPropagation(e);
+          setActiveClub(club.id);
+          if (window.ReactNativeWebView) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'SELECT_CLUB', clubId: club.id }));
           }
+        });
+        clubsGroup.addLayer(marker);
+      });
+    }
 
-          // Notify React Native that map is ready
-          setTimeout(function() {
-            if (window.ReactNativeWebView) {
-              window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'MAP_READY' }));
-            }
-          }, 300);
-        </script>
-      </body>
-    </html>
-  `;
+    function setActiveClub(clubId) {
+      currentActiveId = clubId;
+      renderMarkers();
+      var target = clubsData.find(function(c) { return c.id === clubId; });
+      if (target) {
+        map.flyTo([target.lat, target.lng], 15, { animate: true, duration: 0.5 });
+      }
+    }
+
+    renderMarkers();
+
+    setTimeout(function() {
+      map.invalidateSize();
+    }, 200);
+
+    window.flyToUser = function(lat, lng) {
+      map.flyTo([lat, lng], 14, { animate: true, duration: 0.5 });
+    };
+
+    window.selectClubById = function(clubId) {
+      setActiveClub(clubId);
+    };
+  </script>
+</body>
+</html>`;
+  };
 
   return (
     <View style={styles.container}>
-      {/* ═══════════════════════════════════════════════════════
-          REAL INTERACTIVE DARK MODE MAP ENGINE (HYBRID)
-          ═══════════════════════════════════════════════════════ */}
-      <View style={StyleSheet.absoluteFillObject}>
-        <WebView
-          ref={webViewRef}
-          originWhitelist={['*']}
-          source={{ html: mapHtml }}
-          style={styles.webViewMap}
-          onMessage={handleWebViewMessage}
-          javaScriptEnabled={true}
-          domStorageEnabled={true}
-          scrollEnabled={false}
-          bounces={false}
-        />
-      </View>
-
-      {/* Floating Map Controls (Right Side) */}
-      <View style={styles.mapControls}>
-        <TouchableOpacity
-          activeOpacity={0.8}
-          style={styles.mapBtn}
-          onPress={() => {
-            requestUserLocation();
-            centerOnUser();
-          }}
-        >
-          <MapPinIcon size={18} color="#f8fafc" strokeWidth={2} />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          activeOpacity={0.8}
-          style={styles.mapBtn}
-          onPress={() => {
-            if (clubs.length > 0) {
-              const nextIndex =
-                (clubs.findIndex(c => c.id === selectedClub?.id) + 1) %
-                clubs.length;
-              handleSelectClub(clubs[nextIndex]);
-            }
-          }}
-        >
-          <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-            <Circle cx="12" cy="12" r="10" stroke="#f8fafc" strokeWidth={2} />
-            <Circle cx="12" cy="12" r="4" stroke="#f8fafc" strokeWidth={2} />
-            <Circle cx="12" cy="12" r="1" fill="#f8fafc" />
-          </Svg>
-        </TouchableOpacity>
-      </View>
-
-      {/* Floating Top Pill: "Buscar en esta zona" */}
-      <TouchableOpacity
-        activeOpacity={0.85}
-        style={styles.searchThisAreaBtn}
-        onPress={() => loadData()}
-      >
-        <RepeatIcon size={12} color="#ffffff" strokeWidth={2.2} />
-        <Text style={styles.searchThisAreaText}>Buscar en esta zona</Text>
-      </TouchableOpacity>
-
-      {/* ═══════════════════════════════════════════════════════
-          FLOATING TOP SEARCH BAR & SPORT FILTERS
-          ═══════════════════════════════════════════════════════ */}
-      <View style={styles.topFloatingHeader}>
-        {/* Search Input Bar with Lupita */}
-        <View style={styles.searchBarContainer}>
-          <View style={styles.searchBar}>
-            <View style={styles.searchIconBox}>
-              <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-                <Circle cx="11" cy="11" r="7" stroke="#fc1c46" strokeWidth={2.5} />
-                <Line
-                  x1="16.5"
-                  y1="16.5"
-                  x2="21.5"
-                  y2="21.5"
-                  stroke="#fc1c46"
-                  strokeWidth={3}
-                  strokeLinecap="round"
-                />
-              </Svg>
-            </View>
-
+      <View style={styles.topContainer}>
+        <View style={styles.searchRow}>
+          <View style={styles.searchBox}>
+            <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+              <Circle cx="11" cy="11" r="8" stroke="#fc1c46" strokeWidth={2.5} />
+              <Line x1="16.5" y1="16.5" x2="21" y2="21" stroke="#fc1c46" strokeWidth={2.5} strokeLinecap="round" />
+            </Svg>
             <TextInput
               style={styles.searchInput}
               placeholder="Buscar club, barrio o zona..."
-              placeholderTextColor="#8b92a0"
+              placeholderTextColor="#6b7280"
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
-
             {searchQuery.length > 0 ? (
-              <TouchableOpacity onPress={() => setSearchQuery('')} style={{ padding: 4 }}>
-                <Text style={{ color: '#8b92a0', fontSize: 16 }}>✕</Text>
+              <TouchableOpacity onPress={() => setSearchQuery('')}>
+                <Text style={{ color: '#6b7280', fontSize: 16 }}>✕</Text>
               </TouchableOpacity>
-            ) : (
-              <View style={styles.filterIconButton}>
-                <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
-                  <Line x1="4" y1="6" x2="20" y2="6" stroke="#fff" strokeWidth={2} strokeLinecap="round" />
-                  <Line x1="8" y1="12" x2="20" y2="12" stroke="#fff" strokeWidth={2} strokeLinecap="round" />
-                  <Line x1="12" y1="18" x2="20" y2="18" stroke="#fff" strokeWidth={2} strokeLinecap="round" />
-                </Svg>
-              </View>
-            )}
+            ) : null}
+          </View>
+
+          <View style={styles.toggleContainer}>
+            <TouchableOpacity
+              style={[styles.toggleBtn, viewMode === 'LIST' && styles.toggleBtnActive]}
+              onPress={() => setViewMode('LIST')}
+            >
+              <Text style={[styles.toggleText, viewMode === 'LIST' && styles.toggleTextActive]}>📋 Lista</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.toggleBtn, viewMode === 'MAP' && styles.toggleBtnActive]}
+              onPress={() => setViewMode('MAP')}
+            >
+              <Text style={[styles.toggleText, viewMode === 'MAP' && styles.toggleTextActive]}>🗺️ Mapa</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
-        {/* Sport Filter Chips */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filtersScroll}
-        >
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.sportsScroll}>
           <TouchableOpacity
-            style={[styles.filterPill, sport === 'PADEL' && styles.filterPillActive]}
+            style={[styles.sportChip, sport === 'PADEL' && styles.sportChipActive]}
             onPress={() => setSport('PADEL')}
           >
-            <PadelIcon size={14} color={sport === 'PADEL' ? '#fc1c46' : '#94a3b8'} strokeWidth={2} />
-            <Text
-              style={[
-                styles.filterPillText,
-                sport === 'PADEL' && styles.filterPillTextActive,
-              ]}
-            >
-              Pádel
-            </Text>
+            <Text style={styles.sportChipIcon}>🎾</Text>
+            <Text style={[styles.sportChipText, sport === 'PADEL' && styles.sportChipTextActive]}>Pádel</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.filterPill, sport === 'FUTBOL_5' && styles.filterPillActive]}
-            onPress={() => setSport('FUTBOL_5')}
+            style={[styles.sportChip, sport === 'FUTBOL' && styles.sportChipActive]}
+            onPress={() => setSport('FUTBOL')}
           >
-            <FootballIcon size={14} color={sport === 'FUTBOL_5' ? '#fc1c46' : '#94a3b8'} strokeWidth={2} />
-            <Text
-              style={[
-                styles.filterPillText,
-                sport === 'FUTBOL_5' && styles.filterPillTextActive,
-              ]}
-            >
-              Fútbol 5
-            </Text>
+            <Text style={styles.sportChipIcon}>⚽</Text>
+            <Text style={[styles.sportChipText, sport === 'FUTBOL' && styles.sportChipTextActive]}>Fútbol 5</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.filterPill, sport === 'TENIS' && styles.filterPillActive]}
+            style={[styles.sportChip, sport === 'TENIS' && styles.sportChipActive]}
             onPress={() => setSport('TENIS')}
           >
-            <TennisIcon size={14} color={sport === 'TENIS' ? '#fc1c46' : '#94a3b8'} strokeWidth={2} />
-            <Text
-              style={[
-                styles.filterPillText,
-                sport === 'TENIS' && styles.filterPillTextActive,
-              ]}
-            >
-              Tenis
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.filterPill, timeFilter === '20:00' && styles.filterPillActive]}
-            onPress={() => setTimeFilter(timeFilter === '20:00' ? '' : '20:00')}
-          >
-            <ClockIcon size={13} color={timeFilter === '20:00' ? '#fc1c46' : '#94a3b8'} strokeWidth={2} />
-            <Text
-              style={[
-                styles.filterPillText,
-                timeFilter === '20:00' && styles.filterPillTextActive,
-              ]}
-            >
-              20:00 hs
-            </Text>
+            <Text style={styles.sportChipIcon}>🎾</Text>
+            <Text style={[styles.sportChipText, sport === 'TENIS' && styles.sportChipTextActive]}>Tenis</Text>
           </TouchableOpacity>
         </ScrollView>
       </View>
 
-      {/* ═══════════════════════════════════════════════════════
-          FLOATING BOTTOM CARD: "CERCA DE VOS"
-          ═══════════════════════════════════════════════════════ */}
-      {selectedClub && (
-        <View style={styles.bottomCardWrapper}>
-          <View style={styles.cardHeaderRow}>
-            <Text style={styles.sectionHeaderTitle}>Cerca de vos</Text>
-            <TouchableOpacity onPress={() => onNavigateClub(selectedClub.id)}>
-              <Text style={styles.viewMoreText}>Ver club →</Text>
+      {viewMode === 'MAP' ? (
+        <View style={StyleSheet.absoluteFillObject}>
+          <WebView
+            ref={webViewRef}
+            source={{ html: generateMapHtml() }}
+            style={{ flex: 1, backgroundColor: '#0b0f19' }}
+            originWhitelist={['*']}
+            javaScriptEnabled={true}
+            domStorageEnabled={true}
+            mixedContentMode="always"
+            allowFileAccess={true}
+            scrollEnabled={false}
+            bounces={false}
+            onMessage={onWebViewMessage}
+          />
+
+          <View style={styles.mapControls}>
+            <TouchableOpacity activeOpacity={0.8} style={styles.mapBtn} onPress={centerOnUser}>
+              <MapPinIcon size={18} color="#f8fafc" strokeWidth={2} />
             </TouchableOpacity>
           </View>
 
-          {/* Club Obsidian Card */}
-          <View style={styles.clubCard}>
-            <View style={styles.cardTopRow}>
-              {/* Club Logo / Crimson Icon Box */}
-              <View style={styles.clubLogoBox}>
-                <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-                  <Rect x="3" y="3" width="18" height="18" rx="4" stroke="#fc1c46" strokeWidth={2} />
-                  <Line x1="12" y1="3" x2="12" y2="21" stroke="#fc1c46" strokeWidth={1.5} />
-                  <Line x1="3" y1="12" x2="21" y2="12" stroke="#fc1c46" strokeWidth={1.5} />
-                  <Circle cx="12" cy="12" r="3" stroke="#fc1c46" strokeWidth={1.5} />
-                </Svg>
-              </View>
+          {selectedClub ? (
+            <View style={styles.bottomCardContainer}>
+              <TouchableOpacity
+                activeOpacity={0.9}
+                style={styles.clubPreviewCard}
+                onPress={() => onNavigateClub(selectedClub.id)}
+              >
+                <Image source={{ uri: selectedClub.images[0] }} style={styles.cardImage} />
+                <View style={styles.cardContent}>
+                  <View style={styles.cardHeaderRow}>
+                    <Text style={styles.clubTitle} numberOfLines={1}>{selectedClub.name}</Text>
+                    <TouchableOpacity onPress={() => onNavigateClub(selectedClub.id)}>
+                      <Text style={styles.verClubLinkText}>Ver →</Text>
+                    </TouchableOpacity>
+                  </View>
 
-              {/* Title & Location Info */}
-              <View style={{ flex: 1, paddingLeft: 12 }}>
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  <Text style={styles.clubCardTitle} numberOfLines={1}>
-                    {selectedClub.name}
-                  </Text>
-                  <View style={styles.fixedSlotBadge}>
-                    <Text style={styles.fixedSlotBadgeText}>Turno fijo</Text>
+                  <View style={styles.locationRow}>
+                    <MapPinIcon size={12} color="#9ca3af" strokeWidth={1.8} />
+                    <Text style={styles.addressText} numberOfLines={1}>{selectedClub.address}</Text>
+                  </View>
+
+                  <View style={styles.clubMetaRow}>
+                    <StarIcon size={11} fill="#fbbf24" color="#fbbf24" />
+                    <Text style={styles.clubRatingText}>{selectedClub.rating}</Text>
+                    <Text style={styles.clubDotSeparator}>•</Text>
+                    <Text style={styles.clubDistanceText}>
+                      {`a ${calculateDistanceKm(userLocation.latitude, userLocation.longitude, selectedClub.latitude, selectedClub.longitude).toFixed(1)} km`}
+                    </Text>
+                  </View>
+
+                  <View style={styles.cardBottomRow}>
+                    <View>
+                      <Text style={styles.priceSmallLabel}>Precio desde</Text>
+                      <Text style={styles.priceCardValue}>{formatCurrency(selectedClub.minPrice)}</Text>
+                    </View>
+                    <TouchableOpacity
+                      style={styles.bookDirectButton}
+                      onPress={() => onNavigateCheckout(getActiveSlotForClub(selectedClub.id))}
+                    >
+                      <Text style={styles.bookDirectButtonText}>Reservar</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            </View>
+          ) : null}
+        </View>
+      ) : (
+        <ScrollView contentContainerStyle={styles.listScrollContent} showsVerticalScrollIndicator={false}>
+          <Text style={styles.listHeaderTitle}>
+            {`${filteredClubs.length} Complejos cerca de ${userLocation.city || 'tu ubicación'}`}
+          </Text>
+
+          {filteredClubs.map(item => {
+            const isPadel = item.name.toLowerCase().includes('padel') || item.name.toLowerCase().includes('pádel');
+            const distance = calculateDistanceKm(userLocation.latitude, userLocation.longitude, item.latitude, item.longitude).toFixed(1);
+
+            return (
+              <TouchableOpacity
+                key={item.id}
+                activeOpacity={0.9}
+                style={styles.listClubCard}
+                onPress={() => onNavigateClub(item.id)}
+              >
+                <View style={styles.listImageWrapper}>
+                  <Image source={{ uri: item.images[0] }} style={styles.listCardImage} />
+                  <View style={styles.listBadgeOverlay}>
+                    <Text style={styles.listBadgeText}>{isPadel ? '🎾 PÁDEL' : '⚽ FÚTBOL'}</Text>
                   </View>
                 </View>
 
-                <View style={styles.clubAddressRow}>
-                  <MapPinIcon size={12} color={colors.textSecondary} strokeWidth={1.8} />
-                  <Text style={styles.clubCardAddress} numberOfLines={1}>
-                    {selectedClub.address}
-                  </Text>
+                <View style={styles.listCardDetails}>
+                  <View style={styles.listRowHeader}>
+                    <Text style={styles.listClubTitle} numberOfLines={1}>{item.name}</Text>
+                    <View style={styles.listRatingBadge}>
+                      <StarIcon size={11} fill="#fbbf24" color="#fbbf24" />
+                      <Text style={styles.listRatingValue}>{item.rating}</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.listAddressRow}>
+                    <MapPinIcon size={12} color="#9ca3af" strokeWidth={1.8} />
+                    <Text style={styles.listAddressText} numberOfLines={1}>{item.address}</Text>
+                  </View>
+
+                  <Text style={styles.listDistanceSubtext}>{`a ${distance} km de tu ubicación`}</Text>
+
+                  <View style={styles.listFooterRow}>
+                    <View>
+                      <Text style={styles.priceSmallLabel}>Precio cancha desde</Text>
+                      <Text style={styles.priceCardValue}>{formatCurrency(item.minPrice)}</Text>
+                    </View>
+
+                    <View style={styles.listButtonsGroup}>
+                      <TouchableOpacity
+                        style={styles.listSecBtn}
+                        onPress={() => onNavigateClub(item.id)}
+                      >
+                        <Text style={styles.listSecBtnText}>Canchas</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.listPriBtn}
+                        onPress={() => onNavigateCheckout(getActiveSlotForClub(item.id))}
+                      >
+                        <Text style={styles.listPriBtnText}>Reservar →</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
                 </View>
-
-                <View style={styles.clubMetaRow}>
-                  <StarIcon size={11} fill="#FACC15" color="#FACC15" />
-                  <Text style={styles.clubRatingText}>{selectedClub.rating}</Text>
-                  <Text style={styles.clubDotSeparator}>·</Text>
-                  <Text style={styles.clubDistanceText}>
-                    a {calculateDistanceKm(userLocation.latitude, userLocation.longitude, selectedClub.latitude, selectedClub.longitude)} km
-                  </Text>
-                  <Text style={styles.clubDotSeparator}>·</Text>
-                  <ClockIcon size={11} color="#fc1c46" strokeWidth={2} />
-                  <Text style={styles.clubTimeSlotText}>Hoy 20:30 hs</Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Bottom Actions Row */}
-            <View style={styles.cardBottomRow}>
-              <View>
-                <Text style={styles.priceSmallLabel}>Desde</Text>
-                <Text style={styles.priceCardValue}>
-                  {formatCurrency(selectedClub.minPrice)}
-                </Text>
-              </View>
-
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                <TouchableOpacity
-                  style={styles.viewCourtsButton}
-                  onPress={() => onNavigateClub(selectedClub.id)}
-                >
-                  <Text style={styles.viewCourtsButtonText}>Canchas</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.bookDirectButton}
-                  onPress={() => {
-                    const slot = getActiveSlotForClub(selectedClub.id);
-                    onNavigateCheckout(slot);
-                  }}
-                >
-                  <Text style={styles.bookDirectButtonText}>Reservar →</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </View>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
       )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#07080a',
-  },
-  webViewMap: {
-    flex: 1,
-    backgroundColor: '#07080a',
-  },
-  mapControls: {
+  container: { flex: 1, backgroundColor: '#07080a' },
+  topContainer: {
     position: 'absolute',
-    right: 16,
-    top: height * 0.42,
+    top: Platform.OS === 'ios' ? 50 : 20,
+    left: 14,
+    right: 14,
     gap: 10,
-    zIndex: 50,
+    zIndex: 100,
   },
-  mapBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: 'rgba(20, 22, 31, 0.92)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  searchThisAreaBtn: {
-    position: 'absolute',
-    top: 130,
-    alignSelf: 'center',
-    backgroundColor: 'rgba(20, 22, 28, 0.9)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-    paddingVertical: 7,
-    paddingHorizontal: 16,
-    borderRadius: 9999,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 6,
-    zIndex: 50,
-  },
-  searchThisAreaText: {
-    color: '#ffffff',
-    fontSize: 11.5,
-    fontWeight: '700',
-  },
-  topFloatingHeader: {
-    position: 'absolute',
-    top: Platform.OS === 'ios' ? 12 : 8,
-    left: 0,
-    right: 0,
-    zIndex: 50,
-  },
-  searchBarContainer: {
-    paddingHorizontal: 16,
-    marginBottom: 10,
-  },
-  searchBar: {
+  searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(20, 22, 28, 0.95)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    gap: 10,
+  },
+  searchBox: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#12151e',
     borderRadius: 18,
     paddingHorizontal: 14,
-    paddingVertical: Platform.OS === 'ios' ? 12 : 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.6,
-    shadowRadius: 16,
-    elevation: 10,
-  },
-  searchIconBox: {
-    marginRight: 10,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    gap: 10,
   },
   searchInput: {
     flex: 1,
     color: '#ffffff',
-    fontSize: 14.5,
-    fontWeight: '500',
+    fontFamily: fonts.regular,
+    fontSize: 13,
   },
-  filterIconButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: '#232733',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  filtersScroll: {
-    paddingHorizontal: 16,
-    gap: 8,
-  },
-  filterPill: {
+  toggleContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(20, 22, 28, 0.9)',
+    backgroundColor: '#12151e',
+    borderRadius: 18,
+    padding: 3,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 9999,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+  },
+  toggleBtn: {
     paddingVertical: 7,
-    paddingHorizontal: 13,
-    marginRight: 8,
+    paddingHorizontal: 10,
+    borderRadius: 15,
   },
-  filterPillActive: {
-    backgroundColor: 'rgba(252, 28, 70, 0.16)',
-    borderColor: '#fc1c46',
+  toggleBtnActive: {
+    backgroundColor: '#fc1c46',
   },
-  filterPillIcon: {
-    fontSize: 12,
-    marginRight: 5,
-  },
-  filterPillText: {
+  toggleText: {
     color: '#9ca3af',
-    fontSize: 12,
+    fontSize: 11.5,
     fontWeight: '600',
   },
-  filterPillTextActive: {
+  toggleTextActive: {
     color: '#ffffff',
     fontWeight: '700',
   },
-  bottomCardWrapper: {
-    position: 'absolute',
-    bottom: 84,
-    left: 14,
-    right: 14,
-    zIndex: 40,
+  sportsScroll: {
+    flexDirection: 'row',
   },
-  cardHeaderRow: {
+  sportChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#12151e',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 16,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    gap: 6,
+  },
+  sportChipActive: {
+    backgroundColor: '#fc1c46',
+    borderColor: '#fc1c46',
+  },
+  sportChipIcon: { fontSize: 12 },
+  sportChipText: { color: '#9ca3af', fontSize: 11.5, fontFamily: fonts.medium },
+  sportChipTextActive: { color: '#ffffff', fontFamily: fonts.bold },
+
+  /* LIST VIEW STYLES */
+  listScrollContent: {
+    paddingTop: Platform.OS === 'ios' ? 150 : 120,
+    paddingHorizontal: 14,
+    paddingBottom: 110,
+  },
+  listHeaderTitle: {
+    color: '#ffffff',
+    fontSize: 15,
+    fontFamily: fonts.bold,
+    marginBottom: 12,
+  },
+  listClubCard: {
+    backgroundColor: '#12151e',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    marginBottom: 14,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  listImageWrapper: {
+    height: 140,
+    width: '100%',
+    position: 'relative',
+  },
+  listCardImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  listBadgeOverlay: {
+    position: 'absolute',
+    bottom: 8,
+    left: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  listBadgeText: { color: '#ffffff', fontSize: 10, fontWeight: '800' },
+  listCardDetails: {
+    padding: 14,
+  },
+  listRowHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
-    paddingHorizontal: 4,
   },
-  sectionHeaderTitle: {
-    color: '#ffffff',
-    fontSize: 13.5,
-    fontWeight: '700',
-  },
-  viewMoreText: {
-    color: '#fc1c46',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  clubCard: {
-    backgroundColor: 'rgba(18, 20, 26, 0.96)',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    padding: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.8,
-    shadowRadius: 24,
-    elevation: 16,
-  },
-  cardTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  clubLogoBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: 'rgba(252, 28, 70, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(252, 28, 70, 0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  clubCardTitle: {
-    fontFamily: fonts.headingBold,
+  listClubTitle: {
     color: '#ffffff',
     fontSize: 16,
-    letterSpacing: -0.3,
-    maxWidth: '70%',
-  },
-  fixedSlotBadge: {
-    backgroundColor: '#fc1c46',
-    paddingVertical: 3,
-    paddingHorizontal: 8,
-    borderRadius: 9999,
-  },
-  fixedSlotBadgeText: {
+    fontWeight: '700',
     fontFamily: fonts.bold,
-    color: '#ffffff',
-    fontSize: 10,
-    letterSpacing: 0.3,
+    flex: 1,
+    marginRight: 8,
   },
-  clubAddressRow: {
+  listRatingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: 'rgba(251, 191, 36, 0.12)',
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  listRatingValue: { color: '#fbbf24', fontSize: 12, fontWeight: '700' },
+  listAddressRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    marginTop: 2,
-  },
-  clubCardAddress: {
-    fontFamily: fonts.regular,
-    color: '#8b92a0',
-    fontSize: 11.5,
-    marginTop: 2,
-  },
-  clubMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
     marginTop: 4,
   },
-  clubRatingText: {
-    color: '#fbbf24',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  clubDotSeparator: {
-    color: '#4b5563',
-    marginHorizontal: 4,
-  },
-  clubDistanceText: {
-    color: '#9ca3af',
-    fontSize: 11,
-  },
-  clubTimeSlotText: {
-    color: '#fc1c46',
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  cardBottomRow: {
+  listAddressText: { color: '#9ca3af', fontSize: 12, flex: 1 },
+  listDistanceSubtext: { color: '#6b7280', fontSize: 11, marginTop: 2 },
+  listFooterRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.05)',
+    marginTop: 12,
     paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.06)',
   },
-  priceSmallLabel: {
-    color: '#6b7280',
-    fontSize: 9.5,
-    textTransform: 'uppercase',
-  },
-  priceCardValue: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  viewCourtsButton: {
+  listButtonsGroup: { flexDirection: 'row', gap: 8 },
+  listSecBtn: {
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 10,
-    backgroundColor: '#202430',
+    backgroundColor: '#1f2430',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
-  viewCourtsButtonText: {
-    color: '#d1d5db',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  bookDirectButton: {
+  listSecBtnText: { color: '#d1d5db', fontSize: 12, fontWeight: '600' },
+  listPriBtn: {
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 10,
     backgroundColor: '#fc1c46',
-    shadowColor: '#fc1c46',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 4,
   },
-  bookDirectButtonText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: '700',
+  listPriBtnText: { color: '#ffffff', fontSize: 12, fontWeight: '700' },
+
+  /* MAP VIEW STYLES */
+  mapControls: { position: 'absolute', right: 16, top: height * 0.42, zIndex: 50 },
+  mapBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#12151e',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 6,
   },
+  markerPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 18,
+    backgroundColor: '#12151e',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  markerPillActive: {
+    backgroundColor: '#fc1c46',
+    borderColor: '#ffffff',
+    borderWidth: 1.5,
+  },
+  markerIcon: { fontSize: 12 },
+  markerName: { color: '#f1f5f9', fontSize: 11, fontWeight: '700', maxWidth: 90 },
+  markerNameActive: { color: '#ffffff' },
+  markerPrice: {
+    color: '#ff4d6d',
+    fontSize: 10.5,
+    fontWeight: '800',
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    paddingVertical: 2,
+    paddingHorizontal: 5,
+    borderRadius: 6,
+  },
+  markerPriceActive: { color: '#ffffff' },
+  bottomCardContainer: { position: 'absolute', bottom: 80, left: 14, right: 14, zIndex: 50 },
+  clubPreviewCard: {
+    backgroundColor: '#12151e',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    padding: 12,
+    flexDirection: 'row',
+    gap: 12,
+    elevation: 12,
+  },
+  cardImage: { width: 90, height: 90, borderRadius: 14, resizeMode: 'cover' },
+  cardContent: { flex: 1, justifyContent: 'space-between' },
+  cardHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  clubTitle: { color: '#ffffff', fontSize: 14, fontWeight: '700', fontFamily: fonts.bold, flex: 1, marginRight: 6 },
+  verClubLinkText: { color: '#fc1c46', fontSize: 11, fontWeight: '700' },
+  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  addressText: { color: '#9ca3af', fontSize: 11.5, fontFamily: fonts.regular, flex: 1 },
+  clubMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  clubRatingText: { color: '#fbbf24', fontSize: 11, fontWeight: '700' },
+  clubDotSeparator: { color: '#4b5563', fontSize: 10 },
+  clubDistanceText: { color: '#9ca3af', fontSize: 11 },
+  cardBottomRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 },
+  priceSmallLabel: { color: '#6b7280', fontSize: 9, textTransform: 'uppercase' },
+  priceCardValue: { color: '#ffffff', fontSize: 14, fontWeight: '700' },
+  bookDirectButton: { paddingVertical: 7, paddingHorizontal: 14, borderRadius: 10, backgroundColor: '#fc1c46' },
+  bookDirectButtonText: { color: '#ffffff', fontSize: 11.5, fontWeight: '700' },
 });

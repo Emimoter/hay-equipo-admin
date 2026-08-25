@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Linking, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Linking, Platform, ActivityIndicator } from 'react-native';
 import Svg, { Path, Circle, Line, Rect } from 'react-native-svg';
 import { colors, typography, fonts, formatCurrency } from '../components/theme';
 import {
@@ -67,7 +67,17 @@ export const ClubDetailScreen: React.FC<ClubDetailScreenProps> = ({
     Linking.openURL(url);
   };
 
-  if (!club) return null;
+  if (!club) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', minHeight: 400 }]}>
+        <ActivityIndicator size="large" color="#fc1c46" />
+        <Text style={{ color: '#9ca3af', fontSize: 12, marginTop: 12, fontFamily: fonts.medium }}>Cargando club...</Text>
+        <TouchableOpacity style={{ marginTop: 24, paddingVertical: 10, paddingHorizontal: 20, backgroundColor: '#1f2430', borderRadius: 12 }} onPress={onNavigateBack}>
+          <Text style={{ color: '#ffffff', fontSize: 13, fontWeight: '700' }}>← Volver</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
@@ -124,36 +134,36 @@ export const ClubDetailScreen: React.FC<ClubDetailScreenProps> = ({
         {/* Amenities */}
         <Text style={styles.sectionTitle}>Servicios e Instalaciones</Text>
         <View style={styles.amenitiesGrid}>
-          {club.amenities.parking && (
+          {Boolean(club.amenities?.parking) ? (
             <View style={styles.amenityItem}>
               <ParkingIcon size={15} color="#fc1c46" strokeWidth={2} />
               <Text style={styles.amenityText}>Estacionamiento</Text>
             </View>
-          )}
-          {club.amenities.showers && (
+          ) : null}
+          {Boolean(club.amenities?.showers) ? (
             <View style={styles.amenityItem}>
               <RoofIcon size={15} color="#fc1c46" strokeWidth={2} />
               <Text style={styles.amenityText}>Vestuarios</Text>
             </View>
-          )}
-          {club.amenities.buffet && (
+          ) : null}
+          {Boolean(club.amenities?.buffet) ? (
             <View style={styles.amenityItem}>
               <CoffeeIcon size={15} color="#fc1c46" strokeWidth={2} />
               <Text style={styles.amenityText}>Buffet / Bar</Text>
             </View>
-          )}
-          {club.amenities.covered && (
+          ) : null}
+          {Boolean(club.amenities?.covered) ? (
             <View style={styles.amenityItem}>
               <RoofIcon size={15} color="#fc1c46" strokeWidth={2} />
               <Text style={styles.amenityText}>Canchas Techadas</Text>
             </View>
-          )}
-          {club.amenities.equipmentRental && (
+          ) : null}
+          {Boolean(club.amenities?.equipmentRental) ? (
             <View style={styles.amenityItem}>
               <PadelIcon size={15} color="#fc1c46" strokeWidth={2} />
               <Text style={styles.amenityText}>Alquiler de paletas</Text>
             </View>
-          )}
+          ) : null}
         </View>
 
         {/* Court Selection Tabs */}

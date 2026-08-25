@@ -1,0 +1,9 @@
+node_modules
+.next
+apps/mobile/android/app/build
+apps/mobile/android/.gradle
+apps/mobile/node_modules
+apps/web-club/node_modules
+apps/web-club/.next
+apps/web-public/node_modules
+.git

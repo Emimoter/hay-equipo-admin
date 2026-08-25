@@ -62,6 +62,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const [userLocation, setUserLocation] = useState<UserLocationState>(DEFAULT_LOCATION);
   const [showQuickFinder, setShowQuickFinder] = useState<boolean>(false);
 
+  const [visibleClubsLimit, setVisibleClubsLimit] = useState<number>(5);
+
   useEffect(() => {
     initLocation();
   }, []);
@@ -72,6 +74,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   };
 
   useEffect(() => {
+    setVisibleClubsLimit(5);
     loadHomeData(selectedSport);
   }, [selectedSport]);
 
@@ -325,7 +328,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         </TouchableOpacity>
       </View>
 
-      {clubs.map((club) => (
+      {clubs.slice(0, visibleClubsLimit).map((club) => (
         <TouchableOpacity
           key={club.id}
           style={styles.clubCard}
@@ -369,24 +372,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
             {/* Amenities en chips con iconos vectoriales */}
             <View style={styles.amenitiesRow}>
-              {club.amenities.covered && (
+              {Boolean(club.amenities?.covered) ? (
                 <View style={styles.amenityTag}>
                   <RoofIcon size={12} color={colors.textSecondary} strokeWidth={1.8} />
                   <Text style={styles.amenityText}>Techada</Text>
                 </View>
-              )}
-              {club.amenities.parking && (
+              ) : null}
+              {Boolean(club.amenities?.parking) ? (
                 <View style={styles.amenityTag}>
                   <ParkingIcon size={12} color={colors.textSecondary} strokeWidth={1.8} />
                   <Text style={styles.amenityText}>Parking</Text>
                 </View>
-              )}
-              {club.amenities.buffet && (
+              ) : null}
+              {Boolean(club.amenities?.buffet) ? (
                 <View style={styles.amenityTag}>
                   <CoffeeIcon size={12} color={colors.textSecondary} strokeWidth={1.8} />
                   <Text style={styles.amenityText}>Bar & Buffet</Text>
                 </View>
-              )}
+              ) : null}
             </View>
 
             {/* Footer de precio y botón */}
@@ -402,6 +405,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </View>
         </TouchableOpacity>
       ))}
+
+      {clubs.length > visibleClubsLimit ? (
+        <TouchableOpacity
+          style={styles.loadMoreClubsButton}
+          onPress={() => setVisibleClubsLimit(prev => prev + 5)}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.loadMoreClubsText}>
+            {`Ver más complejos (${clubs.length - visibleClubsLimit} más) ↓`}
+          </Text>
+        </TouchableOpacity>
+      ) : null}
       </ScrollView>
 
       {/* ═══════════════════════════════════════════════════════
@@ -948,5 +963,22 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     color: colors.textMuted,
     fontSize: 13,
+  },
+  loadMoreClubsButton: {
+    backgroundColor: '#141722',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 16,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
+    marginBottom: 20,
+  },
+  loadMoreClubsText: {
+    color: '#fc1c46',
+    fontSize: 13,
+    fontWeight: '700',
+    fontFamily: fonts.bold,
   },
 });

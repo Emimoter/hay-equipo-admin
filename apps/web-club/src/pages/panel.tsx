@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
+import { getClubsFirestore, getCourtsFirestore, saveCourtsFirestore, saveClubsFirestore } from '../services/firebase';
 
 /* ────────────────────────────────────────────────────────────
    Types & Interfaces
@@ -205,17 +206,69 @@ const Icons = {
 export default function ClubPanel() {
   const router = useRouter();
   const [authed, setAuthed] = useState(false);
-  const [clubName, setClubName] = useState('Club Padel Center');
+  const [clubName, setClubName] = useState('Laverde Jara - Canchas de Césped Sintético');
   const [activeTab, setActiveTab] = useState<NavTab>('DASHBOARD');
   const [dateFilter, setDateFilter] = useState('Hoy');
   const [selectedSportFilter, setSelectedSportFilter] = useState<string>('TODOS');
   const [showToast, setShowToast] = useState(true);
+
+  // Firestore Sync State
+  const [allClubs, setAllClubs] = useState<any[]>([]);
+  const [allCourts, setAllCourts] = useState<any[]>([]);
+  const [selectedClubId, setSelectedClubId] = useState<string>('club-laverde-jara');
 
   // Core Data state
   const [slots, setSlots] = useState<CourtSlot[]>(INITIAL_SLOTS);
   const [courts, setCourts] = useState<CourtInfo[]>(INITIAL_COURTS);
   const [players, setPlayers] = useState<PlayerRecord[]>(INITIAL_PLAYERS);
   const [searchPlayer, setSearchPlayer] = useState('');
+
+  // Fetch Firestore clubs and courts on mount
+  useEffect(() => {
+    async function loadFirestoreData() {
+      const clubsData = await getClubsFirestore();
+      const courtsData = await getCourtsFirestore();
+      if (clubsData && clubsData.length > 0) {
+        setAllClubs(clubsData);
+        const initialClub = clubsData.find((c: any) => c.id === 'club-laverde-jara') || clubsData[0];
+        setSelectedClubId(initialClub.id);
+        setClubName(initialClub.name);
+      }
+      if (courtsData && courtsData.length > 0) {
+        setAllCourts(courtsData);
+      }
+    }
+    loadFirestoreData();
+  }, []);
+
+  // Sync displayed courts when selected club changes or courts update
+  useEffect(() => {
+    if (allClubs.length > 0 && selectedClubId) {
+      const matchedClub = allClubs.find((c: any) => c.id === selectedClubId);
+      if (matchedClub) setClubName(matchedClub.name);
+    }
+    if (allCourts.length > 0 && selectedClubId) {
+      const clubCourts = allCourts.filter((c: any) => c.clubId === selectedClubId).map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        sport: c.sportType === 'PADEL' ? 'Pádel' : c.sportType === 'FUTBOL_7' ? 'Fútbol 7' : 'Fútbol 5',
+        surface: c.surface || 'Césped Sintético',
+        active: c.active !== false,
+        pausedForWeather: c.pausedForWeather || false,
+        price: c.pricePerHour || 28000,
+        indoor: c.isCovered !== false,
+        lighting: c.hasLighting !== false,
+        hasCameras: c.hasCameras !== false,
+        hasHeating: c.hasHeating || false,
+        openTime: '08:00',
+        closeTime: '00:00',
+        slotDuration: c.durationMinutes || 90
+      }));
+      if (clubCourts.length > 0) {
+        setCourts(clubCourts);
+      }
+    }
+  }, [selectedClubId, allClubs, allCourts]);
 
   // Turnos Fijos State
   const [fixedSlots, setFixedSlots] = useState<FixedSlot[]>([
@@ -534,6 +587,36 @@ export default function ClubPanel() {
     setShowCourtModal(true);
   };
 
+  const syncAllCourtsToFirestore = (updatedLocalCourts: CourtInfo[]) => {
+    let newAllCourts = [...allCourts];
+    for (const lc of updatedLocalCourts) {
+      const idx = newAllCourts.findIndex((ac: any) => ac.id === lc.id);
+      const sportType = lc.sport.toLowerCase().includes('pádel') || lc.sport.toLowerCase().includes('padel') ? 'PADEL' : lc.sport.toLowerCase().includes('7') ? 'FUTBOL_7' : 'FUTBOL_5';
+      const courtData = {
+        id: lc.id,
+        clubId: selectedClubId,
+        sportType,
+        name: lc.name,
+        surface: lc.surface,
+        isCovered: lc.indoor,
+        hasLighting: lc.lighting,
+        durationMinutes: lc.slotDuration || 90,
+        pricePerHour: lc.price,
+        active: lc.active,
+        pausedForWeather: lc.pausedForWeather || false,
+        priceFixedSlotDiscount: 0.12,
+        images: []
+      };
+      if (idx >= 0) {
+        newAllCourts[idx] = { ...newAllCourts[idx], ...courtData };
+      } else {
+        newAllCourts.push(courtData);
+      }
+    }
+    setAllCourts(newAllCourts);
+    saveCourtsFirestore(newAllCourts);
+  };
+
   // Save Court (Add or Edit)
   const handleSaveCourt = (e: React.FormEvent) => {
     e.preventDefault();
@@ -545,8 +628,10 @@ export default function ClubPanel() {
       return;
     }
 
+    let updatedList: CourtInfo[] = [];
+
     if (editingCourtId) {
-      setCourts(prev => prev.map(c => c.id === editingCourtId ? {
+      updatedList = courts.map(c => c.id === editingCourtId ? {
         ...c,
         name: trimmedName,
         sport: courtSportInput,
@@ -559,10 +644,10 @@ export default function ClubPanel() {
         hasCameras: courtCamerasInput,
         hasHeating: courtHeatingInput,
         slotDuration: courtSlotDurationInput,
-      } : c));
+      } : c);
     } else {
       const newCourt: CourtInfo = {
-        id: `c-${Date.now()}`,
+        id: `court-${selectedClubId}-${Date.now()}`,
         name: courtNameInput.trim(),
         sport: courtSportInput,
         surface: courtSurfaceInput,
@@ -575,9 +660,13 @@ export default function ClubPanel() {
         lighting: courtLightingInput,
         hasCameras: courtCamerasInput,
         hasHeating: courtHeatingInput,
+        slotDuration: courtSlotDurationInput,
       };
-      setCourts(prev => [...prev, newCourt]);
+      updatedList = [...courts, newCourt];
     }
+
+    setCourts(updatedList);
+    syncAllCourtsToFirestore(updatedList);
     setShowCourtModal(false);
   };
 
@@ -629,11 +718,15 @@ export default function ClubPanel() {
 
   // Toggle Court Active / Weather Pause
   const handleToggleCourtActive = (id: string) => {
-    setCourts(prev => prev.map(c => c.id === id ? { ...c, active: !c.active } : c));
+    const updated = courts.map(c => c.id === id ? { ...c, active: !c.active } : c);
+    setCourts(updated);
+    syncAllCourtsToFirestore(updated);
   };
 
   const handleToggleWeatherPause = (id: string) => {
-    setCourts(prev => prev.map(c => c.id === id ? { ...c, pausedForWeather: !c.pausedForWeather } : c));
+    const updated = courts.map(c => c.id === id ? { ...c, pausedForWeather: !c.pausedForWeather } : c);
+    setCourts(updated);
+    syncAllCourtsToFirestore(updated);
   };
 
   // Select player in Modal
@@ -1365,9 +1458,33 @@ export default function ClubPanel() {
                 padding: '6px 14px',
               }}>
                 <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: '#4ade80', boxShadow: '0 0 8px #4ade80' }} />
-                <span style={{ fontSize: 11, fontWeight: 700, color: '#ffffff', letterSpacing: '1px', textTransform: 'uppercase' }}>
-                  {clubName}
-                </span>
+                {allClubs.length > 0 ? (
+                  <select
+                    value={selectedClubId}
+                    onChange={(e) => setSelectedClubId(e.target.value)}
+                    style={{
+                      backgroundColor: 'transparent',
+                      color: '#ffffff',
+                      border: 'none',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      letterSpacing: '1px',
+                      cursor: 'pointer',
+                      outline: 'none',
+                      maxWidth: 240,
+                    }}
+                  >
+                    {allClubs.map((c: any) => (
+                      <option key={c.id} value={c.id} style={{ backgroundColor: '#16181e', color: '#ffffff' }}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#ffffff', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                    {clubName}
+                  </span>
+                )}
               </div>
             </div>
 

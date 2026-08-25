@@ -98,14 +98,14 @@ export const MyBookingsScreen: React.FC<MyBookingsScreenProps> = ({
           <Text style={styles.priceText}>{formatCurrency(booking.totalPrice)}</Text>
         </View>
 
-        {booking.paymentType === 'SPLIT' && (
+        {booking.paymentType === 'SPLIT' ? (
           <View style={styles.splitNoticeBox}>
             <ZapIcon size={12} color="#fc1c46" strokeWidth={2} />
             <Text style={styles.splitNoticeText}>Pago Dividido (Split) activo entre jugadores</Text>
           </View>
-        )}
+        ) : null}
 
-        {isUpcoming && (
+        {isUpcoming ? (
           <View style={styles.actionsGrid}>
             <TouchableOpacity
               style={styles.actionBtnPrimary}
@@ -128,7 +128,7 @@ export const MyBookingsScreen: React.FC<MyBookingsScreenProps> = ({
               <Text style={styles.cancelBtnText}>Cancelar</Text>
             </TouchableOpacity>
           </View>
-        )}
+        ) : null}
       </View>
     );
   };

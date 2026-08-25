@@ -1,5 +1,4 @@
 {
-  "name": "hay-equipo-admin",
   "version": 2,
   "framework": "nextjs",
   "buildCommand": "next build apps/web-club",

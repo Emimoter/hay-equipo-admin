@@ -26,7 +26,16 @@ function MainAppContent() {
   const [activeSplitBooking, setActiveSplitBooking] = useState<Booking | null>(null);
   const [searchInitialSport, setSearchInitialSport] = useState<string>('PADEL');
 
+  const handleTabChange = (tab: TabType) => {
+    setSelectedClubId(null);
+    setSelectedSlotForCheckout(null);
+    setActiveSplitBooking(null);
+    setActiveTab(tab);
+  };
+
   const navigateToSearch = (sport = 'PADEL') => {
+    setSelectedClubId(null);
+    setSelectedSlotForCheckout(null);
     setSearchInitialSport(sport);
     setActiveTab('SEARCH');
   };
@@ -46,6 +55,7 @@ function MainAppContent() {
 
   const navigateToBookingSuccess = (booking: Booking) => {
     setSelectedSlotForCheckout(null);
+    setSelectedClubId(null);
     setActiveTab('BOOKINGS');
   };
 
@@ -99,8 +109,8 @@ function MainAppContent() {
             onNavigateSearch={navigateToSearch}
             onNavigateClub={navigateToClub}
             onNavigateCheckout={navigateToCheckout}
-            onNavigateFixedSlots={() => setActiveTab('PAYMENTS')}
-            onNavigateProfile={() => setActiveTab('PROFILE')}
+            onNavigateFixedSlots={() => handleTabChange('PAYMENTS')}
+            onNavigateProfile={() => handleTabChange('PROFILE')}
           />
         );
       case 'SEARCH':
@@ -115,7 +125,7 @@ function MainAppContent() {
         return (
           <MyBookingsScreen
             onNavigateSplit={navigateToSplit}
-            onNavigateNewBooking={() => setActiveTab('SEARCH')}
+            onNavigateNewBooking={() => handleTabChange('SEARCH')}
           />
         );
       case 'PAYMENTS':
@@ -135,7 +145,7 @@ function MainAppContent() {
       {/* ────────────────────────────────────────────────────────────
           FLOATING DOCK BOTTOM NAVIGATION (Exact Mockup Reference)
           ──────────────────────────────────────────────────────────── */}
-      {!selectedSlotForCheckout && !activeSplitBooking && !selectedClubId && !showAuthModal && (
+      {!selectedSlotForCheckout && !activeSplitBooking && !showAuthModal && (
         <View style={styles.floatingDockContainer}>
           <View style={styles.floatingDock}>
 
@@ -143,7 +153,7 @@ function MainAppContent() {
             <TouchableOpacity
               activeOpacity={0.7}
               style={[styles.navTab, activeTab === 'HOME' && styles.navTabActive]}
-              onPress={() => setActiveTab('HOME')}
+              onPress={() => handleTabChange('HOME')}
             >
               <HomeIcon color={activeTab === 'HOME' ? '#fc1c46' : '#6b7280'} size={20} />
               <Text style={[styles.navLabel, activeTab === 'HOME' && styles.navLabelActive]}>Inicio</Text>
@@ -154,7 +164,7 @@ function MainAppContent() {
             <TouchableOpacity
               activeOpacity={0.7}
               style={[styles.navTab, activeTab === 'SEARCH' && styles.navTabActive]}
-              onPress={() => setActiveTab('SEARCH')}
+              onPress={() => handleTabChange('SEARCH')}
             >
               <SearchIcon color={activeTab === 'SEARCH' ? '#fc1c46' : '#6b7280'} size={20} />
               <Text style={[styles.navLabel, activeTab === 'SEARCH' && styles.navLabelActive]}>Explorar</Text>
@@ -165,7 +175,7 @@ function MainAppContent() {
             <TouchableOpacity
               activeOpacity={0.7}
               style={[styles.navTab, activeTab === 'BOOKINGS' && styles.navTabActive]}
-              onPress={() => setActiveTab('BOOKINGS')}
+              onPress={() => handleTabChange('BOOKINGS')}
             >
               <CalendarIcon color={activeTab === 'BOOKINGS' ? '#fc1c46' : '#6b7280'} size={20} />
               <Text style={[styles.navLabel, activeTab === 'BOOKINGS' && styles.navLabelActive]}>Reservas</Text>
@@ -176,7 +186,7 @@ function MainAppContent() {
             <TouchableOpacity
               activeOpacity={0.7}
               style={[styles.navTab, activeTab === 'PAYMENTS' && styles.navTabActive]}
-              onPress={() => setActiveTab('PAYMENTS')}
+              onPress={() => handleTabChange('PAYMENTS')}
             >
               <WalletIcon color={activeTab === 'PAYMENTS' ? '#fc1c46' : '#6b7280'} size={20} />
               <Text style={[styles.navLabel, activeTab === 'PAYMENTS' && styles.navLabelActive]}>Pagos</Text>
@@ -187,7 +197,7 @@ function MainAppContent() {
             <TouchableOpacity
               activeOpacity={0.7}
               style={[styles.navTab, activeTab === 'PROFILE' && styles.navTabActive]}
-              onPress={() => setActiveTab('PROFILE')}
+              onPress={() => handleTabChange('PROFILE')}
             >
               <ProfileIcon color={activeTab === 'PROFILE' ? '#fc1c46' : '#6b7280'} size={20} />
               <Text style={[styles.navLabel, activeTab === 'PROFILE' && styles.navLabelActive]}>Perfil</Text>
