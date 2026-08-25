@@ -28,7 +28,7 @@ import {
 } from '../components/AppIcons';
 import { mobileApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { getRealUserLocation, UserLocationState, DEFAULT_LOCATION } from '../services/location';
+import { getRealUserLocation, UserLocationState, DEFAULT_LOCATION, calculateDistanceKm } from '../services/location';
 import { QuickBookingFinderModal } from '../components/QuickBookingFinderModal';
 import { Club, TimeSlot } from '@hay-equipo/contracts';
 
@@ -367,7 +367,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
             <View style={styles.clubLocationRow}>
               <MapPinIcon size={13} color={colors.textSecondary} strokeWidth={1.8} />
-              <Text style={styles.clubAddress}>{club.address} · {club.city}</Text>
+              <Text style={styles.clubAddress} numberOfLines={1}>
+                {club.address} · {club.city}
+                {club.latitude && club.longitude
+                  ? ` · a ${calculateDistanceKm(userLocation.latitude, userLocation.longitude, club.latitude, club.longitude).toFixed(1)} km`
+                  : ''}
+              </Text>
             </View>
 
             {/* Amenities en chips con iconos vectoriales */}

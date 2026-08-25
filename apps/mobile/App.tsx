@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, StatusBar, Platform, ActivityIndicator } from 'react-native';
 import { colors, fonts } from './src/components/theme';
 import { useFonts } from 'expo-font';
@@ -14,6 +14,7 @@ import { MyBookingsScreen } from './src/screens/MyBookingsScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 import { TimeSlot, Booking } from '@hay-equipo/contracts';
 import { HomeIcon, SearchIcon, CalendarIcon, WalletIcon, ProfileIcon } from './src/components/NavIcons';
+import { requestLocationPermissions, getRealUserLocation } from './src/services/location';
 
 type TabType = 'HOME' | 'SEARCH' | 'BOOKINGS' | 'PAYMENTS' | 'PROFILE';
 
@@ -25,6 +26,15 @@ function MainAppContent() {
   const [selectedSlotForCheckout, setSelectedSlotForCheckout] = useState<TimeSlot | null>(null);
   const [activeSplitBooking, setActiveSplitBooking] = useState<Booking | null>(null);
   const [searchInitialSport, setSearchInitialSport] = useState<string>('PADEL');
+
+  useEffect(() => {
+    // Proactively request GPS location permissions upon opening the app
+    const initializeLocation = async () => {
+      await requestLocationPermissions();
+      await getRealUserLocation(true);
+    };
+    initializeLocation();
+  }, []);
 
   const handleTabChange = (tab: TabType) => {
     setSelectedClubId(null);

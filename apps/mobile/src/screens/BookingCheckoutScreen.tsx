@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import Svg, { Rect, Line, Circle } from 'react-native-svg';
 import { colors, typography, formatCurrency } from '../components/theme';
+import { MapPinIcon, ShieldCheckIcon, ZapIcon } from '../components/AppIcons';
 import { mobileApi } from '../services/api';
 import { TimeSlot, Booking } from '@hay-equipo/contracts';
 
@@ -77,7 +79,10 @@ export const BookingCheckoutScreen: React.FC<BookingCheckoutScreenProps> = ({
         <View style={styles.courtHeader}>
           <View>
             <Text style={styles.courtName}>{slot.courtName}</Text>
-            <Text style={styles.clubName}>📍 {slot.clubName}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
+              <MapPinIcon size={12} color={colors.textSecondary} strokeWidth={1.8} />
+              <Text style={styles.clubName}>{slot.clubName}</Text>
+            </View>
           </View>
           <View style={styles.sportBadge}>
             <Text style={styles.sportBadgeText}>{slot.sportType}</Text>
@@ -122,7 +127,8 @@ export const BookingCheckoutScreen: React.FC<BookingCheckoutScreenProps> = ({
           onPress={() => setPaymentType('SPLIT')}
         >
           <View style={styles.splitBadge}>
-            <Text style={styles.splitBadgeText}>MÁS ELEGIDO ⚡</Text>
+            <ZapIcon size={10} color="#fc1c46" strokeWidth={2.5} />
+            <Text style={[styles.splitBadgeText, { marginLeft: 3 }]}>MÁS ELEGIDO</Text>
           </View>
           <View style={styles.radioRow}>
             <View style={[styles.radioCircle, paymentType === 'SPLIT' && styles.radioCircleActive]} />
@@ -184,18 +190,26 @@ export const BookingCheckoutScreen: React.FC<BookingCheckoutScreenProps> = ({
           <ActivityIndicator color={colors.background} />
         ) : (
           <Text style={styles.payButtonText}>
-            💳 Pagar con Mercado Pago · {paymentType === 'FULL' ? formatCurrency(grandTotal) : formatCurrency(perPersonAmount)}
+            Pagar con Mercado Pago · {paymentType === 'FULL' ? formatCurrency(grandTotal) : formatCurrency(perPersonAmount)}
           </Text>
         )}
       </TouchableOpacity>
 
-      <Text style={styles.guaranteeText}>🔒 Pago 100% seguro y encriptado con Mercado Pago</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 14 }}>
+        <ShieldCheckIcon size={13} color="#10B981" strokeWidth={2} />
+        <Text style={styles.guaranteeText}>Pago 100% seguro y encriptado con Mercado Pago</Text>
+      </View>
 
       {/* Simulated MP Checkout Modal Overlay */}
       {mpProcessingModal ? (
         <View style={styles.mpModalOverlay}>
           <View style={styles.mpModalCard}>
-            <Text style={{ fontSize: 32, marginBottom: 12 }}>💳</Text>
+            <View style={{ marginBottom: 12, alignItems: 'center' }}>
+              <Svg width={36} height={36} viewBox="0 0 24 24" fill="none">
+                <Rect x="2" y="5" width="20" height="14" rx="3" stroke="#009EE3" strokeWidth={2} />
+                <Line x1="2" y1="10" x2="22" y2="10" stroke="#009EE3" strokeWidth={1.8} />
+              </Svg>
+            </View>
             <Text style={styles.mpModalTitle}>Mercado Pago</Text>
             <Text style={styles.mpModalSub}>Procesando pago seguro...</Text>
             <ActivityIndicator size="large" color="#009EE3" style={{ marginVertical: 20 }} />

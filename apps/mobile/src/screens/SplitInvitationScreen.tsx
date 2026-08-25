@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Share, Linking } from 'react-native';
 import { colors, typography, formatCurrency } from '../components/theme';
+import {
+  CalendarIcon,
+  ClockIcon,
+  WhatsAppIcon,
+  LinkIcon,
+  TrophyIcon,
+  CheckCircleIcon,
+  ZapIcon,
+} from '../components/AppIcons';
 import { mobileApi } from '../services/api';
 import { Booking } from '@hay-equipo/contracts';
 
@@ -34,7 +43,7 @@ export const SplitInvitationScreen: React.FC<SplitInvitationScreenProps> = ({
   const perShare = splitData?.participants?.[0]?.amount || Math.round(booking.totalPrice / 4);
 
   const handleShareWhatsApp = () => {
-    const message = `🎾 ¡Hola! Te sumé al partido de Pádel del ${booking.date} a las ${booking.startTime} hs en ${booking.clubName}.\n\nTu parte es de ${formatCurrency(perShare)}.\n\nPodés pagarla directamente acá en 1 clic: ${shareUrl}`;
+    const message = `¡Hola! Te sumé al partido de Pádel del ${booking.date} a las ${booking.startTime} hs en ${booking.clubName}.\n\nTu parte es de ${formatCurrency(perShare)}.\n\nPodés pagarla directamente acá en 1 clic: ${shareUrl}`;
     const url = `whatsapp://send?text=${encodeURIComponent(message)}`;
     Linking.openURL(url).catch(() => {
       Share.share({ message });
@@ -52,7 +61,9 @@ export const SplitInvitationScreen: React.FC<SplitInvitationScreenProps> = ({
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Success Badge */}
       <View style={styles.successBox}>
-        <Text style={{ fontSize: 40, marginBottom: 8 }}>🎉</Text>
+        <View style={{ marginBottom: 12, alignItems: 'center' }}>
+          <TrophyIcon size={44} color="#fc1c46" strokeWidth={1.8} />
+        </View>
         <Text style={styles.successTitle}>¡Cancha Asegurada!</Text>
         <Text style={styles.successSubtitle}>
           Tu parte ya está abonada. Ahora invitá a tus amigos para que paguen su cuota.
@@ -63,7 +74,13 @@ export const SplitInvitationScreen: React.FC<SplitInvitationScreenProps> = ({
       <View style={styles.matchCard}>
         <Text style={styles.matchClub}>{booking.clubName}</Text>
         <Text style={styles.matchCourt}>{booking.courtName}</Text>
-        <Text style={styles.matchDateTime}>📅 {booking.date} · ⏰ {booking.startTime} – {booking.endTime} hs</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
+          <CalendarIcon size={12} color="#fc1c46" strokeWidth={2} />
+          <Text style={styles.matchDateTime}>{booking.date}</Text>
+          <Text style={styles.matchDateTime}>·</Text>
+          <ClockIcon size={12} color="#fc1c46" strokeWidth={2} />
+          <Text style={styles.matchDateTime}>{booking.startTime} – {booking.endTime} hs</Text>
+        </View>
       </View>
 
       {/* Progress Bar */}
@@ -81,11 +98,13 @@ export const SplitInvitationScreen: React.FC<SplitInvitationScreenProps> = ({
 
       {/* Share Buttons */}
       <TouchableOpacity style={styles.whatsappBtn} onPress={handleShareWhatsApp}>
-        <Text style={styles.whatsappBtnText}>📲 Invitar por WhatsApp</Text>
+        <WhatsAppIcon size={18} color="#ffffff" strokeWidth={2.2} />
+        <Text style={[styles.whatsappBtnText, { marginLeft: 8 }]}>Invitar por WhatsApp</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.copyBtn} onPress={handleCopyLink}>
-        <Text style={styles.copyBtnText}>🔗 Copiar enlace para compartir</Text>
+        <LinkIcon size={16} color="#ffffff" strokeWidth={2} />
+        <Text style={[styles.copyBtnText, { marginLeft: 8 }]}>Copiar enlace para compartir</Text>
       </TouchableOpacity>
 
       {/* Participants List */}
@@ -100,8 +119,13 @@ export const SplitInvitationScreen: React.FC<SplitInvitationScreenProps> = ({
                 <Text style={styles.participantAmount}>{formatCurrency(p.amount)}</Text>
               </View>
               <View style={[styles.statusBadge, isPaid ? styles.statusBadgePaid : styles.statusBadgePending]}>
-                <Text style={[styles.statusBadgeText, isPaid ? styles.statusBadgeTextPaid : styles.statusBadgeTextPending]}>
-                  {isPaid ? '✓ Pagado' : '⏳ Pendiente'}
+                {isPaid ? (
+                  <CheckCircleIcon size={12} color="#10B981" strokeWidth={2.2} />
+                ) : (
+                  <ClockIcon size={12} color="#f59e0b" strokeWidth={2.2} />
+                )}
+                <Text style={[styles.statusBadgeText, isPaid ? styles.statusBadgeTextPaid : styles.statusBadgeTextPending, { marginLeft: 4 }]}>
+                  {isPaid ? 'Pagado' : 'Pendiente'}
                 </Text>
               </View>
             </View>
@@ -111,7 +135,10 @@ export const SplitInvitationScreen: React.FC<SplitInvitationScreenProps> = ({
 
       {/* Web Fallback Info */}
       <View style={styles.webFallbackCard}>
-        <Text style={styles.webFallbackTitle}>⚡ Tus amigos no necesitan la app para pagar</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+          <ZapIcon size={14} color="#fc1c46" strokeWidth={2.2} />
+          <Text style={styles.webFallbackTitle}>Tus amigos no necesitan la app para pagar</Text>
+        </View>
         <Text style={styles.webFallbackText}>
           Al abrir el link desde WhatsApp pueden pagar su parte en 30 segundos con Mercado Pago directo desde el navegador.
         </Text>

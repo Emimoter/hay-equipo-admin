@@ -4,58 +4,57 @@ import { getClubsFirestore, getCourtsFirestore } from './firebase';
 
 const API_BASE_URL = 'http://localhost:4000/api';
 
+// In-memory instant cache for maximum fluidity
+let memoryClubsCache: Club[] = INITIAL_CLUBS;
+let isSyncingClubs = false;
+
+// Background sync with Firestore
+async function syncClubsInBackground() {
+  if (isSyncingClubs) return;
+  isSyncingClubs = true;
+  try {
+    const firestoreClubs = await getClubsFirestore();
+    if (firestoreClubs && firestoreClubs.length > 0) {
+      memoryClubsCache = firestoreClubs;
+    }
+  } catch (e) {
+    console.log('Background sync info:', e);
+  } finally {
+    isSyncingClubs = false;
+  }
+}
+
+// Initial trigger
+syncClubsInBackground();
+
 export class MobileApiService {
   public async getSports(): Promise<Sport[]> {
-    try {
-      const res = await fetch(`${API_BASE_URL}/sports`);
-      const data = await res.json();
-      return data.data;
-    } catch {
-      // Fallback
-      return [
-        { id: 'sp-padel', name: 'Pádel', slug: 'padel', icon: '🎾', defaultDurationMinutes: 90, active: true },
-        { id: 'sp-f5', name: 'Fútbol 5', slug: 'futbol-5', icon: '⚽', defaultDurationMinutes: 60, active: true },
-        { id: 'sp-f7', name: 'Fútbol 7', slug: 'futbol-7', icon: '⚽', defaultDurationMinutes: 60, active: true },
-        { id: 'sp-f8', name: 'Fútbol 8', slug: 'futbol-8', icon: '⚽', defaultDurationMinutes: 60, active: true },
-        { id: 'sp-f11', name: 'Fútbol 11', slug: 'futbol-11', icon: '⚽', defaultDurationMinutes: 90, active: true }
-      ];
-    }
+    return [
+      { id: 'sp-padel', name: 'Pádel', slug: 'padel', icon: 'padel', defaultDurationMinutes: 90, active: true },
+      { id: 'sp-f5', name: 'Fútbol 5', slug: 'futbol-5', icon: 'football', defaultDurationMinutes: 60, active: true },
+      { id: 'sp-f7', name: 'Fútbol 7', slug: 'futbol-7', icon: 'football', defaultDurationMinutes: 60, active: true },
+      { id: 'sp-f8', name: 'Fútbol 8', slug: 'futbol-8', icon: 'football', defaultDurationMinutes: 60, active: true },
+      { id: 'sp-f11', name: 'Fútbol 11', slug: 'futbol-11', icon: 'football', defaultDurationMinutes: 90, active: true }
+    ];
   }
 
   public async getClubs(sport?: string): Promise<Club[]> {
-    // 1. Primary source: Firebase Firestore (Live sync with Panel)
-    try {
-      const firestoreClubs = await getClubsFirestore();
-      if (firestoreClubs && firestoreClubs.length > 0) {
-        if (sport) {
-          const sportUpper = sport.toUpperCase();
-          return firestoreClubs.filter((c: any) => {
-            if (c.active === false) return false;
-            if (sportUpper === 'PADEL') {
-              return c.name.toLowerCase().includes('pádel') || c.name.toLowerCase().includes('padel') || (c.description && c.description.toLowerCase().includes('padel')) || true;
-            }
-            if (sportUpper.includes('FUTBOL')) {
-              return c.name.toLowerCase().includes('fútbol') || c.name.toLowerCase().includes('futbol') || c.name.toLowerCase().includes('7') || c.name.toLowerCase().includes('5');
-            }
-            return true;
-          });
-        }
-        return firestoreClubs;
+    syncClubsInBackground();
+
+    const clubsList = memoryClubsCache.length > 0 ? memoryClubsCache : INITIAL_CLUBS;
+    if (!sport) return clubsList;
+
+    const sportUpper = sport.toUpperCase();
+    return clubsList.filter((c: any) => {
+      if (c.active === false) return false;
+      if (sportUpper === 'PADEL') {
+        return c.name.toLowerCase().includes('pádel') || c.name.toLowerCase().includes('padel') || (c.description && c.description.toLowerCase().includes('padel')) || true;
       }
-    } catch (e) {
-      console.log('Error loading clubs from firestore:', e);
-    }
-
-    // 2. Secondary source: Local HTTP API
-    try {
-      const url = sport ? `${API_BASE_URL}/clubs?sport=${sport}` : `${API_BASE_URL}/clubs`;
-      const res = await fetch(url);
-      const data = await res.json();
-      if (data.data && data.data.length > 0) return data.data;
-    } catch {}
-
-    // 3. Guaranteed Local Fallback
-    return INITIAL_CLUBS;
+      if (sportUpper.includes('FUTBOL')) {
+        return c.name.toLowerCase().includes('fútbol') || c.name.toLowerCase().includes('futbol') || c.name.toLowerCase().includes('7') || c.name.toLowerCase().includes('5');
+      }
+      return true;
+    });
   }
 
   public async getClubDetails(clubId: string): Promise<(Club & { courts: Court[] }) | null> {
@@ -63,13 +62,9 @@ export class MobileApiService {
     const club = clubs.find(c => c.id === clubId) || clubs[0];
     if (!club) return null;
 
-    try {
-      const courts = await getCourtsFirestore(club.id);
-      if (courts && courts.length > 0) {
-        return { ...club, courts };
-      }
-    } catch (e) {
-      console.log('Error fetching courts from firestore:', e);
+    const matchingCourts = INITIAL_COURTS.filter(c => c.clubId === club.id);
+    if (matchingCourts.length > 0) {
+      return { ...club, courts: matchingCourts };
     }
 
     const mockCourts: Court[] = [
@@ -82,7 +77,7 @@ export class MobileApiService {
         isCovered: true,
         hasLighting: true,
         durationMinutes: 90,
-        pricePerHour: club.minPrice,
+        pricePerHour: club.minPrice || 28000,
         priceFixedSlotDiscount: 0.15,
         images: club.images,
       },
@@ -95,7 +90,7 @@ export class MobileApiService {
         isCovered: true,
         hasLighting: true,
         durationMinutes: 90,
-        pricePerHour: club.minPrice + 2000,
+        pricePerHour: (club.minPrice || 28000) + 2000,
         priceFixedSlotDiscount: 0.15,
         images: club.images,
       },
@@ -123,67 +118,52 @@ export class MobileApiService {
     timeFrom?: string;
   }): Promise<TimeSlot[]> {
     const today = params.date || new Date().toISOString().split('T')[0];
+    const clubs = await this.getClubs(params.sport);
+    const slots: TimeSlot[] = [];
+    const times = ['18:00', '19:30', '21:00', '22:30'];
 
-    // 1. Primary source: Generate real availability slots dynamically from Firebase real clubs & courts
-    try {
-      const clubs = await getClubsFirestore();
-      const slots: TimeSlot[] = [];
-      const times = ['18:00', '19:30', '21:00', '22:30'];
+    for (const club of clubs.slice(0, 8)) {
+      const courts = INITIAL_COURTS.filter(c => c.clubId === club.id);
+      const activeCourts = courts.length > 0 ? courts : [
+        {
+          id: `court-${club.id}-1`,
+          clubId: club.id,
+          sportType: 'PADEL',
+          name: 'Cancha 1 (Panorámica)',
+          durationMinutes: 90,
+          pricePerHour: club.minPrice || 28000,
+          priceFixedSlotDiscount: 0.15,
+        }
+      ];
 
-      for (const club of clubs.slice(0, 10)) {
-        const courts = await getCourtsFirestore(club.id);
-        for (const court of courts) {
-          if (params.sport) {
-            const sportUpper = params.sport.toUpperCase();
-            const isPadel = sportUpper === 'PADEL' && court.sportType === 'PADEL';
-            const isFutbol = sportUpper.includes('FUTBOL') && court.sportType.includes('FUTBOL');
-            if (!isPadel && !isFutbol) continue;
-          }
+      for (const court of activeCourts) {
+        for (const t of times) {
+          const [h, m] = t.split(':').map(Number);
+          const duration = court.durationMinutes || 90;
+          const totalM = h * 60 + m + duration;
+          const endH = Math.floor(totalM / 60) % 24;
+          const endM = totalM % 60;
+          const endTimeStr = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
 
-          for (const t of times) {
-            const [h, m] = t.split(':').map(Number);
-            const duration = court.durationMinutes || 90;
-            const totalM = h * 60 + m + duration;
-            const endH = Math.floor(totalM / 60) % 24;
-            const endM = totalM % 60;
-            const endTimeStr = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
-
-            slots.push({
-              courtId: court.id,
-              courtName: court.name,
-              clubId: club.id,
-              clubName: club.name,
-              sportType: court.sportType as any,
-              date: today,
-              startTime: t,
-              endTime: endTimeStr,
-              durationMinutes: duration,
-              price: court.pricePerHour || club.minPrice || 25000,
-              fixedSlotPrice: Math.round((court.pricePerHour || club.minPrice || 25000) * (1 - (court.priceFixedSlotDiscount || 0.12))),
-              status: 'AVAILABLE',
-            });
-          }
+          slots.push({
+            courtId: court.id,
+            courtName: court.name,
+            clubId: club.id,
+            clubName: club.name,
+            sportType: (court.sportType || 'PADEL') as any,
+            date: today,
+            startTime: t,
+            endTime: endTimeStr,
+            durationMinutes: duration,
+            price: court.pricePerHour || club.minPrice || 28000,
+            fixedSlotPrice: Math.round((court.pricePerHour || club.minPrice || 28000) * 0.85),
+            status: 'AVAILABLE',
+          });
         }
       }
-
-      if (slots.length > 0) return slots;
-    } catch (e) {
-      console.log('Error generating slots from firebase:', e);
     }
 
-    // 2. Secondary source: Local HTTP API
-    try {
-      const query = new URLSearchParams();
-      if (params.sport) query.append('sport', params.sport);
-      if (params.date) query.append('date', params.date);
-      if (params.timeFrom) query.append('timeFrom', params.timeFrom);
-
-      const res = await fetch(`${API_BASE_URL}/availability?${query.toString()}`);
-      const data = await res.json();
-      if (data.data && data.data.length > 0) return data.data;
-    } catch {}
-
-    return [];
+    return slots;
   }
 
   public async holdBooking(params: {

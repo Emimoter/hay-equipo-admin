@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -22,6 +22,11 @@ import {
   StarIcon,
   ClockIcon,
   RepeatIcon,
+  PlusIcon,
+  MinusIcon,
+  ListIcon,
+  MapIcon,
+  CloseIcon,
 } from '../components/AppIcons';
 import { mobileApi } from '../services/api';
 import {
@@ -62,37 +67,52 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
   onNavigateClub,
 }) => {
   const webViewRef = useRef<WebView>(null);
+  const [isMapReady, setIsMapReady] = useState<boolean>(false);
   const [viewMode, setViewMode] = useState<'LIST' | 'MAP'>('MAP');
   const [sport, setSport] = useState<string>(initialSport);
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [timeFilter, setTimeFilter] = useState<string>('20:00');
   const [clubs, setClubs] = useState<Club[]>([]);
   const [selectedClub, setSelectedClub] = useState<Club | null>(null);
   const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
   const [userLocation, setUserLocation] = useState<UserLocationState>(DEFAULT_LOCATION);
+  const [isLocating, setIsLocating] = useState<boolean>(false);
 
   useEffect(() => {
     requestUserLocation();
   }, []);
 
-  const requestUserLocation = async () => {
+  const requestUserLocation = async (forceFresh = false) => {
     try {
-      const loc = await getRealUserLocation();
+      setIsLocating(true);
+      const loc = await getRealUserLocation(forceFresh);
       setUserLocation(loc);
+      if (isMapReady && loc.isRealLocation) {
+        webViewRef.current?.injectJavaScript(`
+          if (window.updateUserLocation) {
+            window.updateUserLocation(${loc.latitude}, ${loc.longitude});
+          }
+          if (window.flyToUser) {
+            window.flyToUser(${loc.latitude}, ${loc.longitude});
+          }
+          true;
+        `);
+      }
     } catch (e) {
       console.log('Location request error:', e);
+    } finally {
+      setIsLocating(false);
     }
   };
 
   useEffect(() => {
     loadData();
-  }, [sport, timeFilter, userLocation]);
+  }, [sport, userLocation]);
 
   const loadData = async () => {
     const today = new Date().toISOString().split('T')[0];
     const [clubsData, slotsData] = await Promise.all([
       mobileApi.getClubs(sport),
-      mobileApi.searchAvailability({ sport, date: today, timeFrom: timeFilter }),
+      mobileApi.searchAvailability({ sport, date: today }),
     ]);
 
     const adaptedClubs = clubsData.map((c, i) => {
@@ -121,6 +141,40 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
     }
   };
 
+  const filteredClubs = clubs.filter(c =>
+    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.city.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Synchronize markers to WebView via JS injection without reloading the WebView
+  useEffect(() => {
+    if (!isMapReady) return;
+
+    const clubsToRender = filteredClubs.length > 0 ? filteredClubs : clubs;
+    const serializedClubs = clubsToRender.map(c => {
+      const isPadel = c.name.toLowerCase().includes('padel') || c.name.toLowerCase().includes('pádel');
+      const sportType = isPadel ? 'PADEL' : 'FUTBOL';
+      const cleanName = c.name.split('-')[0].replace(/Complejo/gi, '').replace(/Canchas de/gi, '').trim();
+      return {
+        id: c.id,
+        name: cleanName,
+        lat: c.latitude,
+        lng: c.longitude,
+        sportType,
+        price: c.minPrice || 0,
+      };
+    });
+
+    const activeId = selectedClub?.id || (serializedClubs[0]?.id || '');
+    webViewRef.current?.injectJavaScript(`
+      if (window.updateClubsData) {
+        window.updateClubsData(${JSON.stringify(serializedClubs)}, "${activeId}");
+      }
+      true;
+    `);
+  }, [clubs, filteredClubs, isMapReady, sport]);
+
   const getActiveSlotForClub = (clubId: string) => {
     return availableSlots.find(s => s.clubId === clubId) || availableSlots[0];
   };
@@ -135,19 +189,59 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
     `);
   };
 
-  const centerOnUser = () => {
+  const zoomIn = () => {
     webViewRef.current?.injectJavaScript(`
-      if (window.flyToUser) {
-        window.flyToUser(${userLocation.latitude}, ${userLocation.longitude});
+      if (window.zoomInMap) {
+        window.zoomInMap();
       }
       true;
     `);
   };
 
+  const zoomOut = () => {
+    webViewRef.current?.injectJavaScript(`
+      if (window.zoomOutMap) {
+        window.zoomOutMap();
+      }
+      true;
+    `);
+  };
+
+  const centerOnUser = async () => {
+    setIsLocating(true);
+    try {
+      const loc = await getRealUserLocation(true);
+      setUserLocation(loc);
+      webViewRef.current?.injectJavaScript(`
+        if (window.flyToUser) {
+          window.flyToUser(${loc.latitude}, ${loc.longitude});
+        }
+        true;
+      `);
+    } catch (e) {
+      console.log('Center on user error:', e);
+    } finally {
+      setIsLocating(false);
+    }
+  };
+
   const onWebViewMessage = (event: any) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
-      if (data.type === 'SELECT_CLUB') {
+      if (data.type === 'MAP_READY') {
+        setIsMapReady(true);
+        if (userLocation.isRealLocation) {
+          webViewRef.current?.injectJavaScript(`
+            if (window.updateUserLocation) {
+              window.updateUserLocation(${userLocation.latitude}, ${userLocation.longitude});
+            }
+            if (window.flyToUser) {
+              window.flyToUser(${userLocation.latitude}, ${userLocation.longitude});
+            }
+            true;
+          `);
+        }
+      } else if (data.type === 'SELECT_CLUB') {
         const club = clubs.find(c => c.id === data.clubId);
         if (club) {
           setSelectedClub(club);
@@ -158,30 +252,8 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
     }
   };
 
-  const filteredClubs = clubs.filter(c => 
-    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.city.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const generateMapHtml = () => {
-    const clubsToRender = filteredClubs.length > 0 ? filteredClubs : clubs;
-    const clubsJson = JSON.stringify(
-      clubsToRender.map(c => {
-        const isPadel = c.name.toLowerCase().includes('padel') || c.name.toLowerCase().includes('pádel');
-        const sportIcon = isPadel ? '🎾' : '⚽';
-        const cleanName = c.name.split('-')[0].replace(/Complejo/gi, '').replace(/Canchas de/gi, '').trim();
-        return {
-          id: c.id,
-          name: cleanName,
-          lat: c.latitude,
-          lng: c.longitude,
-          sportIcon,
-          price: c.minPrice || 0,
-        };
-      })
-    );
-
+  // Static HTML generated ONCE so WebView DOM is never wiped or reloaded
+  const staticMapHtml = useMemo(() => {
     return `<!DOCTYPE html>
 <html>
 <head>
@@ -195,7 +267,7 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
       height: 100%;
       margin: 0;
       padding: 0;
-      background-color: #0b0f19;
+      background-color: #07080a;
       overflow: hidden;
     }
     #map {
@@ -204,36 +276,68 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
       left: 0;
       width: 100%;
       height: 100%;
-      background: #0b0f19;
+      background: #07080a;
     }
     .custom-pin {
       display: inline-flex;
       align-items: center;
-      background-color: #0f172a;
+      background-color: #12151e;
       color: #ffffff;
-      padding: 5px 10px;
+      padding: 6px 11px;
       border-radius: 18px;
-      border: 1.5px solid rgba(255,255,255,0.3);
+      border: 1.5px solid rgba(255, 255, 255, 0.22);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      font-size: 11px;
+      font-size: 11.5px;
       font-weight: 700;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.6);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.7);
       cursor: pointer;
       white-space: nowrap;
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.25s ease;
+      will-change: transform;
     }
     .custom-pin.active {
-      background-color: #fc1c46;
-      border-color: #ffffff;
-      transform: scale(1.15);
-      box-shadow: 0 4px 18px rgba(252,28,70,0.8);
+      background-color: #fc1c46 !important;
+      border-color: #ffffff !important;
+      transform: scale(1.18);
+      box-shadow: 0 6px 20px rgba(252, 28, 70, 0.85);
+      z-index: 9999;
+    }
+    .pin-icon-svg {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 5px;
+      vertical-align: middle;
+    }
+    .user-pulse-container {
+      position: relative;
+      width: 26px;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .user-pulse-ring {
+      position: absolute;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: rgba(252, 28, 70, 0.4);
+      animation: pulseRadar 2s infinite ease-out;
     }
     .user-pulse-dot {
-      width: 22px;
-      height: 22px;
+      width: 14px;
+      height: 14px;
       border-radius: 50%;
       background: #fc1c46;
-      border: 3px solid #ffffff;
-      box-shadow: 0 0 14px rgba(252, 28, 70, 1);
+      border: 2.5px solid #ffffff;
+      box-shadow: 0 0 10px rgba(252, 28, 70, 0.9);
+      position: relative;
+      z-index: 2;
+    }
+    @keyframes pulseRadar {
+      0% { transform: scale(0.6); opacity: 0.9; }
+      100% { transform: scale(2.2); opacity: 0; }
     }
   </style>
 </head>
@@ -248,88 +352,163 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
 
     ${LEAFLET_JS}
 
+    var defaultLat = -37.9718;
+    var defaultLng = -57.5593;
+
     var map = L.map('map', {
       zoomControl: false,
-      attributionControl: false
-    }).setView([${userLocation.latitude}, ${userLocation.longitude}], 14);
+      attributionControl: false,
+      fadeAnimation: true,
+      zoomAnimation: true,
+    }).setView([defaultLat, defaultLng], 14);
 
-    // Google Maps Tile Layer
+    // Google Maps Dark/Standard Tiles
     L.tileLayer('https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
       maxZoom: 20,
       subdomains: ['0', '1', '2', '3']
     }).addTo(map);
 
-    // User Location Pin
+    // User Location Marker
     var userIcon = L.divIcon({
-      className: 'user-icon-container',
-      html: '<div class="user-pulse-dot"></div>',
-      iconSize: [22, 22],
-      iconAnchor: [11, 11]
+      className: 'user-marker-icon',
+      html: '<div class="user-pulse-container"><div class="user-pulse-ring"></div><div class="user-pulse-dot"></div></div>',
+      iconSize: [26, 26],
+      iconAnchor: [13, 13]
     });
-    L.marker([${userLocation.latitude}, ${userLocation.longitude}], { icon: userIcon, zIndexOffset: 500 }).addTo(map);
+    var userMarker = L.marker([defaultLat, defaultLng], { icon: userIcon, zIndexOffset: 500 }).addTo(map);
 
-    var clubsData = ${clubsJson};
-    var currentActiveId = "${selectedClub?.id || ''}";
+    var currentActiveId = "";
+    var currentClubs = [];
+    var markersMap = {};
     var clubsGroup = L.layerGroup().addTo(map);
 
-    function buildClubIcon(club, isActive) {
-      return L.divIcon({
-        className: 'club-pin-container',
-        html: '<div class="custom-pin ' + (isActive ? 'active' : '') + '">' +
-                '<span style="margin-right:4px;">' + club.sportIcon + '</span>' +
-                '<span>' + club.name + '</span>' +
-                '<span style="margin-left:5px;color:#ff6b8b;font-weight:800;background:rgba(0,0,0,0.4);padding:1px 5px;border-radius:4px;font-size:10px;">$' + Number(club.price).toLocaleString('es-AR') + '</span>' +
-              '</div>',
-        iconSize: [140, 30],
-        iconAnchor: [70, 15]
-      });
+    var padelSvgIcon = '<svg class="pin-icon-svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fc1c46" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="6.5"></circle><line x1="12" y1="15.5" x2="12" y2="22"></line><circle cx="10" cy="8" r="0.8" fill="#fc1c46"></circle><circle cx="14" cy="8" r="0.8" fill="#fc1c46"></circle><circle cx="12" cy="10.5" r="0.8" fill="#fc1c46"></circle></svg>';
+    var footballSvgIcon = '<svg class="pin-icon-svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><polygon points="12 7.5 15.5 10 14 14.5 10 14.5 8.5 10 12 7.5" fill="rgba(56,189,248,0.4)"></polygon></svg>';
+    var tennisSvgIcon = '<svg class="pin-icon-svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a3e635" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="6"></circle><line x1="12" y1="14.5" x2="12" y2="22"></line></svg>';
+
+    function getSportVectorSvg(sportType) {
+      if (sportType === 'FUTBOL') return footballSvgIcon;
+      if (sportType === 'TENIS') return tennisSvgIcon;
+      return padelSvgIcon;
     }
 
-    function renderMarkers() {
+    function buildClubPinHtml(club, isActive) {
+      var priceFormatted = Number(club.price || 0).toLocaleString('es-AR');
+      var iconSvg = getSportVectorSvg(club.sportType);
+      return '<div class="custom-pin ' + (isActive ? 'active' : '') + '">' +
+               iconSvg +
+               '<span>' + club.name + '</span>' +
+               '<span style="margin-left:6px;color:#ff6b8b;font-weight:800;background:rgba(0,0,0,0.45);padding:2px 6px;border-radius:6px;font-size:10px;">$' + priceFormatted + '</span>' +
+             '</div>';
+    }
+
+    function renderAllMarkers() {
       clubsGroup.clearLayers();
-      clubsData.forEach(function(club) {
-        var isAct = club.id === currentActiveId;
-        var marker = L.marker([club.lat, club.lng], {
-          icon: buildClubIcon(club, isAct),
-          zIndexOffset: isAct ? 1000 : 100
+      markersMap = {};
+
+      currentClubs.forEach(function(club) {
+        var isActive = club.id === currentActiveId;
+        var icon = L.divIcon({
+          className: 'club-pin-container',
+          html: buildClubPinHtml(club, isActive),
+          iconSize: [140, 32],
+          iconAnchor: [70, 16]
         });
+
+        var marker = L.marker([club.lat, club.lng], {
+          icon: icon,
+          zIndexOffset: isActive ? 2000 : 100
+        });
+
         marker.on('click', function(e) {
           L.DomEvent.stopPropagation(e);
-          setActiveClub(club.id);
-          if (window.ReactNativeWebView) {
-            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'SELECT_CLUB', clubId: club.id }));
-          }
+          internalSelectClub(club.id, true);
         });
+
         clubsGroup.addLayer(marker);
+        markersMap[club.id] = { marker: marker, club: club };
       });
     }
 
-    function setActiveClub(clubId) {
+    function internalSelectClub(clubId, notifyRN) {
+      if (currentActiveId === clubId) {
+        var target = currentClubs.find(function(c) { return c.id === clubId; });
+        if (target) {
+          map.flyTo([target.lat, target.lng], 15.5, { animate: true, duration: 0.6 });
+        }
+        return;
+      }
+
       currentActiveId = clubId;
-      renderMarkers();
-      var target = clubsData.find(function(c) { return c.id === clubId; });
-      if (target) {
-        map.flyTo([target.lat, target.lng], 15, { animate: true, duration: 0.5 });
+
+      for (var id in markersMap) {
+        var entry = markersMap[id];
+        var isAct = id === currentActiveId;
+        var newIcon = L.divIcon({
+          className: 'club-pin-container',
+          html: buildClubPinHtml(entry.club, isAct),
+          iconSize: [140, 32],
+          iconAnchor: [70, 16]
+        });
+        entry.marker.setIcon(newIcon);
+        entry.marker.setZIndexOffset(isAct ? 2000 : 100);
+      }
+
+      var targetClub = currentClubs.find(function(c) { return c.id === clubId; });
+      if (targetClub) {
+        map.flyTo([targetClub.lat, targetClub.lng], 15.5, { animate: true, duration: 0.6 });
+      }
+
+      if (notifyRN && window.ReactNativeWebView) {
+        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'SELECT_CLUB', clubId: clubId }));
       }
     }
 
-    renderMarkers();
-
-    setTimeout(function() {
-      map.invalidateSize();
-    }, 200);
-
-    window.flyToUser = function(lat, lng) {
-      map.flyTo([lat, lng], 14, { animate: true, duration: 0.5 });
+    // Exposed JS methods called by React Native
+    window.updateClubsData = function(clubs, activeId) {
+      currentClubs = clubs || [];
+      if (activeId) {
+        currentActiveId = activeId;
+      }
+      renderAllMarkers();
     };
 
     window.selectClubById = function(clubId) {
-      setActiveClub(clubId);
+      internalSelectClub(clubId, false);
     };
+
+    window.updateUserLocation = function(lat, lng) {
+      if (userMarker) {
+        userMarker.setLatLng([lat, lng]);
+      }
+    };
+
+    window.flyToUser = function(lat, lng) {
+      if (userMarker) {
+        userMarker.setLatLng([lat, lng]);
+      }
+      map.flyTo([lat, lng], 15, { animate: true, duration: 0.6 });
+    };
+
+    window.zoomInMap = function() {
+      map.zoomIn(1, { animate: true });
+    };
+
+    window.zoomOutMap = function() {
+      map.zoomOut(1, { animate: true });
+    };
+
+    // Notify React Native that Map DOM is ready
+    setTimeout(function() {
+      map.invalidateSize();
+      if (window.ReactNativeWebView) {
+        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'MAP_READY' }));
+      }
+    }, 150);
   </script>
 </body>
 </html>`;
-  };
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -349,7 +528,7 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
             />
             {searchQuery.length > 0 ? (
               <TouchableOpacity onPress={() => setSearchQuery('')}>
-                <Text style={{ color: '#6b7280', fontSize: 16 }}>✕</Text>
+                <CloseIcon size={14} color="#6b7280" strokeWidth={2.5} />
               </TouchableOpacity>
             ) : null}
           </View>
@@ -359,13 +538,15 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
               style={[styles.toggleBtn, viewMode === 'LIST' && styles.toggleBtnActive]}
               onPress={() => setViewMode('LIST')}
             >
-              <Text style={[styles.toggleText, viewMode === 'LIST' && styles.toggleTextActive]}>📋 Lista</Text>
+              <ListIcon size={13} color={viewMode === 'LIST' ? '#ffffff' : '#9ca3af'} strokeWidth={2.2} />
+              <Text style={[styles.toggleText, viewMode === 'LIST' && styles.toggleTextActive]}>Lista</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.toggleBtn, viewMode === 'MAP' && styles.toggleBtnActive]}
               onPress={() => setViewMode('MAP')}
             >
-              <Text style={[styles.toggleText, viewMode === 'MAP' && styles.toggleTextActive]}>🗺️ Mapa</Text>
+              <MapIcon size={13} color={viewMode === 'MAP' ? '#ffffff' : '#9ca3af'} strokeWidth={2.2} />
+              <Text style={[styles.toggleText, viewMode === 'MAP' && styles.toggleTextActive]}>Mapa</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -375,7 +556,7 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
             style={[styles.sportChip, sport === 'PADEL' && styles.sportChipActive]}
             onPress={() => setSport('PADEL')}
           >
-            <Text style={styles.sportChipIcon}>🎾</Text>
+            <PadelIcon size={13} color={sport === 'PADEL' ? '#ffffff' : '#9ca3af'} strokeWidth={2} />
             <Text style={[styles.sportChipText, sport === 'PADEL' && styles.sportChipTextActive]}>Pádel</Text>
           </TouchableOpacity>
 
@@ -383,7 +564,7 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
             style={[styles.sportChip, sport === 'FUTBOL' && styles.sportChipActive]}
             onPress={() => setSport('FUTBOL')}
           >
-            <Text style={styles.sportChipIcon}>⚽</Text>
+            <FootballIcon size={13} color={sport === 'FUTBOL' ? '#ffffff' : '#9ca3af'} strokeWidth={2} />
             <Text style={[styles.sportChipText, sport === 'FUTBOL' && styles.sportChipTextActive]}>Fútbol 5</Text>
           </TouchableOpacity>
 
@@ -391,82 +572,94 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
             style={[styles.sportChip, sport === 'TENIS' && styles.sportChipActive]}
             onPress={() => setSport('TENIS')}
           >
-            <Text style={styles.sportChipIcon}>🎾</Text>
+            <TennisIcon size={13} color={sport === 'TENIS' ? '#ffffff' : '#9ca3af'} strokeWidth={2} />
             <Text style={[styles.sportChipText, sport === 'TENIS' && styles.sportChipTextActive]}>Tenis</Text>
           </TouchableOpacity>
         </ScrollView>
       </View>
 
-      {viewMode === 'MAP' ? (
-        <View style={StyleSheet.absoluteFillObject}>
-          <WebView
-            ref={webViewRef}
-            source={{ html: generateMapHtml() }}
-            style={{ flex: 1, backgroundColor: '#0b0f19' }}
-            originWhitelist={['*']}
-            javaScriptEnabled={true}
-            domStorageEnabled={true}
-            mixedContentMode="always"
-            allowFileAccess={true}
-            scrollEnabled={false}
-            bounces={false}
-            onMessage={onWebViewMessage}
-          />
+      {/* MAP VIEW WRAPPER - kept mounted to prevent WebView re-instantiation */}
+      <View style={[StyleSheet.absoluteFillObject, { display: viewMode === 'MAP' ? 'flex' : 'none' }]}>
+        <WebView
+          ref={webViewRef}
+          source={{ html: staticMapHtml }}
+          style={{ flex: 1, backgroundColor: '#07080a' }}
+          originWhitelist={['*']}
+          javaScriptEnabled={true}
+          domStorageEnabled={true}
+          mixedContentMode="always"
+          allowFileAccess={true}
+          scrollEnabled={false}
+          bounces={false}
+          onMessage={onWebViewMessage}
+        />
 
-          <View style={styles.mapControls}>
-            <TouchableOpacity activeOpacity={0.8} style={styles.mapBtn} onPress={centerOnUser}>
-              <MapPinIcon size={18} color="#f8fafc" strokeWidth={2} />
+        <View style={styles.mapControls}>
+          <TouchableOpacity activeOpacity={0.8} style={styles.mapBtn} onPress={zoomIn}>
+            <PlusIcon size={18} color="#f8fafc" strokeWidth={2.8} />
+          </TouchableOpacity>
+          <TouchableOpacity activeOpacity={0.8} style={styles.mapBtn} onPress={zoomOut}>
+            <MinusIcon size={18} color="#f8fafc" strokeWidth={2.8} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={[styles.mapBtn, isLocating && styles.mapBtnActive]}
+            onPress={centerOnUser}
+          >
+            <MapPinIcon size={18} color={userLocation.isRealLocation ? '#fc1c46' : '#94a3b8'} strokeWidth={2.2} />
+          </TouchableOpacity>
+        </View>
+
+        {selectedClub ? (
+          <View style={styles.bottomCardContainer}>
+            <TouchableOpacity
+              activeOpacity={0.9}
+              style={styles.clubPreviewCard}
+              onPress={() => onNavigateClub(selectedClub.id)}
+            >
+              <Image source={{ uri: selectedClub.images[0] }} style={styles.cardImage} />
+              <View style={styles.cardContent}>
+                <View style={styles.cardHeaderRow}>
+                  <Text style={styles.clubTitle} numberOfLines={1}>{selectedClub.name}</Text>
+                  <TouchableOpacity onPress={() => onNavigateClub(selectedClub.id)}>
+                    <Text style={styles.verClubLinkText}>Ver →</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.locationRow}>
+                  <MapPinIcon size={12} color="#9ca3af" strokeWidth={1.8} />
+                  <Text style={styles.addressText} numberOfLines={1}>{selectedClub.address}</Text>
+                </View>
+
+                <View style={styles.clubMetaRow}>
+                  <StarIcon size={11} fill="#fbbf24" color="#fbbf24" />
+                  <Text style={styles.clubRatingText}>{selectedClub.rating}</Text>
+                  <Text style={styles.clubDotSeparator}>•</Text>
+                  <Text style={styles.clubDistanceText}>
+                    {`a ${calculateDistanceKm(userLocation.latitude, userLocation.longitude, selectedClub.latitude, selectedClub.longitude).toFixed(1)} km`}
+                  </Text>
+                </View>
+
+                <View style={styles.cardBottomRow}>
+                  <View>
+                    <Text style={styles.priceSmallLabel}>Precio desde</Text>
+                    <Text style={styles.priceCardValue}>{formatCurrency(selectedClub.minPrice)}</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.bookDirectButton}
+                    onPress={() => onNavigateCheckout(getActiveSlotForClub(selectedClub.id))}
+                  >
+                    <Text style={styles.bookDirectButtonText}>Reservar</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
             </TouchableOpacity>
           </View>
+        ) : null}
+      </View>
 
-          {selectedClub ? (
-            <View style={styles.bottomCardContainer}>
-              <TouchableOpacity
-                activeOpacity={0.9}
-                style={styles.clubPreviewCard}
-                onPress={() => onNavigateClub(selectedClub.id)}
-              >
-                <Image source={{ uri: selectedClub.images[0] }} style={styles.cardImage} />
-                <View style={styles.cardContent}>
-                  <View style={styles.cardHeaderRow}>
-                    <Text style={styles.clubTitle} numberOfLines={1}>{selectedClub.name}</Text>
-                    <TouchableOpacity onPress={() => onNavigateClub(selectedClub.id)}>
-                      <Text style={styles.verClubLinkText}>Ver →</Text>
-                    </TouchableOpacity>
-                  </View>
-
-                  <View style={styles.locationRow}>
-                    <MapPinIcon size={12} color="#9ca3af" strokeWidth={1.8} />
-                    <Text style={styles.addressText} numberOfLines={1}>{selectedClub.address}</Text>
-                  </View>
-
-                  <View style={styles.clubMetaRow}>
-                    <StarIcon size={11} fill="#fbbf24" color="#fbbf24" />
-                    <Text style={styles.clubRatingText}>{selectedClub.rating}</Text>
-                    <Text style={styles.clubDotSeparator}>•</Text>
-                    <Text style={styles.clubDistanceText}>
-                      {`a ${calculateDistanceKm(userLocation.latitude, userLocation.longitude, selectedClub.latitude, selectedClub.longitude).toFixed(1)} km`}
-                    </Text>
-                  </View>
-
-                  <View style={styles.cardBottomRow}>
-                    <View>
-                      <Text style={styles.priceSmallLabel}>Precio desde</Text>
-                      <Text style={styles.priceCardValue}>{formatCurrency(selectedClub.minPrice)}</Text>
-                    </View>
-                    <TouchableOpacity
-                      style={styles.bookDirectButton}
-                      onPress={() => onNavigateCheckout(getActiveSlotForClub(selectedClub.id))}
-                    >
-                      <Text style={styles.bookDirectButtonText}>Reservar</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            </View>
-          ) : null}
-        </View>
-      ) : (
+      {/* LIST VIEW */}
+      {viewMode === 'LIST' && (
         <ScrollView contentContainerStyle={styles.listScrollContent} showsVerticalScrollIndicator={false}>
           <Text style={styles.listHeaderTitle}>
             {`${filteredClubs.length} Complejos cerca de ${userLocation.city || 'tu ubicación'}`}
@@ -486,7 +679,12 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
                 <View style={styles.listImageWrapper}>
                   <Image source={{ uri: item.images[0] }} style={styles.listCardImage} />
                   <View style={styles.listBadgeOverlay}>
-                    <Text style={styles.listBadgeText}>{isPadel ? '🎾 PÁDEL' : '⚽ FÚTBOL'}</Text>
+                    {isPadel ? (
+                      <PadelIcon size={11} color="#ffffff" strokeWidth={2} />
+                    ) : (
+                      <FootballIcon size={11} color="#ffffff" strokeWidth={2} />
+                    )}
+                    <Text style={styles.listBadgeText}>{isPadel ? ' PÁDEL' : ' FÚTBOL'}</Text>
                   </View>
                 </View>
 
@@ -726,17 +924,31 @@ const styles = StyleSheet.create({
   listPriBtnText: { color: '#ffffff', fontSize: 12, fontWeight: '700' },
 
   /* MAP VIEW STYLES */
-  mapControls: { position: 'absolute', right: 16, top: height * 0.42, zIndex: 50 },
+  mapControls: {
+    position: 'absolute',
+    right: 16,
+    top: height * 0.38,
+    gap: 10,
+    zIndex: 90,
+  },
   mapBtn: {
     width: 44,
     height: 44,
     borderRadius: 22,
     backgroundColor: '#12151e',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: 'rgba(255, 255, 255, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.45,
+    shadowRadius: 6,
+    elevation: 8,
+  },
+  mapBtnActive: {
+    borderColor: '#fc1c46',
+    backgroundColor: 'rgba(252, 28, 70, 0.15)',
   },
   markerPill: {
     flexDirection: 'row',
