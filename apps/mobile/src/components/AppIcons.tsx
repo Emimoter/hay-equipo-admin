@@ -86,32 +86,57 @@ export const ZapIcon: React.FC<IconProps> = ({ color = '#fc1c46', size = 14, str
 
 export const PadelIcon: React.FC<IconProps> = ({ color = '#ffffff', size = 16, strokeWidth = 2 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Circle cx="12" cy="9" r="6.5" stroke={color} strokeWidth={strokeWidth} />
-    <Line x1="12" y1="15.5" x2="12" y2="22" stroke={color} strokeWidth={strokeWidth + 0.5} strokeLinecap="round" />
-    <Circle cx="10" cy="8" r="0.75" fill={color} />
-    <Circle cx="14" cy="8" r="0.75" fill={color} />
-    <Circle cx="12" cy="10.5" r="0.75" fill={color} />
+    {/* Racket Head Outline (Teardrop shape) */}
+    <Path
+      d="M12 2C8.13 2 5 5.13 5 9C5 12.38 7.42 15.19 10.6 15.86L9.5 21.3C9.4 21.8 9.8 22.3 10.3 22.3H13.7C14.2 22.3 14.6 21.8 14.5 21.3L13.4 15.86C16.58 15.19 19 12.38 19 9C19 5.13 15.87 2 12 2Z"
+      stroke={color}
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    {/* Throat Bridge Line */}
+    <Path d="M9.8 15.5H14.2" stroke={color} strokeWidth={strokeWidth - 0.5} strokeLinecap="round" />
+    {/* Grip Tape Detail */}
+    <Line x1="10" y1="18.5" x2="14" y2="18.5" stroke={color} strokeWidth={strokeWidth - 0.5} strokeLinecap="round" />
+    {/* Padel Perforation Holes Matrix */}
+    <Circle cx="12" cy="6" r="0.9" fill={color} />
+    <Circle cx="9.5" cy="8.5" r="0.9" fill={color} />
+    <Circle cx="12" cy="8.5" r="0.9" fill={color} />
+    <Circle cx="14.5" cy="8.5" r="0.9" fill={color} />
+    <Circle cx="10" cy="11.5" r="0.9" fill={color} />
+    <Circle cx="12" cy="11.5" r="0.9" fill={color} />
+    <Circle cx="14" cy="11.5" r="0.9" fill={color} />
   </Svg>
 );
 
 export const FootballIcon: React.FC<IconProps> = ({ color = '#ffffff', size = 16, strokeWidth = 2 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Circle cx="12" cy="12" r="9" stroke={color} strokeWidth={strokeWidth} />
-    <Polygon points="12 7.5 15.5 10 14 14.5 10 14.5 8.5 10 12 7.5" stroke={color} strokeWidth={strokeWidth - 0.5} />
-    <Line x1="12" y1="3" x2="12" y2="7.5" stroke={color} strokeWidth={strokeWidth - 0.5} />
-    <Line x1="20.5" y1="9.5" x2="15.5" y2="10" stroke={color} strokeWidth={strokeWidth - 0.5} />
-    <Line x1="18" y1="18.5" x2="14" y2="14.5" stroke={color} strokeWidth={strokeWidth - 0.5} />
-    <Line x1="6" y1="18.5" x2="10" y2="14.5" stroke={color} strokeWidth={strokeWidth - 0.5} />
-    <Line x1="3.5" y1="9.5" x2="8.5" y2="10" stroke={color} strokeWidth={strokeWidth - 0.5} />
+    {/* Outer Ball Circle */}
+    <Circle cx="12" cy="12" r="9.5" stroke={color} strokeWidth={strokeWidth} />
+    {/* Central Pentagon */}
+    <Polygon
+      points="12 7.5 16 10.5 14.5 15 9.5 15 8 10.5"
+      stroke={color}
+      strokeWidth={strokeWidth}
+      strokeLinejoin="round"
+      fill={color === '#ffffff' ? 'rgba(255,255,255,0.25)' : 'rgba(56,189,248,0.3)'}
+    />
+    {/* Radiating Seams to Boundary */}
+    <Line x1="12" y1="7.5" x2="12" y2="2.5" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+    <Line x1="16" y1="10.5" x2="20.5" y2="8" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+    <Line x1="14.5" y1="15" x2="18" y2="19.5" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+    <Line x1="9.5" y1="15" x2="6" y2="19.5" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+    <Line x1="8" y1="10.5" x2="3.5" y2="8" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
   </Svg>
 );
 
 export const TennisIcon: React.FC<IconProps> = ({ color = '#ffffff', size = 16, strokeWidth = 2 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Circle cx="12" cy="8.5" r="6" stroke={color} strokeWidth={strokeWidth} />
-    <Line x1="12" y1="14.5" x2="12" y2="22" stroke={color} strokeWidth={strokeWidth + 0.5} strokeLinecap="round" />
-    <Line x1="9" y1="8.5" x2="15" y2="8.5" stroke={color} strokeWidth={strokeWidth - 0.8} />
-    <Line x1="12" y1="5.5" x2="12" y2="11.5" stroke={color} strokeWidth={strokeWidth - 0.8} />
+    {/* Tennis Ball Circle */}
+    <Circle cx="12" cy="12" r="9.5" stroke={color} strokeWidth={strokeWidth} />
+    {/* Curved Tennis Ball Seams */}
+    <Path d="M6 5.3C9.5 8.8 9.5 15.2 6 18.7" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+    <Path d="M18 5.3C14.5 8.8 14.5 15.2 18 18.7" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
   </Svg>
 );
 
