@@ -52,7 +52,9 @@ export const BookingCheckoutScreen: React.FC<BookingCheckoutScreenProps> = ({
     setMpProcessingModal(true);
 
     setTimeout(async () => {
-      await mobileApi.confirmBooking(holdRes.booking!.id);
+      if (paymentType === 'FULL') {
+        await mobileApi.confirmBooking(holdRes.booking!.id);
+      }
       setMpProcessingModal(false);
 
       if (paymentType === 'SPLIT') {
@@ -60,7 +62,7 @@ export const BookingCheckoutScreen: React.FC<BookingCheckoutScreenProps> = ({
       } else {
         onNavigateSuccess(holdRes.booking!);
       }
-    }, 1500);
+    }, 1200);
   };
 
   return (

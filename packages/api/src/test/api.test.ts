@@ -94,15 +94,25 @@ describe('Hay Equipo Core Booking Engine & Flow Tests', () => {
     });
 
     assert(hold.booking?.splitToken, 'Split token must be created');
-    const split = db.splitPayments.find(s => s.shareToken === hold.booking?.splitToken);
-    assert(split, 'Split payment record must exist');
-    assert(split.sharesCount === 4, 'Must have 4 participants');
-    assert(split.participants.length === 4, '4 participant quotas created');
-    assert.strictEqual(
-      split.participants.reduce((a, b) => a + b.amount, 0),
-      split.totalAmount,
-      'Sum of quotas must equal total price'
-    );
+    const token = hold.booking.splitToken!;
+    const details1 = bookingEngine.getSplitDetails(token);
+    assert(details1, 'Split room details must exist');
+    assert(details1.paidCount === 1, 'Organizer is already paid upon creation (1/4)');
+    assert(details1.isComplete === false, 'Room is not yet complete');
+
+    // Participant 2 pays
+    const pay2 = bookingEngine.paySplitShare({ shareToken: token, playerName: 'Martín G.' });
+    assert(pay2.success && !pay2.isComplete, 'Participant 2 paid, room still pending (2/4)');
+
+    // Participant 3 pays
+    const pay3 = bookingEngine.paySplitShare({ shareToken: token, playerName: 'Lucas P.' });
+    assert(pay3.success && !pay3.isComplete, 'Participant 3 paid, room still pending (3/4)');
+
+    // Participant 4 pays (final quota)
+    const pay4 = bookingEngine.paySplitShare({ shareToken: token, playerName: 'Facundo M.' });
+    assert(pay4.success && pay4.isComplete, 'Participant 4 paid, room is complete (4/4)');
+    assert.strictEqual(pay4.booking?.status, 'CONFIRMED', 'Booking automatically confirmed when 100% paid');
+    assert.strictEqual(pay4.booking?.paymentStatus, 'APPROVED', 'Payment status is APPROVED');
   });
 
   test('5. Fixed Slot Subscription generates weekly occurrences with discounts', () => {

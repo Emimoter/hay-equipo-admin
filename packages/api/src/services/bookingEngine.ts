@@ -163,7 +163,7 @@ export class BookingEngineService {
         sharesCount: count,
         splitType: 'EQUAL',
         shareToken: splitToken,
-        status: 'PENDING',
+        status: 'PARTIALLY_PAID',
         participants: [
           {
             id: `part_org_${Date.now()}`,
@@ -172,7 +172,8 @@ export class BookingEngineService {
             name: `${params.userName} (Organizador)`,
             phone: params.userPhone,
             amount: shareAmount,
-            status: 'PENDING'
+            status: 'PAID',
+            paidAt: new Date().toISOString()
           },
           ...Array.from({ length: count - 1 }, (_, i) => ({
             id: `part_guest_${i + 1}_${Date.now()}`,
@@ -186,6 +187,82 @@ export class BookingEngineService {
     }
 
     return { success: true, booking: newBooking };
+  }
+
+  /**
+   * Retrieves Split payment room details and booking information
+   */
+  public getSplitDetails(token: string) {
+    const split = db.splitPayments.find(s => s.shareToken === token);
+    if (!split) return null;
+
+    const booking = db.bookings.find(b => b.id === split.bookingId);
+    const paidParticipants = split.participants.filter(p => p.status === 'PAID');
+    const totalCollected = paidParticipants.reduce((sum, p) => sum + p.amount, 0);
+    const isComplete = paidParticipants.length === split.sharesCount;
+
+    return {
+      split,
+      booking,
+      totalCollected,
+      paidCount: paidParticipants.length,
+      totalSlots: split.sharesCount,
+      isComplete
+    };
+  }
+
+  /**
+   * Processes a participant's quota payment in the Split Lobby.
+   * When all participants have paid, automatically confirms the booking.
+   */
+  public paySplitShare(params: {
+    shareToken: string;
+    participantId?: string;
+    playerName?: string;
+    mpPaymentId?: string;
+  }): { success: boolean; isComplete: boolean; booking?: Booking; split?: any; error?: string } {
+    const split = db.splitPayments.find(s => s.shareToken === params.shareToken);
+    if (!split) return { success: false, isComplete: false, error: 'Sala de Split no encontrada' };
+
+    // Find specific participant or next pending participant
+    let participant = params.participantId
+      ? split.participants.find(p => p.id === params.participantId)
+      : split.participants.find(p => p.status === 'PENDING');
+
+    if (!participant) {
+      // If all are already paid
+      const allPaid = split.participants.every(p => p.status === 'PAID');
+      const booking = db.bookings.find(b => b.id === split.bookingId);
+      return { success: true, isComplete: allPaid, booking, split };
+    }
+
+    // Mark participant as PAID
+    participant.status = 'PAID';
+    if (params.playerName && params.playerName.trim()) {
+      participant.name = params.playerName.trim();
+    }
+    participant.paidAt = new Date().toISOString();
+    participant.mpPaymentId = params.mpPaymentId || `mp_split_${Date.now()}`;
+
+    // Check if room is fully paid
+    const allPaid = split.participants.every(p => p.status === 'PAID');
+    let booking = db.bookings.find(b => b.id === split.bookingId);
+
+    if (allPaid) {
+      split.status = 'APPROVED';
+      if (booking && booking.status !== 'CONFIRMED') {
+        booking = this.confirmBooking(booking.id, participant.mpPaymentId) || booking;
+      }
+    } else {
+      split.status = 'PARTIALLY_PAID';
+    }
+
+    return {
+      success: true,
+      isComplete: allPaid,
+      booking,
+      split
+    };
   }
 
   /**
