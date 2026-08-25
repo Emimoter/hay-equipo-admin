@@ -136,25 +136,34 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
     setClubs(adaptedClubs);
     setAvailableSlots(slotsData);
 
-    if (adaptedClubs.length > 0 && !selectedClub) {
-      setSelectedClub(adaptedClubs[0]);
+    if (adaptedClubs.length > 0) {
+      setSelectedClub(prev => (prev && adaptedClubs.some(c => c.id === prev.id) ? prev : adaptedClubs[0]));
+    } else {
+      setSelectedClub(null);
     }
   };
 
-  const filteredClubs = clubs.filter(c =>
-    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.city.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredClubs = searchQuery.trim().length > 0
+    ? clubs.filter(c =>
+        c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.city.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : clubs;
 
   // Synchronize markers to WebView via JS injection without reloading the WebView
   useEffect(() => {
     if (!isMapReady) return;
 
-    const clubsToRender = filteredClubs.length > 0 ? filteredClubs : clubs;
+    const clubsToRender = filteredClubs;
+    const currentSportUpper = sport.toUpperCase();
     const serializedClubs = clubsToRender.map(c => {
-      const isPadel = c.name.toLowerCase().includes('padel') || c.name.toLowerCase().includes('pádel');
-      const sportType = isPadel ? 'PADEL' : 'FUTBOL';
+      let sportType = 'PADEL';
+      if (currentSportUpper.includes('FUTBOL')) {
+        sportType = 'FUTBOL';
+      } else if (currentSportUpper === 'TENIS') {
+        sportType = 'TENIS';
+      }
       const cleanName = c.name.split('-')[0].replace(/Complejo/gi, '').replace(/Canchas de/gi, '').trim();
       return {
         id: c.id,
@@ -662,40 +671,64 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
       {viewMode === 'LIST' && (
         <ScrollView contentContainerStyle={styles.listScrollContent} showsVerticalScrollIndicator={false}>
           <Text style={styles.listHeaderTitle}>
-            {`${filteredClubs.length} Complejos cerca de ${userLocation.city || 'tu ubicación'}`}
+            {filteredClubs.length === 0
+              ? 'No hay complejos con canchas disponibles'
+              : `${filteredClubs.length} Complejos con ${sport === 'TENIS' ? 'Tenis' : sport === 'FUTBOL' ? 'Fútbol' : 'Pádel'} cerca de ${userLocation.city || 'tu ubicación'}`}
           </Text>
 
-          {filteredClubs.map(item => {
-            const isPadel = item.name.toLowerCase().includes('padel') || item.name.toLowerCase().includes('pádel');
-            const distance = calculateDistanceKm(userLocation.latitude, userLocation.longitude, item.latitude, item.longitude).toFixed(1);
+          {filteredClubs.length === 0 ? (
+            <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 50, paddingHorizontal: 24 }}>
+              <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: '#131722', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+                {sport === 'TENIS' ? (
+                  <TennisIcon size={30} color="#a3e635" strokeWidth={2} />
+                ) : sport === 'FUTBOL' ? (
+                  <FootballIcon size={30} color="#38bdf8" strokeWidth={2} />
+                ) : (
+                  <PadelIcon size={30} color="#fc1c46" strokeWidth={2} />
+                )}
+              </View>
+              <Text style={{ color: '#ffffff', fontSize: 16, fontWeight: '700', marginBottom: 6, textAlign: 'center' }}>
+                Sin resultados para {sport === 'TENIS' ? 'Tenis' : sport === 'FUTBOL' ? 'Fútbol' : 'Pádel'}
+              </Text>
+              <Text style={{ color: '#94a3b8', fontSize: 13, textAlign: 'center', lineHeight: 18 }}>
+                No encontramos complejos que tengan canchas publicadas para este deporte con los filtros actuales.
+              </Text>
+            </View>
+          ) : (
+            filteredClubs.map(item => {
+              const distance = calculateDistanceKm(userLocation.latitude, userLocation.longitude, item.latitude, item.longitude).toFixed(1);
 
-            return (
-              <TouchableOpacity
-                key={item.id}
-                activeOpacity={0.9}
-                style={styles.listClubCard}
-                onPress={() => onNavigateClub(item.id)}
-              >
-                <View style={styles.listImageWrapper}>
-                  <Image source={{ uri: item.images[0] }} style={styles.listCardImage} />
-                  <View style={styles.listBadgeOverlay}>
-                    {isPadel ? (
-                      <PadelIcon size={11} color="#ffffff" strokeWidth={2} />
-                    ) : (
-                      <FootballIcon size={11} color="#ffffff" strokeWidth={2} />
-                    )}
-                    <Text style={styles.listBadgeText}>{isPadel ? ' PÁDEL' : ' FÚTBOL'}</Text>
-                  </View>
-                </View>
-
-                <View style={styles.listCardDetails}>
-                  <View style={styles.listRowHeader}>
-                    <Text style={styles.listClubTitle} numberOfLines={1}>{item.name}</Text>
-                    <View style={styles.listRatingBadge}>
-                      <StarIcon size={11} fill="#fbbf24" color="#fbbf24" />
-                      <Text style={styles.listRatingValue}>{item.rating}</Text>
+              return (
+                <TouchableOpacity
+                  key={item.id}
+                  activeOpacity={0.9}
+                  style={styles.listClubCard}
+                  onPress={() => onNavigateClub(item.id)}
+                >
+                  <View style={styles.listImageWrapper}>
+                    <Image source={{ uri: item.images[0] }} style={styles.listCardImage} />
+                    <View style={styles.listBadgeOverlay}>
+                      {sport === 'TENIS' ? (
+                        <TennisIcon size={11} color="#ffffff" strokeWidth={2} />
+                      ) : sport === 'FUTBOL' ? (
+                        <FootballIcon size={11} color="#ffffff" strokeWidth={2} />
+                      ) : (
+                        <PadelIcon size={11} color="#ffffff" strokeWidth={2} />
+                      )}
+                      <Text style={styles.listBadgeText}>
+                        {sport === 'TENIS' ? ' TENIS' : sport === 'FUTBOL' ? ' FÚTBOL' : ' PÁDEL'}
+                      </Text>
                     </View>
                   </View>
+
+                  <View style={styles.listCardDetails}>
+                    <View style={styles.listRowHeader}>
+                      <Text style={styles.listClubTitle} numberOfLines={1}>{item.name}</Text>
+                      <View style={styles.listRatingBadge}>
+                        <StarIcon size={11} fill="#fbbf24" color="#fbbf24" />
+                        <Text style={styles.listRatingValue}>{item.rating}</Text>
+                      </View>
+                    </View>
 
                   <View style={styles.listAddressRow}>
                     <MapPinIcon size={12} color="#9ca3af" strokeWidth={1.8} />
@@ -729,7 +762,7 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
                 </View>
               </TouchableOpacity>
             );
-          })}
+          }))}
         </ScrollView>
       )}
     </View>

@@ -42,18 +42,30 @@ export class MobileApiService {
     syncClubsInBackground();
 
     const clubsList = memoryClubsCache.length > 0 ? memoryClubsCache : INITIAL_CLUBS;
-    if (!sport) return clubsList;
+    if (!sport || sport === 'ALL') return clubsList.filter(c => c.active !== false);
 
-    const sportUpper = sport.toUpperCase();
+    const sportUpper = sport.toUpperCase().trim();
+
+    // Find courts matching the requested sport
+    const matchingCourts = INITIAL_COURTS.filter((court) => {
+      const cSport = court.sportType.toUpperCase();
+      if (sportUpper === 'PADEL') return cSport === 'PADEL';
+      if (sportUpper === 'FUTBOL' || sportUpper === 'FUTBOL_5' || sportUpper === 'FUTBOL 5') {
+        return cSport.startsWith('FUTBOL') || cSport === 'FUTBOL_5';
+      }
+      if (sportUpper === 'FUTBOL_7' || sportUpper === 'FUTBOL 7') return cSport === 'FUTBOL_7';
+      if (sportUpper === 'FUTBOL_8' || sportUpper === 'FUTBOL 8') return cSport === 'FUTBOL_8';
+      if (sportUpper === 'FUTBOL_11' || sportUpper === 'FUTBOL 11') return cSport === 'FUTBOL_11';
+      if (sportUpper === 'TENIS') return cSport === 'TENIS';
+      if (sportUpper === 'PICKLEBALL') return cSport === 'PICKLEBALL';
+      return cSport === sportUpper;
+    });
+
+    const clubIdsWithPublishedCourts = new Set(matchingCourts.map((c) => c.clubId));
+
     return clubsList.filter((c: any) => {
       if (c.active === false) return false;
-      if (sportUpper === 'PADEL') {
-        return c.name.toLowerCase().includes('pádel') || c.name.toLowerCase().includes('padel') || (c.description && c.description.toLowerCase().includes('padel')) || true;
-      }
-      if (sportUpper.includes('FUTBOL')) {
-        return c.name.toLowerCase().includes('fútbol') || c.name.toLowerCase().includes('futbol') || c.name.toLowerCase().includes('7') || c.name.toLowerCase().includes('5');
-      }
-      return true;
+      return clubIdsWithPublishedCourts.has(c.id);
     });
   }
 

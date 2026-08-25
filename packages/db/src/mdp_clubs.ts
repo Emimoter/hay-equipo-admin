@@ -884,58 +884,199 @@ export const MDP_REAL_CLUBS: Club[] = [
     closingTime: '01:00',
     minPrice: 31000,
     active: true
+  },
+  {
+    id: 'club-nautico-mdp',
+    name: 'Club Náutico Mar del Plata',
+    slug: 'club-nautico-mdp',
+    description: 'Histórico club costero con canchas de tenis de polvo de ladrillo frente al mar y pistas de pádel.',
+    address: 'Espigón C - Puerto',
+    city: 'Mar del Plata',
+    province: 'Buenos Aires',
+    latitude: -38.034567,
+    longitude: -57.534211,
+    phone: '+54 223 480-0323',
+    whatsapp: '+54 9 223 555-0127',
+    rating: 4.9,
+    reviewCount: 240,
+    images: [
+      'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=800&auto=format&fit=crop&q=80'
+    ],
+    amenities: {
+      parking: true,
+      showers: true,
+      lockerRooms: true,
+      buffet: true,
+      grill: true,
+      wifi: true,
+      equipmentRental: true,
+      covered: false,
+      lighting: true
+    },
+    openingTime: '08:00',
+    closingTime: '22:30',
+    minPrice: 22000,
+    active: true
+  },
+  {
+    id: 'club-edison-lawn-tennis',
+    name: 'Edison Lawn Tennis',
+    slug: 'edison-lawn-tennis',
+    description: 'Club especializado en tenis con canchas de polvo de ladrillo de torneo e iluminación LED profesional.',
+    address: 'Av. Edison 1560',
+    city: 'Mar del Plata',
+    province: 'Buenos Aires',
+    latitude: -38.026789,
+    longitude: -57.551234,
+    phone: '+54 223 489-1560',
+    whatsapp: '+54 9 223 555-0128',
+    rating: 4.8,
+    reviewCount: 165,
+    images: [
+      'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=800&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop&q=80'
+    ],
+    amenities: {
+      parking: true,
+      showers: true,
+      lockerRooms: true,
+      buffet: true,
+      grill: false,
+      wifi: true,
+      equipmentRental: true,
+      covered: false,
+      lighting: true
+    },
+    openingTime: '08:00',
+    closingTime: '22:00',
+    minPrice: 20000,
+    active: true
+  },
+  {
+    id: 'club-once-unidos',
+    name: 'Club Once Unidos - Tenis & Pádel',
+    slug: 'club-once-unidos',
+    description: 'Sede deportiva en Parque Luro con canchas de tenis polvo de ladrillo, pádel y fútbol sintético.',
+    address: 'Falkner 5220',
+    city: 'Mar del Plata',
+    province: 'Buenos Aires',
+    latitude: -37.962145,
+    longitude: -57.561234,
+    phone: '+54 223 479-5220',
+    whatsapp: '+54 9 223 555-0129',
+    rating: 4.8,
+    reviewCount: 210,
+    images: [
+      'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&auto=format&fit=crop&q=80'
+    ],
+    amenities: {
+      parking: true,
+      showers: true,
+      lockerRooms: true,
+      buffet: true,
+      grill: true,
+      wifi: true,
+      equipmentRental: true,
+      covered: true,
+      lighting: true
+    },
+    openingTime: '08:00',
+    closingTime: '23:30',
+    minPrice: 24000,
+    active: true
   }
 ];
 
 export const MDP_REAL_COURTS: Court[] = [];
 
 for (const club of MDP_REAL_CLUBS) {
-  // Padel Court 1
-  MDP_REAL_COURTS.push({
-    id: `court-${club.id}-padel-1`,
-    clubId: club.id,
-    sportType: 'PADEL',
-    name: 'Cancha 1 — Pádel Panorámica Cristal',
-    surface: 'Césped Sintético Texturado Azul WPT',
-    isCovered: true,
-    hasLighting: true,
-    durationMinutes: 90,
-    pricePerHour: club.minPrice,
-    priceFixedSlotDiscount: 0.12,
-    images: [club.images[0]]
-  });
+  const nameLower = club.name.toLowerCase();
+  const descLower = (club.description || '').toLowerCase();
 
-  // Padel Court 2
-  MDP_REAL_COURTS.push({
-    id: `court-${club.id}-padel-2`,
-    clubId: club.id,
-    sportType: 'PADEL',
-    name: 'Cancha 2 — Pádel Blindex Pro',
-    surface: 'Césped Sintético Fibrilado',
-    isCovered: club.amenities.covered,
-    hasLighting: true,
-    durationMinutes: 90,
-    pricePerHour: club.minPrice,
-    priceFixedSlotDiscount: 0.10,
-    images: [club.images[0]]
-  });
+  const isTennisClub = club.id === 'club-nautico-mdp' || club.id === 'club-edison-lawn-tennis' || club.id === 'club-once-unidos' || nameLower.includes('tenis') || descLower.includes('tenis');
+  const isFutbolOnly = nameLower.includes('fútbol 5') || nameLower.includes('futbol 5') || nameLower.includes('fútbol 7') || nameLower.includes('futbol 7') || nameLower.includes('catonio') || nameLower.includes('cancha fútbol');
+  const isPadelOnly = (nameLower.includes('pádel') || nameLower.includes('padel') || nameLower.includes('arena') || nameLower.includes('naranjos')) && !nameLower.includes('fútbol') && !nameLower.includes('futbol') && !isTennisClub;
 
-  // Futbol Court
-  const isF7 = club.name.toLowerCase().includes('fútbol 7') || club.name.toLowerCase().includes('futbol 7') || club.name.toLowerCase().includes('7');
-  const sportType: SportType = isF7 ? 'FUTBOL_7' : 'FUTBOL_5';
-  const courtName = isF7 ? 'Cancha 1 — Fútbol 7 Sintético Pro' : 'Cancha 1 — Fútbol 5 Sintético';
+  // Add Tennis Courts
+  if (isTennisClub) {
+    MDP_REAL_COURTS.push({
+      id: `court-${club.id}-tennis-1`,
+      clubId: club.id,
+      sportType: 'TENIS',
+      name: 'Cancha 1 — Tenis Polvo de Ladrillo Central',
+      surface: 'Polvo de Ladrillo',
+      isCovered: false,
+      hasLighting: true,
+      durationMinutes: 60,
+      pricePerHour: club.minPrice,
+      priceFixedSlotDiscount: 0.10,
+      images: [club.images[0]]
+    });
+    MDP_REAL_COURTS.push({
+      id: `court-${club.id}-tennis-2`,
+      clubId: club.id,
+      sportType: 'TENIS',
+      name: 'Cancha 2 — Tenis Polvo de Ladrillo',
+      surface: 'Polvo de Ladrillo',
+      isCovered: false,
+      hasLighting: true,
+      durationMinutes: 60,
+      pricePerHour: club.minPrice,
+      priceFixedSlotDiscount: 0.10,
+      images: [club.images[0]]
+    });
+  }
 
-  MDP_REAL_COURTS.push({
-    id: `court-${club.id}-futbol-1`,
-    clubId: club.id,
-    sportType: sportType,
-    name: courtName,
-    surface: 'Césped Sintético Forbex 50mm con Caucho',
-    isCovered: club.amenities.covered,
-    hasLighting: true,
-    durationMinutes: 60,
-    pricePerHour: club.minPrice + 2000,
-    priceFixedSlotDiscount: 0.15,
-    images: [club.images[1] || club.images[0]]
-  });
+  // Add Padel Courts (if not exclusively football)
+  if (!isFutbolOnly || nameLower.includes('pádel') || nameLower.includes('padel')) {
+    MDP_REAL_COURTS.push({
+      id: `court-${club.id}-padel-1`,
+      clubId: club.id,
+      sportType: 'PADEL',
+      name: 'Cancha 1 — Pádel Panorámica Cristal',
+      surface: 'Césped Sintético Texturado Azul WPT',
+      isCovered: true,
+      hasLighting: true,
+      durationMinutes: 90,
+      pricePerHour: club.minPrice,
+      priceFixedSlotDiscount: 0.12,
+      images: [club.images[0]]
+    });
+    MDP_REAL_COURTS.push({
+      id: `court-${club.id}-padel-2`,
+      clubId: club.id,
+      sportType: 'PADEL',
+      name: 'Cancha 2 — Pádel Blindex Pro',
+      surface: 'Césped Sintético Fibrilado',
+      isCovered: club.amenities.covered,
+      hasLighting: true,
+      durationMinutes: 90,
+      pricePerHour: club.minPrice,
+      priceFixedSlotDiscount: 0.10,
+      images: [club.images[0]]
+    });
+  }
+
+  // Add Football Courts (if not exclusively padel/tennis)
+  if (!isPadelOnly && (isFutbolOnly || nameLower.includes('fútbol') || nameLower.includes('futbol') || nameLower.includes('laverde') || nameLower.includes('complejo') || nameLower.includes('área') || nameLower.includes('potrero') || nameLower.includes('balón') || nameLower.includes('once unidos'))) {
+    const isF7 = nameLower.includes('fútbol 7') || nameLower.includes('futbol 7') || nameLower.includes('7');
+    const sportType: SportType = isF7 ? 'FUTBOL_7' : 'FUTBOL_5';
+    const courtName = isF7 ? 'Cancha 1 — Fútbol 7 Sintético Pro' : 'Cancha 1 — Fútbol 5 Sintético';
+
+    MDP_REAL_COURTS.push({
+      id: `court-${club.id}-futbol-1`,
+      clubId: club.id,
+      sportType: sportType,
+      name: courtName,
+      surface: 'Césped Sintético Forbex 50mm con Caucho',
+      isCovered: club.amenities.covered,
+      hasLighting: true,
+      durationMinutes: 60,
+      pricePerHour: club.minPrice + 2000,
+      priceFixedSlotDiscount: 0.15,
+      images: [club.images[1] || club.images[0]]
+    });
+  }
 }
