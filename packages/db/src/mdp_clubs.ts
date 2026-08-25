@@ -2,1081 +2,2340 @@ import { Club, Court, SportType } from '@hay-equipo/contracts';
 
 export const MDP_REAL_CLUBS: Club[] = [
   {
-    id: 'club-laverde-jara',
-    name: 'Laverde Jara - Canchas de Césped Sintético',
-    slug: 'laverde-jara',
-    description: 'Complejo deportivo con canchas de césped sintético de alta calidad y canchas de pádel panorámicas.',
-    address: 'Av. Juan Héctor Jara 470',
-    city: 'Mar del Plata',
-    province: 'Buenos Aires',
-    latitude: -37.977321,
-    longitude: -57.562843,
-    phone: '+54 223 475-1234',
-    whatsapp: '+54 9 223 555-0101',
-    rating: 4.8,
-    reviewCount: 142,
-    images: [
-      'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=800&auto=format&fit=crop&q=80'
+    "id": "club-360-padel",
+    "name": "360 Padel",
+    "slug": "360-padel",
+    "description": "Complejo 360 Padel con pistas de cristal panorámicas, iluminación LED de torneo, vestuarios y buffet.",
+    "address": "Solís 9565",
+    "city": "Mar del Plata",
+    "province": "Buenos Aires",
+    "latitude": -38.0355,
+    "longitude": -57.6105,
+    "phone": "+54 223 481-9565",
+    "whatsapp": "+54 9 223 555-0201",
+    "rating": 4.8,
+    "reviewCount": 95,
+    "minPrice": 26000,
+    "images": [
+      "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80"
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: true,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
+    "amenities": {
+      "parking": true,
+      "showers": true,
+      "lockerRooms": true,
+      "buffet": true,
+      "grill": true,
+      "wifi": true,
+      "equipmentRental": true,
+      "covered": true,
+      "lighting": true
     },
-    openingTime: '08:00',
-    closingTime: '01:00',
-    minPrice: 28000,
-    active: true
+    "openingTime": "08:00",
+    "closingTime": "00:30",
+    "active": true
   },
   {
-    id: 'club-laverde-cordoba',
-    name: 'Laverde Córdoba',
-    slug: 'laverde-cordoba',
-    description: 'Sede céntrica con canchas de pádel de cristal y fútbol 5 en césped sintético con buffet y vestuarios.',
-    address: 'Córdoba 3540',
-    city: 'Mar del Plata',
-    province: 'Buenos Aires',
-    latitude: -38.014198,
-    longitude: -57.5587,
-    phone: '+54 223 491-5678',
-    whatsapp: '+54 9 223 555-0102',
-    rating: 4.7,
-    reviewCount: 118,
-    images: [
-      'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=800&auto=format&fit=crop&q=80'
+    "id": "club-alfar-club",
+    "name": "Alfar Club (Sports Complex)",
+    "slug": "alfar-club",
+    "description": "Complejo deportivo Alfar Club con canchas de pádel de césped sintético, vestuarios y confitería.",
+    "address": "Alvarado 3280",
+    "city": "Mar del Plata",
+    "province": "Buenos Aires",
+    "latitude": -38.0125,
+    "longitude": -57.5622,
+    "phone": "+54 223 472-3280",
+    "whatsapp": "+54 9 223 555-0202",
+    "rating": 4.7,
+    "reviewCount": 88,
+    "minPrice": 25000,
+    "images": [
+      "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80"
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: false,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
+    "amenities": {
+      "parking": true,
+      "showers": true,
+      "lockerRooms": true,
+      "buffet": true,
+      "grill": false,
+      "wifi": true,
+      "equipmentRental": true,
+      "covered": true,
+      "lighting": true
     },
-    openingTime: '08:00',
-    closingTime: '00:00',
-    minPrice: 26000,
-    active: true
+    "openingTime": "08:00",
+    "closingTime": "00:30",
+    "active": true
   },
   {
-    id: 'club-laverde-telefonos',
-    name: 'Laverde Club Teléfonos',
-    slug: 'laverde-club-telefonos',
-    description: 'Gran predio deportivo con canchas de Fútbol 7 reglamentario y canchas de Pádel techadas.',
-    address: 'Florisbelo Acosta 6810',
-    city: 'Mar del Plata',
-    province: 'Buenos Aires',
-    latitude: -37.959651,
-    longitude: -57.574533,
-    phone: '+54 223 479-9900',
-    whatsapp: '+54 9 223 555-0103',
-    rating: 4.9,
-    reviewCount: 195,
-    images: [
-      'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop&q=80'
+    "id": "club-academia-padel",
+    "name": "Academia Pádel",
+    "slug": "academia-padel",
+    "description": "Academia de Pádel en zona puerto con pistas profesionales de cristal, escuela y torneos.",
+    "address": "Av. de los Trabajadores 1079",
+    "city": "Mar del Plata",
+    "province": "Buenos Aires",
+    "latitude": -38.0425,
+    "longitude": -57.5385,
+    "phone": "+54 223 480-1079",
+    "whatsapp": "+54 9 223 555-0203",
+    "rating": 4.9,
+    "reviewCount": 140,
+    "minPrice": 28000,
+    "images": [
+      "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80"
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: true,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
+    "amenities": {
+      "parking": true,
+      "showers": true,
+      "lockerRooms": true,
+      "buffet": true,
+      "grill": true,
+      "wifi": true,
+      "equipmentRental": true,
+      "covered": true,
+      "lighting": true
     },
-    openingTime: '08:30',
-    closingTime: '01:00',
-    minPrice: 32000,
-    active: true
+    "openingTime": "08:00",
+    "closingTime": "00:30",
+    "active": true
   },
   {
-    id: 'club-el-potrero',
-    name: 'El Potrero',
-    slug: 'el-potrero',
-    description: 'Complejo céntrico de Fútbol 5 y Pádel con excelente iluminación nocturna y vestuarios completos.',
-    address: 'Salta 2248',
-    city: 'Mar del Plata',
-    province: 'Buenos Aires',
-    latitude: -38.000319,
-    longitude: -57.557516,
-    phone: '+54 223 495-2244',
-    whatsapp: '+54 9 223 555-0104',
-    rating: 4.8,
-    reviewCount: 164,
-    images: [
-      'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=800&auto=format&fit=crop&q=80'
+    "id": "club-breack-point-padel",
+    "name": "Breack Point Padel",
+    "slug": "breack-point-padel",
+    "description": "Complejo Breack Point Padel sobre Av. Constitución con canchas de pádel de última generación.",
+    "address": "Av. Constitución 5951",
+    "city": "Mar del Plata",
+    "province": "Buenos Aires",
+    "latitude": -37.9625,
+    "longitude": -57.571,
+    "phone": "+54 223 479-5951",
+    "whatsapp": "+54 9 223 555-0204",
+    "rating": 4.8,
+    "reviewCount": 160,
+    "minPrice": 28000,
+    "images": [
+      "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80"
     ],
-    amenities: {
-      parking: false,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: false,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
+    "amenities": {
+      "parking": true,
+      "showers": true,
+      "lockerRooms": true,
+      "buffet": true,
+      "grill": false,
+      "wifi": true,
+      "equipmentRental": true,
+      "covered": true,
+      "lighting": true
     },
-    openingTime: '09:00',
-    closingTime: '00:30',
-    minPrice: 25000,
-    active: true
+    "openingTime": "08:00",
+    "closingTime": "00:30",
+    "active": true
   },
   {
-    id: 'club-balon-5',
-    name: 'Balón 5 - Papi Fútbol & Pádel',
-    slug: 'balon-5',
-    description: 'Tradicional complejo en Mar del Plata. Pistas de pádel y canchas de fútbol 5 techadas.',
-    address: 'Moreno 3545',
-    city: 'Mar del Plata',
-    province: 'Buenos Aires',
-    latitude: -37.996898,
-    longitude: -57.558361,
-    phone: '+54 223 494-3545',
-    whatsapp: '+54 9 223 555-0105',
-    rating: 4.7,
-    reviewCount: 88,
-    images: [
-      'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=800&auto=format&fit=crop&q=80'
+    "id": "club-kongo-padel",
+    "name": "Kongo Padel",
+    "slug": "kongo-padel",
+    "description": "Kongo Padel sobre Av. Colón con pistas de cristal panorámicas y césped texturado azul.",
+    "address": "Av. Colón 5402",
+    "city": "Mar del Plata",
+    "province": "Buenos Aires",
+    "latitude": -37.9905,
+    "longitude": -57.5755,
+    "phone": "+54 223 478-5402",
+    "whatsapp": "+54 9 223 555-0205",
+    "rating": 4.8,
+    "reviewCount": 175,
+    "minPrice": 27000,
+    "images": [
+      "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80"
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: true,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
+    "amenities": {
+      "parking": true,
+      "showers": true,
+      "lockerRooms": true,
+      "buffet": true,
+      "grill": true,
+      "wifi": true,
+      "equipmentRental": true,
+      "covered": true,
+      "lighting": true
     },
-    openingTime: '08:00',
-    closingTime: '00:00',
-    minPrice: 24000,
-    active: true
+    "openingTime": "08:00",
+    "closingTime": "00:30",
+    "active": true
   },
   {
-    id: 'club-cancha-luro-5102',
-    name: 'Cancha Fútbol 5 & Pádel Luro',
-    slug: 'cancha-luro-5102',
-    description: 'Ubicación privilegiada sobre Av. Luro con canchas de césped sintético y pádel.',
-    address: 'Av. Pedro Luro 5102',
-    city: 'Mar del Plata',
-    province: 'Buenos Aires',
-    latitude: -37.985894,
-    longitude: -57.571676,
-    phone: '+54 223 470-5102',
-    whatsapp: '+54 9 223 555-0106',
-    rating: 4.6,
-    reviewCount: 76,
-    images: [
-      'https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=800&auto=format&fit=crop&q=80'
+    "id": "club-las-lajas-padle",
+    "name": "Las Lajas Padle Club",
+    "slug": "las-lajas-padle-club",
+    "description": "Tradicional club Las Lajas con canchas de pádel techadas, buffet y parrilla para el tercer tiempo.",
+    "address": "José Mármol 846",
+    "city": "Mar del Plata",
+    "province": "Buenos Aires",
+    "latitude": -37.9685,
+    "longitude": -57.5655,
+    "phone": "+54 223 474-0846",
+    "whatsapp": "+54 9 223 555-0206",
+    "rating": 4.7,
+    "reviewCount": 110,
+    "minPrice": 24000,
+    "images": [
+      "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80"
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: false,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
+    "amenities": {
+      "parking": true,
+      "showers": true,
+      "lockerRooms": true,
+      "buffet": true,
+      "grill": false,
+      "wifi": true,
+      "equipmentRental": true,
+      "covered": true,
+      "lighting": true
     },
-    openingTime: '09:00',
-    closingTime: '00:00',
-    minPrice: 24000,
-    active: true
+    "openingTime": "08:00",
+    "closingTime": "00:30",
+    "active": true
   },
   {
-    id: 'club-catonio-f7',
-    name: 'Catonio Fútbol 7 & Pádel',
-    slug: 'catonio-futbol-7',
-    description: 'Complejo en zona Puerto / Juan B. Justo con canchas de fútbol 7 de césped monofilamento y pádel.',
-    address: 'Juan B. Justo 666',
-    city: 'Mar del Plata',
-    province: 'Buenos Aires',
-    latitude: -38.035858,
-    longitude: -57.549071,
-    phone: '+54 223 480-0666',
-    whatsapp: '+54 9 223 555-0107',
-    rating: 4.9,
-    reviewCount: 153,
-    images: [
-      'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop&q=80'
+    "id": "club-los-naranjos-padel",
+    "name": "Los Naranjos",
+    "slug": "los-naranjos-padel",
+    "description": "Los Naranjos Pádel en zona norte con pistas de pádel panorámicas e indoor de competición.",
+    "address": "Dorrego 333",
+    "city": "Mar del Plata",
+    "province": "Buenos Aires",
+    "latitude": -37.979,
+    "longitude": -57.5485,
+    "phone": "+54 223 473-0333",
+    "whatsapp": "+54 9 223 555-0207",
+    "rating": 4.9,
+    "reviewCount": 220,
+    "minPrice": 28000,
+    "images": [
+      "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80"
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: true,
-      wifi: true,
-      equipmentRental: true,
-      covered: false,
-      lighting: true
+    "amenities": {
+      "parking": true,
+      "showers": true,
+      "lockerRooms": true,
+      "buffet": true,
+      "grill": true,
+      "wifi": true,
+      "equipmentRental": true,
+      "covered": true,
+      "lighting": true
     },
-    openingTime: '09:00',
-    closingTime: '01:00',
-    minPrice: 34000,
-    active: true
+    "openingTime": "08:00",
+    "closingTime": "00:30",
+    "active": true
   },
   {
-    id: 'club-complejo-gaboto',
-    name: 'Complejo Deportivo Gaboto',
-    slug: 'complejo-deportivo-gaboto',
-    description: 'Predio deportivo integral con canchas de pádel de blindex y fútbol sintético.',
-    address: 'Gaboto 3875',
-    city: 'Mar del Plata',
-    province: 'Buenos Aires',
-    latitude: -38.037691,
-    longitude: -57.549731,
-    phone: '+54 223 489-3875',
-    whatsapp: '+54 9 223 555-0108',
-    rating: 4.7,
-    reviewCount: 92,
-    images: [
-      'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&auto=format&fit=crop&q=80'
+    "id": "club-paddle-san-juan",
+    "name": "Paddle San Juan",
+    "slug": "paddle-san-juan",
+    "description": "Complejo céntrico de pádel sobre calle San Juan con pistas de blindex y confitería.",
+    "address": "San Juan 1660",
+    "city": "Mar del Plata",
+    "province": "Buenos Aires",
+    "latitude": -37.9912,
+    "longitude": -57.5582,
+    "phone": "+54 223 472-1660",
+    "whatsapp": "+54 9 223 555-0208",
+    "rating": 4.6,
+    "reviewCount": 85,
+    "minPrice": 24000,
+    "images": [
+      "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80"
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: true,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
+    "amenities": {
+      "parking": true,
+      "showers": true,
+      "lockerRooms": true,
+      "buffet": true,
+      "grill": false,
+      "wifi": true,
+      "equipmentRental": true,
+      "covered": true,
+      "lighting": true
     },
-    openingTime: '08:00',
-    closingTime: '00:30',
-    minPrice: 27000,
-    active: true
+    "openingTime": "08:00",
+    "closingTime": "00:30",
+    "active": true
   },
   {
-    id: 'club-complejo-san-paolo',
-    name: 'Complejo San Paolo',
-    slug: 'complejo-san-paolo',
-    description: 'Canchas panorámicas de pádel y predio de fútbol en la zona sur de Mar del Plata.',
-    address: 'J. S. Elcano 6438',
-    city: 'Mar del Plata',
-    province: 'Buenos Aires',
-    latitude: -38.02195,
-    longitude: -57.57273,
-    phone: '+54 223 484-6438',
-    whatsapp: '+54 9 223 555-0109',
-    rating: 4.8,
-    reviewCount: 114,
-    images: [
-      'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=800&auto=format&fit=crop&q=80'
+    "id": "club-play-time-padel",
+    "name": "Play Time",
+    "slug": "play-time-padel",
+    "description": "Play Time Pádel sobre Av. Constitución con canchas de blindex, vestuarios y bar.",
+    "address": "Av. Constitución 7147",
+    "city": "Mar del Plata",
+    "province": "Buenos Aires",
+    "latitude": -37.961,
+    "longitude": -57.5815,
+    "phone": "+54 223 479-7147",
+    "whatsapp": "+54 9 223 555-0209",
+    "rating": 4.8,
+    "reviewCount": 190,
+    "minPrice": 28000,
+    "images": [
+      "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80"
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: true,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
+    "amenities": {
+      "parking": true,
+      "showers": true,
+      "lockerRooms": true,
+      "buffet": true,
+      "grill": true,
+      "wifi": true,
+      "equipmentRental": true,
+      "covered": true,
+      "lighting": true
     },
-    openingTime: '08:00',
-    closingTime: '01:00',
-    minPrice: 29000,
-    active: true
+    "openingTime": "08:00",
+    "closingTime": "00:30",
+    "active": true
   },
   {
-    id: 'club-parada-5',
-    name: 'Parada 5 Complejo Deportivo',
-    slug: 'parada-5',
-    description: 'Complejo sobre Av. Constitución con canchas de fútbol 5 y pádel de última generación.',
-    address: 'Av. Constitución 4205',
-    city: 'Mar del Plata',
-    province: 'Buenos Aires',
-    latitude: -37.969406,
-    longitude: -57.545654,
-    phone: '+54 223 471-4205',
-    whatsapp: '+54 9 223 555-0110',
-    rating: 4.9,
-    reviewCount: 220,
-    images: [
-      'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=800&auto=format&fit=crop&q=80'
+    "id": "club-san-carlos-padel",
+    "name": "San Carlos Padel",
+    "slug": "san-carlos-padel",
+    "description": "Complejo San Carlos Pádel con canchas cubiertas de cristal y estacionamiento propio.",
+    "address": "9 de Julio 4179",
+    "city": "Mar del Plata",
+    "province": "Buenos Aires",
+    "latitude": -37.9885,
+    "longitude": -57.565,
+    "phone": "+54 223 475-4179",
+    "whatsapp": "+54 9 223 555-0210",
+    "rating": 4.7,
+    "reviewCount": 98,
+    "minPrice": 25000,
+    "images": [
+      "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80"
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: true,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
+    "amenities": {
+      "parking": true,
+      "showers": true,
+      "lockerRooms": true,
+      "buffet": true,
+      "grill": false,
+      "wifi": true,
+      "equipmentRental": true,
+      "covered": true,
+      "lighting": true
     },
-    openingTime: '08:00',
-    closingTime: '01:30',
-    minPrice: 30000,
-    active: true
+    "openingTime": "08:00",
+    "closingTime": "00:30",
+    "active": true
   },
   {
-    id: 'club-estacion-futbol-luro',
-    name: 'Estación Fútbol Mdq',
-    slug: 'estacion-futbol-mdq',
-    description: 'Canchas sintéticas sobre Av. Luro con iluminación LED y pistas de pádel.',
-    address: 'Av. Pedro Luro 5484',
-    city: 'Mar del Plata',
-    province: 'Buenos Aires',
-    latitude: -37.984024,
-    longitude: -57.575339,
-    phone: '+54 223 478-5484',
-    whatsapp: '+54 9 223 555-0111',
-    rating: 4.7,
-    reviewCount: 105,
-    images: [
-      'https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=800&auto=format&fit=crop&q=80'
+    "id": "club-las-palmeras-padel-pickleball",
+    "name": "Las Palmeras Padel Y Pickleball",
+    "slug": "las-palmeras-padel-pickleball",
+    "description": "Complejo deportivo Las Palmeras con pistas de pádel panorámicas y canchas oficiales de pickleball.",
+    "address": "Tierra del Fuego 1155",
+    "city": "Mar del Plata",
+    "province": "Buenos Aires",
+    "latitude": -37.9785,
+    "longitude": -57.5725,
+    "phone": "+54 223 473-1155",
+    "whatsapp": "+54 9 223 555-0211",
+    "rating": 4.9,
+    "reviewCount": 130,
+    "minPrice": 26000,
+    "images": [
+      "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80"
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: false,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
+    "amenities": {
+      "parking": true,
+      "showers": true,
+      "lockerRooms": true,
+      "buffet": true,
+      "grill": true,
+      "wifi": true,
+      "equipmentRental": true,
+      "covered": true,
+      "lighting": true
     },
-    openingTime: '09:00',
-    closingTime: '00:00',
-    minPrice: 25000,
-    active: true
+    "openingTime": "08:00",
+    "closingTime": "00:30",
+    "active": true
   },
   {
-    id: 'club-estacion-futbol-berutti',
-    name: 'Complejo Estación Fútbol',
-    slug: 'complejo-estacion-futbol',
-    description: 'Predio deportivo en Berutti con canchas de fútbol sintético y canchas de pádel.',
-    address: 'Berutti 7290',
-    city: 'Mar del Plata',
-    province: 'Buenos Aires',
-    latitude: -37.964161,
-    longitude: -57.583203,
-    phone: '+54 223 477-7290',
-    whatsapp: '+54 9 223 555-0112',
-    rating: 4.8,
-    reviewCount: 130,
-    images: [
-      'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop&q=80'
+    "id": "club-indoor-padel-canchas",
+    "name": "Indoor Padel Alquiler de Canchas",
+    "slug": "indoor-padel-alquiler-canchas",
+    "description": "Canchas de pádel 100% techadas e indoor en pleno centro de Mar del Plata.",
+    "address": "Belgrano 4182",
+    "city": "Mar del Plata",
+    "province": "Buenos Aires",
+    "latitude": -37.9975,
+    "longitude": -57.5655,
+    "phone": "+54 223 494-4182",
+    "whatsapp": "+54 9 223 555-0212",
+    "rating": 4.7,
+    "reviewCount": 115,
+    "minPrice": 26000,
+    "images": [
+      "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80"
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: true,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
+    "amenities": {
+      "parking": true,
+      "showers": true,
+      "lockerRooms": true,
+      "buffet": true,
+      "grill": false,
+      "wifi": true,
+      "equipmentRental": true,
+      "covered": true,
+      "lighting": true
     },
-    openingTime: '08:30',
-    closingTime: '01:00',
-    minPrice: 27000,
-    active: true
+    "openingTime": "08:00",
+    "closingTime": "00:30",
+    "active": true
   },
   {
-    id: 'club-el-campito',
-    name: 'El Campito Complejo Deportivo',
-    slug: 'el-campito',
-    description: 'Canchas de pádel techadas y fútbol en zona norte de Mar del Plata.',
-    address: 'Rafael del Riego 95',
-    city: 'Mar del Plata',
-    province: 'Buenos Aires',
-    latitude: -37.9575,
-    longitude: -57.568,
-    phone: '+54 223 479-0095',
-    whatsapp: '+54 9 223 555-0113',
-    rating: 4.7,
-    reviewCount: 82,
-    images: [
-      'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&auto=format&fit=crop&q=80'
+    "id": "club-geminis-paddle-tennis",
+    "name": "Géminis Paddle Tennis",
+    "slug": "geminis-paddle-tennis",
+    "description": "Géminis Paddle Tennis sobre Av. Juan B. Justo con canchas de pádel y tenis.",
+    "address": "Av. Juan B. Justo 566",
+    "city": "Mar del Plata",
+    "province": "Buenos Aires",
+    "latitude": -38.035,
+    "longitude": -57.5475,
+    "phone": "+54 223 480-0566",
+    "whatsapp": "+54 9 223 555-0213",
+    "rating": 4.8,
+    "reviewCount": 145,
+    "minPrice": 25000,
+    "images": [
+      "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80"
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: true,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
+    "amenities": {
+      "parking": true,
+      "showers": true,
+      "lockerRooms": true,
+      "buffet": true,
+      "grill": true,
+      "wifi": true,
+      "equipmentRental": true,
+      "covered": true,
+      "lighting": true
     },
-    openingTime: '09:00',
-    closingTime: '00:00',
-    minPrice: 25000,
-    active: true
+    "openingTime": "08:00",
+    "closingTime": "00:30",
+    "active": true
   },
   {
-    id: 'club-dreams-futbol-5',
-    name: 'Dreams Fútbol 5 & Pádel',
-    slug: 'dreams-futbol-5',
-    description: 'Complejo céntrico sobre Moreno con canchas techadas de pádel y fútbol 5.',
-    address: 'Moreno 3364',
-    city: 'Mar del Plata',
-    province: 'Buenos Aires',
-    latitude: -37.998022,
-    longitude: -57.556655,
-    phone: '+54 223 491-3364',
-    whatsapp: '+54 9 223 555-0114',
-    rating: 4.8,
-    reviewCount: 147,
-    images: [
-      'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=800&auto=format&fit=crop&q=80'
+    "id": "club-la-manzana-padel",
+    "name": "La Manzana",
+    "slug": "la-manzana-padel",
+    "description": "La Manzana Pádel sobre Av. Independencia con canchas de cristal y vestuarios completos.",
+    "address": "Independencia 2961",
+    "city": "Mar del Plata",
+    "province": "Buenos Aires",
+    "latitude": -38.0065,
+    "longitude": -57.5605,
+    "phone": "+54 223 495-2961",
+    "whatsapp": "+54 9 223 555-0214",
+    "rating": 4.7,
+    "reviewCount": 105,
+    "minPrice": 25000,
+    "images": [
+      "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80"
     ],
-    amenities: {
-      parking: false,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: false,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
+    "amenities": {
+      "parking": true,
+      "showers": true,
+      "lockerRooms": true,
+      "buffet": true,
+      "grill": false,
+      "wifi": true,
+      "equipmentRental": true,
+      "covered": true,
+      "lighting": true
     },
-    openingTime: '08:00',
-    closingTime: '01:00',
-    minPrice: 26000,
-    active: true
+    "openingTime": "08:00",
+    "closingTime": "00:30",
+    "active": true
   },
   {
-    id: 'club-7-anker',
-    name: '7 Anker Football & Pádel',
-    slug: '7-anker-football',
-    description: 'Predio multideporte en Magallanes y San Antonio con canchas sintéticas y pádel.',
-    address: 'Magallanes y San Antonio',
-    city: 'Mar del Plata',
-    province: 'Buenos Aires',
-    latitude: -38.008397,
-    longitude: -57.593922,
-    phone: '+54 223 482-7700',
-    whatsapp: '+54 9 223 555-0115',
-    rating: 4.7,
-    reviewCount: 94,
-    images: [
-      'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop&q=80'
+    "id": "club-la-marca-padel",
+    "name": "La Marca",
+    "slug": "la-marca-padel",
+    "description": "La Marca Pádel en zona Playa Grande con pistas de pádel panorámicas e iluminación LED.",
+    "address": "Almafuerte 253",
+    "city": "Mar del Plata",
+    "province": "Buenos Aires",
+    "latitude": -38.0195,
+    "longitude": -57.5355,
+    "phone": "+54 223 451-0253",
+    "whatsapp": "+54 9 223 555-0215",
+    "rating": 4.9,
+    "reviewCount": 180,
+    "minPrice": 30000,
+    "images": [
+      "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80"
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: true,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
+    "amenities": {
+      "parking": true,
+      "showers": true,
+      "lockerRooms": true,
+      "buffet": true,
+      "grill": true,
+      "wifi": true,
+      "equipmentRental": true,
+      "covered": true,
+      "lighting": true
     },
-    openingTime: '09:00',
-    closingTime: '00:30',
-    minPrice: 27000,
-    active: true
+    "openingTime": "08:00",
+    "closingTime": "00:30",
+    "active": true
   },
   {
-    id: 'club-smith-colon',
-    name: 'Smith Colón',
-    slug: 'smith-colon',
-    description: 'Complejo tradicional en Guido y Av. Colón. Pistas de pádel y fútbol sintético.',
-    address: 'Guido y Av. Colón',
-    city: 'Mar del Plata',
-    province: 'Buenos Aires',
-    latitude: -38.0035,
-    longitude: -57.5615,
-    phone: '+54 223 492-8800',
-    whatsapp: '+54 9 223 555-0116',
-    rating: 4.8,
-    reviewCount: 160,
-    images: [
-      'https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=800&auto=format&fit=crop&q=80'
+    "id": "club-la-terraza-padel",
+    "name": "La Terraza",
+    "slug": "la-terraza-padel",
+    "description": "Complejo La Terraza Pádel con canchas techadas de blindex y terraza lounge.",
+    "address": "Av. Jacinto Peralta Ramos 2422",
+    "city": "Mar del Plata",
+    "province": "Buenos Aires",
+    "latitude": -38.0245,
+    "longitude": -57.568,
+    "phone": "+54 223 482-2422",
+    "whatsapp": "+54 9 223 555-0216",
+    "rating": 4.8,
+    "reviewCount": 125,
+    "minPrice": 26000,
+    "images": [
+      "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80"
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: false,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
+    "amenities": {
+      "parking": true,
+      "showers": true,
+      "lockerRooms": true,
+      "buffet": true,
+      "grill": false,
+      "wifi": true,
+      "equipmentRental": true,
+      "covered": true,
+      "lighting": true
     },
-    openingTime: '08:00',
-    closingTime: '01:00',
-    minPrice: 28000,
-    active: true
+    "openingTime": "08:00",
+    "closingTime": "00:30",
+    "active": true
   },
   {
-    id: 'club-green-park',
-    name: 'Green Park Complejo',
-    slug: 'green-park',
-    description: 'Amplio predio sobre Champagnat con canchas de fútbol y pádel rodeadas de verde.',
-    address: 'Av. Champagnat 3418',
-    city: 'Mar del Plata',
-    province: 'Buenos Aires',
-    latitude: -37.995012,
-    longitude: -57.594034,
-    phone: '+54 223 478-3418',
-    whatsapp: '+54 9 223 555-0117',
-    rating: 4.9,
-    reviewCount: 210,
-    images: [
-      'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&auto=format&fit=crop&q=80'
+    "id": "club-la-masia-padel",
+    "name": "Club de padel La Masia",
+    "slug": "club-la-masia-padel",
+    "description": "Club de Pádel La Masía en zona Puerto con canchas de pádel de césped sintético de primera línea.",
+    "address": "Juramento 55",
+    "city": "Mar del Plata",
+    "province": "Buenos Aires",
+    "latitude": -38.0385,
+    "longitude": -57.545,
+    "phone": "+54 223 480-0055",
+    "whatsapp": "+54 9 223 555-0217",
+    "rating": 4.8,
+    "reviewCount": 135,
+    "minPrice": 26000,
+    "images": [
+      "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80"
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: true,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
+    "amenities": {
+      "parking": true,
+      "showers": true,
+      "lockerRooms": true,
+      "buffet": true,
+      "grill": true,
+      "wifi": true,
+      "equipmentRental": true,
+      "covered": true,
+      "lighting": true
     },
-    openingTime: '08:00',
-    closingTime: '01:30',
-    minPrice: 30000,
-    active: true
+    "openingTime": "08:00",
+    "closingTime": "00:30",
+    "active": true
   },
   {
-    id: 'club-la-techada',
-    name: 'La Techada Fútbol 5 & Pádel',
-    slug: 'la-techada',
-    description: 'Canchas 100% techadas en Juan B. Justo. Ideales para jugar en cualquier clima.',
-    address: 'Av. Juan B. Justo 6454',
-    city: 'Mar del Plata',
-    province: 'Buenos Aires',
-    latitude: -37.997394,
-    longitude: -57.599907,
-    phone: '+54 223 481-6454',
-    whatsapp: '+54 9 223 555-0118',
-    rating: 4.8,
-    reviewCount: 175,
-    images: [
-      'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=800&auto=format&fit=crop&q=80'
+    "id": "club-los-pinos-padel",
+    "name": "Los Pinos",
+    "slug": "los-pinos-padel",
+    "description": "Los Pinos Pádel con pistas de cristal e iluminación LED profesional para partidos nocturnos.",
+    "address": "San Juan 4214",
+    "city": "Mar del Plata",
+    "province": "Buenos Aires",
+    "latitude": -38.0155,
+    "longitude": -57.572,
+    "phone": "+54 223 475-4214",
+    "whatsapp": "+54 9 223 555-0218",
+    "rating": 4.7,
+    "reviewCount": 92,
+    "minPrice": 25000,
+    "images": [
+      "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80"
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: true,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
+    "amenities": {
+      "parking": true,
+      "showers": true,
+      "lockerRooms": true,
+      "buffet": true,
+      "grill": false,
+      "wifi": true,
+      "equipmentRental": true,
+      "covered": true,
+      "lighting": true
     },
-    openingTime: '08:30',
-    closingTime: '01:00',
-    minPrice: 28000,
-    active: true
+    "openingTime": "08:00",
+    "closingTime": "00:30",
+    "active": true
   },
   {
-    id: 'club-indoor-7',
-    name: 'Indoor 7 Nuevo Complejo',
-    slug: 'indoor-7',
-    description: 'Modernas instalaciones techadas sobre Champagnat para Fútbol 7 y Pádel Pro.',
-    address: 'Av. M. Champagnat 3442',
-    city: 'Mar del Plata',
-    province: 'Buenos Aires',
-    latitude: -37.995163,
-    longitude: -57.594152,
-    phone: '+54 223 478-3442',
-    whatsapp: '+54 9 223 555-0119',
-    rating: 4.9,
-    reviewCount: 188,
-    images: [
-      'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop&q=80'
+    "id": "club-masters-padel",
+    "name": "Master's Pádel / Master Upa",
+    "slug": "masters-padel-master-upa",
+    "description": "Master's Pádel / Master Upa con pistas de competición WPT, academia y torneos federados.",
+    "address": "12 de Octubre 6344",
+    "city": "Mar del Plata",
+    "province": "Buenos Aires",
+    "latitude": -38.0305,
+    "longitude": -57.5855,
+    "phone": "+54 223 482-6344",
+    "whatsapp": "+54 9 223 555-0219",
+    "rating": 4.9,
+    "reviewCount": 210,
+    "minPrice": 28000,
+    "images": [
+      "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80"
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: true,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
+    "amenities": {
+      "parking": true,
+      "showers": true,
+      "lockerRooms": true,
+      "buffet": true,
+      "grill": true,
+      "wifi": true,
+      "equipmentRental": true,
+      "covered": true,
+      "lighting": true
     },
-    openingTime: '08:00',
-    closingTime: '01:30',
-    minPrice: 32000,
-    active: true
+    "openingTime": "08:00",
+    "closingTime": "00:30",
+    "active": true
   },
   {
-    id: 'club-3er-tiempo',
-    name: '3ER TIEMPO Complejo Deportivo',
-    slug: '3er-tiempo',
-    description: 'Complejo sobre Falucho con canchas sintéticas, pádel y área social con parrillas.',
-    address: 'Falucho 5463',
-    city: 'Mar del Plata',
-    province: 'Buenos Aires',
-    latitude: -37.990419,
-    longitude: -57.580255,
-    phone: '+54 223 475-5463',
-    whatsapp: '+54 9 223 555-0120',
-    rating: 4.8,
-    reviewCount: 135,
-    images: [
-      'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=800&auto=format&fit=crop&q=80'
+    "id": "club-la-meca-padel",
+    "name": "Complejo La Meca",
+    "slug": "complejo-la-meca",
+    "description": "Complejo La Meca con canchas de pádel techadas, buffet completo y vestuarios con duchas.",
+    "address": "Uruguay 4064",
+    "city": "Mar del Plata",
+    "province": "Buenos Aires",
+    "latitude": -38.0085,
+    "longitude": -57.5805,
+    "phone": "+54 223 474-4064",
+    "whatsapp": "+54 9 223 555-0220",
+    "rating": 4.8,
+    "reviewCount": 115,
+    "minPrice": 26000,
+    "images": [
+      "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80"
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: true,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
+    "amenities": {
+      "parking": true,
+      "showers": true,
+      "lockerRooms": true,
+      "buffet": true,
+      "grill": false,
+      "wifi": true,
+      "equipmentRental": true,
+      "covered": true,
+      "lighting": true
     },
-    openingTime: '09:00',
-    closingTime: '01:00',
-    minPrice: 27000,
-    active: true
+    "openingTime": "08:00",
+    "closingTime": "00:30",
+    "active": true
   },
   {
-    id: 'club-var-futbol-7',
-    name: 'V.A.R. Fútbol 7 & Pádel',
-    slug: 'var-futbol-7',
-    description: 'Complejo deportivo en zona sur (Calle 475) con canchas de Fútbol 7 y Pádel.',
-    address: 'Calle 475 Nº 3500',
-    city: 'Mar del Plata',
-    province: 'Buenos Aires',
-    latitude: -38.083035,
-    longitude: -57.630487,
-    phone: '+54 223 467-3500',
-    whatsapp: '+54 9 223 555-0121',
-    rating: 4.9,
-    reviewCount: 162,
-    images: [
-      'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&auto=format&fit=crop&q=80'
+    "id": "club-crazy-for-padel",
+    "name": "Crazy For Padel",
+    "slug": "crazy-for-padel",
+    "description": "Crazy For Padel con pistas panorámicas de cristal, pro-shop con paletas y accesorios.",
+    "address": "México 2767",
+    "city": "Mar del Plata",
+    "province": "Buenos Aires",
+    "latitude": -37.9855,
+    "longitude": -57.585,
+    "phone": "+54 223 478-2767",
+    "whatsapp": "+54 9 223 555-0221",
+    "rating": 4.9,
+    "reviewCount": 155,
+    "minPrice": 28000,
+    "images": [
+      "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80"
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: true,
-      wifi: true,
-      equipmentRental: true,
-      covered: false,
-      lighting: true
+    "amenities": {
+      "parking": true,
+      "showers": true,
+      "lockerRooms": true,
+      "buffet": true,
+      "grill": true,
+      "wifi": true,
+      "equipmentRental": true,
+      "covered": true,
+      "lighting": true
     },
-    openingTime: '09:00',
-    closingTime: '01:00',
-    minPrice: 30000,
-    active: true
+    "openingTime": "08:00",
+    "closingTime": "00:30",
+    "active": true
   },
   {
-    id: 'club-aztk-arena',
-    name: 'COMPLEJO AZTK ARENA',
-    slug: 'complejo-aztk-arena',
-    description: 'Arena deportiva moderna sobre San Martín con canchas de pádel de cristal y fútbol.',
-    address: 'San Martín 5521',
-    city: 'Mar del Plata',
-    province: 'Buenos Aires',
-    latitude: -37.984403,
-    longitude: -57.576428,
-    phone: '+54 223 474-5521',
-    whatsapp: '+54 9 223 555-0122',
-    rating: 4.8,
-    reviewCount: 140,
-    images: [
-      'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=800&auto=format&fit=crop&q=80'
+    "id": "club-calex-padel",
+    "name": "Calex cancha de Pádel Mar del Plata",
+    "slug": "calex-padel-mdp",
+    "description": "Calex Pádel con canchas de pádel de césped texturado, vestuarios y cantina.",
+    "address": "Alberti 6457",
+    "city": "Mar del Plata",
+    "province": "Buenos Aires",
+    "latitude": -37.995,
+    "longitude": -57.5955,
+    "phone": "+54 223 477-6457",
+    "whatsapp": "+54 9 223 555-0222",
+    "rating": 4.7,
+    "reviewCount": 89,
+    "minPrice": 24000,
+    "images": [
+      "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80"
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: false,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
+    "amenities": {
+      "parking": true,
+      "showers": true,
+      "lockerRooms": true,
+      "buffet": true,
+      "grill": false,
+      "wifi": true,
+      "equipmentRental": true,
+      "covered": true,
+      "lighting": true
     },
-    openingTime: '08:00',
-    closingTime: '00:30',
-    minPrice: 28000,
-    active: true
+    "openingTime": "08:00",
+    "closingTime": "00:30",
+    "active": true
   },
   {
-    id: 'club-deportivo-colon',
-    name: 'Complejo Deportivo Colón',
-    slug: 'complejo-deportivo-colon',
-    description: 'Predio sobre Av. Colón con canchas de fútbol sintético y pistas de pádel iluminadas.',
-    address: 'Av. Colón 9534',
-    city: 'Mar del Plata',
-    province: 'Buenos Aires',
-    latitude: -37.997074,
-    longitude: -57.562824,
-    phone: '+54 223 477-9534',
-    whatsapp: '+54 9 223 555-0123',
-    rating: 4.7,
-    reviewCount: 98,
-    images: [
-      'https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop&q=80'
+    "id": "club-la-estacion-padel",
+    "name": "La estación pádel",
+    "slug": "la-estacion-padel",
+    "description": "La Estación Pádel sobre Av. Luro con canchas de blindex, fácil acceso y estacionamiento.",
+    "address": "Av. Pedro Luro 5102",
+    "city": "Mar del Plata",
+    "province": "Buenos Aires",
+    "latitude": -37.986,
+    "longitude": -57.5718,
+    "phone": "+54 223 470-5102",
+    "whatsapp": "+54 9 223 555-0223",
+    "rating": 4.8,
+    "reviewCount": 140,
+    "minPrice": 27000,
+    "images": [
+      "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80"
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: true,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
+    "amenities": {
+      "parking": true,
+      "showers": true,
+      "lockerRooms": true,
+      "buffet": true,
+      "grill": true,
+      "wifi": true,
+      "equipmentRental": true,
+      "covered": true,
+      "lighting": true
     },
-    openingTime: '08:30',
-    closingTime: '01:00',
-    minPrice: 26000,
-    active: true
+    "openingTime": "08:00",
+    "closingTime": "00:30",
+    "active": true
   },
   {
-    id: 'club-complejo-trebi',
-    name: 'Complejo Trebi',
-    slug: 'complejo-trebi',
-    description: 'Canchas de pádel de césped texturado y canchas de fútbol en Tierra del Fuego.',
-    address: 'Tierra del Fuego 650',
-    city: 'Mar del Plata',
-    province: 'Buenos Aires',
-    latitude: -37.975169,
-    longitude: -57.571109,
-    phone: '+54 223 473-0650',
-    whatsapp: '+54 9 223 555-0124',
-    rating: 4.8,
-    reviewCount: 112,
-    images: [
-      'https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&auto=format&fit=crop&q=80'
+    "id": "club-once-unidos-padel",
+    "name": "Once Unidos Padel",
+    "slug": "once-unidos-padel",
+    "description": "Sede Once Unidos Pádel en Parque Luro con pistas de cristal panorámicas y predio social.",
+    "address": "Strobel 5322",
+    "city": "Mar del Plata",
+    "province": "Buenos Aires",
+    "latitude": -37.962,
+    "longitude": -57.561,
+    "phone": "+54 223 479-5322",
+    "whatsapp": "+54 9 223 555-0224",
+    "rating": 4.9,
+    "reviewCount": 230,
+    "minPrice": 26000,
+    "images": [
+      "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80"
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: true,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
+    "amenities": {
+      "parking": true,
+      "showers": true,
+      "lockerRooms": true,
+      "buffet": true,
+      "grill": false,
+      "wifi": true,
+      "equipmentRental": true,
+      "covered": true,
+      "lighting": true
     },
-    openingTime: '08:00',
-    closingTime: '00:00',
-    minPrice: 25000,
-    active: true
+    "openingTime": "08:00",
+    "closingTime": "00:30",
+    "active": true
   },
   {
-    id: 'club-america-f5',
-    name: 'América Fútbol 5 & Pádel',
-    slug: 'america-futbol-5',
-    description: 'Complejo deportivo sobre Av. Colón con canchas de fútbol 5 y pistas de pádel.',
-    address: 'Av. Colón 7254',
-    city: 'Mar del Plata',
-    province: 'Buenos Aires',
-    latitude: -37.979935,
-    longitude: -57.596954,
-    phone: '+54 223 478-7254',
-    whatsapp: '+54 9 223 555-0125',
-    rating: 4.7,
-    reviewCount: 89,
-    images: [
-      'https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop&q=80'
+    "id": "club-bar-samohu-paddle",
+    "name": "Bar Samohu Paddle",
+    "slug": "bar-samohu-paddle",
+    "description": "Bar Samohu Paddle sobre Av. Tejedor con canchas de pádel, cerveza tirada y gastronomía.",
+    "address": "Av. Carlos Tejedor 271",
+    "city": "Mar del Plata",
+    "province": "Buenos Aires",
+    "latitude": -37.968,
+    "longitude": -57.5545,
+    "phone": "+54 223 471-0271",
+    "whatsapp": "+54 9 223 555-0225",
+    "rating": 4.8,
+    "reviewCount": 165,
+    "minPrice": 26000,
+    "images": [
+      "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80"
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: false,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
+    "amenities": {
+      "parking": true,
+      "showers": true,
+      "lockerRooms": true,
+      "buffet": true,
+      "grill": true,
+      "wifi": true,
+      "equipmentRental": true,
+      "covered": true,
+      "lighting": true
     },
-    openingTime: '09:00',
-    closingTime: '00:00',
-    minPrice: 24000,
-    active: true
+    "openingTime": "08:00",
+    "closingTime": "00:30",
+    "active": true
   },
   {
-    id: 'club-area-7',
-    name: 'Área 7 Complejo Deportivo',
-    slug: 'area-7',
-    description: 'Canchas de pádel de última generación y fútbol 7 sintético en Av. Independencia.',
-    address: 'Av. Independencia 3500',
-    city: 'Mar del Plata',
-    province: 'Buenos Aires',
-    latitude: -38.010693,
-    longitude: -57.564404,
-    phone: '+54 223 494-3500',
-    whatsapp: '+54 9 223 555-0126',
-    rating: 4.9,
-    reviewCount: 178,
-    images: [
-      'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&auto=format&fit=crop&q=80'
+    "id": "club-agp-padel",
+    "name": "Club AGP",
+    "slug": "club-agp-padel",
+    "description": "Club AGP en zona costera con pistas de pádel reglamentarias, vestuarios y vista panorámica.",
+    "address": "Av. de los Trabajadores 800",
+    "city": "Mar del Plata",
+    "province": "Buenos Aires",
+    "latitude": -38.0395,
+    "longitude": -57.537,
+    "phone": "+54 223 480-0800",
+    "whatsapp": "+54 9 223 555-0226",
+    "rating": 4.8,
+    "reviewCount": 120,
+    "minPrice": 28000,
+    "images": [
+      "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80"
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: true,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
+    "amenities": {
+      "parking": true,
+      "showers": true,
+      "lockerRooms": true,
+      "buffet": true,
+      "grill": false,
+      "wifi": true,
+      "equipmentRental": true,
+      "covered": true,
+      "lighting": true
     },
-    openingTime: '08:00',
-    closingTime: '01:00',
-    minPrice: 31000,
-    active: true
+    "openingTime": "08:00",
+    "closingTime": "00:30",
+    "active": true
   },
   {
-    id: 'club-nautico-mdp',
-    name: 'Club Náutico Mar del Plata',
-    slug: 'club-nautico-mdp',
-    description: 'Histórico club costero con canchas de tenis de polvo de ladrillo frente al mar y pistas de pádel.',
-    address: 'Espigón C - Puerto',
-    city: 'Mar del Plata',
-    province: 'Buenos Aires',
-    latitude: -38.034567,
-    longitude: -57.534211,
-    phone: '+54 223 480-0323',
-    whatsapp: '+54 9 223 555-0127',
-    rating: 4.9,
-    reviewCount: 240,
-    images: [
-      'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=800&auto=format&fit=crop&q=80'
+    "id": "club-roca-padel",
+    "name": "Roca Pádel",
+    "slug": "roca-padel",
+    "description": "Roca Pádel con pistas de cristal en zona comercial de Mar del Plata, vestuarios y bar.",
+    "address": "Roca 3264",
+    "city": "Mar del Plata",
+    "province": "Buenos Aires",
+    "latitude": -38.015,
+    "longitude": -57.56,
+    "phone": "+54 223 451-3264",
+    "whatsapp": "+54 9 223 555-0227",
+    "rating": 4.7,
+    "reviewCount": 105,
+    "minPrice": 25000,
+    "images": [
+      "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80"
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: true,
-      wifi: true,
-      equipmentRental: true,
-      covered: false,
-      lighting: true
+    "amenities": {
+      "parking": true,
+      "showers": true,
+      "lockerRooms": true,
+      "buffet": true,
+      "grill": true,
+      "wifi": true,
+      "equipmentRental": true,
+      "covered": true,
+      "lighting": true
     },
-    openingTime: '08:00',
-    closingTime: '22:30',
-    minPrice: 22000,
-    active: true
+    "openingTime": "08:00",
+    "closingTime": "00:30",
+    "active": true
   },
   {
-    id: 'club-edison-lawn-tennis',
-    name: 'Edison Lawn Tennis',
-    slug: 'edison-lawn-tennis',
-    description: 'Club especializado en tenis con canchas de polvo de ladrillo de torneo e iluminación LED profesional.',
-    address: 'Av. Edison 1560',
-    city: 'Mar del Plata',
-    province: 'Buenos Aires',
-    latitude: -38.026789,
-    longitude: -57.551234,
-    phone: '+54 223 489-1560',
-    whatsapp: '+54 9 223 555-0128',
-    rating: 4.8,
-    reviewCount: 165,
-    images: [
-      'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop&q=80'
+    "id": "club-san-remo-padel",
+    "name": "San Remo Sport Padel",
+    "slug": "san-remo-sport-padel",
+    "description": "San Remo Sport Pádel con canchas de pádel panorámicas, espacio verde y parrillas.",
+    "address": "Av. Antártida Argentina 4326",
+    "city": "Mar del Plata",
+    "province": "Buenos Aires",
+    "latitude": -38.055,
+    "longitude": -57.59,
+    "phone": "+54 223 467-4326",
+    "whatsapp": "+54 9 223 555-0228",
+    "rating": 4.8,
+    "reviewCount": 135,
+    "minPrice": 26000,
+    "images": [
+      "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80"
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: false,
-      wifi: true,
-      equipmentRental: true,
-      covered: false,
-      lighting: true
+    "amenities": {
+      "parking": true,
+      "showers": true,
+      "lockerRooms": true,
+      "buffet": true,
+      "grill": false,
+      "wifi": true,
+      "equipmentRental": true,
+      "covered": true,
+      "lighting": true
     },
-    openingTime: '08:00',
-    closingTime: '22:00',
-    minPrice: 20000,
-    active: true
+    "openingTime": "08:00",
+    "closingTime": "00:30",
+    "active": true
   },
   {
-    id: 'club-once-unidos',
-    name: 'Club Once Unidos - Tenis & Pádel',
-    slug: 'club-once-unidos',
-    description: 'Sede deportiva en Parque Luro con canchas de tenis polvo de ladrillo, pádel y fútbol sintético.',
-    address: 'Falkner 5220',
-    city: 'Mar del Plata',
-    province: 'Buenos Aires',
-    latitude: -37.962145,
-    longitude: -57.561234,
-    phone: '+54 223 479-5220',
-    whatsapp: '+54 9 223 555-0129',
-    rating: 4.8,
-    reviewCount: 210,
-    images: [
-      'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&auto=format&fit=crop&q=80'
+    "id": "club-las-lomas-padel",
+    "name": "Las Lomas",
+    "slug": "las-lomas-padel",
+    "description": "Las Lomas Pádel con canchas de pádel techadas, buffet completo y estacionamiento.",
+    "address": "Gaboto 3875",
+    "city": "Mar del Plata",
+    "province": "Buenos Aires",
+    "latitude": -38.0378,
+    "longitude": -57.568,
+    "phone": "+54 223 481-3875",
+    "whatsapp": "+54 9 223 555-0229",
+    "rating": 4.7,
+    "reviewCount": 95,
+    "minPrice": 25000,
+    "images": [
+      "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80"
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: true,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
+    "amenities": {
+      "parking": true,
+      "showers": true,
+      "lockerRooms": true,
+      "buffet": true,
+      "grill": true,
+      "wifi": true,
+      "equipmentRental": true,
+      "covered": true,
+      "lighting": true
     },
-    openingTime: '08:00',
-    closingTime: '23:30',
-    minPrice: 24000,
-    active: true
+    "openingTime": "08:00",
+    "closingTime": "00:30",
+    "active": true
+  },
+  {
+    "id": "club-catonio-f7",
+    "name": "Catonio Fútbol 7 & Pádel",
+    "slug": "catonio-futbol-7",
+    "description": "Complejo en zona Puerto con canchas de fútbol 7 de césped monofilamento y pádel.",
+    "address": "Juan B. Justo 666",
+    "city": "Mar del Plata",
+    "province": "Buenos Aires",
+    "latitude": -38.035858,
+    "longitude": -57.549071,
+    "phone": "+54 223 480-0666",
+    "whatsapp": "+54 9 223 555-0107",
+    "rating": 4.9,
+    "reviewCount": 153,
+    "minPrice": 34000,
+    "images": [
+      "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80"
+    ],
+    "amenities": {
+      "parking": true,
+      "showers": true,
+      "lockerRooms": true,
+      "buffet": true,
+      "grill": false,
+      "wifi": true,
+      "equipmentRental": true,
+      "covered": true,
+      "lighting": true
+    },
+    "openingTime": "08:00",
+    "closingTime": "00:30",
+    "active": true
+  },
+  {
+    "id": "club-laverde-telefonos",
+    "name": "Laverde Club Teléfonos",
+    "slug": "laverde-club-telefonos",
+    "description": "Gran predio deportivo con canchas de Fútbol 7 reglamentario y canchas de Pádel techadas.",
+    "address": "Florisbelo Acosta 6810",
+    "city": "Mar del Plata",
+    "province": "Buenos Aires",
+    "latitude": -37.959651,
+    "longitude": -57.574533,
+    "phone": "+54 223 479-9900",
+    "whatsapp": "+54 9 223 555-0103",
+    "rating": 4.9,
+    "reviewCount": 195,
+    "minPrice": 32000,
+    "images": [
+      "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80"
+    ],
+    "amenities": {
+      "parking": true,
+      "showers": true,
+      "lockerRooms": true,
+      "buffet": true,
+      "grill": true,
+      "wifi": true,
+      "equipmentRental": true,
+      "covered": true,
+      "lighting": true
+    },
+    "openingTime": "08:00",
+    "closingTime": "00:30",
+    "active": true
+  },
+  {
+    "id": "club-america-f5",
+    "name": "América Fútbol 5",
+    "slug": "america-futbol-5",
+    "description": "Complejo deportivo sobre Av. Colón con canchas de fútbol 5 techadas y vestuarios.",
+    "address": "Av. Colón 7254",
+    "city": "Mar del Plata",
+    "province": "Buenos Aires",
+    "latitude": -37.979935,
+    "longitude": -57.596954,
+    "phone": "+54 223 478-7254",
+    "whatsapp": "+54 9 223 555-0125",
+    "rating": 4.7,
+    "reviewCount": 89,
+    "minPrice": 24000,
+    "images": [
+      "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80"
+    ],
+    "amenities": {
+      "parking": true,
+      "showers": true,
+      "lockerRooms": true,
+      "buffet": true,
+      "grill": false,
+      "wifi": true,
+      "equipmentRental": true,
+      "covered": true,
+      "lighting": true
+    },
+    "openingTime": "08:00",
+    "closingTime": "00:30",
+    "active": true
+  },
+  {
+    "id": "club-area-7",
+    "name": "Área 7 Complejo Deportivo",
+    "slug": "area-7",
+    "description": "Canchas de pádel de última generación y fútbol 7 sintético en Av. Independencia.",
+    "address": "Av. Independencia 3500",
+    "city": "Mar del Plata",
+    "province": "Buenos Aires",
+    "latitude": -38.010693,
+    "longitude": -57.564404,
+    "phone": "+54 223 494-3500",
+    "whatsapp": "+54 9 223 555-0126",
+    "rating": 4.9,
+    "reviewCount": 178,
+    "minPrice": 31000,
+    "images": [
+      "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80"
+    ],
+    "amenities": {
+      "parking": true,
+      "showers": true,
+      "lockerRooms": true,
+      "buffet": true,
+      "grill": true,
+      "wifi": true,
+      "equipmentRental": true,
+      "covered": true,
+      "lighting": true
+    },
+    "openingTime": "08:00",
+    "closingTime": "00:30",
+    "active": true
+  },
+  {
+    "id": "club-nautico-mdp",
+    "name": "Club Náutico Mar del Plata",
+    "slug": "club-nautico-mdp",
+    "description": "Histórico club costero con canchas de tenis de polvo de ladrillo frente al mar y pistas de pádel.",
+    "address": "Espigón C - Puerto",
+    "city": "Mar del Plata",
+    "province": "Buenos Aires",
+    "latitude": -38.034567,
+    "longitude": -57.534211,
+    "phone": "+54 223 480-0323",
+    "whatsapp": "+54 9 223 555-0127",
+    "rating": 4.9,
+    "reviewCount": 240,
+    "minPrice": 22000,
+    "images": [
+      "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80"
+    ],
+    "amenities": {
+      "parking": true,
+      "showers": true,
+      "lockerRooms": true,
+      "buffet": true,
+      "grill": false,
+      "wifi": true,
+      "equipmentRental": true,
+      "covered": true,
+      "lighting": true
+    },
+    "openingTime": "08:00",
+    "closingTime": "00:30",
+    "active": true
+  },
+  {
+    "id": "club-edison-lawn-tennis",
+    "name": "Edison Lawn Tennis",
+    "slug": "edison-lawn-tennis",
+    "description": "Club especializado en tenis con canchas de polvo de ladrillo de torneo e iluminación LED profesional.",
+    "address": "Av. Edison 1560",
+    "city": "Mar del Plata",
+    "province": "Buenos Aires",
+    "latitude": -38.026789,
+    "longitude": -57.551234,
+    "phone": "+54 223 489-1560",
+    "whatsapp": "+54 9 223 555-0128",
+    "rating": 4.8,
+    "reviewCount": 165,
+    "minPrice": 20000,
+    "images": [
+      "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80"
+    ],
+    "amenities": {
+      "parking": true,
+      "showers": true,
+      "lockerRooms": true,
+      "buffet": true,
+      "grill": true,
+      "wifi": true,
+      "equipmentRental": true,
+      "covered": true,
+      "lighting": true
+    },
+    "openingTime": "08:00",
+    "closingTime": "00:30",
+    "active": true
+  },
+  {
+    "id": "club-once-unidos",
+    "name": "Club Once Unidos - Tenis & Pádel",
+    "slug": "club-once-unidos",
+    "description": "Sede deportiva en Parque Luro con canchas de tenis polvo de ladrillo, pádel y fútbol sintético.",
+    "address": "Falkner 5220",
+    "city": "Mar del Plata",
+    "province": "Buenos Aires",
+    "latitude": -37.962145,
+    "longitude": -57.561234,
+    "phone": "+54 223 479-5220",
+    "whatsapp": "+54 9 223 555-0129",
+    "rating": 4.8,
+    "reviewCount": 210,
+    "minPrice": 24000,
+    "images": [
+      "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80"
+    ],
+    "amenities": {
+      "parking": true,
+      "showers": true,
+      "lockerRooms": true,
+      "buffet": true,
+      "grill": false,
+      "wifi": true,
+      "equipmentRental": true,
+      "covered": true,
+      "lighting": true
+    },
+    "openingTime": "08:00",
+    "closingTime": "00:30",
+    "active": true
   }
 ];
 
-export const MDP_REAL_COURTS: Court[] = [];
-
-for (const club of MDP_REAL_CLUBS) {
-  const nameLower = club.name.toLowerCase();
-  const descLower = (club.description || '').toLowerCase();
-
-  const isTennisClub = club.id === 'club-nautico-mdp' || club.id === 'club-edison-lawn-tennis' || club.id === 'club-once-unidos' || nameLower.includes('tenis') || descLower.includes('tenis');
-  const isFutbolOnly = nameLower.includes('fútbol 5') || nameLower.includes('futbol 5') || nameLower.includes('fútbol 7') || nameLower.includes('futbol 7') || nameLower.includes('catonio') || nameLower.includes('cancha fútbol');
-  const isPadelOnly = (nameLower.includes('pádel') || nameLower.includes('padel') || nameLower.includes('arena') || nameLower.includes('naranjos')) && !nameLower.includes('fútbol') && !nameLower.includes('futbol') && !isTennisClub;
-
-  // Add Tennis Courts
-  if (isTennisClub) {
-    MDP_REAL_COURTS.push({
-      id: `court-${club.id}-tennis-1`,
-      clubId: club.id,
-      sportType: 'TENIS',
-      name: 'Cancha 1 — Tenis Polvo de Ladrillo Central',
-      surface: 'Polvo de Ladrillo',
-      isCovered: false,
-      hasLighting: true,
-      durationMinutes: 60,
-      pricePerHour: club.minPrice,
-      priceFixedSlotDiscount: 0.10,
-      images: [club.images[0]]
-    });
-    MDP_REAL_COURTS.push({
-      id: `court-${club.id}-tennis-2`,
-      clubId: club.id,
-      sportType: 'TENIS',
-      name: 'Cancha 2 — Tenis Polvo de Ladrillo',
-      surface: 'Polvo de Ladrillo',
-      isCovered: false,
-      hasLighting: true,
-      durationMinutes: 60,
-      pricePerHour: club.minPrice,
-      priceFixedSlotDiscount: 0.10,
-      images: [club.images[0]]
-    });
+export const MDP_REAL_COURTS: Court[] = [
+  {
+    "id": "court-club-360-padel-padel-1",
+    "clubId": "club-360-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 1 — Pádel Panorámica Cristal WPT",
+    "surface": "Césped Sintético Texturado Azul",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 26000,
+    "priceFixedSlotDiscount": 0.12,
+    "images": [
+      "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-360-padel-padel-2",
+    "clubId": "club-360-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 2 — Pádel Blindex Pro",
+    "surface": "Césped Sintético Fibrilado",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 26000,
+    "priceFixedSlotDiscount": 0.1,
+    "images": [
+      "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-alfar-club-padel-1",
+    "clubId": "club-alfar-club",
+    "sportType": "PADEL",
+    "name": "Cancha 1 — Pádel Panorámica Cristal WPT",
+    "surface": "Césped Sintético Texturado Azul",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 25000,
+    "priceFixedSlotDiscount": 0.12,
+    "images": [
+      "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-alfar-club-padel-2",
+    "clubId": "club-alfar-club",
+    "sportType": "PADEL",
+    "name": "Cancha 2 — Pádel Blindex Pro",
+    "surface": "Césped Sintético Fibrilado",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 25000,
+    "priceFixedSlotDiscount": 0.1,
+    "images": [
+      "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-academia-padel-padel-1",
+    "clubId": "club-academia-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 1 — Pádel Panorámica Cristal WPT",
+    "surface": "Césped Sintético Texturado Azul",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 28000,
+    "priceFixedSlotDiscount": 0.12,
+    "images": [
+      "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-academia-padel-padel-2",
+    "clubId": "club-academia-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 2 — Pádel Blindex Pro",
+    "surface": "Césped Sintético Fibrilado",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 28000,
+    "priceFixedSlotDiscount": 0.1,
+    "images": [
+      "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-breack-point-padel-padel-1",
+    "clubId": "club-breack-point-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 1 — Pádel Panorámica Cristal WPT",
+    "surface": "Césped Sintético Texturado Azul",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 28000,
+    "priceFixedSlotDiscount": 0.12,
+    "images": [
+      "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-breack-point-padel-padel-2",
+    "clubId": "club-breack-point-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 2 — Pádel Blindex Pro",
+    "surface": "Césped Sintético Fibrilado",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 28000,
+    "priceFixedSlotDiscount": 0.1,
+    "images": [
+      "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-kongo-padel-padel-1",
+    "clubId": "club-kongo-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 1 — Pádel Panorámica Cristal WPT",
+    "surface": "Césped Sintético Texturado Azul",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 27000,
+    "priceFixedSlotDiscount": 0.12,
+    "images": [
+      "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-kongo-padel-padel-2",
+    "clubId": "club-kongo-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 2 — Pádel Blindex Pro",
+    "surface": "Césped Sintético Fibrilado",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 27000,
+    "priceFixedSlotDiscount": 0.1,
+    "images": [
+      "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-las-lajas-padle-padel-1",
+    "clubId": "club-las-lajas-padle",
+    "sportType": "PADEL",
+    "name": "Cancha 1 — Pádel Panorámica Cristal WPT",
+    "surface": "Césped Sintético Texturado Azul",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 24000,
+    "priceFixedSlotDiscount": 0.12,
+    "images": [
+      "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-las-lajas-padle-padel-2",
+    "clubId": "club-las-lajas-padle",
+    "sportType": "PADEL",
+    "name": "Cancha 2 — Pádel Blindex Pro",
+    "surface": "Césped Sintético Fibrilado",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 24000,
+    "priceFixedSlotDiscount": 0.1,
+    "images": [
+      "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-los-naranjos-padel-padel-1",
+    "clubId": "club-los-naranjos-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 1 — Pádel Panorámica Cristal WPT",
+    "surface": "Césped Sintético Texturado Azul",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 28000,
+    "priceFixedSlotDiscount": 0.12,
+    "images": [
+      "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-los-naranjos-padel-padel-2",
+    "clubId": "club-los-naranjos-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 2 — Pádel Blindex Pro",
+    "surface": "Césped Sintético Fibrilado",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 28000,
+    "priceFixedSlotDiscount": 0.1,
+    "images": [
+      "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-paddle-san-juan-padel-1",
+    "clubId": "club-paddle-san-juan",
+    "sportType": "PADEL",
+    "name": "Cancha 1 — Pádel Panorámica Cristal WPT",
+    "surface": "Césped Sintético Texturado Azul",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 24000,
+    "priceFixedSlotDiscount": 0.12,
+    "images": [
+      "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-paddle-san-juan-padel-2",
+    "clubId": "club-paddle-san-juan",
+    "sportType": "PADEL",
+    "name": "Cancha 2 — Pádel Blindex Pro",
+    "surface": "Césped Sintético Fibrilado",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 24000,
+    "priceFixedSlotDiscount": 0.1,
+    "images": [
+      "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-play-time-padel-padel-1",
+    "clubId": "club-play-time-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 1 — Pádel Panorámica Cristal WPT",
+    "surface": "Césped Sintético Texturado Azul",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 28000,
+    "priceFixedSlotDiscount": 0.12,
+    "images": [
+      "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-play-time-padel-padel-2",
+    "clubId": "club-play-time-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 2 — Pádel Blindex Pro",
+    "surface": "Césped Sintético Fibrilado",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 28000,
+    "priceFixedSlotDiscount": 0.1,
+    "images": [
+      "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-san-carlos-padel-padel-1",
+    "clubId": "club-san-carlos-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 1 — Pádel Panorámica Cristal WPT",
+    "surface": "Césped Sintético Texturado Azul",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 25000,
+    "priceFixedSlotDiscount": 0.12,
+    "images": [
+      "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-san-carlos-padel-padel-2",
+    "clubId": "club-san-carlos-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 2 — Pádel Blindex Pro",
+    "surface": "Césped Sintético Fibrilado",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 25000,
+    "priceFixedSlotDiscount": 0.1,
+    "images": [
+      "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-las-palmeras-padel-pickleball-padel-1",
+    "clubId": "club-las-palmeras-padel-pickleball",
+    "sportType": "PADEL",
+    "name": "Cancha 1 — Pádel Panorámica Cristal WPT",
+    "surface": "Césped Sintético Texturado Azul",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 26000,
+    "priceFixedSlotDiscount": 0.12,
+    "images": [
+      "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-las-palmeras-padel-pickleball-padel-2",
+    "clubId": "club-las-palmeras-padel-pickleball",
+    "sportType": "PADEL",
+    "name": "Cancha 2 — Pádel Blindex Pro",
+    "surface": "Césped Sintético Fibrilado",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 26000,
+    "priceFixedSlotDiscount": 0.1,
+    "images": [
+      "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-indoor-padel-canchas-padel-1",
+    "clubId": "club-indoor-padel-canchas",
+    "sportType": "PADEL",
+    "name": "Cancha 1 — Pádel Panorámica Cristal WPT",
+    "surface": "Césped Sintético Texturado Azul",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 26000,
+    "priceFixedSlotDiscount": 0.12,
+    "images": [
+      "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-indoor-padel-canchas-padel-2",
+    "clubId": "club-indoor-padel-canchas",
+    "sportType": "PADEL",
+    "name": "Cancha 2 — Pádel Blindex Pro",
+    "surface": "Césped Sintético Fibrilado",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 26000,
+    "priceFixedSlotDiscount": 0.1,
+    "images": [
+      "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-geminis-paddle-tennis-padel-1",
+    "clubId": "club-geminis-paddle-tennis",
+    "sportType": "PADEL",
+    "name": "Cancha 1 — Pádel Panorámica Cristal WPT",
+    "surface": "Césped Sintético Texturado Azul",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 25000,
+    "priceFixedSlotDiscount": 0.12,
+    "images": [
+      "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-geminis-paddle-tennis-padel-2",
+    "clubId": "club-geminis-paddle-tennis",
+    "sportType": "PADEL",
+    "name": "Cancha 2 — Pádel Blindex Pro",
+    "surface": "Césped Sintético Fibrilado",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 25000,
+    "priceFixedSlotDiscount": 0.1,
+    "images": [
+      "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-la-manzana-padel-padel-1",
+    "clubId": "club-la-manzana-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 1 — Pádel Panorámica Cristal WPT",
+    "surface": "Césped Sintético Texturado Azul",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 25000,
+    "priceFixedSlotDiscount": 0.12,
+    "images": [
+      "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-la-manzana-padel-padel-2",
+    "clubId": "club-la-manzana-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 2 — Pádel Blindex Pro",
+    "surface": "Césped Sintético Fibrilado",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 25000,
+    "priceFixedSlotDiscount": 0.1,
+    "images": [
+      "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-la-marca-padel-padel-1",
+    "clubId": "club-la-marca-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 1 — Pádel Panorámica Cristal WPT",
+    "surface": "Césped Sintético Texturado Azul",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 30000,
+    "priceFixedSlotDiscount": 0.12,
+    "images": [
+      "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-la-marca-padel-padel-2",
+    "clubId": "club-la-marca-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 2 — Pádel Blindex Pro",
+    "surface": "Césped Sintético Fibrilado",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 30000,
+    "priceFixedSlotDiscount": 0.1,
+    "images": [
+      "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-la-terraza-padel-padel-1",
+    "clubId": "club-la-terraza-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 1 — Pádel Panorámica Cristal WPT",
+    "surface": "Césped Sintético Texturado Azul",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 26000,
+    "priceFixedSlotDiscount": 0.12,
+    "images": [
+      "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-la-terraza-padel-padel-2",
+    "clubId": "club-la-terraza-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 2 — Pádel Blindex Pro",
+    "surface": "Césped Sintético Fibrilado",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 26000,
+    "priceFixedSlotDiscount": 0.1,
+    "images": [
+      "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-la-masia-padel-padel-1",
+    "clubId": "club-la-masia-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 1 — Pádel Panorámica Cristal WPT",
+    "surface": "Césped Sintético Texturado Azul",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 26000,
+    "priceFixedSlotDiscount": 0.12,
+    "images": [
+      "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-la-masia-padel-padel-2",
+    "clubId": "club-la-masia-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 2 — Pádel Blindex Pro",
+    "surface": "Césped Sintético Fibrilado",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 26000,
+    "priceFixedSlotDiscount": 0.1,
+    "images": [
+      "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-los-pinos-padel-padel-1",
+    "clubId": "club-los-pinos-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 1 — Pádel Panorámica Cristal WPT",
+    "surface": "Césped Sintético Texturado Azul",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 25000,
+    "priceFixedSlotDiscount": 0.12,
+    "images": [
+      "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-los-pinos-padel-padel-2",
+    "clubId": "club-los-pinos-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 2 — Pádel Blindex Pro",
+    "surface": "Césped Sintético Fibrilado",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 25000,
+    "priceFixedSlotDiscount": 0.1,
+    "images": [
+      "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-masters-padel-padel-1",
+    "clubId": "club-masters-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 1 — Pádel Panorámica Cristal WPT",
+    "surface": "Césped Sintético Texturado Azul",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 28000,
+    "priceFixedSlotDiscount": 0.12,
+    "images": [
+      "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-masters-padel-padel-2",
+    "clubId": "club-masters-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 2 — Pádel Blindex Pro",
+    "surface": "Césped Sintético Fibrilado",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 28000,
+    "priceFixedSlotDiscount": 0.1,
+    "images": [
+      "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-la-meca-padel-padel-1",
+    "clubId": "club-la-meca-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 1 — Pádel Panorámica Cristal WPT",
+    "surface": "Césped Sintético Texturado Azul",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 26000,
+    "priceFixedSlotDiscount": 0.12,
+    "images": [
+      "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-la-meca-padel-padel-2",
+    "clubId": "club-la-meca-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 2 — Pádel Blindex Pro",
+    "surface": "Césped Sintético Fibrilado",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 26000,
+    "priceFixedSlotDiscount": 0.1,
+    "images": [
+      "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-crazy-for-padel-padel-1",
+    "clubId": "club-crazy-for-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 1 — Pádel Panorámica Cristal WPT",
+    "surface": "Césped Sintético Texturado Azul",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 28000,
+    "priceFixedSlotDiscount": 0.12,
+    "images": [
+      "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-crazy-for-padel-padel-2",
+    "clubId": "club-crazy-for-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 2 — Pádel Blindex Pro",
+    "surface": "Césped Sintético Fibrilado",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 28000,
+    "priceFixedSlotDiscount": 0.1,
+    "images": [
+      "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-calex-padel-padel-1",
+    "clubId": "club-calex-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 1 — Pádel Panorámica Cristal WPT",
+    "surface": "Césped Sintético Texturado Azul",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 24000,
+    "priceFixedSlotDiscount": 0.12,
+    "images": [
+      "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-calex-padel-padel-2",
+    "clubId": "club-calex-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 2 — Pádel Blindex Pro",
+    "surface": "Césped Sintético Fibrilado",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 24000,
+    "priceFixedSlotDiscount": 0.1,
+    "images": [
+      "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-la-estacion-padel-padel-1",
+    "clubId": "club-la-estacion-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 1 — Pádel Panorámica Cristal WPT",
+    "surface": "Césped Sintético Texturado Azul",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 27000,
+    "priceFixedSlotDiscount": 0.12,
+    "images": [
+      "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-la-estacion-padel-padel-2",
+    "clubId": "club-la-estacion-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 2 — Pádel Blindex Pro",
+    "surface": "Césped Sintético Fibrilado",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 27000,
+    "priceFixedSlotDiscount": 0.1,
+    "images": [
+      "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-once-unidos-padel-padel-1",
+    "clubId": "club-once-unidos-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 1 — Pádel Panorámica Cristal WPT",
+    "surface": "Césped Sintético Texturado Azul",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 26000,
+    "priceFixedSlotDiscount": 0.12,
+    "images": [
+      "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-once-unidos-padel-padel-2",
+    "clubId": "club-once-unidos-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 2 — Pádel Blindex Pro",
+    "surface": "Césped Sintético Fibrilado",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 26000,
+    "priceFixedSlotDiscount": 0.1,
+    "images": [
+      "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-bar-samohu-paddle-padel-1",
+    "clubId": "club-bar-samohu-paddle",
+    "sportType": "PADEL",
+    "name": "Cancha 1 — Pádel Panorámica Cristal WPT",
+    "surface": "Césped Sintético Texturado Azul",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 26000,
+    "priceFixedSlotDiscount": 0.12,
+    "images": [
+      "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-bar-samohu-paddle-padel-2",
+    "clubId": "club-bar-samohu-paddle",
+    "sportType": "PADEL",
+    "name": "Cancha 2 — Pádel Blindex Pro",
+    "surface": "Césped Sintético Fibrilado",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 26000,
+    "priceFixedSlotDiscount": 0.1,
+    "images": [
+      "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-agp-padel-padel-1",
+    "clubId": "club-agp-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 1 — Pádel Panorámica Cristal WPT",
+    "surface": "Césped Sintético Texturado Azul",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 28000,
+    "priceFixedSlotDiscount": 0.12,
+    "images": [
+      "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-agp-padel-padel-2",
+    "clubId": "club-agp-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 2 — Pádel Blindex Pro",
+    "surface": "Césped Sintético Fibrilado",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 28000,
+    "priceFixedSlotDiscount": 0.1,
+    "images": [
+      "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-roca-padel-padel-1",
+    "clubId": "club-roca-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 1 — Pádel Panorámica Cristal WPT",
+    "surface": "Césped Sintético Texturado Azul",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 25000,
+    "priceFixedSlotDiscount": 0.12,
+    "images": [
+      "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-roca-padel-padel-2",
+    "clubId": "club-roca-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 2 — Pádel Blindex Pro",
+    "surface": "Césped Sintético Fibrilado",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 25000,
+    "priceFixedSlotDiscount": 0.1,
+    "images": [
+      "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-san-remo-padel-padel-1",
+    "clubId": "club-san-remo-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 1 — Pádel Panorámica Cristal WPT",
+    "surface": "Césped Sintético Texturado Azul",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 26000,
+    "priceFixedSlotDiscount": 0.12,
+    "images": [
+      "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-san-remo-padel-padel-2",
+    "clubId": "club-san-remo-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 2 — Pádel Blindex Pro",
+    "surface": "Césped Sintético Fibrilado",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 26000,
+    "priceFixedSlotDiscount": 0.1,
+    "images": [
+      "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-las-lomas-padel-padel-1",
+    "clubId": "club-las-lomas-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 1 — Pádel Panorámica Cristal WPT",
+    "surface": "Césped Sintético Texturado Azul",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 25000,
+    "priceFixedSlotDiscount": 0.12,
+    "images": [
+      "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-las-lomas-padel-padel-2",
+    "clubId": "club-las-lomas-padel",
+    "sportType": "PADEL",
+    "name": "Cancha 2 — Pádel Blindex Pro",
+    "surface": "Césped Sintético Fibrilado",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 25000,
+    "priceFixedSlotDiscount": 0.1,
+    "images": [
+      "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-catonio-f7-futbol-7",
+    "clubId": "club-catonio-f7",
+    "sportType": "FUTBOL_7",
+    "name": "Cancha 1 — Fútbol 7 Césped Sintético Pro",
+    "surface": "Césped Sintético 60mm",
+    "isCovered": false,
+    "hasLighting": true,
+    "durationMinutes": 60,
+    "pricePerHour": 38000,
+    "priceFixedSlotDiscount": 0.15,
+    "images": [
+      "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-catonio-f7-padel-1",
+    "clubId": "club-catonio-f7",
+    "sportType": "PADEL",
+    "name": "Cancha 1 — Pádel Panorámica Cristal WPT",
+    "surface": "Césped Sintético Texturado Azul",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 34000,
+    "priceFixedSlotDiscount": 0.12,
+    "images": [
+      "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-catonio-f7-padel-2",
+    "clubId": "club-catonio-f7",
+    "sportType": "PADEL",
+    "name": "Cancha 2 — Pádel Blindex Pro",
+    "surface": "Césped Sintético Fibrilado",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 34000,
+    "priceFixedSlotDiscount": 0.1,
+    "images": [
+      "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-laverde-telefonos-padel-1",
+    "clubId": "club-laverde-telefonos",
+    "sportType": "PADEL",
+    "name": "Cancha 1 — Pádel Panorámica Cristal WPT",
+    "surface": "Césped Sintético Texturado Azul",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 32000,
+    "priceFixedSlotDiscount": 0.12,
+    "images": [
+      "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-laverde-telefonos-padel-2",
+    "clubId": "club-laverde-telefonos",
+    "sportType": "PADEL",
+    "name": "Cancha 2 — Pádel Blindex Pro",
+    "surface": "Césped Sintético Fibrilado",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 32000,
+    "priceFixedSlotDiscount": 0.1,
+    "images": [
+      "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-america-f5-futbol-5",
+    "clubId": "club-america-f5",
+    "sportType": "FUTBOL_5",
+    "name": "Cancha 1 — Fútbol 5 Techada",
+    "surface": "Césped Sintético Forbex",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 60,
+    "pricePerHour": 26000,
+    "priceFixedSlotDiscount": 0.15,
+    "images": [
+      "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-area-7-padel-1",
+    "clubId": "club-area-7",
+    "sportType": "PADEL",
+    "name": "Cancha 1 — Pádel Panorámica Cristal WPT",
+    "surface": "Césped Sintético Texturado Azul",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 31000,
+    "priceFixedSlotDiscount": 0.12,
+    "images": [
+      "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-area-7-padel-2",
+    "clubId": "club-area-7",
+    "sportType": "PADEL",
+    "name": "Cancha 2 — Pádel Blindex Pro",
+    "surface": "Césped Sintético Fibrilado",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 31000,
+    "priceFixedSlotDiscount": 0.1,
+    "images": [
+      "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-nautico-mdp-padel-1",
+    "clubId": "club-nautico-mdp",
+    "sportType": "PADEL",
+    "name": "Cancha 1 — Pádel Panorámica Cristal WPT",
+    "surface": "Césped Sintético Texturado Azul",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 22000,
+    "priceFixedSlotDiscount": 0.12,
+    "images": [
+      "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-nautico-mdp-padel-2",
+    "clubId": "club-nautico-mdp",
+    "sportType": "PADEL",
+    "name": "Cancha 2 — Pádel Blindex Pro",
+    "surface": "Césped Sintético Fibrilado",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 22000,
+    "priceFixedSlotDiscount": 0.1,
+    "images": [
+      "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-edison-lawn-tennis-tennis-1",
+    "clubId": "club-edison-lawn-tennis",
+    "sportType": "TENIS",
+    "name": "Cancha 1 — Tenis Polvo de Ladrillo Central",
+    "surface": "Polvo de Ladrillo",
+    "isCovered": false,
+    "hasLighting": true,
+    "durationMinutes": 60,
+    "pricePerHour": 20000,
+    "priceFixedSlotDiscount": 0.1,
+    "images": [
+      "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-edison-lawn-tennis-padel-1",
+    "clubId": "club-edison-lawn-tennis",
+    "sportType": "PADEL",
+    "name": "Cancha 1 — Pádel Panorámica Cristal WPT",
+    "surface": "Césped Sintético Texturado Azul",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 20000,
+    "priceFixedSlotDiscount": 0.12,
+    "images": [
+      "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-edison-lawn-tennis-padel-2",
+    "clubId": "club-edison-lawn-tennis",
+    "sportType": "PADEL",
+    "name": "Cancha 2 — Pádel Blindex Pro",
+    "surface": "Césped Sintético Fibrilado",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 20000,
+    "priceFixedSlotDiscount": 0.1,
+    "images": [
+      "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-once-unidos-tennis-1",
+    "clubId": "club-once-unidos",
+    "sportType": "TENIS",
+    "name": "Cancha 1 — Tenis Polvo de Ladrillo Central",
+    "surface": "Polvo de Ladrillo",
+    "isCovered": false,
+    "hasLighting": true,
+    "durationMinutes": 60,
+    "pricePerHour": 24000,
+    "priceFixedSlotDiscount": 0.1,
+    "images": [
+      "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-once-unidos-padel-1",
+    "clubId": "club-once-unidos",
+    "sportType": "PADEL",
+    "name": "Cancha 1 — Pádel Panorámica Cristal WPT",
+    "surface": "Césped Sintético Texturado Azul",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 24000,
+    "priceFixedSlotDiscount": 0.12,
+    "images": [
+      "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80"
+    ]
+  },
+  {
+    "id": "court-club-once-unidos-padel-2",
+    "clubId": "club-once-unidos",
+    "sportType": "PADEL",
+    "name": "Cancha 2 — Pádel Blindex Pro",
+    "surface": "Césped Sintético Fibrilado",
+    "isCovered": true,
+    "hasLighting": true,
+    "durationMinutes": 90,
+    "pricePerHour": 24000,
+    "priceFixedSlotDiscount": 0.1,
+    "images": [
+      "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80"
+    ]
   }
-
-  // Add Padel Courts (if not exclusively football)
-  if (!isFutbolOnly || nameLower.includes('pádel') || nameLower.includes('padel')) {
-    MDP_REAL_COURTS.push({
-      id: `court-${club.id}-padel-1`,
-      clubId: club.id,
-      sportType: 'PADEL',
-      name: 'Cancha 1 — Pádel Panorámica Cristal',
-      surface: 'Césped Sintético Texturado Azul WPT',
-      isCovered: true,
-      hasLighting: true,
-      durationMinutes: 90,
-      pricePerHour: club.minPrice,
-      priceFixedSlotDiscount: 0.12,
-      images: [club.images[0]]
-    });
-    MDP_REAL_COURTS.push({
-      id: `court-${club.id}-padel-2`,
-      clubId: club.id,
-      sportType: 'PADEL',
-      name: 'Cancha 2 — Pádel Blindex Pro',
-      surface: 'Césped Sintético Fibrilado',
-      isCovered: club.amenities.covered,
-      hasLighting: true,
-      durationMinutes: 90,
-      pricePerHour: club.minPrice,
-      priceFixedSlotDiscount: 0.10,
-      images: [club.images[0]]
-    });
-  }
-
-  // Add Football Courts (if not exclusively padel/tennis)
-  if (!isPadelOnly && (isFutbolOnly || nameLower.includes('fútbol') || nameLower.includes('futbol') || nameLower.includes('laverde') || nameLower.includes('complejo') || nameLower.includes('área') || nameLower.includes('potrero') || nameLower.includes('balón') || nameLower.includes('once unidos'))) {
-    const isF7 = nameLower.includes('fútbol 7') || nameLower.includes('futbol 7') || nameLower.includes('7');
-    const sportType: SportType = isF7 ? 'FUTBOL_7' : 'FUTBOL_5';
-    const courtName = isF7 ? 'Cancha 1 — Fútbol 7 Sintético Pro' : 'Cancha 1 — Fútbol 5 Sintético';
-
-    MDP_REAL_COURTS.push({
-      id: `court-${club.id}-futbol-1`,
-      clubId: club.id,
-      sportType: sportType,
-      name: courtName,
-      surface: 'Césped Sintético Forbex 50mm con Caucho',
-      isCovered: club.amenities.covered,
-      hasLighting: true,
-      durationMinutes: 60,
-      pricePerHour: club.minPrice + 2000,
-      priceFixedSlotDiscount: 0.15,
-      images: [club.images[1] || club.images[0]]
-    });
-  }
-}
+];
