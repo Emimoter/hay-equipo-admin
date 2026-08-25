@@ -42,7 +42,8 @@ interface HomeScreenProps {
 
 const SPORTS_CATEGORIES = [
   { id: 'PADEL', label: 'Pádel', Icon: PadelIcon },
-  { id: 'FUTBOL', label: 'Fútbol 5', Icon: FootballIcon },
+  { id: 'FUTBOL_5', label: 'Fútbol 5', Icon: FootballIcon },
+  { id: 'FUTBOL_7', label: 'Fútbol 7', Icon: FootballIcon },
   { id: 'TENIS', label: 'Tenis', Icon: TennisIcon },
   { id: 'PICKLEBALL', label: 'Pickleball', Icon: PickleballIcon },
 ];

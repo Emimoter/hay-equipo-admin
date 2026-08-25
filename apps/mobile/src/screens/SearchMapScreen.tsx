@@ -570,11 +570,19 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.sportChip, sport === 'FUTBOL' && styles.sportChipActive]}
-            onPress={() => setSport('FUTBOL')}
+            style={[styles.sportChip, (sport === 'FUTBOL_5' || sport === 'FUTBOL') && styles.sportChipActive]}
+            onPress={() => setSport('FUTBOL_5')}
           >
-            <FootballIcon size={13} color={sport === 'FUTBOL' ? '#ffffff' : '#9ca3af'} strokeWidth={2} />
-            <Text style={[styles.sportChipText, sport === 'FUTBOL' && styles.sportChipTextActive]}>Fútbol 5</Text>
+            <FootballIcon size={13} color={(sport === 'FUTBOL_5' || sport === 'FUTBOL') ? '#ffffff' : '#9ca3af'} strokeWidth={2} />
+            <Text style={[styles.sportChipText, (sport === 'FUTBOL_5' || sport === 'FUTBOL') && styles.sportChipTextActive]}>Fútbol 5</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.sportChip, sport === 'FUTBOL_7' && styles.sportChipActive]}
+            onPress={() => setSport('FUTBOL_7')}
+          >
+            <FootballIcon size={13} color={sport === 'FUTBOL_7' ? '#ffffff' : '#9ca3af'} strokeWidth={2} />
+            <Text style={[styles.sportChipText, sport === 'FUTBOL_7' && styles.sportChipTextActive]}>Fútbol 7</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -673,7 +681,7 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
           <Text style={styles.listHeaderTitle}>
             {filteredClubs.length === 0
               ? 'No hay complejos con canchas disponibles'
-              : `${filteredClubs.length} Complejos con ${sport === 'TENIS' ? 'Tenis' : sport === 'FUTBOL' ? 'Fútbol' : 'Pádel'} cerca de ${userLocation.city || 'tu ubicación'}`}
+              : `${filteredClubs.length} Complejos con ${sport === 'TENIS' ? 'Tenis' : sport === 'FUTBOL_7' ? 'Fútbol 7' : sport === 'FUTBOL_5' || sport === 'FUTBOL' ? 'Fútbol 5' : 'Pádel'} cerca de ${userLocation.city || 'tu ubicación'}`}
           </Text>
 
           {filteredClubs.length === 0 ? (
@@ -681,14 +689,14 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
               <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: '#131722', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
                 {sport === 'TENIS' ? (
                   <TennisIcon size={30} color="#a3e635" strokeWidth={2} />
-                ) : sport === 'FUTBOL' ? (
+                ) : sport === 'FUTBOL_7' || sport === 'FUTBOL_5' || sport === 'FUTBOL' ? (
                   <FootballIcon size={30} color="#38bdf8" strokeWidth={2} />
                 ) : (
                   <PadelIcon size={30} color="#fc1c46" strokeWidth={2} />
                 )}
               </View>
               <Text style={{ color: '#ffffff', fontSize: 16, fontWeight: '700', marginBottom: 6, textAlign: 'center' }}>
-                Sin resultados para {sport === 'TENIS' ? 'Tenis' : sport === 'FUTBOL' ? 'Fútbol' : 'Pádel'}
+                Sin resultados para {sport === 'TENIS' ? 'Tenis' : sport === 'FUTBOL_7' ? 'Fútbol 7' : sport === 'FUTBOL_5' || sport === 'FUTBOL' ? 'Fútbol 5' : 'Pádel'}
               </Text>
               <Text style={{ color: '#94a3b8', fontSize: 13, textAlign: 'center', lineHeight: 18 }}>
                 No encontramos complejos que tengan canchas publicadas para este deporte con los filtros actuales.
@@ -710,13 +718,13 @@ export const SearchMapScreen: React.FC<SearchMapScreenProps> = ({
                     <View style={styles.listBadgeOverlay}>
                       {sport === 'TENIS' ? (
                         <TennisIcon size={11} color="#ffffff" strokeWidth={2} />
-                      ) : sport === 'FUTBOL' ? (
+                      ) : sport === 'FUTBOL_7' || sport === 'FUTBOL_5' || sport === 'FUTBOL' ? (
                         <FootballIcon size={11} color="#ffffff" strokeWidth={2} />
                       ) : (
                         <PadelIcon size={11} color="#ffffff" strokeWidth={2} />
                       )}
                       <Text style={styles.listBadgeText}>
-                        {sport === 'TENIS' ? ' TENIS' : sport === 'FUTBOL' ? ' FÚTBOL' : ' PÁDEL'}
+                        {sport === 'TENIS' ? ' TENIS' : sport === 'FUTBOL_7' ? ' FÚTBOL 7' : sport === 'FUTBOL_5' || sport === 'FUTBOL' ? ' FÚTBOL 5' : ' PÁDEL'}
                       </Text>
                     </View>
                   </View>
