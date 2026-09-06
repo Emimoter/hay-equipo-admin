@@ -210,6 +210,7 @@ export default function LandingPage() {
 
   // Section in-view refs
   const [heroRef, heroInView] = useInView({ threshold: 0.1 });
+  const [reservaRef, reservaInView] = useInView({ threshold: 0.15 });
   const [aboutRef, aboutInView] = useInView({ threshold: 0.2 });
   const [featRef, featInView] = useInView({ threshold: 0.15 });
   const [statsRef, statsInView] = useInView({ threshold: 0.2 });
@@ -384,18 +385,36 @@ export default function LandingPage() {
           </span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          {/* Botón 1: Publicá tus Canchas (Outline / Glass Obsidian) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+          {/* Enlace discreto B2B para Clubes */}
           <a
             href="/registro-club"
+            style={{
+              color: 'var(--color-ash)',
+              fontSize: 13,
+              fontWeight: 500,
+              textDecoration: 'none',
+              letterSpacing: '0.2px',
+              transition: 'color 0.2s ease',
+              padding: '6px 8px',
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--color-frost)'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--color-ash)'; }}
+          >
+            ¿Sos un Club?
+          </a>
+
+          {/* Botón 1: Descargá la App (Outline / Glass Obsidian) */}
+          <a
+            href="#descargar"
             className="landing-header-btn-outline"
             style={{
               backgroundColor: 'rgba(255, 255, 255, 0.04)',
               color: 'var(--color-frost)',
-              border: '1px solid rgba(255, 255, 255, 0.22)',
+              border: '1px solid rgba(255, 255, 255, 0.18)',
               borderRadius: 'var(--radius-full)',
-              padding: '9px 24px',
-              fontSize: 14,
+              padding: '9px 20px',
+              fontSize: 13,
               fontWeight: 600,
               textDecoration: 'none',
               textTransform: 'uppercase',
@@ -406,49 +425,53 @@ export default function LandingPage() {
               gap: 6,
             }}
             onMouseEnter={e => {
-              (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--color-crimson-signal)';
-              (e.currentTarget as HTMLAnchorElement).style.color = 'var(--color-crimson-signal)';
-              (e.currentTarget as HTMLAnchorElement).style.backgroundColor = 'rgba(252, 28, 70, 0.08)';
+              (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(255, 255, 255, 0.4)';
+              (e.currentTarget as HTMLAnchorElement).style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
               (e.currentTarget as HTMLAnchorElement).style.transform = 'scale(1.02)';
             }}
             onMouseLeave={e => {
-              (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(255, 255, 255, 0.22)';
-              (e.currentTarget as HTMLAnchorElement).style.color = 'var(--color-frost)';
+              (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(255, 255, 255, 0.18)';
               (e.currentTarget as HTMLAnchorElement).style.backgroundColor = 'rgba(255, 255, 255, 0.04)';
               (e.currentTarget as HTMLAnchorElement).style.transform = 'scale(1)';
             }}
           >
-            <span>Publicá tus Canchas</span>
-            <span style={{ fontSize: 13, lineHeight: 1 }}>→</span>
+            <span>Descargar App</span>
           </a>
 
-          {/* Botón 2: Descargá la App (Solid Crimson Signal) */}
+          {/* Botón 2: RESERVAR CANCHA (Acción Transaccional Principal) */}
           <a
-            href="#descargar"
+            href="#reservar"
             className="landing-header-btn-cta"
             style={{
               backgroundColor: 'var(--color-crimson-signal)',
               color: 'var(--color-frost)',
               border: 'none',
               borderRadius: 'var(--radius-full)',
-              padding: '9px 28px',
-              fontSize: 14,
-              fontWeight: 600,
+              padding: '10px 24px',
+              fontSize: 13.5,
+              fontWeight: 700,
               textDecoration: 'none',
               textTransform: 'uppercase',
-              letterSpacing: '0.4px',
-              transition: 'transform 0.2s ease, filter 0.2s ease',
+              letterSpacing: '0.5px',
+              transition: 'transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 7,
+              boxShadow: '0 0 20px rgba(252, 28, 70, 0.35)',
             }}
             onMouseEnter={e => {
               (e.currentTarget as HTMLAnchorElement).style.filter = 'brightness(1.15)';
-              (e.currentTarget as HTMLAnchorElement).style.transform = 'scale(1.02)';
+              (e.currentTarget as HTMLAnchorElement).style.transform = 'scale(1.03)';
+              (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 0 28px rgba(252, 28, 70, 0.55)';
             }}
             onMouseLeave={e => {
               (e.currentTarget as HTMLAnchorElement).style.filter = 'none';
               (e.currentTarget as HTMLAnchorElement).style.transform = 'scale(1)';
+              (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 0 20px rgba(252, 28, 70, 0.35)';
             }}
           >
-            Descargá la App
+            <span>Reservar Cancha</span>
+            <span style={{ fontSize: 13, lineHeight: 1 }}>→</span>
           </a>
         </div>
       </header>
@@ -606,6 +629,141 @@ export default function LandingPage() {
                 Un toque y jugás.
               </span>
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════
+          RESERVA — Live Marketplace Hub (Anchor #reservar)
+          Espacio preparado para montar la experiencia interactiva de la app
+          ═══════════════════════════════════════════════════════ */}
+      <section
+        id="reservar"
+        ref={reservaRef}
+        className="landing-section"
+        style={{
+          position: 'relative',
+          zIndex: 2,
+          backgroundColor: 'transparent',
+          padding: '80px 36px 100px',
+        }}
+      >
+        <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+          <HairlineRule inView={reservaInView} delay={0.1} />
+
+          <div style={{ marginTop: 54 }}>
+            {/* Tag & Subheader */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 20, marginBottom: 40 }}>
+              <div>
+                <div style={{ fontSize: 10, color: 'var(--color-crimson-signal)', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', backgroundColor: 'var(--color-crimson-signal)', boxShadow: '0 0 10px var(--color-crimson-signal)' }} />
+                  01 / DISPONIBILIDAD EN VIVO
+                </div>
+                <h2 style={{ fontSize: 'clamp(28px, 4vw, 54px)', fontWeight: 700, color: 'var(--color-frost)', letterSpacing: '-1.5px', margin: 0, textTransform: 'uppercase' }}>
+                  Reservá tu Cancha Hoy
+                </h2>
+              </div>
+              <p style={{ fontSize: 14, color: 'var(--color-ash)', maxWidth: 420, margin: 0, lineHeight: 1.5 }}>
+                Encontrá turnos libres en tiempo real, bloqueá la cancha en segundos y pagá con Mercado Pago sin instalar nada obligatorio.
+              </p>
+            </div>
+
+            {/* Canvas / Container preparado para la Web App de reservas */}
+            <div
+              style={{
+                position: 'relative',
+                borderRadius: 20,
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                backgroundColor: 'rgba(11, 14, 20, 0.75)',
+                backdropFilter: 'blur(20px)',
+                padding: '40px 32px',
+                minHeight: 460,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+                overflow: 'hidden',
+              }}
+            >
+              {/* Subtle ambient red glow behind container */}
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '20%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  width: 320,
+                  height: 180,
+                  backgroundColor: 'rgba(252, 28, 70, 0.12)',
+                  filter: 'blur(90px)',
+                  pointerEvents: 'none',
+                }}
+              />
+
+              {/* Selector provisional de deportes de alta fidelidad */}
+              <div style={{ display: 'inline-flex', padding: 4, backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: 100, border: '1px solid rgba(255, 255, 255, 0.1)', marginBottom: 36, zIndex: 1 }}>
+                <button
+                  style={{
+                    backgroundColor: 'var(--color-crimson-signal)',
+                    color: '#fff',
+                    border: 'none',
+                    padding: '8px 24px',
+                    borderRadius: 100,
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    letterSpacing: '0.4px',
+                  }}
+                >
+                  🎾 PÁDEL
+                </button>
+                <button
+                  style={{
+                    backgroundColor: 'transparent',
+                    color: 'var(--color-ash)',
+                    border: 'none',
+                    padding: '8px 24px',
+                    borderRadius: 100,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    letterSpacing: '0.4px',
+                  }}
+                >
+                  ⚽ FÚTBOL
+                </button>
+              </div>
+
+              {/* Teaser placeholder de la experiencia de la app web */}
+              <div style={{ textAlign: 'center', maxWidth: 580, zIndex: 1 }}>
+                <div style={{ fontSize: 13, color: 'var(--color-frost)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: 12 }}>
+                  Centro de Búsqueda & Reserva Express
+                </div>
+                <p style={{ fontSize: 15, color: 'var(--color-ash)', lineHeight: 1.6, margin: '0 0 28px' }}>
+                  Conectando con los mejores clubes de Argentina (La Verde Jara, Trebi Padel, Match Point, Los Naranjos, Arenas Sport Center). Disponibilidad inmediata de turnos para hoy.
+                </p>
+
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 12, flexWrap: 'wrap' }}>
+                  {['Canchas Panorámicas', 'Cristal & Césped Sintético', 'Bloqueo Atómico 7 min', 'Mercado Pago'].map((badge, idx) => (
+                    <span
+                      key={idx}
+                      style={{
+                        fontSize: 11.5,
+                        color: 'var(--color-frost)',
+                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                        border: '1px solid rgba(255, 255, 255, 0.12)',
+                        padding: '6px 14px',
+                        borderRadius: 8,
+                        fontWeight: 500,
+                      }}
+                    >
+                      ✓ {badge}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
