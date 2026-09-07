@@ -12,9 +12,9 @@ import {
   ActivityIndicator,
   Animated,
   Easing,
-  Alert
+  Alert,
 } from 'react-native';
-import { colors, typography, formatCurrency } from '../components/theme';
+import { colors, typography, fonts, formatCurrency } from '../components/theme';
 import {
   PadelIcon,
   FootballIcon,
@@ -29,8 +29,10 @@ import {
   ArrowRightIcon,
   CloseIcon,
   ShieldCheckIcon,
-  WalletIcon
+  WalletIcon,
 } from '../components/AppIcons';
+import { DoubleBezelCard } from '../components/DoubleBezelCard';
+import { triggerHaptic } from '../services/haptics';
 import { mobileApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { Booking } from '@hay-equipo/contracts';
@@ -44,9 +46,9 @@ interface SplitInvitationScreenProps {
 export const SplitInvitationScreen: React.FC<SplitInvitationScreenProps> = ({
   booking,
   onNavigateHome,
-  onNavigateMyBookings
+  onNavigateMyBookings,
 }) => {
-  const { userProfile, creditWallet } = useAuth();
+  const { userProfile } = useAuth();
   const [splitData, setSplitData] = useState<any>(null);
   const [timeLeft, setTimeLeft] = useState<number>(600);
   const [isSimulating, setIsSimulating] = useState<boolean>(false);
@@ -58,7 +60,7 @@ export const SplitInvitationScreen: React.FC<SplitInvitationScreenProps> = ({
   // Host Rescue & Timeout States
   const [showTimeoutModal, setShowTimeoutModal] = useState<boolean>(false);
   const [refundSuccessModal, setRefundSuccessModal] = useState<boolean>(false);
-  const [refundInfo, setRefundInfo] = useState<{ amount: number; newWalletBalance: number } | null>(null);
+  const [refundInfo, setRefundInfo] = useState<{ amount: number } | null>(null);
 
   const pulseAnim = useState(new Animated.Value(1))[0];
 
@@ -69,14 +71,14 @@ export const SplitInvitationScreen: React.FC<SplitInvitationScreenProps> = ({
           toValue: 1.05,
           duration: 1200,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true
+          useNativeDriver: true,
         }),
         Animated.timing(pulseAnim, {
           toValue: 1,
           duration: 1200,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true
-        })
+          useNativeDriver: true,
+        }),
       ])
     ).start();
   }, [pulseAnim]);
@@ -87,13 +89,11 @@ export const SplitInvitationScreen: React.FC<SplitInvitationScreenProps> = ({
     }
   }, [booking]);
 
-  // Countdown timer with automatic timeout trigger
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
           clearInterval(timer);
-          // When timer hits 0 and game is not complete, trigger timeout modal
           return 0;
         }
         return prev - 1;
@@ -102,9 +102,9 @@ export const SplitInvitationScreen: React.FC<SplitInvitationScreenProps> = ({
     return () => clearInterval(timer);
   }, []);
 
-  // When timeLeft becomes 0, open rescue modal if room is incomplete
   useEffect(() => {
     if (timeLeft === 0 && splitData && !splitData.isComplete) {
+      triggerHaptic('warning');
       setShowTimeoutModal(true);
     }
   }, [timeLeft, splitData]);
@@ -133,6 +133,7 @@ export const SplitInvitationScreen: React.FC<SplitInvitationScreenProps> = ({
   const timeString = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 
   const handleShareWhatsApp = () => {
+    triggerHaptic('medium');
     const message = `🏆 ¡Hay Equipo! Te sumé al partido en ${booking.clubName}.\n\n📅 Fecha: ${booking.date}\n⏰ Horario: ${booking.startTime} hs\n💵 Tu cuota: ${formatCurrency(perShare)}\n\n📲 Entrá a la sala de espera y aboná en 1 clic: ${shareUrl}`;
     const url = `whatsapp://send?text=${encodeURIComponent(message)}`;
     Linking.openURL(url).catch(() => {
@@ -141,116 +142,114 @@ export const SplitInvitationScreen: React.FC<SplitInvitationScreenProps> = ({
   };
 
   const handleCopyLink = () => {
+    triggerHaptic('light');
     Share.share({
       title: `Sala de Espera - Partido en ${booking.clubName}`,
-      message: `Sumate a la sala y pagá tu parte para el partido en ${booking.clubName}: ${shareUrl}`
+      message: `Sumate a la sala y pagá tu parte para el partido en ${booking.clubName}: ${shareUrl}`,
     });
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2500);
   };
 
   const handleOpenSlotSimulation = (participant: any) => {
+    triggerHaptic('light');
     setSelectedSlotForSim(participant);
-    setFriendNameInput(`Jugador ${participant.id ? participant.id.slice(-1) : ''}`);
+    setFriendNameInput(participant.name.includes('Jugador') ? '' : participant.name);
     setShowSimulateModal(true);
   };
 
   const handleConfirmFriendPayment = async () => {
     if (!selectedSlotForSim) return;
+    triggerHaptic('medium');
     setIsSimulating(true);
-
-    await mobileApi.paySplitShare(shareToken, selectedSlotForSim.id, friendNameInput.trim() || 'Amigo');
+    const finalName = friendNameInput.trim() || `Jugador ${selectedSlotForSim.slotNumber}`;
+    await mobileApi.paySplitShare(booking.splitToken || 'HE-7492', selectedSlotForSim.id, finalName);
     await loadSplit();
-
     setIsSimulating(false);
     setShowSimulateModal(false);
-    setSelectedSlotForSim(null);
+    triggerHaptic('success');
   };
 
   const handleSimulateAllRemaining = async () => {
+    triggerHaptic('medium');
     setIsSimulating(true);
-    const pending = splitData?.participants?.filter((p: any) => p.status === 'PENDING') || [];
-    const mockNames = ['Martín Gómez', 'Lucas Peralta', 'Facundo Martínez', 'Rodrigo Díaz', 'Agustín Rossi', 'Matías Silva'];
-
-    for (let i = 0; i < pending.length; i++) {
-      const p = pending[i];
-      const name = mockNames[i % mockNames.length];
-      await mobileApi.paySplitShare(shareToken, p.id, name);
-    }
-
+    await mobileApi.payRemainingSplitShares(booking.splitToken || 'HE-7492');
     await loadSplit();
     setIsSimulating(false);
+    triggerHaptic('success');
   };
 
-  // Host Rescue Option 1: Cover all remaining quotas
   const handleCoverRemaining = async () => {
+    triggerHaptic('medium');
     setIsSimulating(true);
-    const res = await mobileApi.payRemainingSplitShares(shareToken, userProfile?.displayName || 'Organizador');
+    await mobileApi.confirmBooking(booking.id);
+    await mobileApi.payRemainingSplitShares(booking.splitToken || 'HE-7492');
     await loadSplit();
     setIsSimulating(false);
     setShowTimeoutModal(false);
+    triggerHaptic('success');
+    Alert.alert('¡Cancha Asegurada!', 'Abonaste el saldo pendiente. La cancha quedó confirmada para tu grupo.');
   };
 
-  // Host Rescue Option 2: Cancel split and refund deposited quotas to In-App Wallet
   const handleCancelAndRefund = async () => {
+    triggerHaptic('warning');
     setIsSimulating(true);
-    const res = await mobileApi.cancelSplitAndRefundToWallet(shareToken);
-    setIsSimulating(false);
+    const refundAmount = totalCollected;
+    await mobileApi.cancelSplitAndRefundToWallet(booking.splitToken || 'HE-7492');
+    setRefundInfo({ amount: refundAmount });
     setShowTimeoutModal(false);
-
-    if (res.success) {
-      // Credit wallet of host with their share / collected amount
-      const refunded = res.totalRefunded || perShare;
-      const newBal = await creditWallet(refunded, `Devolución sala ${shareToken} cancelada`);
-      setRefundInfo({
-        amount: refunded,
-        newWalletBalance: newBal
-      });
-      setRefundSuccessModal(true);
-    }
+    setIsSimulating(false);
+    triggerHaptic('success');
+    setRefundSuccessModal(true);
   };
 
-  // Host Rescue Option 3: Extend timer by 5 minutes
   const handleExtend5Min = () => {
+    triggerHaptic('light');
     setTimeLeft(prev => prev + 300);
     setShowTimeoutModal(false);
   };
 
-  const renderSportIcon = () => {
-    const s = (booking.sportType || 'PADEL').toUpperCase();
-    if (s.includes('FUTBOL')) return <FootballIcon size={20} color="#fc1c46" />;
-    if (s.includes('TENIS')) return <TennisIcon size={20} color="#fc1c46" />;
-    return <PadelIcon size={20} color="#fc1c46" />;
-  };
-
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Top Room Header */}
+    <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      {/* ═══════════════════════════════════════════════════════
+          TOP BAR & TIMEOUT BADGE
+          ═══════════════════════════════════════════════════════ */}
       <View style={styles.topHeader}>
         <View style={styles.roomBadge}>
-          <Text style={styles.roomBadgeLabel}>SALA DE ESPERA</Text>
+          <Text style={styles.roomBadgeLabel}>SALA</Text>
           <Text style={styles.roomBadgeCode}>#{shareToken}</Text>
         </View>
 
-        <View style={styles.timerBadge}>
-          <ClockIcon size={13} color={timeLeft < 180 ? '#ef4444' : '#22c55e'} strokeWidth={2.2} />
-          <Text style={[styles.timerText, { color: timeLeft < 180 ? '#ef4444' : '#22c55e' }]}>
-            {timeString}
-          </Text>
-        </View>
+        {!isComplete ? (
+          <Animated.View style={[styles.timerBadge, { transform: [{ scale: timeLeft < 120 ? pulseAnim : 1 }] }]}>
+            <ClockIcon size={13} color="#fc1c46" strokeWidth={2.4} />
+            <Text style={[styles.timerText, { color: timeLeft < 120 ? '#ef4444' : '#fc1c46' }]}>
+              {timeString}
+            </Text>
+          </Animated.View>
+        ) : (
+          <View style={styles.timerBadgeComplete}>
+            <CheckCircleIcon size={14} color="#fc1c46" strokeWidth={2.2} />
+            <Text style={styles.timerTextComplete}>CONFIRMADO</Text>
+          </View>
+        )}
       </View>
 
-      {/* Hero Match Details Card */}
-      <View style={styles.matchHeroCard}>
+      {/* ═══════════════════════════════════════════════════════
+          HERO MATCH DETAILS CARD (BLACK CARD)
+          ═══════════════════════════════════════════════════════ */}
+      <DoubleBezelCard variant="black" style={styles.matchHeroOuter} innerStyle={styles.matchHeroInner}>
         <View style={styles.matchHeroTop}>
-          <View style={styles.sportIconCircle}>{renderSportIcon()}</View>
-          <View style={{ flex: 1, marginLeft: 12 }}>
-            <Text style={styles.matchClubName}>{booking.clubName}</Text>
-            <Text style={styles.matchCourtName}>{booking.courtName || 'Cancha Central'}</Text>
+          <View style={styles.sportIconCircle}>
+            <PadelIcon size={20} color="#fc1c46" strokeWidth={2} />
           </View>
-          <View style={styles.statusPill}>
-            <Text style={styles.statusPillText}>
-              {isComplete ? 'SALA COMPLETA' : 'ESPERANDO PAGOS'}
+          <View style={{ flex: 1, marginLeft: 12 }}>
+            <Text style={styles.matchClubName}>{booking.clubName || 'Arena Pádel Palermo'}</Text>
+            <Text style={styles.matchCourtName}>{booking.courtName || 'Cancha 1 Panorámica'}</Text>
+          </View>
+          <View style={[styles.statusPill, isComplete && styles.statusPillComplete]}>
+            <Text style={[styles.statusPillText, isComplete && styles.statusPillTextComplete]}>
+              {isComplete ? 'CONFIRMADO' : 'BLOQUEADA'}
             </Text>
           </View>
         </View>
@@ -259,78 +258,81 @@ export const SplitInvitationScreen: React.FC<SplitInvitationScreenProps> = ({
 
         <View style={styles.matchInfoRow}>
           <View style={styles.matchInfoCol}>
-            <Text style={styles.matchInfoLabel}>Fecha y Hora</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
-              <CalendarIcon size={12} color="#fc1c46" strokeWidth={2} />
-              <Text style={styles.matchInfoVal}>{booking.date} · {booking.startTime} hs</Text>
-            </View>
+            <Text style={styles.matchInfoLabel}>FECHA Y HORA</Text>
+            <Text style={styles.matchInfoVal}>{booking.date} · {booking.startTime} hs</Text>
           </View>
-
-          <View style={styles.matchInfoColRight}>
-            <Text style={styles.matchInfoLabel}>Cuota por Jugador</Text>
+          <View style={[styles.matchInfoCol, styles.matchInfoColRight]}>
+            <Text style={styles.matchInfoLabel}>CUOTA POR JUGADOR</Text>
             <Text style={styles.matchInfoPrice}>{formatCurrency(perShare)}</Text>
           </View>
         </View>
-      </View>
+      </DoubleBezelCard>
 
-      {/* Live Pot & Progress Section */}
-      <View style={styles.progressCard}>
+      {/* ═══════════════════════════════════════════════════════
+          PROGRESS CARD (RED / BLACK DUAL TONE)
+          ═══════════════════════════════════════════════════════ */}
+      <DoubleBezelCard variant="black" style={styles.progressOuter} innerStyle={styles.progressInner}>
         <View style={styles.progressHeaderRow}>
           <View>
-            <Text style={styles.progressTitle}>Recaudación en Vivo</Text>
+            <Text style={styles.progressTitle}>
+              {isComplete ? '¡Cupos Completados!' : `Jugadores Confirmados (${paidCount}/${totalSlots})`}
+            </Text>
             <Text style={styles.progressSubtitle}>
-              {paidCount} de {totalSlots} jugadores listos ({progressPercent}%)
+              {isComplete
+                ? 'Todos los jugadores pagaron su cuota.'
+                : `Faltan ${pendingCount} cuotas de ${formatCurrency(perShare)}`}
             </Text>
           </View>
           <View style={styles.progressAmountBadge}>
-            <Text style={styles.progressAmountCollected}>
-              {formatCurrency(paidCount * perShare)}
-            </Text>
+            <Text style={styles.progressAmountCollected}>{formatCurrency(totalCollected)}</Text>
             <Text style={styles.progressAmountTotal}> / {formatCurrency(booking.totalPrice)}</Text>
           </View>
         </View>
 
         <View style={styles.progressBarTrack}>
-          <Animated.View
-            style={[
-              styles.progressBarFill,
-              { width: `${progressPercent}%` },
-              isComplete && { backgroundColor: '#22c55e' }
-            ]}
-          />
+          <View style={[styles.progressBarFill, { width: `${progressPercent}%` }]} />
         </View>
-      </View>
+      </DoubleBezelCard>
 
-      {/* Interactive Player Slots Grid (Game Lobby style) */}
+      {/* ═══════════════════════════════════════════════════════
+          LOBBY PLAYERS LIST (BLACK CARDS)
+          ═══════════════════════════════════════════════════════ */}
       <View style={styles.lobbySectionHeader}>
-        <Text style={styles.sectionTitle}>Formación del Partido</Text>
+        <Text style={styles.sectionTitle}>Jugadores en la Sala</Text>
         <Text style={styles.sectionSubtitle}>
-          Cada jugador asegura su lugar pagando su parte
+          Cada amigo entra al link y paga con su Mercado Pago
         </Text>
       </View>
 
       <View style={styles.slotsContainer}>
-        {splitData?.participants?.map((participant: any, index: number) => {
-          const isPaid = participant.status === 'PAID';
+        {(splitData?.participants || [
+          { slotNumber: 1, name: 'Emiliano (Organizador)', isPaid: true, isOrganizer: true },
+          { slotNumber: 2, name: 'Jugador 2', isPaid: false, isOrganizer: false },
+          { slotNumber: 3, name: 'Jugador 3', isPaid: false, isOrganizer: false },
+          { slotNumber: 4, name: 'Jugador 4', isPaid: false, isOrganizer: false },
+        ]).map((participant: any, index: number) => {
+          const isPaid = participant.isPaid;
           const isOrg = participant.isOrganizer || index === 0;
-          const cleanName = (participant.name || `Jugador ${index + 1}`).replace(/\s*\(Organizador\)/gi, '');
+          const cleanName = participant.name || `Jugador ${index + 1}`;
 
           return (
-            <View
-              key={participant.id || index}
-              style={[
-                styles.slotCard,
-                isPaid ? styles.slotCardPaid : styles.slotCardPending
+            <DoubleBezelCard
+              key={index}
+              variant="black"
+              style={styles.slotItemOuter}
+              innerStyle={[
+                styles.slotItemInner,
+                isPaid ? styles.slotCardPaid : styles.slotCardPending,
               ]}
             >
               <View
                 style={[
                   styles.slotAvatar,
-                  isPaid ? styles.slotAvatarPaid : styles.slotAvatarPending
+                  isPaid ? styles.slotAvatarPaid : styles.slotAvatarPending,
                 ]}
               >
                 {isPaid ? (
-                  <CheckCircleIcon size={18} color="#22c55e" strokeWidth={2.4} />
+                  <CheckCircleIcon size={18} color="#fc1c46" strokeWidth={2.4} />
                 ) : (
                   <Text style={styles.slotAvatarNumber}>{index + 1}</Text>
                 )}
@@ -363,26 +365,37 @@ export const SplitInvitationScreen: React.FC<SplitInvitationScreenProps> = ({
                   <TouchableOpacity
                     style={styles.simulateFriendBtn}
                     onPress={() => handleOpenSlotSimulation(participant)}
+                    activeOpacity={0.8}
                   >
                     <Text style={styles.simulateFriendBtnText}>Pagar Cuota</Text>
                   </TouchableOpacity>
                 )}
               </View>
-            </View>
+            </DoubleBezelCard>
           );
         })}
       </View>
 
-      {/* Share / Invite Shortcuts */}
+      {/* ═══════════════════════════════════════════════════════
+          SHARE / INVITE SHORTCUTS
+          ═══════════════════════════════════════════════════════ */}
       {!isComplete && (
         <View style={styles.shareSection}>
-          <TouchableOpacity style={styles.whatsappBtn} onPress={handleShareWhatsApp}>
+          <TouchableOpacity
+            style={styles.whatsappBtn}
+            onPress={handleShareWhatsApp}
+            activeOpacity={0.88}
+          >
             <WhatsAppIcon size={18} color="#ffffff" strokeWidth={2.2} />
             <Text style={styles.whatsappBtnText}>Invitar Jugadores por WhatsApp</Text>
           </TouchableOpacity>
 
           <View style={styles.shareSubRow}>
-            <TouchableOpacity style={styles.copyLinkBtn} onPress={handleCopyLink}>
+            <TouchableOpacity
+              style={styles.copyLinkBtn}
+              onPress={handleCopyLink}
+              activeOpacity={0.8}
+            >
               <LinkIcon size={14} color="#ffffff" strokeWidth={2} />
               <Text style={styles.copyLinkBtnText}>
                 {copiedLink ? '¡Enlace Copiado!' : 'Copiar Enlace'}
@@ -393,6 +406,7 @@ export const SplitInvitationScreen: React.FC<SplitInvitationScreenProps> = ({
               style={styles.demoSimulateBtn}
               onPress={handleSimulateAllRemaining}
               disabled={isSimulating}
+              activeOpacity={0.8}
             >
               {isSimulating ? (
                 <ActivityIndicator size="small" color="#fc1c46" />
@@ -409,15 +423,23 @@ export const SplitInvitationScreen: React.FC<SplitInvitationScreenProps> = ({
           <View style={styles.rescueActionsRow}>
             <TouchableOpacity
               style={styles.rescueOptionsBtn}
-              onPress={() => setShowTimeoutModal(true)}
+              onPress={() => {
+                triggerHaptic('light');
+                setShowTimeoutModal(true);
+              }}
+              activeOpacity={0.8}
             >
-              <ShieldCheckIcon size={15} color="#38bdf8" strokeWidth={2} />
+              <ShieldCheckIcon size={15} color="#fc1c46" strokeWidth={2} />
               <Text style={styles.rescueOptionsBtnText}>¿Qué pasa si no pagan? / Opciones</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.demoTimeoutBtn}
-              onPress={() => setTimeLeft(0)}
+              onPress={() => {
+                triggerHaptic('warning');
+                setTimeLeft(0);
+              }}
+              activeOpacity={0.8}
             >
               <ClockIcon size={13} color="#ef4444" strokeWidth={2} />
               <Text style={styles.demoTimeoutBtnText}>Simular Fin de Tiempo</Text>
@@ -426,11 +448,13 @@ export const SplitInvitationScreen: React.FC<SplitInvitationScreenProps> = ({
         </View>
       )}
 
-      {/* Full Room Celebration Card */}
+      {/* ═══════════════════════════════════════════════════════
+          FULL ROOM CELEBRATION CARD (RED CARD)
+          ═══════════════════════════════════════════════════════ */}
       {isComplete && (
-        <View style={styles.celebrationCard}>
+        <DoubleBezelCard variant="red" style={styles.celebrationOuter} innerStyle={styles.celebrationInner} glow>
           <View style={{ marginBottom: 12, alignItems: 'center' }}>
-            <TrophyIcon size={48} color="#22c55e" strokeWidth={2} />
+            <TrophyIcon size={48} color="#ffffff" strokeWidth={2} />
           </View>
           <Text style={styles.celebrationTitle}>¡SALA COMPLETA!</Text>
           <Text style={styles.celebrationSubtitle}>
@@ -438,18 +462,34 @@ export const SplitInvitationScreen: React.FC<SplitInvitationScreenProps> = ({
           </Text>
 
           <View style={styles.celebrationNavRow}>
-            <TouchableOpacity style={styles.primaryNavBtn} onPress={onNavigateMyBookings}>
+            <TouchableOpacity
+              style={styles.primaryNavBtn}
+              onPress={() => {
+                triggerHaptic('medium');
+                onNavigateMyBookings();
+              }}
+              activeOpacity={0.88}
+            >
               <Text style={styles.primaryNavBtnText}>Ver en Mis Reservas</Text>
               <ArrowRightIcon size={14} color="#07080a" strokeWidth={2.5} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.secondaryNavBtn} onPress={onNavigateHome}>
+            <TouchableOpacity
+              style={styles.secondaryNavBtn}
+              onPress={() => {
+                triggerHaptic('light');
+                onNavigateHome();
+              }}
+              activeOpacity={0.85}
+            >
               <Text style={styles.secondaryNavBtnText}>Volver al Inicio</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </DoubleBezelCard>
       )}
 
-      {/* Modal 1: Simular Pago de Amigo */}
+      {/* ═══════════════════════════════════════════════════════
+          MODAL 1: SIMULAR PAGO DE AMIGO
+          ═══════════════════════════════════════════════════════ */}
       <Modal
         visible={showSimulateModal}
         transparent
@@ -457,17 +497,22 @@ export const SplitInvitationScreen: React.FC<SplitInvitationScreenProps> = ({
         onRequestClose={() => setShowSimulateModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <DoubleBezelCard variant="black" style={styles.modalOuter} innerStyle={styles.modalInner}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Simular Pago de Amigo</Text>
-              <TouchableOpacity onPress={() => setShowSimulateModal(false)}>
-                <CloseIcon size={20} color={colors.textSecondary} />
+              <TouchableOpacity
+                onPress={() => {
+                  triggerHaptic('light');
+                  setShowSimulateModal(false);
+                }}
+              >
+                <CloseIcon size={20} color="#94a3b8" />
               </TouchableOpacity>
             </View>
 
             <Text style={styles.modalBodyText}>
               Ingresá el nombre del jugador para registrar su cuota de{' '}
-              <Text style={{ color: colors.primary, fontWeight: '700' }}>
+              <Text style={{ color: colors.primary, fontFamily: fonts.bold }}>
                 {formatCurrency(perShare)}
               </Text>{' '}
               en esta sala:
@@ -476,7 +521,7 @@ export const SplitInvitationScreen: React.FC<SplitInvitationScreenProps> = ({
             <TextInput
               style={styles.modalInput}
               placeholder="Nombre del amigo (ej: Martín Gómez)"
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor="#94a3b8"
               value={friendNameInput}
               onChangeText={setFriendNameInput}
               autoFocus
@@ -486,18 +531,21 @@ export const SplitInvitationScreen: React.FC<SplitInvitationScreenProps> = ({
               style={styles.modalConfirmBtn}
               onPress={handleConfirmFriendPayment}
               disabled={isSimulating}
+              activeOpacity={0.88}
             >
               {isSimulating ? (
-                <ActivityIndicator size="small" color="#07080a" />
+                <ActivityIndicator size="small" color="#ffffff" />
               ) : (
                 <Text style={styles.modalConfirmBtnText}>Confirmar Pago de Amigo</Text>
               )}
             </TouchableOpacity>
-          </View>
+          </DoubleBezelCard>
         </View>
       </Modal>
 
-      {/* Modal 2: Host Timeout Resolution & Protection Modal */}
+      {/* ═══════════════════════════════════════════════════════
+          MODAL 2: HOST TIMEOUT RESOLUTION & PROTECTION MODAL
+          ═══════════════════════════════════════════════════════ */}
       <Modal
         visible={showTimeoutModal}
         transparent
@@ -505,10 +553,10 @@ export const SplitInvitationScreen: React.FC<SplitInvitationScreenProps> = ({
         onRequestClose={() => setShowTimeoutModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.rescueModalCard}>
+          <DoubleBezelCard variant="black" style={styles.rescueOuter} innerStyle={styles.rescueInner}>
             <View style={styles.rescueModalHeader}>
               <View style={styles.rescueWarningIcon}>
-                <ClockIcon size={24} color="#f59e0b" strokeWidth={2.2} />
+                <ClockIcon size={24} color="#fc1c46" strokeWidth={2.2} />
               </View>
               <View style={{ flex: 1, marginLeft: 12 }}>
                 <Text style={styles.rescueModalTitle}>
@@ -518,8 +566,13 @@ export const SplitInvitationScreen: React.FC<SplitInvitationScreenProps> = ({
                   {paidCount} de {totalSlots} cuotas abonadas ({formatCurrency(totalCollected)})
                 </Text>
               </View>
-              <TouchableOpacity onPress={() => setShowTimeoutModal(false)}>
-                <CloseIcon size={20} color={colors.textSecondary} />
+              <TouchableOpacity
+                onPress={() => {
+                  triggerHaptic('light');
+                  setShowTimeoutModal(false);
+                }}
+              >
+                <CloseIcon size={20} color="#94a3b8" />
               </TouchableOpacity>
             </View>
 
@@ -534,30 +587,28 @@ export const SplitInvitationScreen: React.FC<SplitInvitationScreenProps> = ({
               style={styles.rescueOptionCardPrimary}
               onPress={handleCoverRemaining}
               disabled={isSimulating}
+              activeOpacity={0.88}
             >
-              <View style={styles.rescueOptionTopRow}>
-                <Text style={styles.rescueOptionTitlePrimary}>
-                  💳 Cubrir Faltante ({formatCurrency(remainingAmount)}) y Confirmar Cancha
-                </Text>
-              </View>
+              <Text style={styles.rescueOptionTitlePrimary}>
+                💳 Cubrir Faltante ({formatCurrency(remainingAmount)}) y Confirmar Cancha
+              </Text>
               <Text style={styles.rescueOptionDescPrimary}>
-                Abonás las {pendingCount} cuotas restantes. La cancha se confirma de inmediato en el club y tus amigos te transfieren luego.
+                Abonás las {pendingCount} cuotas restantes. La cancha se confirma de inmediato en el club.
               </Text>
             </TouchableOpacity>
 
-            {/* Option B: Cancel and Refund to Wallet */}
+            {/* Option B: Cancel and Refund via Mercado Pago */}
             <TouchableOpacity
               style={styles.rescueOptionCardSecondary}
               onPress={handleCancelAndRefund}
               disabled={isSimulating}
+              activeOpacity={0.88}
             >
-              <View style={styles.rescueOptionTopRow}>
-                <Text style={styles.rescueOptionTitleSecondary}>
-                  💸 Cancelar Turno y Devolver a Billetera ({formatCurrency(totalCollected)})
-                </Text>
-              </View>
+              <Text style={styles.rescueOptionTitleSecondary}>
+                💸 Cancelar Turno y Reintegrar por Mercado Pago ({formatCurrency(totalCollected)})
+              </Text>
               <Text style={styles.rescueOptionDescSecondary}>
-                La reserva se cancela y se te acredita el 100% de lo abonado a tu Saldo de Billetera Hay Equipo para usar en futuros turnos.
+                La reserva se cancela y se procesa la devolución directa a cada participante a su cuenta de Mercado Pago.
               </Text>
             </TouchableOpacity>
 
@@ -565,16 +616,19 @@ export const SplitInvitationScreen: React.FC<SplitInvitationScreenProps> = ({
             <TouchableOpacity
               style={styles.rescueOptionCardGrace}
               onPress={handleExtend5Min}
+              activeOpacity={0.8}
             >
               <Text style={styles.rescueOptionTitleGrace}>
                 ⏱️ Pedir +5 Minutos Extra de Tolerancia
               </Text>
             </TouchableOpacity>
-          </View>
+          </DoubleBezelCard>
         </View>
       </Modal>
 
-      {/* Modal 3: Wallet Refund Success Notification */}
+      {/* ═══════════════════════════════════════════════════════
+          MODAL 3: MERCADO PAGO REFUND SUCCESS NOTIFICATION
+          ═══════════════════════════════════════════════════════ */}
       <Modal
         visible={refundSuccessModal}
         transparent
@@ -582,48 +636,52 @@ export const SplitInvitationScreen: React.FC<SplitInvitationScreenProps> = ({
         onRequestClose={() => setRefundSuccessModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.refundSuccessCard}>
+          <DoubleBezelCard variant="black" style={styles.refundOuter} innerStyle={styles.refundInner}>
             <View style={styles.refundSuccessIconCircle}>
-              <WalletIcon size={38} color="#22c55e" />
+              <ShieldCheckIcon size={38} color="#fc1c46" />
             </View>
 
-            <Text style={styles.refundSuccessTitle}>¡SALDO ACREDITADO!</Text>
+            <Text style={styles.refundSuccessTitle}>¡REINTEGRO PROCESADO!</Text>
             <Text style={styles.refundSuccessAmount}>
-              +{formatCurrency(refundInfo?.amount || perShare)}
+              {formatCurrency(refundInfo?.amount || perShare)}
             </Text>
             <Text style={styles.refundSuccessDesc}>
-              El dinero fue devuelto con éxito a tu Billetera Hay Equipo. Podés usarlo para pagar total o parcialmente cualquier próximo turno.
+              La reserva fue cancelada y se gestionó la devolución directa a cada jugador a través de Mercado Pago. Sin saldos retenidos.
             </Text>
 
             <View style={styles.walletBalanceBadge}>
-              <Text style={styles.walletBalanceBadgeLabel}>Saldo total en tu billetera:</Text>
+              <Text style={styles.walletBalanceBadgeLabel}>Método de devolución:</Text>
               <Text style={styles.walletBalanceBadgeVal}>
-                {formatCurrency(refundInfo?.newWalletBalance || userProfile?.walletBalance || 0)}
+                Cuenta de Mercado Pago Original
               </Text>
             </View>
 
             <View style={styles.refundNavCol}>
               <TouchableOpacity
-                style={styles.primaryNavBtn}
+                style={styles.primaryNavBtnRefund}
                 onPress={() => {
+                  triggerHaptic('light');
                   setRefundSuccessModal(false);
-                  onNavigateMyBookings();
+                  onNavigateHome();
                 }}
+                activeOpacity={0.88}
               >
-                <Text style={styles.primaryNavBtnText}>Ver Mis Reservas</Text>
+                <Text style={styles.primaryNavBtnText}>Volver al Inicio</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.secondaryNavBtn}
                 onPress={() => {
+                  triggerHaptic('light');
                   setRefundSuccessModal(false);
                   onNavigateHome();
                 }}
+                activeOpacity={0.85}
               >
                 <Text style={styles.secondaryNavBtnText}>Volver al Inicio</Text>
               </TouchableOpacity>
             </View>
-          </View>
+          </DoubleBezelCard>
         </View>
       </Modal>
     </ScrollView>
@@ -633,213 +691,244 @@ export const SplitInvitationScreen: React.FC<SplitInvitationScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background
+    backgroundColor: '#f8fafc',
   },
   content: {
     padding: 16,
-    paddingBottom: 40
+    paddingBottom: 50,
   },
   topHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16
+    marginBottom: 16,
+    paddingTop: 4,
   },
   roomBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#131722',
+    backgroundColor: '#0b0e14',
     borderWidth: 1,
-    borderColor: '#242b3d',
+    borderColor: 'rgba(252, 28, 70, 0.3)',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 8,
-    gap: 6
+    borderRadius: 10,
+    gap: 6,
   },
   roomBadgeLabel: {
-    color: colors.textMuted,
+    color: '#94a3b8',
     fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.5
+    fontFamily: fonts.bold,
+    letterSpacing: 0.5,
   },
   roomBadgeCode: {
-    color: colors.textPrimary,
+    color: '#ffffff',
     fontSize: 13,
-    fontWeight: '800'
+    fontFamily: fonts.headingBold,
   },
   timerBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0f172a',
+    backgroundColor: 'rgba(252, 28, 70, 0.12)',
     borderWidth: 1,
-    borderColor: '#1e293b',
+    borderColor: 'rgba(252, 28, 70, 0.35)',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 8,
-    gap: 6
+    borderRadius: 10,
+    gap: 6,
   },
   timerText: {
-    fontSize: 13,
-    fontWeight: '800'
+    fontSize: 13.5,
+    fontFamily: fonts.headingBold,
   },
-  matchHeroCard: {
-    backgroundColor: colors.card,
-    borderRadius: 16,
+  timerBadgeComplete: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(252, 28, 70, 0.15)',
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: 'rgba(252, 28, 70, 0.4)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+    gap: 6,
+  },
+  timerTextComplete: {
+    color: '#fc1c46',
+    fontSize: 11,
+    fontFamily: fonts.bold,
+  },
+  matchHeroOuter: {
+    marginBottom: 16,
+  },
+  matchHeroInner: {
+    backgroundColor: '#0b0e14',
+    borderWidth: 1,
+    borderColor: 'rgba(252, 28, 70, 0.25)',
     padding: 16,
-    marginBottom: 16
   },
   matchHeroTop: {
     flexDirection: 'row',
-    alignItems: 'center'
+    alignItems: 'center',
   },
   sportIconCircle: {
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: 'rgba(252, 28, 70, 0.12)',
+    backgroundColor: 'rgba(252, 28, 70, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(252, 28, 70, 0.25)'
+    borderColor: 'rgba(252, 28, 70, 0.35)',
   },
   matchClubName: {
-    color: colors.textPrimary,
+    color: '#ffffff',
     fontSize: 16,
-    fontWeight: '800'
+    fontFamily: fonts.headingBold,
   },
   matchCourtName: {
-    color: colors.textSecondary,
-    fontSize: 13,
-    marginTop: 2
+    color: '#94a3b8',
+    fontSize: 12.5,
+    fontFamily: fonts.regular,
+    marginTop: 2,
   },
   statusPill: {
-    backgroundColor: '#1e293b',
-    paddingHorizontal: 10,
+    backgroundColor: 'rgba(252, 28, 70, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(252, 28, 70, 0.35)',
+    paddingHorizontal: 9,
     paddingVertical: 4,
-    borderRadius: 6
+    borderRadius: 8,
+  },
+  statusPillComplete: {
+    backgroundColor: '#fc1c46',
   },
   statusPillText: {
-    color: '#38bdf8',
+    color: '#fc1c46',
     fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.5
+    fontFamily: fonts.bold,
+    letterSpacing: 0.5,
+  },
+  statusPillTextComplete: {
+    color: '#ffffff',
   },
   matchDivider: {
     height: 1,
-    backgroundColor: colors.cardBorder,
-    marginVertical: 14
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    marginVertical: 14,
   },
   matchInfoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center'
+    alignItems: 'center',
   },
   matchInfoCol: {
-    flex: 1
+    flex: 1,
   },
   matchInfoColRight: {
-    alignItems: 'flex-end'
+    alignItems: 'flex-end',
   },
   matchInfoLabel: {
-    color: colors.textMuted,
+    color: '#94a3b8',
     fontSize: 11,
-    fontWeight: '600',
-    marginBottom: 2
+    fontFamily: fonts.medium,
+    marginBottom: 2,
   },
   matchInfoVal: {
-    color: colors.textPrimary,
+    color: '#ffffff',
     fontSize: 13,
-    fontWeight: '600'
+    fontFamily: fonts.semiBold,
   },
   matchInfoPrice: {
-    color: colors.primary,
-    fontSize: 15,
-    fontWeight: '800'
+    color: '#fc1c46',
+    fontSize: 16,
+    fontFamily: fonts.headingBold,
   },
-  progressCard: {
-    backgroundColor: '#0d111a',
-    borderRadius: 16,
+  progressOuter: {
+    marginBottom: 20,
+  },
+  progressInner: {
+    backgroundColor: '#0b0e14',
     borderWidth: 1,
-    borderColor: '#1e2738',
+    borderColor: 'rgba(252, 28, 70, 0.25)',
     padding: 16,
-    marginBottom: 20
   },
   progressHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12
+    marginBottom: 12,
   },
   progressTitle: {
-    color: colors.textPrimary,
-    fontSize: 14,
-    fontWeight: '800'
+    color: '#ffffff',
+    fontSize: 14.5,
+    fontFamily: fonts.headingBold,
   },
   progressSubtitle: {
-    color: colors.textSecondary,
+    color: '#94a3b8',
     fontSize: 12,
-    marginTop: 2
+    fontFamily: fonts.regular,
+    marginTop: 2,
   },
   progressAmountBadge: {
     flexDirection: 'row',
-    alignItems: 'baseline'
+    alignItems: 'baseline',
   },
   progressAmountCollected: {
-    color: colors.primary,
+    color: '#fc1c46',
     fontSize: 16,
-    fontWeight: '800'
+    fontFamily: fonts.headingBold,
   },
   progressAmountTotal: {
-    color: colors.textMuted,
+    color: '#94a3b8',
     fontSize: 12,
-    fontWeight: '600'
+    fontFamily: fonts.medium,
   },
   progressBarTrack: {
     height: 8,
-    backgroundColor: '#182030',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderRadius: 4,
-    overflow: 'hidden'
+    overflow: 'hidden',
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: colors.primary,
-    borderRadius: 4
+    backgroundColor: '#fc1c46',
+    borderRadius: 4,
   },
   lobbySectionHeader: {
-    marginBottom: 12
+    marginBottom: 12,
   },
   sectionTitle: {
-    ...typography.titleMedium,
-    color: colors.textPrimary,
+    fontFamily: fonts.headingBold,
+    color: '#0f172a',
     fontSize: 16,
-    fontWeight: '800'
+    letterSpacing: -0.2,
   },
   sectionSubtitle: {
-    color: colors.textSecondary,
+    fontFamily: fonts.regular,
+    color: '#64748b',
     fontSize: 12,
-    marginTop: 2
+    marginTop: 2,
   },
   slotsContainer: {
     gap: 10,
-    marginBottom: 20
+    marginBottom: 20,
   },
-  slotCard: {
+  slotItemOuter: {
+    width: '100%',
+  },
+  slotItemInner: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 14,
-    borderRadius: 14,
-    borderWidth: 1
+    backgroundColor: '#0b0e14',
+    borderWidth: 1,
+    borderColor: 'rgba(252, 28, 70, 0.25)',
   },
   slotCardPaid: {
-    backgroundColor: 'rgba(34, 197, 94, 0.06)',
-    borderColor: 'rgba(34, 197, 94, 0.3)'
+    borderColor: '#fc1c46',
   },
   slotCardPending: {
-    backgroundColor: '#0c0f17',
-    borderColor: '#1f2739',
-    borderStyle: 'dashed'
+    backgroundColor: '#0b0e14',
   },
   slotAvatar: {
     width: 38,
@@ -847,39 +936,39 @@ const styles = StyleSheet.create({
     borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12
+    marginRight: 12,
   },
   slotAvatarPaid: {
-    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    backgroundColor: 'rgba(252, 28, 70, 0.15)',
     borderWidth: 1,
-    borderColor: '#22c55e'
+    borderColor: '#fc1c46',
   },
   slotAvatarPending: {
-    backgroundColor: '#182030',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     borderWidth: 1,
-    borderColor: '#29354d'
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   slotAvatarNumber: {
-    color: colors.textMuted,
+    color: '#94a3b8',
     fontSize: 13,
-    fontWeight: '800'
+    fontFamily: fonts.bold,
   },
   slotCenterInfo: {
-    flex: 1
+    flex: 1,
   },
   slotNameRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    flexWrap: 'wrap'
+    flexWrap: 'wrap',
   },
   slotPlayerName: {
-    color: colors.textPrimary,
+    color: '#ffffff',
     fontSize: 14,
-    fontWeight: '700'
+    fontFamily: fonts.bold,
   },
   slotPlayerNamePaid: {
-    color: '#ffffff'
+    color: '#ffffff',
   },
   orgTag: {
     backgroundColor: 'rgba(252, 28, 70, 0.15)',
@@ -887,124 +976,123 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: 'rgba(252, 28, 70, 0.3)'
+    borderColor: 'rgba(252, 28, 70, 0.3)',
   },
   orgTagText: {
-    color: colors.primary,
+    color: '#fc1c46',
     fontSize: 9,
-    fontWeight: '800'
+    fontFamily: fonts.bold,
   },
   slotPlayerStatus: {
-    color: colors.textSecondary,
-    fontSize: 11,
-    marginTop: 2
+    color: '#94a3b8',
+    fontSize: 11.5,
+    fontFamily: fonts.regular,
+    marginTop: 2,
   },
   slotActionCol: {
-    marginLeft: 8
+    marginLeft: 8,
   },
   badgePaid: {
-    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    backgroundColor: 'rgba(252, 28, 70, 0.18)',
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: 6,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#22c55e'
+    borderColor: '#fc1c46',
   },
   badgePaidText: {
-    color: '#22c55e',
-    fontSize: 11,
-    fontWeight: '800'
+    color: '#fc1c46',
+    fontSize: 10.5,
+    fontFamily: fonts.bold,
   },
   simulateFriendBtn: {
-    backgroundColor: '#1e293b',
-    borderWidth: 1,
-    borderColor: '#334155',
+    backgroundColor: '#fc1c46',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 8
+    borderRadius: 8,
   },
   simulateFriendBtnText: {
-    color: '#38bdf8',
-    fontSize: 12,
-    fontWeight: '700'
+    color: '#ffffff',
+    fontSize: 11.5,
+    fontFamily: fonts.bold,
   },
   shareSection: {
     gap: 10,
-    marginBottom: 20
+    marginBottom: 20,
   },
   whatsappBtn: {
-    backgroundColor: '#25D366',
+    backgroundColor: '#0b0e14',
+    borderWidth: 1.5,
+    borderColor: '#fc1c46',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 14,
     borderRadius: 14,
-    gap: 8
+    gap: 8,
   },
   whatsappBtnText: {
     color: '#ffffff',
-    fontSize: 15,
-    fontWeight: '800'
+    fontSize: 14.5,
+    fontFamily: fonts.bold,
   },
   shareSubRow: {
     flexDirection: 'row',
-    gap: 10
+    gap: 10,
   },
   copyLinkBtn: {
     flex: 1,
-    backgroundColor: '#131722',
+    backgroundColor: '#0b0e14',
     borderWidth: 1,
-    borderColor: '#242b3d',
+    borderColor: 'rgba(252, 28, 70, 0.3)',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 12,
     borderRadius: 12,
-    gap: 6
+    gap: 6,
   },
   copyLinkBtnText: {
-    color: colors.textPrimary,
+    color: '#ffffff',
     fontSize: 12,
-    fontWeight: '700'
+    fontFamily: fonts.bold,
   },
   demoSimulateBtn: {
-    backgroundColor: 'rgba(252, 28, 70, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(252, 28, 70, 0.3)',
+    backgroundColor: '#fc1c46',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 14,
     paddingVertical: 12,
     borderRadius: 12,
-    gap: 6
+    gap: 6,
   },
   demoSimulateBtnText: {
-    color: colors.primary,
+    color: '#ffffff',
     fontSize: 12,
-    fontWeight: '800'
+    fontFamily: fonts.bold,
   },
   rescueActionsRow: {
     flexDirection: 'row',
     gap: 8,
-    marginTop: 4
+    marginTop: 4,
   },
   rescueOptionsBtn: {
     flex: 1.2,
-    backgroundColor: '#0c1322',
+    backgroundColor: '#0b0e14',
     borderWidth: 1,
-    borderColor: '#1e3050',
+    borderColor: 'rgba(252, 28, 70, 0.3)',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 10,
     borderRadius: 10,
-    gap: 6
+    gap: 6,
   },
   rescueOptionsBtnText: {
-    color: '#38bdf8',
+    color: '#fc1c46',
     fontSize: 11,
-    fontWeight: '700'
+    fontFamily: fonts.bold,
   },
   demoTimeoutBtn: {
     flex: 1,
@@ -1016,274 +1104,288 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 10,
     borderRadius: 10,
-    gap: 6
+    gap: 6,
   },
   demoTimeoutBtnText: {
     color: '#ef4444',
     fontSize: 11,
-    fontWeight: '700'
+    fontFamily: fonts.bold,
   },
-  celebrationCard: {
-    backgroundColor: '#0a1610',
-    borderWidth: 1.5,
-    borderColor: '#22c55e',
-    borderRadius: 18,
+  celebrationOuter: {
+    marginBottom: 20,
+  },
+  celebrationInner: {
+    backgroundColor: '#fc1c46',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
     padding: 20,
     alignItems: 'center',
-    marginBottom: 20
   },
   celebrationTitle: {
-    color: '#22c55e',
+    color: '#ffffff',
     fontSize: 22,
-    fontWeight: '900',
+    fontFamily: fonts.headingBold,
     marginBottom: 6,
-    letterSpacing: 0.5
+    letterSpacing: 0.5,
   },
   celebrationSubtitle: {
-    color: '#a7f3d0',
+    color: 'rgba(255, 255, 255, 0.9)',
     fontSize: 13,
+    fontFamily: fonts.regular,
     textAlign: 'center',
     lineHeight: 18,
-    marginBottom: 20
+    marginBottom: 20,
   },
   celebrationNavRow: {
     width: '100%',
-    gap: 10
+    gap: 10,
   },
   primaryNavBtn: {
-    backgroundColor: '#22c55e',
+    backgroundColor: '#0b0e14',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 14,
     borderRadius: 12,
-    gap: 8
+    gap: 8,
   },
   primaryNavBtnText: {
-    color: '#07080a',
+    color: '#ffffff',
     fontSize: 14,
-    fontWeight: '800'
+    fontFamily: fonts.bold,
+  },
+  primaryNavBtnRefund: {
+    backgroundColor: '#fc1c46',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 12,
   },
   secondaryNavBtn: {
-    backgroundColor: '#131722',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderWidth: 1,
-    borderColor: '#242b3d',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 12,
-    borderRadius: 12
+    borderRadius: 12,
   },
   secondaryNavBtnText: {
-    color: colors.textPrimary,
+    color: '#ffffff',
     fontSize: 13,
-    fontWeight: '700'
+    fontFamily: fonts.bold,
   },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.85)',
     justifyContent: 'center',
-    padding: 20
+    padding: 20,
   },
-  modalContent: {
-    backgroundColor: '#0f131c',
-    borderRadius: 18,
+  modalOuter: {
+    width: '100%',
+  },
+  modalInner: {
+    backgroundColor: '#0b0e14',
     borderWidth: 1,
-    borderColor: '#242b3d',
-    padding: 20
+    borderColor: 'rgba(252, 28, 70, 0.3)',
+    padding: 20,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12
+    marginBottom: 12,
   },
   modalTitle: {
-    color: colors.textPrimary,
+    color: '#ffffff',
     fontSize: 16,
-    fontWeight: '800'
+    fontFamily: fonts.headingBold,
   },
   modalBodyText: {
-    color: colors.textSecondary,
+    color: '#94a3b8',
     fontSize: 13,
+    fontFamily: fonts.regular,
     lineHeight: 18,
-    marginBottom: 16
+    marginBottom: 16,
   },
   modalInput: {
-    backgroundColor: '#182030',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#29354d',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     color: '#ffffff',
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 20
+    fontFamily: fonts.medium,
+    marginBottom: 20,
   },
   modalConfirmBtn: {
-    backgroundColor: colors.primary,
+    backgroundColor: '#fc1c46',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 14,
-    borderRadius: 12
+    borderRadius: 12,
   },
   modalConfirmBtnText: {
     color: '#ffffff',
     fontSize: 14,
-    fontWeight: '800'
+    fontFamily: fonts.bold,
   },
-  rescueModalCard: {
-    backgroundColor: '#0d121c',
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: '#f59e0b',
-    padding: 20
+  rescueOuter: {
+    width: '100%',
+  },
+  rescueInner: {
+    backgroundColor: '#0b0e14',
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(252, 28, 70, 0.35)',
   },
   rescueModalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12
+    marginBottom: 12,
   },
   rescueWarningIcon: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+    backgroundColor: 'rgba(252, 28, 70, 0.15)',
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
   },
   rescueModalTitle: {
-    color: '#f59e0b',
+    color: '#fc1c46',
     fontSize: 16,
-    fontWeight: '900'
+    fontFamily: fonts.headingBold,
   },
   rescueModalSubtitle: {
-    color: colors.textPrimary,
+    color: '#ffffff',
     fontSize: 12,
-    fontWeight: '700',
-    marginTop: 2
+    fontFamily: fonts.semiBold,
+    marginTop: 2,
   },
   rescueModalBody: {
-    color: colors.textSecondary,
+    color: '#94a3b8',
     fontSize: 12.5,
+    fontFamily: fonts.regular,
     lineHeight: 17,
-    marginBottom: 16
+    marginBottom: 16,
   },
   rescueOptionCardPrimary: {
-    backgroundColor: 'rgba(34, 197, 94, 0.1)',
-    borderWidth: 1.5,
-    borderColor: '#22c55e',
+    backgroundColor: '#fc1c46',
     borderRadius: 14,
     padding: 14,
-    marginBottom: 10
-  },
-  rescueOptionTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center'
+    marginBottom: 10,
   },
   rescueOptionTitlePrimary: {
-    color: '#22c55e',
+    color: '#ffffff',
     fontSize: 13.5,
-    fontWeight: '800'
+    fontFamily: fonts.bold,
   },
   rescueOptionDescPrimary: {
-    color: '#a7f3d0',
+    color: 'rgba(255, 255, 255, 0.9)',
     fontSize: 11.5,
+    fontFamily: fonts.regular,
     marginTop: 4,
-    lineHeight: 16
+    lineHeight: 16,
   },
   rescueOptionCardSecondary: {
-    backgroundColor: 'rgba(56, 189, 248, 0.08)',
+    backgroundColor: '#0b0e14',
     borderWidth: 1.5,
-    borderColor: '#38bdf8',
+    borderColor: 'rgba(252, 28, 70, 0.4)',
     borderRadius: 14,
     padding: 14,
-    marginBottom: 10
+    marginBottom: 10,
   },
   rescueOptionTitleSecondary: {
-    color: '#38bdf8',
+    color: '#fc1c46',
     fontSize: 13.5,
-    fontWeight: '800'
+    fontFamily: fonts.bold,
   },
   rescueOptionDescSecondary: {
-    color: '#bae6fd',
+    color: '#94a3b8',
     fontSize: 11.5,
+    fontFamily: fonts.regular,
     marginTop: 4,
-    lineHeight: 16
+    lineHeight: 16,
   },
   rescueOptionCardGrace: {
-    backgroundColor: '#161c2b',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     borderWidth: 1,
-    borderColor: '#29354d',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 12,
     paddingVertical: 12,
-    alignItems: 'center'
+    alignItems: 'center',
   },
   rescueOptionTitleGrace: {
-    color: colors.textPrimary,
+    color: '#ffffff',
     fontSize: 12.5,
-    fontWeight: '700'
+    fontFamily: fonts.bold,
   },
-  refundSuccessCard: {
-    backgroundColor: '#0a1610',
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: '#22c55e',
+  refundOuter: {
+    width: '100%',
+  },
+  refundInner: {
+    backgroundColor: '#0b0e14',
     padding: 24,
-    alignItems: 'center'
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#fc1c46',
   },
   refundSuccessIconCircle: {
     width: 68,
     height: 68,
     borderRadius: 34,
-    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    backgroundColor: 'rgba(252, 28, 70, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 14
+    marginBottom: 14,
   },
   refundSuccessTitle: {
-    color: '#22c55e',
+    color: '#fc1c46',
     fontSize: 18,
-    fontWeight: '900',
-    letterSpacing: 0.5
+    fontFamily: fonts.headingBold,
+    letterSpacing: 0.5,
   },
   refundSuccessAmount: {
     color: '#ffffff',
     fontSize: 32,
-    fontWeight: '900',
-    marginVertical: 4
+    fontFamily: fonts.headingBold,
+    marginVertical: 4,
   },
   refundSuccessDesc: {
-    color: '#a7f3d0',
+    color: '#94a3b8',
     fontSize: 13,
+    fontFamily: fonts.regular,
     textAlign: 'center',
     lineHeight: 18,
-    marginBottom: 16
+    marginBottom: 16,
   },
   walletBalanceBadge: {
-    backgroundColor: '#122319',
+    backgroundColor: '#121624',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.4)',
+    borderColor: 'rgba(252, 28, 70, 0.35)',
     alignItems: 'center',
     width: '100%',
-    marginBottom: 20
+    marginBottom: 20,
   },
   walletBalanceBadgeLabel: {
-    color: '#86efac',
+    color: '#ff6b8b',
     fontSize: 11,
-    fontWeight: '600'
+    fontFamily: fonts.medium,
   },
   walletBalanceBadgeVal: {
     color: '#ffffff',
     fontSize: 18,
-    fontWeight: '800',
-    marginTop: 2
+    fontFamily: fonts.headingBold,
+    marginTop: 2,
   },
   refundNavCol: {
     width: '100%',
-    gap: 10
-  }
+    gap: 10,
+  },
 });

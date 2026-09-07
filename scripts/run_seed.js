@@ -3,13 +3,13 @@ const { getFirestore, doc, setDoc, getDoc } = require('firebase/firestore');
 const { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } = require('firebase/auth');
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyA6rBjlZ62CULHi8CqADZqE-VO8Nm5faJA',
-  authDomain: 'pclink-f6e0d.firebaseapp.com',
-  projectId: 'pclink-f6e0d',
-  storageBucket: 'pclink-f6e0d.firebasestorage.app',
-  messagingSenderId: '716411272758',
-  appId: '1:716411272758:web:26e82f394e28e57e3de297',
-  measurementId: 'G-0Y1T09135P'
+  apiKey: "AIzaSyAkcxejcGGvvhgFBXP970GcG4EwKnPn82A",
+  authDomain: "hay-equipo-6c320.firebaseapp.com",
+  projectId: "hay-equipo-6c320",
+  storageBucket: "hay-equipo-6c320.firebasestorage.app",
+  messagingSenderId: "520908260494",
+  appId: "1:520908260494:web:aa384fc831e74b9fca35df",
+  measurementId: "G-K8CM7MET5W"
 };
 
 const app = initializeApp(firebaseConfig);

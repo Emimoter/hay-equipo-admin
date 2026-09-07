@@ -25,12 +25,19 @@ import {
   ParkingIcon,
   CoffeeIcon,
   ClockIcon,
+  ZapIcon,
+  ChevronDownIcon,
 } from '../components/AppIcons';
 import { mobileApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { getRealUserLocation, UserLocationState, DEFAULT_LOCATION, calculateDistanceKm } from '../services/location';
 import { QuickBookingFinderModal } from '../components/QuickBookingFinderModal';
-import { Club, TimeSlot } from '@hay-equipo/contracts';
+import { DoubleBezelCard } from '../components/DoubleBezelCard';
+import { triggerHaptic } from '../services/haptics';
+import { Club, TimeSlot, Booking } from '@hay-equipo/contracts';
+
+const PADEL_RED_3D_ASSET = require('../../assets/padel_rackets_cutout.png');
+const SOCCER_BALL_3D_ASSET = require('../../assets/soccer_ball_cutout.png');
 
 interface HomeScreenProps {
   onNavigateSearch: (sport?: string) => void;
@@ -43,10 +50,13 @@ interface HomeScreenProps {
 
 const SPORTS_CATEGORIES = [
   { id: 'PADEL', label: 'Pádel', Icon: PadelIcon },
-  { id: 'FUTBOL_5', label: 'Fútbol 5', Icon: FootballIcon },
-  { id: 'FUTBOL_7', label: 'Fútbol 7', Icon: FootballIcon },
-  { id: 'TENIS', label: 'Tenis', Icon: TennisIcon },
-  { id: 'PICKLEBALL', label: 'Pickleball', Icon: PickleballIcon },
+  { id: 'FUTBOL', label: 'Fútbol', Icon: FootballIcon },
+];
+
+const SAMPLE_AVATARS = [
+  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
+  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&q=80',
+  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=120&q=80',
 ];
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({
@@ -61,10 +71,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const [selectedSport, setSelectedSport] = useState<string>('PADEL');
   const [clubs, setClubs] = useState<Club[]>([]);
   const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
+  const [userBookings, setUserBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [userLocation, setUserLocation] = useState<UserLocationState>(DEFAULT_LOCATION);
   const [showQuickFinder, setShowQuickFinder] = useState<boolean>(false);
-
   const [visibleClubsLimit, setVisibleClubsLimit] = useState<number>(5);
 
   useEffect(() => {
@@ -84,13 +94,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const loadHomeData = async (sport: string) => {
     setLoading(true);
     const today = new Date().toISOString().split('T')[0];
-    const [clubsData, slotsData] = await Promise.all([
+    const uid = userProfile?.uid || user?.uid || 'user-1';
+    const [clubsData, slotsData, bookingsData] = await Promise.all([
       mobileApi.getClubs(sport),
       mobileApi.searchAvailability({ date: today, timeFrom: '18:00', sport }),
+      mobileApi.getUserBookings(uid),
     ]);
     setClubs(clubsData);
     setAvailableSlots(slotsData);
+    setUserBookings(bookingsData?.upcoming || []);
     setLoading(false);
+  };
+
+  const handleSportSelect = (sportId: string) => {
+    triggerHaptic('selection');
+    setSelectedSport(sportId);
   };
 
   const displayName = userProfile?.displayName || user?.displayName || 'Emiliano';
@@ -103,364 +121,560 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-      {/* ═══════════════════════════════════════════════════════
-          HEADER: BUSCADOR PROFESIONAL Y PERFIL
-          ═══════════════════════════════════════════════════════ */}
-      <View style={styles.headerRow}>
-        <TouchableOpacity
-          activeOpacity={0.85}
-          style={styles.searchBar}
-          onPress={() => setShowQuickFinder(true)}
-        >
-          <View style={styles.searchIconBox}>
-            <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-              <Circle cx="11" cy="11" r="7" stroke="#fc1c46" strokeWidth={2.5} />
-              <Line
-                x1="16.5"
-                y1="16.5"
-                x2="21.5"
-                y2="21.5"
-                stroke="#fc1c46"
-                strokeWidth={3}
-                strokeLinecap="round"
-              />
-            </Svg>
+        {/* ═══════════════════════════════════════════════════════
+            TOP BAR: SALUDO PERSONALIZADO (CANVAS BLANCO)
+            ═══════════════════════════════════════════════════════ */}
+        <View style={styles.topGreetingRow}>
+          <View>
+            <Text style={styles.greetingTitle}>¡Hola, {displayName}! 👋</Text>
+            <Text style={styles.greetingSubtitle}>¿Qué jugamos hoy?</Text>
           </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.searchPlaceholder}>Encontrar cancha</Text>
-            <Text style={styles.searchSub}>
-              {userLocation.formattedLocation || 'Mar del Plata, Buenos Aires'} · Búsqueda rápida
-            </Text>
-          </View>
-          <View style={styles.filterPill}>
-            <Text style={styles.filterPillText}>Buscar →</Text>
-          </View>
-        </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.profileBadge}
-          onPress={onNavigateProfile}
-          activeOpacity={0.8}
-        >
-          {photoURL ? (
-            <Image source={{ uri: photoURL }} style={styles.profileImage} />
-          ) : (
-            <Text style={styles.profileBadgeText}>{displayName.charAt(0)}</Text>
-          )}
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity
+            style={styles.profileBadge}
+            onPress={() => {
+              triggerHaptic('light');
+              onNavigateProfile();
+            }}
+            activeOpacity={0.8}
+          >
+            {photoURL ? (
+              <Image source={{ uri: photoURL }} style={styles.profileImage} />
+            ) : (
+              <Text style={styles.profileBadgeText}>{displayName.charAt(0)}</Text>
+            )}
+            <View style={styles.onlineBadgeDot} />
+          </TouchableOpacity>
+        </View>
 
-      {/* ═══════════════════════════════════════════════════════
-          SELECTOR DE DEPORTES (ICONOS VECTORIALES SVG)
-          ═══════════════════════════════════════════════════════ */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.sportsScroll}
-        contentContainerStyle={styles.sportsScrollContent}
-      >
-        {SPORTS_CATEGORIES.map((sport) => {
-          const isActive = selectedSport === sport.id;
-          const IconComp = sport.Icon;
-          return (
-            <TouchableOpacity
-              key={sport.id}
-              activeOpacity={0.8}
-              style={[styles.sportPill, isActive && styles.sportPillActive]}
-              onPress={() => setSelectedSport(sport.id)}
-            >
-              <IconComp size={15} color={isActive ? '#fc1c46' : '#94a3b8'} strokeWidth={2} />
-              <Text style={[styles.sportLabel, isActive && styles.sportLabelActive]}>
-                {sport.label}
+        {/* ═══════════════════════════════════════════════════════
+            BUSCADOR ESTRUCTURADO MULTI-SEGMENTO:
+            [¿Dónde querés jugar?] | [Deporte] | [Fecha] | [Buscar]
+            ═══════════════════════════════════════════════════════ */}
+        <View style={styles.segmentedSearchOuter}>
+          {/* Segmento 1: ¿Dónde querés jugar? */}
+          <TouchableOpacity
+            style={styles.searchSegmentLocation}
+            onPress={() => {
+              triggerHaptic('light');
+              setShowQuickFinder(true);
+            }}
+            activeOpacity={0.75}
+          >
+            <Text style={styles.searchSegmentLabel} numberOfLines={1}>¿Dónde querés jugar?</Text>
+            <View style={styles.searchSegmentValueRow}>
+              <MapPinIcon size={11} color="#fc1c46" strokeWidth={2.2} />
+              <Text style={styles.searchSegmentValueText} numberOfLines={1}>
+                {userLocation.city || 'Mar del Plata'}
               </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
-
-      {/* ═══════════════════════════════════════════════════════
-          BANNER DESTACADO: TURNO FIJO SEMANAL (PREMIUM)
-          ═══════════════════════════════════════════════════════ */}
-      <TouchableOpacity
-        activeOpacity={0.92}
-        style={styles.offerBanner}
-        onPress={onNavigateFixedSlots}
-      >
-        {/* Glow de fondo y perspectiva vectorial de cancha */}
-        <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
-          <Svg width="100%" height="100%" viewBox="0 0 360 220" preserveAspectRatio="none">
-            <Defs>
-              <RadialGradient id="bannerGlow" cx="90%" cy="15%" r="80%">
-                <Stop offset="0%" stopColor="#fc1c46" stopOpacity="0.25" />
-                <Stop offset="55%" stopColor="#fc1c46" stopOpacity="0.05" />
-                <Stop offset="100%" stopColor="#fc1c46" stopOpacity="0" />
-              </RadialGradient>
-              <LinearGradient id="meshLineGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <Stop offset="0%" stopColor="#fc1c46" stopOpacity="0.2" />
-                <Stop offset="100%" stopColor="#ffffff" stopOpacity="0.03" />
-              </LinearGradient>
-            </Defs>
-            <Rect width="100%" height="100%" fill="url(#bannerGlow)" />
-            <Path
-              d="M 200,0 L 360,120 M 260,0 L 360,75 M 150,0 L 360,165"
-              stroke="url(#meshLineGrad)"
-              strokeWidth="1.2"
-            />
-            <Circle cx="320" cy="45" r="48" stroke="rgba(252, 28, 70, 0.09)" strokeWidth="1.5" fill="none" />
-          </Svg>
-        </View>
-
-        {/* Encabezado del banner */}
-        <View style={styles.offerHeaderRow}>
-          <View style={styles.offerBadge}>
-            <View style={styles.offerLiveDot} />
-            <Text style={styles.offerBadgeText}>TURNO FIJO SEMANAL</Text>
-          </View>
-          <View style={styles.discountPill}>
-            <Text style={styles.discountPillText}>-15% OFF</Text>
-          </View>
-        </View>
-
-        {/* Título y descripción */}
-        <Text style={styles.offerTitle}>Asegurá tu Cancha Fija</Text>
-        <Text style={styles.offerSubtitle}>
-          Mismo día y horario garantizado cada semana para tu grupo, sin señas manuales.
-        </Text>
-
-        {/* Micro-Chips con iconos vectoriales */}
-        <View style={styles.offerPerksRow}>
-          <View style={styles.offerPerkChip}>
-            <CalendarIcon size={12} color="#cbd5e1" strokeWidth={2} />
-            <Text style={styles.offerPerkText}>Horario fijo</Text>
-          </View>
-          <View style={styles.offerPerkChip}>
-            <UsersIcon size={12} color="#cbd5e1" strokeWidth={2} />
-            <Text style={styles.offerPerkText}>Pago dividido</Text>
-          </View>
-          <View style={styles.offerPerkChip}>
-            <RepeatIcon size={12} color="#cbd5e1" strokeWidth={2} />
-            <Text style={styles.offerPerkText}>Renovación auto</Text>
-          </View>
-        </View>
-
-        {/* Botón CTA */}
-        <View style={styles.offerCtaRow}>
-          <View style={styles.offerButton}>
-            <Text style={styles.offerButtonText}>Reservar turno recurrente</Text>
-            <View style={styles.offerButtonIconCircle}>
-              <Text style={styles.offerButtonArrow}>→</Text>
+              <ChevronDownIcon size={9} color="#94a3b8" />
             </View>
-          </View>
-        </View>
-      </TouchableOpacity>
+          </TouchableOpacity>
 
-      {/* ═══════════════════════════════════════════════════════
-          BANNER DEMO: SALA DE ESPERA / SPLIT LOBBY (PROVISIONAL)
-          ═══════════════════════════════════════════════════════ */}
-      {onNavigateDemoSplit && (
-        <TouchableOpacity
-          activeOpacity={0.88}
-          style={styles.demoLobbyBanner}
-          onPress={onNavigateDemoSplit}
-        >
-          <View style={styles.demoLobbyLeft}>
-            <View style={styles.demoLobbyIconCircle}>
-              <UsersIcon size={20} color="#fc1c46" strokeWidth={2.2} />
+          {/* Divisor vertical */}
+          <View style={styles.searchSegmentDivider} />
+
+          {/* Segmento 2: Deporte */}
+          <TouchableOpacity
+            style={styles.searchSegmentSport}
+            onPress={() => {
+              triggerHaptic('selection');
+              const nextSport = selectedSport === 'PADEL' ? 'FUTBOL' : 'PADEL';
+              handleSportSelect(nextSport);
+            }}
+            activeOpacity={0.75}
+          >
+            <Text style={styles.searchSegmentLabel} numberOfLines={1}>Deporte</Text>
+            <View style={styles.searchSegmentValueRow}>
+              {selectedSport === 'FUTBOL' ? (
+                <FootballIcon size={11} color="#fc1c46" strokeWidth={2.2} />
+              ) : (
+                <PadelIcon size={11} color="#fc1c46" strokeWidth={2.2} />
+              )}
+              <Text style={styles.searchSegmentValueText} numberOfLines={1}>
+                {selectedSport === 'FUTBOL' ? 'Fútbol' : 'Pádel'}
+              </Text>
+              <ChevronDownIcon size={9} color="#94a3b8" />
             </View>
-            <View style={{ flex: 1, marginLeft: 12 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Text style={styles.demoLobbyTitle}>🎮 Probar Sala de Espera</Text>
-                <View style={styles.demoLobbyBadge}>
-                  <Text style={styles.demoLobbyBadgeText}>DEMO</Text>
-                </View>
-              </View>
-              <Text style={styles.demoLobbySubtitle}>
-                Mirá en vivo el lobby de jugadores, cuotas y confirmación automática.
+          </TouchableOpacity>
+
+          {/* Divisor vertical */}
+          <View style={styles.searchSegmentDivider} />
+
+          {/* Segmento 3: Fecha */}
+          <TouchableOpacity
+            style={styles.searchSegmentDate}
+            onPress={() => {
+              triggerHaptic('light');
+              setShowQuickFinder(true);
+            }}
+            activeOpacity={0.75}
+          >
+            <Text style={styles.searchSegmentLabel} numberOfLines={1}>Fecha</Text>
+            <View style={styles.searchSegmentValueRow}>
+              <CalendarIcon size={11} color="#fc1c46" strokeWidth={2.2} />
+              <Text style={styles.searchSegmentValueText} numberOfLines={1}>
+                Hoy 20:00h
               </Text>
             </View>
-          </View>
-          <View style={styles.demoLobbyArrowCircle}>
-            <Text style={styles.demoLobbyArrowText}>→</Text>
-          </View>
-        </TouchableOpacity>
-      )}
+          </TouchableOpacity>
 
-      {/* ═══════════════════════════════════════════════════════
-          SECTION: PARA JUGAR HOY (TURNOS LIBRES INMEDIATOS)
-          ═══════════════════════════════════════════════════════ */}
-      <View style={styles.sectionHeader}>
-        <View>
-          <Text style={styles.sectionTitle}>Para jugar hoy</Text>
-          <Text style={styles.sectionSubtitle}>Turnos libres en las próximas horas</Text>
+          {/* Botón Rojo Buscar */}
+          <TouchableOpacity
+            style={styles.searchSegmentBtn}
+            onPress={() => {
+              triggerHaptic('medium');
+              setShowQuickFinder(true);
+            }}
+            activeOpacity={0.88}
+          >
+            <Text style={styles.searchSegmentBtnText}>Buscar</Text>
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity onPress={() => onNavigateSearch(selectedSport)} activeOpacity={0.7}>
-          <Text style={styles.seeAllText}>Ver todos →</Text>
-        </TouchableOpacity>
-      </View>
 
-      {loading ? (
-        <ActivityIndicator size="small" color={colors.primary} style={{ marginVertical: 24 }} />
-      ) : availableSlots.length === 0 ? (
-        <View style={styles.emptyCard}>
-          <Text style={styles.emptyText}>No hay turnos libres inmediatos para hoy.</Text>
-        </View>
-      ) : (
+        {/* ═══════════════════════════════════════════════════════
+            SELECTOR DE DEPORTES: PASTILLAS NEGRO / ROJO
+            ═══════════════════════════════════════════════════════ */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          style={styles.slotsScroll}
-          contentContainerStyle={{ paddingRight: 16 }}
+          style={styles.sportsScroll}
+          contentContainerStyle={styles.sportsScrollContent}
         >
-          {availableSlots.slice(0, 6).map((slot, idx) => (
-            <TouchableOpacity
-              key={idx}
-              style={styles.slotCard}
-              onPress={() => onNavigateCheckout(slot)}
-              activeOpacity={0.88}
-            >
-              {/* Badge de Horario */}
-              <View style={styles.slotTimeBadge}>
-                <ClockIcon size={12} color="#fc1c46" strokeWidth={2.2} />
-                <Text style={styles.slotTimeText}>{slot.startTime} – {slot.endTime}</Text>
-              </View>
-
-              <Text style={styles.slotCourtName} numberOfLines={1}>
-                {slot.courtName}
-              </Text>
-              
-              <View style={styles.slotClubRow}>
-                <MapPinIcon size={12} color={colors.textSecondary} strokeWidth={1.8} />
-                <Text style={styles.slotClubName} numberOfLines={1}>
-                  {slot.clubName}
+          {SPORTS_CATEGORIES.map((sport) => {
+            const isActive = selectedSport === sport.id;
+            const IconComp = sport.Icon;
+            return (
+              <TouchableOpacity
+                key={sport.id}
+                activeOpacity={0.8}
+                style={[styles.sportPill, isActive && styles.sportPillActive]}
+                onPress={() => handleSportSelect(sport.id)}
+              >
+                <IconComp
+                  size={15}
+                  color={isActive ? '#ffffff' : '#fc1c46'}
+                  strokeWidth={2.2}
+                />
+                <Text style={[styles.sportLabel, isActive && styles.sportLabelActive]}>
+                  {sport.label}
                 </Text>
-              </View>
-
-              <View style={styles.slotPriceRow}>
-                <View>
-                  <Text style={styles.slotPriceLabel}>Por jugador</Text>
-                  <Text style={styles.slotPrice}>{formatCurrency(slot.price)}</Text>
-                </View>
-                <View style={styles.reserveButton}>
-                  <Text style={styles.reserveButtonText}>Reservar</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          ))}
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
-      )}
 
-      {/* ═══════════════════════════════════════════════════════
-          SECTION: CLUBES DESTACADOS CERCA TUYO
-          ═══════════════════════════════════════════════════════ */}
-      <View style={styles.sectionHeader}>
-        <View>
-          <Text style={styles.sectionTitle}>Clubes cerca tuyo</Text>
-          <Text style={styles.sectionSubtitle}>Complejos con mejores instalaciones</Text>
+        {/* ═══════════════════════════════════════════════════════
+            VARIACIÓN 1: TARJETA ROJA CON DETALLES NEGROS Y LETRAS BLANCAS
+            WIDGET: TU PRÓXIMO PARTIDO (SOLO SI EL USUARIO TIENE PARTIDO RESERVADO / ES HOST)
+            ═══════════════════════════════════════════════════════ */}
+        {(() => {
+          const activeUpcomingMatch = userBookings.find(
+            b => b.status === 'CONFIRMED' || b.status === 'HELD' || !!b.splitToken
+          );
+          if (!activeUpcomingMatch) return null;
+
+          const isMatchFutbol = (activeUpcomingMatch.sportType || '').toUpperCase().includes('FUTBOL');
+
+          return (
+            <View style={styles.upcomingBookingSection}>
+              <View style={styles.upcomingHeaderRow}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <View style={styles.livePulseDot} />
+                  <Text style={styles.upcomingSectionTitle}>Tu próximo partido</Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => {
+                    triggerHaptic('light');
+                    if (onNavigateDemoSplit) onNavigateDemoSplit();
+                  }}
+                >
+                  <Text style={styles.upcomingLinkText}>Ver sala →</Text>
+                </TouchableOpacity>
+              </View>
+
+              <DoubleBezelCard
+                variant="red"
+                style={styles.upcomingCardOuter}
+                innerStyle={styles.upcomingCardInner}
+                onPress={() => {
+                  triggerHaptic('medium');
+                  if (onNavigateDemoSplit) onNavigateDemoSplit();
+                }}
+                glow
+              >
+                <View style={styles.upcomingTopRow}>
+                  <View style={styles.upcomingSportTag}>
+                    {isMatchFutbol ? (
+                      <FootballIcon size={12} color="#ffffff" strokeWidth={2.2} />
+                    ) : (
+                      <PadelIcon size={12} color="#ffffff" strokeWidth={2.2} />
+                    )}
+                    <Text style={styles.upcomingSportTagText}>
+                      {isMatchFutbol ? 'FÚTBOL' : 'PÁDEL'} · {activeUpcomingMatch.courtName || 'CANCHA 1'}
+                    </Text>
+                  </View>
+                  <View style={styles.upcomingTimeBadge}>
+                    <ClockIcon size={11} color="#ffffff" strokeWidth={2} />
+                    <Text style={styles.upcomingTimeBadgeText}>
+                      {activeUpcomingMatch.date === new Date().toISOString().split('T')[0] ? 'Hoy' : activeUpcomingMatch.date} {activeUpcomingMatch.startTime} hs
+                    </Text>
+                  </View>
+                </View>
+
+                <Text style={styles.upcomingClubName}>{activeUpcomingMatch.clubName || 'Arena Pádel Palermo'}</Text>
+
+                <View style={styles.upcomingBottomRow}>
+                  <View style={styles.avatarPileContainer}>
+                    <View style={styles.avatarPileRow}>
+                      {SAMPLE_AVATARS.map((uri, idx) => (
+                        <Image
+                          key={idx}
+                          source={{ uri }}
+                          style={[styles.avatarPileImg, { marginLeft: idx > 0 ? -10 : 0 }]}
+                        />
+                      ))}
+                      <View style={[styles.avatarPileBadge, { marginLeft: -10 }]}>
+                        <Text style={styles.avatarPileBadgeText}>+1</Text>
+                      </View>
+                    </View>
+                    <Text style={styles.avatarPileLabel}>Confirmado</Text>
+                  </View>
+
+                  <TouchableOpacity
+                    style={styles.upcomingActionBtn}
+                    onPress={() => {
+                      triggerHaptic('medium');
+                      if (onNavigateDemoSplit) onNavigateDemoSplit();
+                    }}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={styles.upcomingActionText}>Split</Text>
+                    <Text style={styles.upcomingActionArrow}>↗</Text>
+                  </TouchableOpacity>
+                </View>
+              </DoubleBezelCard>
+            </View>
+          );
+        })()}
+
+        {/* ═══════════════════════════════════════════════════════
+            VARIACIÓN 2: TARJETA NEGRA CON DETALLES ROJOS Y LETRAS BLANCAS
+            HERO CARD: ASEGURÁ TU CANCHA FIJA (CON ASSET 3D DINÁMICO PÁDEL / FÚTBOL)
+            ═══════════════════════════════════════════════════════ */}
+        {(() => {
+          const isSoccer = selectedSport.toUpperCase().includes('FUTBOL');
+
+          return (
+            <DoubleBezelCard
+              variant="black"
+              style={styles.heroBannerOuter}
+              innerStyle={styles.heroBannerInner}
+              onPress={() => {
+                triggerHaptic('medium');
+                onNavigateFixedSlots();
+              }}
+              glow
+            >
+              {/* Fondo Texturizado con halo rojo sutil */}
+              <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
+                <Svg width="100%" height="100%" viewBox="0 0 360 180" preserveAspectRatio="none">
+                  <Defs>
+                    <RadialGradient id="redGlow" cx="85%" cy="30%" r="70%">
+                      <Stop offset="0%" stopColor="#fc1c46" stopOpacity="0.25" />
+                      <Stop offset="60%" stopColor="#0b0e14" stopOpacity="0.08" />
+                      <Stop offset="100%" stopColor="#0b0e14" stopOpacity="0" />
+                    </RadialGradient>
+                  </Defs>
+                  <Rect width="100%" height="100%" fill="url(#redGlow)" />
+                </Svg>
+              </View>
+
+              <View style={styles.heroContentLeft}>
+                <View style={styles.heroBadgeRow}>
+                  <View style={styles.heroTag}>
+                    <ZapIcon size={11} color="#fc1c46" strokeWidth={2.4} />
+                    <Text style={styles.heroTagText}>TURNO FIJO SEMANAL</Text>
+                  </View>
+                  <View style={styles.heroDiscountBadge}>
+                    <Text style={styles.heroDiscountText}>-15% OFF</Text>
+                  </View>
+                </View>
+
+                <Text style={styles.heroTitle}>Asegurá tu Cancha Fija</Text>
+                <Text style={styles.heroSubtitle}>
+                  {isSoccer
+                    ? 'Fútbol semanal con tu equipo y pago dividido automático.'
+                    : 'Mismo día y horario cada semana con pago dividido automático.'}
+                </Text>
+
+                {/* Button-in-Button Rojo */}
+                <View style={styles.heroCtaBtn}>
+                  <Text style={styles.heroCtaText}>Asegurar cupo</Text>
+                  <View style={styles.heroCtaCircle}>
+                    <Text style={styles.heroCtaArrow}>↗</Text>
+                  </View>
+                </View>
+              </View>
+
+              {/* Imagen 3D Saliente Dinámica (Paletas de Pádel o Pelota de Fútbol) */}
+              <View style={styles.heroImageContainer}>
+                <Image
+                  source={isSoccer ? SOCCER_BALL_3D_ASSET : PADEL_RED_3D_ASSET}
+                  style={styles.hero3DImage}
+                />
+              </View>
+            </DoubleBezelCard>
+          );
+        })()}
+
+        {/* ═══════════════════════════════════════════════════════
+            SECTION: PARA JUGAR HOY (TARJETAS NEGRAS CON DETALLES ROJOS)
+            ═══════════════════════════════════════════════════════ */}
+        <View style={styles.sectionHeader}>
+          <View>
+            <Text style={styles.sectionTitle}>Para jugar hoy</Text>
+            <Text style={styles.sectionSubtitle}>Turnos libres en las próximas horas</Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => {
+              triggerHaptic('light');
+              onNavigateSearch(selectedSport);
+            }}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.seeAllText}>Ver todos →</Text>
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity onPress={() => onNavigateSearch(selectedSport)} activeOpacity={0.7}>
-          <Text style={styles.seeAllText}>Ver mapa →</Text>
-        </TouchableOpacity>
-      </View>
 
-      {clubs.slice(0, visibleClubsLimit).map((club) => (
-        <TouchableOpacity
-          key={club.id}
-          style={styles.clubCard}
-          onPress={() => onNavigateClub(club.id)}
-          activeOpacity={0.9}
-        >
-          <View style={styles.clubImageContainer}>
-            <Image source={{ uri: club.images[0] }} style={styles.clubImage} />
-            <View style={styles.clubImageOverlay} />
-            
-            {/* Badges superiores sobre la foto con iconos SVG */}
-            <View style={styles.clubFloatingBadgeRow}>
-              <View style={styles.clubSportTag}>
-                {selectedSport === 'PADEL' ? (
-                  <PadelIcon size={12} color="#f8fafc" strokeWidth={2} />
-                ) : selectedSport === 'FUTBOL' ? (
-                  <FootballIcon size={12} color="#f8fafc" strokeWidth={2} />
-                ) : (
-                  <TennisIcon size={12} color="#f8fafc" strokeWidth={2} />
-                )}
-                <Text style={styles.clubSportTagText}>
-                  {selectedSport === 'PADEL' ? 'PÁDEL' : selectedSport === 'FUTBOL' ? 'FÚTBOL' : 'TENIS'}
+        {loading ? (
+          <ActivityIndicator size="small" color={colors.primary} style={{ marginVertical: 24 }} />
+        ) : availableSlots.length === 0 ? (
+          <DoubleBezelCard style={{ marginBottom: 20 }} innerStyle={styles.emptyCard}>
+            <Text style={styles.emptyText}>No hay turnos libres inmediatos para hoy.</Text>
+          </DoubleBezelCard>
+        ) : (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.slotsScroll}
+            contentContainerStyle={{ paddingRight: 16 }}
+          >
+            {availableSlots.slice(0, 6).map((slot, idx) => {
+              const courtUpper = (slot.courtName + ' ' + (slot.sportType || '')).toUpperCase();
+              let courtBadgeTag = 'Pádel Panorámica';
+              let courtCapacity = '4 jugadores';
+
+              if (courtUpper.includes('7') || slot.sportType === 'FUTBOL_7') {
+                courtBadgeTag = 'Fútbol 7';
+                courtCapacity = '14 jugadores';
+              } else if (courtUpper.includes('8') || slot.sportType === 'FUTBOL_8') {
+                courtBadgeTag = 'Fútbol 8';
+                courtCapacity = '16 jugadores';
+              } else if (courtUpper.includes('11') || slot.sportType === 'FUTBOL_11') {
+                courtBadgeTag = 'Fútbol 11';
+                courtCapacity = '22 jugadores';
+              } else if (courtUpper.includes('FUTBOL') || courtUpper.includes('5') || slot.sportType === 'FUTBOL_5') {
+                courtBadgeTag = 'Fútbol 5';
+                courtCapacity = '10 jugadores';
+              }
+
+              return (
+                <DoubleBezelCard
+                  key={idx}
+                  variant="black"
+                  style={styles.slotCardOuter}
+                  innerStyle={styles.slotCardInner}
+                  onPress={() => {
+                    triggerHaptic('medium');
+                    onNavigateCheckout(slot);
+                  }}
+                >
+                  {/* Header de la tarjeta con badge de horario rojo */}
+                  <View style={styles.slotCardHeaderRow}>
+                    <View style={styles.slotTimeBadge}>
+                      <ClockIcon size={11} color="#fc1c46" strokeWidth={2.2} />
+                      <Text style={styles.slotTimeText}>{slot.startTime} – {slot.endTime}</Text>
+                    </View>
+                    <View style={styles.slotArrowCircle}>
+                      <Text style={styles.slotArrowText}>↗</Text>
+                    </View>
+                  </View>
+
+                  <Text style={styles.slotCourtName} numberOfLines={1}>
+                    {slot.courtName}
+                  </Text>
+
+                  {/* Badge de tipo de cancha y jugadores */}
+                  <View style={styles.courtSpecBadge}>
+                    <Text style={styles.courtSpecBadgeText}>{courtBadgeTag} · {courtCapacity}</Text>
+                  </View>
+                  
+                  <View style={styles.slotClubRow}>
+                    <MapPinIcon size={12} color="#94a3b8" strokeWidth={1.8} />
+                    <Text style={styles.slotClubName} numberOfLines={1}>
+                      {slot.clubName}
+                    </Text>
+                  </View>
+
+                  {/* Avatar pile social en el turno */}
+                  <View style={styles.slotAvatarRow}>
+                    <View style={styles.avatarPileRowMini}>
+                      {SAMPLE_AVATARS.slice(0, 2).map((uri, aIdx) => (
+                        <Image
+                          key={aIdx}
+                          source={{ uri }}
+                          style={[styles.avatarPileImgMini, { marginLeft: aIdx > 0 ? -6 : 0 }]}
+                        />
+                      ))}
+                      <View style={[styles.avatarPileBadgeMini, { marginLeft: -6 }]}>
+                        <Text style={styles.avatarPileBadgeTextMini}>+2</Text>
+                      </View>
+                    </View>
+                    <Text style={styles.slotPlayersRemaining}>2 cupos libres</Text>
+                  </View>
+
+                  <View style={styles.slotPriceRow}>
+                    <View>
+                      <Text style={styles.slotPriceLabel}>Por jugador</Text>
+                      <Text style={styles.slotPrice}>{formatCurrency(slot.price)}</Text>
+                    </View>
+                    <View style={styles.reserveButton}>
+                      <Text style={styles.reserveButtonText}>Reservar</Text>
+                    </View>
+                  </View>
+                </DoubleBezelCard>
+              );
+            })}
+          </ScrollView>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════
+            SECTION: CLUBES DESTACADOS CERCA TUYO (TARJETAS NEGRAS / ROJAS)
+            ═══════════════════════════════════════════════════════ */}
+        <View style={styles.sectionHeader}>
+          <View>
+            <Text style={styles.sectionTitle}>Clubes cerca tuyo</Text>
+            <Text style={styles.sectionSubtitle}>Complejos con mejores canchas</Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => {
+              triggerHaptic('light');
+              onNavigateSearch(selectedSport);
+            }}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.seeAllText}>Ver mapa →</Text>
+          </TouchableOpacity>
+        </View>
+
+        {clubs.slice(0, visibleClubsLimit).map((club) => (
+          <DoubleBezelCard
+            key={club.id}
+            variant="black"
+            style={styles.clubCardOuter}
+            innerStyle={styles.clubCardInner}
+            onPress={() => {
+              triggerHaptic('medium');
+              onNavigateClub(club.id);
+            }}
+          >
+            <View style={styles.clubImageContainer}>
+              <Image source={{ uri: club.images[0] }} style={styles.clubImage} />
+              <View style={styles.clubImageOverlay} />
+              
+              {/* Badges superiores sobre la foto con iconos SVG */}
+              <View style={styles.clubFloatingBadgeRow}>
+                <View style={styles.clubSportTag}>
+                  {selectedSport === 'PADEL' ? (
+                    <PadelIcon size={12} color="#ffffff" strokeWidth={2} />
+                  ) : selectedSport === 'FUTBOL' ? (
+                    <FootballIcon size={12} color="#ffffff" strokeWidth={2} />
+                  ) : (
+                    <TennisIcon size={12} color="#ffffff" strokeWidth={2} />
+                  )}
+                  <Text style={styles.clubSportTagText}>
+                    {selectedSport === 'PADEL' ? 'PÁDEL' : selectedSport === 'FUTBOL' ? 'FÚTBOL' : 'TENIS'}
+                  </Text>
+                </View>
+                <View style={styles.ratingBadge}>
+                  <StarIcon size={11} fill="#FACC15" color="#FACC15" />
+                  <Text style={styles.ratingText}>{club.rating}</Text>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.clubInfo}>
+              <View style={styles.clubHeaderRow}>
+                <Text style={styles.clubName}>{club.name}</Text>
+                <View style={styles.clubArrowBtn}>
+                  <Text style={styles.clubArrowText}>↗</Text>
+                </View>
+              </View>
+
+              <View style={styles.clubLocationRow}>
+                <MapPinIcon size={13} color="#94a3b8" strokeWidth={1.8} />
+                <Text style={styles.clubAddress} numberOfLines={1}>
+                  {club.address} · {club.city}
+                  {club.latitude && club.longitude
+                    ? ` · a ${calculateDistanceKm(userLocation.latitude, userLocation.longitude, club.latitude, club.longitude).toFixed(1)} km`
+                    : ''}
                 </Text>
               </View>
-              <View style={styles.ratingBadge}>
-                <StarIcon size={11} fill="#FACC15" color="#FACC15" />
-                <Text style={styles.ratingText}>{club.rating}</Text>
+
+              {/* Amenities en chips */}
+              <View style={styles.amenitiesRow}>
+                {Boolean(club.amenities?.covered) ? (
+                  <View style={styles.amenityTag}>
+                    <RoofIcon size={12} color="#94a3b8" strokeWidth={1.8} />
+                    <Text style={styles.amenityText}>Techada</Text>
+                  </View>
+                ) : null}
+                {Boolean(club.amenities?.parking) ? (
+                  <View style={styles.amenityTag}>
+                    <ParkingIcon size={12} color="#94a3b8" strokeWidth={1.8} />
+                    <Text style={styles.amenityText}>Parking</Text>
+                  </View>
+                ) : null}
+                {Boolean(club.amenities?.buffet) ? (
+                  <View style={styles.amenityTag}>
+                    <CoffeeIcon size={12} color="#94a3b8" strokeWidth={1.8} />
+                    <Text style={styles.amenityText}>Buffet</Text>
+                  </View>
+                ) : null}
+              </View>
+
+              {/* Footer de precio y botón */}
+              <View style={styles.clubFooterRow}>
+                <View>
+                  <Text style={styles.priceStartingLabel}>Precio desde</Text>
+                  <Text style={styles.priceStartingText}>{formatCurrency(club.minPrice)}</Text>
+                </View>
+                <View style={styles.viewCourtsButton}>
+                  <Text style={styles.viewCourtsLink}>Ver canchas</Text>
+                  <Text style={styles.viewCourtsArrow}>↗</Text>
+                </View>
               </View>
             </View>
-          </View>
+          </DoubleBezelCard>
+        ))}
 
-          <View style={styles.clubInfo}>
-            <View style={styles.clubHeaderRow}>
-              <Text style={styles.clubName}>{club.name}</Text>
-            </View>
-
-            <View style={styles.clubLocationRow}>
-              <MapPinIcon size={13} color={colors.textSecondary} strokeWidth={1.8} />
-              <Text style={styles.clubAddress} numberOfLines={1}>
-                {club.address} · {club.city}
-                {club.latitude && club.longitude
-                  ? ` · a ${calculateDistanceKm(userLocation.latitude, userLocation.longitude, club.latitude, club.longitude).toFixed(1)} km`
-                  : ''}
-              </Text>
-            </View>
-
-            {/* Amenities en chips con iconos vectoriales */}
-            <View style={styles.amenitiesRow}>
-              {Boolean(club.amenities?.covered) ? (
-                <View style={styles.amenityTag}>
-                  <RoofIcon size={12} color={colors.textSecondary} strokeWidth={1.8} />
-                  <Text style={styles.amenityText}>Techada</Text>
-                </View>
-              ) : null}
-              {Boolean(club.amenities?.parking) ? (
-                <View style={styles.amenityTag}>
-                  <ParkingIcon size={12} color={colors.textSecondary} strokeWidth={1.8} />
-                  <Text style={styles.amenityText}>Parking</Text>
-                </View>
-              ) : null}
-              {Boolean(club.amenities?.buffet) ? (
-                <View style={styles.amenityTag}>
-                  <CoffeeIcon size={12} color={colors.textSecondary} strokeWidth={1.8} />
-                  <Text style={styles.amenityText}>Bar & Buffet</Text>
-                </View>
-              ) : null}
-            </View>
-
-            {/* Footer de precio y botón */}
-            <View style={styles.clubFooterRow}>
-              <View>
-                <Text style={styles.priceStartingLabel}>Precio desde</Text>
-                <Text style={styles.priceStartingText}>{formatCurrency(club.minPrice)}</Text>
-              </View>
-              <View style={styles.viewCourtsButton}>
-                <Text style={styles.viewCourtsLink}>Ver canchas →</Text>
-              </View>
-            </View>
-          </View>
-        </TouchableOpacity>
-      ))}
-
-      {clubs.length > visibleClubsLimit ? (
-        <TouchableOpacity
-          style={styles.loadMoreClubsButton}
-          onPress={() => setVisibleClubsLimit(prev => prev + 5)}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.loadMoreClubsText}>
-            {`Ver más complejos (${clubs.length - visibleClubsLimit} más) ↓`}
-          </Text>
-        </TouchableOpacity>
-      ) : null}
+        {clubs.length > visibleClubsLimit ? (
+          <TouchableOpacity
+            style={styles.loadMoreClubsButton}
+            onPress={() => {
+              triggerHaptic('light');
+              setVisibleClubsLimit((prev) => prev + 5);
+            }}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.loadMoreClubsText}>
+              {`Ver más complejos (${clubs.length - visibleClubsLimit} más) ↓`}
+            </Text>
+          </TouchableOpacity>
+        ) : null}
       </ScrollView>
 
-      {/* ═══════════════════════════════════════════════════════
-          MINI CUESTIONARIO DE BÚSQUEDA RÁPIDA (MODAL)
-          ═══════════════════════════════════════════════════════ */}
       <QuickBookingFinderModal
         visible={showQuickFinder}
         onClose={() => setShowQuickFinder(false)}
@@ -481,402 +695,641 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#f8fafc',
   },
   contentContainer: {
-    padding: 16,
-    paddingTop: Platform.OS === 'ios' ? 12 : 8,
+    paddingTop: Platform.OS === 'ios' ? 44 : 20,
+    paddingHorizontal: 16,
     paddingBottom: 95,
   },
-  headerRow: {
+
+  /* Top Greeting Row */
+  topGreetingRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 12,
-    marginBottom: 14,
+    marginBottom: 16,
   },
-  searchBar: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(18, 21, 29, 0.95)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.09)',
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.5,
-    shadowRadius: 12,
-    elevation: 8,
+  greetingTitle: {
+    fontFamily: fonts.headingBold,
+    color: '#0f172a',
+    fontSize: 22,
+    letterSpacing: -0.4,
   },
-  searchIconBox: {
-    marginRight: 10,
-  },
-  searchPlaceholder: {
-    fontFamily: fonts.semiBold,
-    color: colors.textPrimary,
-    fontSize: 14,
-  },
-  searchSub: {
-    fontFamily: fonts.regular,
-    color: colors.textMuted,
-    fontSize: 11.5,
+  greetingSubtitle: {
+    fontFamily: fonts.medium,
+    color: '#64748b',
+    fontSize: 13,
     marginTop: 2,
   },
-  filterPill: {
-    backgroundColor: 'rgba(252, 28, 70, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(252, 28, 70, 0.28)',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 10,
-  },
-  filterPillText: {
-    fontFamily: fonts.bold,
-    color: '#fc1c46',
-    fontSize: 11.5,
-  },
   profileBadge: {
+    position: 'relative',
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(252, 28, 70, 0.14)',
+    backgroundColor: '#0b0e14',
     borderWidth: 1.5,
-    borderColor: 'rgba(252, 28, 70, 0.6)',
+    borderColor: '#fc1c46',
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
   },
   profileImage: {
     width: '100%',
     height: '100%',
+    borderRadius: 22,
   },
   profileBadgeText: {
     fontFamily: fonts.headingBold,
-    color: '#fc1c46',
+    color: '#ffffff',
     fontSize: 18,
   },
+  onlineBadgeDot: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#fc1c46',
+    borderWidth: 2,
+    borderColor: '#ffffff',
+  },
 
-  /* Selector de Deportes */
-  sportsScroll: {
+  /* Segmented Structured Search Bar (Brand Velocity Red & Jet Black) */
+  segmentedSearchOuter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0b0e14',
+    borderRadius: 18,
+    paddingVertical: 9,
+    paddingLeft: 12,
+    paddingRight: 8,
+    borderWidth: 1.2,
+    borderColor: 'rgba(252, 28, 70, 0.4)',
     marginBottom: 16,
+    shadowColor: '#fc1c46',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.22,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  searchSegmentLocation: {
+    flex: 1.25,
+    justifyContent: 'center',
+  },
+  searchSegmentSport: {
+    flex: 0.95,
+    justifyContent: 'center',
+  },
+  searchSegmentDate: {
+    flex: 1.15,
+    justifyContent: 'center',
+  },
+  searchSegmentLabel: {
+    fontFamily: fonts.medium,
+    color: '#94a3b8',
+    fontSize: 9.5,
+    marginBottom: 3,
+  },
+  searchSegmentValueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  searchSegmentValueText: {
+    fontFamily: fonts.headingBold,
+    color: '#ffffff',
+    fontSize: 11.5,
+    flexShrink: 1,
+  },
+  searchSegmentDivider: {
+    width: 1,
+    height: 26,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    marginHorizontal: 6,
+  },
+  searchSegmentBtn: {
+    backgroundColor: '#fc1c46',
+    paddingVertical: 9,
+    paddingHorizontal: 13,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 4,
+  },
+  searchSegmentBtnText: {
+    fontFamily: fonts.headingBold,
+    color: '#ffffff',
+    fontSize: 12,
+    letterSpacing: 0.2,
+  },
+
+  /* Sports Selector */
+  sportsScroll: {
+    marginBottom: 18,
   },
   sportsScrollContent: {
-    gap: 8,
     paddingRight: 16,
+    gap: 8,
   },
   sportPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: '#ffffff',
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 9999,
-    gap: 7,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(15, 23, 42, 0.1)',
+    gap: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   sportPillActive: {
-    backgroundColor: 'rgba(252, 28, 70, 0.14)',
+    backgroundColor: '#0b0e14',
     borderColor: '#fc1c46',
   },
   sportLabel: {
     fontFamily: fonts.medium,
-    color: '#94a3b8',
-    fontSize: 13,
+    color: '#475569',
+    fontSize: 12.5,
   },
   sportLabelActive: {
     fontFamily: fonts.bold,
     color: '#ffffff',
   },
 
-  /* Banner Turno Fijo */
-  offerBanner: {
-    backgroundColor: '#0f121a',
-    borderRadius: 22,
-    padding: 18,
-    marginBottom: 26,
-    borderWidth: 1,
-    borderColor: 'rgba(252, 28, 70, 0.24)',
-    overflow: 'hidden',
-    position: 'relative',
-    shadowColor: '#fc1c46',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 6,
+  /* Upcoming Booking Widget (Red Variant Card) */
+  upcomingBookingSection: {
+    marginBottom: 18,
   },
-  offerHeaderRow: {
+  upcomingHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  livePulseDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#fc1c46',
+  },
+  upcomingSectionTitle: {
+    fontFamily: fonts.headingBold,
+    color: '#0f172a',
+    fontSize: 15,
+    letterSpacing: -0.2,
+  },
+  upcomingLinkText: {
+    fontFamily: fonts.bold,
+    color: '#fc1c46',
+    fontSize: 12,
+  },
+  upcomingCardOuter: {
+    width: '100%',
+  },
+  upcomingCardInner: {
+    backgroundColor: '#fc1c46',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+    padding: 15,
+  },
+  upcomingTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  upcomingSportTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  upcomingSportTagText: {
+    fontFamily: fonts.bold,
+    color: '#ffffff',
+    fontSize: 11,
+    letterSpacing: 0.6,
+  },
+  upcomingTimeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  upcomingTimeBadgeText: {
+    fontFamily: fonts.bold,
+    color: '#ffffff',
+    fontSize: 11,
+  },
+  upcomingClubName: {
+    fontFamily: fonts.headingBold,
+    color: '#ffffff',
+    fontSize: 17,
+    letterSpacing: -0.2,
+    marginBottom: 12,
+  },
+  upcomingBottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.2)',
+    paddingTop: 10,
+  },
+  avatarPileContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  avatarPileRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  avatarPileImg: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    borderWidth: 2,
+    borderColor: '#fc1c46',
+  },
+  avatarPileBadge: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#0b0e14',
+    borderWidth: 2,
+    borderColor: '#fc1c46',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarPileBadgeText: {
+    fontFamily: fonts.bold,
+    color: '#ffffff',
+    fontSize: 10,
+  },
+  avatarPileLabel: {
+    fontFamily: fonts.bold,
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontSize: 11.5,
+  },
+  upcomingActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#0b0e14',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 12,
+  },
+  upcomingActionText: {
+    fontFamily: fonts.bold,
+    color: '#ffffff',
+    fontSize: 12,
+  },
+  upcomingActionArrow: {
+    fontFamily: fonts.bold,
+    color: '#fc1c46',
+    fontSize: 13,
+  },
+
+  /* Hero Black Card with Red Accents */
+  heroBannerOuter: {
+    marginBottom: 22,
+  },
+  heroBannerInner: {
+    backgroundColor: '#0b0e14',
+    borderWidth: 1,
+    borderColor: 'rgba(252, 28, 70, 0.35)',
+    padding: 16,
+    minHeight: 160,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  heroContentLeft: {
+    flex: 1.2,
+    zIndex: 2,
+  },
+  heroBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+  },
+  heroTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(252, 28, 70, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(252, 28, 70, 0.4)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  heroTagText: {
+    fontFamily: fonts.bold,
+    color: '#fc1c46',
+    fontSize: 9.5,
+    letterSpacing: 0.5,
+  },
+  heroDiscountBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  heroDiscountText: {
+    fontFamily: fonts.bold,
+    color: '#ffffff',
+    fontSize: 9.5,
+  },
+  heroTitle: {
+    fontFamily: fonts.headingBold,
+    color: '#ffffff',
+    fontSize: 18,
+    letterSpacing: -0.3,
+    marginBottom: 4,
+  },
+  heroSubtitle: {
+    fontFamily: fonts.regular,
+    color: '#94a3b8',
+    fontSize: 11.5,
+    lineHeight: 16,
+    marginBottom: 14,
+  },
+  heroCtaBtn: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#fc1c46',
+    paddingHorizontal: 13,
+    paddingVertical: 8,
+    borderRadius: 14,
+  },
+  heroCtaText: {
+    fontFamily: fonts.bold,
+    color: '#ffffff',
+    fontSize: 12,
+  },
+  heroCtaCircle: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: 'rgba(0, 0, 0, 0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroCtaArrow: {
+    color: '#ffffff',
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  heroImageContainer: {
+    width: 140,
+    height: 140,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: -8,
+  },
+  hero3DImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'contain',
+  },
+
+  /* Sections General */
+  sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
   },
-  offerBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(252, 28, 70, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(252, 28, 70, 0.3)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 9999,
-    gap: 6,
-  },
-  offerLiveDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#fc1c46',
-  },
-  offerBadgeText: {
-    fontFamily: fonts.bold,
-    color: '#ff4d6d',
-    fontSize: 10.5,
-    letterSpacing: 0.8,
-  },
-  discountPill: {
-    backgroundColor: 'rgba(255, 255, 255, 0.07)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.14)',
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-    borderRadius: 9999,
-  },
-  discountPillText: {
-    fontFamily: fonts.bold,
-    color: '#f8fafc',
-    fontSize: 11,
-    letterSpacing: 0.3,
-  },
-  offerTitle: {
-    fontFamily: fonts.headingBold,
-    color: '#FFFFFF',
-    fontSize: 20,
-    letterSpacing: -0.4,
-    marginBottom: 6,
-  },
-  offerSubtitle: {
-    fontFamily: fonts.regular,
-    color: '#94a3b8',
-    fontSize: 13,
-    lineHeight: 18.5,
-    marginBottom: 14,
-  },
-  offerPerksRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginBottom: 16,
-  },
-  offerPerkChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    paddingHorizontal: 9,
-    paddingVertical: 4.5,
-    borderRadius: 8,
-  },
-  offerPerkText: {
-    fontFamily: fonts.medium,
-    color: '#cbd5e1',
-    fontSize: 11.5,
-  },
-  offerCtaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  offerButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#fc1c46',
-    paddingVertical: 10,
-    paddingLeft: 16,
-    paddingRight: 8,
-    borderRadius: 14,
-    shadowColor: '#fc1c46',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  offerButtonText: {
-    fontFamily: fonts.bold,
-    color: '#FFFFFF',
-    fontSize: 13.5,
-    letterSpacing: -0.1,
-    marginRight: 10,
-  },
-  offerButtonIconCircle: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: 'rgba(0, 0, 0, 0.22)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  offerButtonArrow: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '800',
-    marginTop: -1,
-  },
-
-  /* Secciones Headers */
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginBottom: 14,
-    marginTop: 4,
-  },
   sectionTitle: {
     fontFamily: fonts.headingBold,
-    color: colors.textPrimary,
-    fontSize: 19,
-    letterSpacing: -0.4,
+    fontSize: 18,
+    color: '#0f172a',
+    letterSpacing: -0.3,
   },
   sectionSubtitle: {
-    fontFamily: fonts.regular,
-    color: colors.textMuted,
-    fontSize: 12.5,
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: '#64748b',
     marginTop: 2,
   },
   seeAllText: {
     fontFamily: fonts.bold,
+    fontSize: 12.5,
     color: '#fc1c46',
-    fontSize: 13,
   },
 
-  /* Turnos Libres Scroll */
+  /* Slots Para Jugar Hoy (Black Cards) */
   slotsScroll: {
-    marginBottom: 28,
+    marginBottom: 24,
   },
-  slotCard: {
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 18,
-    padding: 14,
-    width: 216,
+  slotCardOuter: {
+    width: 220,
     marginRight: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+  },
+  slotCardInner: {
+    backgroundColor: '#0b0e14',
+    borderWidth: 1,
+    borderColor: 'rgba(252, 28, 70, 0.25)',
+    padding: 14,
+  },
+  slotCardHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   slotTimeBadge: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 4,
     backgroundColor: 'rgba(252, 28, 70, 0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(252, 28, 70, 0.28)',
+    borderColor: 'rgba(252, 28, 70, 0.3)',
     paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingVertical: 3,
     borderRadius: 8,
-    alignSelf: 'flex-start',
-    marginBottom: 10,
-    gap: 6,
   },
   slotTimeText: {
     fontFamily: fonts.bold,
     color: '#fc1c46',
-    fontSize: 12.5,
+    fontSize: 11.5,
+  },
+  slotArrowCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  slotArrowText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '800',
   },
   slotCourtName: {
     fontFamily: fonts.headingBold,
-    color: colors.textPrimary,
+    color: '#ffffff',
     fontSize: 15,
-    letterSpacing: -0.2,
-    marginBottom: 4,
+    marginBottom: 3,
+  },
+  courtSpecBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(252, 28, 70, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(252, 28, 70, 0.3)',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginBottom: 6,
+  },
+  courtSpecBadgeText: {
+    fontFamily: fonts.bold,
+    color: '#fc1c46',
+    fontSize: 10,
+    letterSpacing: 0.2,
   },
   slotClubRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   slotClubName: {
     fontFamily: fonts.regular,
-    color: colors.textSecondary,
+    color: '#94a3b8',
     fontSize: 12,
-    flex: 1,
+  },
+  slotAvatarRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    padding: 6,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  avatarPileRowMini: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  avatarPileImgMini: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 1.5,
+    borderColor: '#0b0e14',
+  },
+  avatarPileBadgeMini: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#fc1c46',
+    borderWidth: 1.5,
+    borderColor: '#0b0e14',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarPileBadgeTextMini: {
+    fontFamily: fonts.bold,
+    color: '#ffffff',
+    fontSize: 8,
+  },
+  slotPlayersRemaining: {
+    fontFamily: fonts.medium,
+    color: '#cbd5e1',
+    fontSize: 10.5,
   },
   slotPriceRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.06)',
-    paddingTop: 10,
+    borderTopColor: 'rgba(255, 255, 255, 0.08)',
+    paddingTop: 8,
   },
   slotPriceLabel: {
     fontFamily: fonts.regular,
-    color: colors.textMuted,
-    fontSize: 10,
-    marginBottom: 1,
+    color: '#94a3b8',
+    fontSize: 9.5,
+    textTransform: 'uppercase',
   },
   slotPrice: {
     fontFamily: fonts.headingBold,
-    color: colors.textPrimary,
+    color: '#ffffff',
     fontSize: 15,
-    letterSpacing: -0.3,
   },
   reserveButton: {
     backgroundColor: '#fc1c46',
     paddingHorizontal: 12,
-    paddingVertical: 7,
+    paddingVertical: 6,
     borderRadius: 10,
-    shadowColor: '#fc1c46',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.35,
-    shadowRadius: 4,
-    elevation: 3,
   },
   reserveButtonText: {
     fontFamily: fonts.bold,
     color: '#ffffff',
-    fontSize: 12,
+    fontSize: 11,
+  },
+  emptyCard: {
+    backgroundColor: '#0b0e14',
+    padding: 20,
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontFamily: fonts.regular,
+    color: '#94a3b8',
+    fontSize: 13,
   },
 
-  /* Clubes Destacados */
-  clubCard: {
-    backgroundColor: colors.card,
-    borderRadius: 20,
+  /* Clubes Cerca Tuyo (Black Cards) */
+  clubCardOuter: {
+    marginBottom: 16,
+  },
+  clubCardInner: {
+    backgroundColor: '#0b0e14',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(252, 28, 70, 0.25)',
     overflow: 'hidden',
-    marginBottom: 18,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 6,
   },
   clubImageContainer: {
-    position: 'relative',
+    height: 140,
     width: '100%',
-    height: 150,
+    position: 'relative',
   },
   clubImage: {
     width: '100%',
     height: '100%',
+    resizeMode: 'cover',
   },
   clubImageOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.25)',
+    backgroundColor: 'rgba(11, 14, 20, 0.35)',
   },
   clubFloatingBadgeRow: {
     position: 'absolute',
-    top: 12,
-    left: 12,
-    right: 12,
+    top: 10,
+    left: 10,
+    right: 10,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -884,27 +1337,27 @@ const styles = StyleSheet.create({
   clubSportTag: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    backgroundColor: 'rgba(15, 18, 26, 0.88)',
+    gap: 4,
+    backgroundColor: 'rgba(11, 14, 20, 0.85)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-    paddingHorizontal: 9,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
   },
   clubSportTagText: {
     fontFamily: fonts.bold,
-    color: '#f8fafc',
+    color: '#ffffff',
     fontSize: 10,
     letterSpacing: 0.5,
   },
   ratingBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(15, 18, 26, 0.88)',
+    gap: 3,
+    backgroundColor: 'rgba(11, 14, 20, 0.85)',
     borderWidth: 1,
-    borderColor: 'rgba(250, 204, 21, 0.3)',
+    borderColor: 'rgba(250, 204, 21, 0.35)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
@@ -912,178 +1365,116 @@ const styles = StyleSheet.create({
   ratingText: {
     fontFamily: fonts.bold,
     color: '#FACC15',
-    fontSize: 12,
+    fontSize: 11,
   },
   clubInfo: {
-    padding: 16,
+    padding: 14,
   },
   clubHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 4,
   },
   clubName: {
     fontFamily: fonts.headingBold,
-    color: colors.textPrimary,
-    fontSize: 18,
-    letterSpacing: -0.3,
+    fontSize: 16,
+    color: '#ffffff',
+    letterSpacing: -0.2,
+    flex: 1,
+  },
+  clubArrowBtn: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  clubArrowText: {
+    color: '#fc1c46',
+    fontSize: 13,
+    fontWeight: '800',
   },
   clubLocationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    marginBottom: 12,
+    gap: 4,
+    marginBottom: 10,
   },
   clubAddress: {
     fontFamily: fonts.regular,
-    color: colors.textSecondary,
-    fontSize: 12.5,
+    fontSize: 12,
+    color: '#94a3b8',
+    flex: 1,
   },
   amenitiesRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 6,
-    marginBottom: 14,
+    marginBottom: 12,
   },
   amenityTag: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    gap: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.07)',
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-    borderRadius: 8,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
   },
   amenityText: {
-    fontFamily: fonts.medium,
-    color: colors.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: 11,
+    color: '#cbd5e1',
   },
   clubFooterRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.06)',
-    paddingTop: 12,
+    borderTopColor: 'rgba(255, 255, 255, 0.08)',
+    paddingTop: 10,
   },
   priceStartingLabel: {
     fontFamily: fonts.regular,
-    color: colors.textMuted,
-    fontSize: 10.5,
+    fontSize: 9.5,
+    color: '#94a3b8',
+    textTransform: 'uppercase',
   },
   priceStartingText: {
     fontFamily: fonts.headingBold,
-    color: colors.textPrimary,
-    fontSize: 16,
-    letterSpacing: -0.3,
+    fontSize: 15,
+    color: '#ffffff',
   },
   viewCourtsButton: {
-    backgroundColor: 'rgba(252, 28, 70, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(252, 28, 70, 0.28)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#fc1c46',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 10,
   },
   viewCourtsLink: {
     fontFamily: fonts.bold,
-    color: '#fc1c46',
-    fontSize: 12.5,
+    fontSize: 11.5,
+    color: '#ffffff',
   },
-  emptyCard: {
-    padding: 20,
-    backgroundColor: colors.card,
-    borderRadius: 14,
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  emptyText: {
-    fontFamily: fonts.regular,
-    color: colors.textMuted,
-    fontSize: 13,
+  viewCourtsArrow: {
+    fontFamily: fonts.bold,
+    fontSize: 12,
+    color: '#ffffff',
   },
   loadMoreClubsButton: {
-    backgroundColor: '#141722',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 16,
-    paddingVertical: 14,
     alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 4,
-    marginBottom: 20,
+    paddingVertical: 14,
+    marginBottom: 10,
   },
   loadMoreClubsText: {
+    fontFamily: fonts.bold,
     color: '#fc1c46',
     fontSize: 13,
-    fontWeight: '700',
-    fontFamily: fonts.bold,
-  },
-  demoLobbyBanner: {
-    backgroundColor: '#121724',
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: 'rgba(252, 28, 70, 0.35)',
-    padding: 16,
-    marginBottom: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  demoLobbyLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  demoLobbyIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(252, 28, 70, 0.12)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(252, 28, 70, 0.3)',
-  },
-  demoLobbyTitle: {
-    color: '#ffffff',
-    fontSize: 15,
-    fontWeight: '800',
-    fontFamily: fonts.headingBold,
-  },
-  demoLobbyBadge: {
-    backgroundColor: 'rgba(252, 28, 70, 0.2)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: '#fc1c46',
-  },
-  demoLobbyBadgeText: {
-    color: '#fc1c46',
-    fontSize: 9,
-    fontWeight: '900',
-    letterSpacing: 0.5,
-  },
-  demoLobbySubtitle: {
-    color: '#94a3b8',
-    fontSize: 11.5,
-    marginTop: 2,
-    lineHeight: 16,
-  },
-  demoLobbyArrowCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#1e2638',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 8,
-  },
-  demoLobbyArrowText: {
-    color: '#fc1c46',
-    fontSize: 16,
-    fontWeight: '800',
   },
 });

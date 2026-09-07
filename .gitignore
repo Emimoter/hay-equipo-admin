@@ -50,3 +50,5 @@ apps/mobile/android/app/build/
 apps/mobile/android/build/
 apps/mobile/android/local.properties
 *.tsbuildinfo
+apps/mobile/*.png
+apps/mobile/scratch_*.json

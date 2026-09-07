@@ -42,6 +42,15 @@ export const WalletIcon: React.FC<IconProps> = ({ color, size = 22 }) => (
   </Svg>
 );
 
+export const RepeatNavIcon: React.FC<IconProps> = ({ color, size = 22 }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M17 2l4 4-4 4" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M3 11v-1a4 4 0 0 1 4-4h14" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M7 22l-4-4 4-4" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M21 13v1a4 4 0 0 1-4 4H3" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
 export const ProfileIcon: React.FC<IconProps> = ({ color, size = 22 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path

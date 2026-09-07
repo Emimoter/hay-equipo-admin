@@ -15,6 +15,7 @@ import {
   doc,
   setDoc,
   getDoc,
+  deleteDoc,
   collection,
   getDocs,
   query,
@@ -25,13 +26,13 @@ import { getStorage } from 'firebase/storage';
 import { INITIAL_CLUBS, INITIAL_COURTS } from '@hay-equipo/db';
 
 export const firebaseConfig = {
-  apiKey: 'AIzaSyA6rBjlZ62CULHi8CqADZqE-VO8Nm5faJA',
-  authDomain: 'pclink-f6e0d.firebaseapp.com',
-  projectId: 'pclink-f6e0d',
-  storageBucket: 'pclink-f6e0d.firebasestorage.app',
-  messagingSenderId: '716411272758',
-  appId: '1:716411272758:web:26e82f394e28e57e3de297',
-  measurementId: 'G-0Y1T09135P'
+  apiKey: "AIzaSyAkcxejcGGvvhgFBXP970GcG4EwKnPn82A",
+  authDomain: "hay-equipo-6c320.firebaseapp.com",
+  projectId: "hay-equipo-6c320",
+  storageBucket: "hay-equipo-6c320.firebasestorage.app",
+  messagingSenderId: "520908260494",
+  appId: "1:520908260494:web:aa384fc831e74b9fca35df",
+  measurementId: "G-K8CM7MET5W"
 };
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
@@ -50,7 +51,6 @@ export interface UserProfile {
   sportLevel: string;
   category: string;
   matchesPlayed: number;
-  walletBalance: number;
   createdAt?: string;
 }
 
@@ -69,7 +69,6 @@ export async function syncUserProfile(user: FirebaseUser, extraPhone?: string): 
       sportLevel: 'Intermedio',
       category: 'Pádel 5ta / Fútbol 7',
       matchesPlayed: 0,
-      walletBalance: 12000,
       createdAt: new Date().toISOString()
     };
     await setDoc(userRef, defaultProfile);
@@ -121,13 +120,15 @@ export async function getCourtsFirestore(clubId: string) {
   }
 }
 
-// 4. Update User Wallet Balance
-export async function updateUserWalletBalance(uid: string, newBalance: number): Promise<boolean> {
+// 4. Delete User Profile from Firestore (Google Play Requirement)
+export async function deleteUserFirestore(uid: string): Promise<boolean> {
   try {
     const userRef = doc(dbFirestore, 'users', uid);
-    await setDoc(userRef, { walletBalance: newBalance }, { merge: true });
+    await deleteDoc(userRef);
     return true;
-  } catch {
+  } catch (e) {
+    console.error('Error deleting user from Firestore:', e);
     return false;
   }
 }
+

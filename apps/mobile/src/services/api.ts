@@ -309,7 +309,39 @@ export class MobileApiService {
       memorySplitRooms.set(splitToken, splitRoom);
     }
 
-    return { success: true, booking: newBooking };
+    const fallbackCheckout = {
+      preferenceId: `pref_${bookingId}`,
+      initPoint: `https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=pref_${bookingId}&back_url=${encodeURIComponent(`hayequipo://booking/${bookingId}/status?status=approved`)}`,
+      sandboxInitPoint: `https://sandbox.mercadopago.com.ar/checkout/v1/redirect?pref_id=pref_${bookingId}&back_url=${encodeURIComponent(`https://hayequipo.com/booking/${bookingId}/status?status=approved`)}`
+    };
+
+    return { success: true, booking: newBooking, checkout: fallbackCheckout };
+  }
+
+  public async createSplitPreference(token: string, participantId?: string, payerEmail?: string): Promise<{ success: boolean; checkout?: any; error?: string }> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/split/${token}/preference`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ participantId, playerEmail: payerEmail || 'jugador@hayequipo.com' })
+      });
+      const data = await res.json();
+      if (data.success && data.checkout) {
+        return { success: true, checkout: data.checkout };
+      }
+    } catch {
+      // Fallback
+    }
+
+    const prefId = `pref_split_${token}_${Date.now()}`;
+    return {
+      success: true,
+      checkout: {
+        preferenceId: prefId,
+        initPoint: `https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=${prefId}&back_url=${encodeURIComponent(`hayequipo://split/${token}?status=approved`)}`,
+        sandboxInitPoint: `https://sandbox.mercadopago.com.ar/checkout/v1/redirect?pref_id=${prefId}&back_url=${encodeURIComponent(`https://hayequipo.com/split/${token}?status=approved`)}`
+      }
+    };
   }
 
   public async confirmBooking(bookingId: string): Promise<boolean> {

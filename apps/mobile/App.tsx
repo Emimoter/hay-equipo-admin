@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, StatusBar, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, StatusBar, Platform, ActivityIndicator, Linking, Alert } from 'react-native';
 import { colors, fonts } from './src/components/theme';
 import { useFonts } from 'expo-font';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
@@ -13,9 +13,11 @@ import { FixedSlotScreen } from './src/screens/FixedSlotScreen';
 import { MyBookingsScreen } from './src/screens/MyBookingsScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 import { TimeSlot, Booking } from '@hay-equipo/contracts';
-import { HomeIcon, SearchIcon, CalendarIcon, WalletIcon, ProfileIcon } from './src/components/NavIcons';
+import { HomeIcon, SearchIcon, CalendarIcon, RepeatNavIcon, ProfileIcon } from './src/components/NavIcons';
 import { requestLocationPermissions, getRealUserLocation } from './src/services/location';
 import { mobileApi } from './src/services/api';
+
+import { triggerHaptic } from './src/services/haptics';
 
 type TabType = 'HOME' | 'SEARCH' | 'BOOKINGS' | 'PAYMENTS' | 'PROFILE';
 
@@ -35,9 +37,36 @@ function MainAppContent() {
       await getRealUserLocation(true);
     };
     initializeLocation();
+
+    // Handle deep links from Mercado Pago checkout (e.g. hayequipo://booking/bk_xxx/status?status=approved)
+    const handleDeepLink = async (event: { url: string }) => {
+      const url = event.url;
+      if (!url) return;
+
+      if (url.includes('status=approved') || url.includes('status=success')) {
+        triggerHaptic('success');
+        setSelectedSlotForCheckout(null);
+        setSelectedClubId(null);
+        setActiveTab('BOOKINGS');
+        Alert.alert('¡Pago Confirmado! 🎉', 'Tu reserva ha sido confirmada con éxito por Mercado Pago.');
+      } else if (url.includes('status=failure')) {
+        triggerHaptic('error');
+        Alert.alert('Pago Rechazado', 'No se pudo completar el cobro en Mercado Pago. Podés intentar nuevamente.');
+      }
+    };
+
+    const subscription = Linking.addEventListener('url', handleDeepLink);
+    Linking.getInitialURL().then(initialUrl => {
+      if (initialUrl) handleDeepLink({ url: initialUrl });
+    });
+
+    return () => {
+      subscription.remove();
+    };
   }, []);
 
   const handleTabChange = (tab: TabType) => {
+    triggerHaptic('selection');
     setSelectedClubId(null);
     setSelectedSlotForCheckout(null);
     setActiveSplitBooking(null);
@@ -79,7 +108,7 @@ function MainAppContent() {
       userName: 'Emiliano (Organizador)',
       userPhone: '+5491155550001',
       paymentType: 'SPLIT',
-      splitPlayerCount: 4
+      splitPlayerCount: 4,
     });
     if (holdRes.booking) {
       navigateToSplit(holdRes.booking);
@@ -167,11 +196,11 @@ function MainAppContent() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#07080a" />
+      <StatusBar barStyle="dark-content" backgroundColor="#f8fafc" />
       <View style={styles.screenContainer}>{renderScreen()}</View>
 
       {/* ────────────────────────────────────────────────────────────
-          FLOATING DOCK BOTTOM NAVIGATION (Exact Mockup Reference)
+          FLOATING DOCK BOTTOM NAVIGATION (JET BLACK / RED LUXURY)
           ──────────────────────────────────────────────────────────── */}
       {!selectedSlotForCheckout && !activeSplitBooking && !showAuthModal && (
         <View style={styles.floatingDockContainer}>
@@ -183,7 +212,7 @@ function MainAppContent() {
               style={[styles.navTab, activeTab === 'HOME' && styles.navTabActive]}
               onPress={() => handleTabChange('HOME')}
             >
-              <HomeIcon color={activeTab === 'HOME' ? '#fc1c46' : '#6b7280'} size={20} />
+              <HomeIcon color={activeTab === 'HOME' ? '#fc1c46' : '#94a3b8'} size={20} />
               <Text style={[styles.navLabel, activeTab === 'HOME' && styles.navLabelActive]}>Inicio</Text>
               {activeTab === 'HOME' && <View style={styles.activeDot} />}
             </TouchableOpacity>
@@ -194,7 +223,7 @@ function MainAppContent() {
               style={[styles.navTab, activeTab === 'SEARCH' && styles.navTabActive]}
               onPress={() => handleTabChange('SEARCH')}
             >
-              <SearchIcon color={activeTab === 'SEARCH' ? '#fc1c46' : '#6b7280'} size={20} />
+              <SearchIcon color={activeTab === 'SEARCH' ? '#fc1c46' : '#94a3b8'} size={20} />
               <Text style={[styles.navLabel, activeTab === 'SEARCH' && styles.navLabelActive]}>Explorar</Text>
               {activeTab === 'SEARCH' && <View style={styles.activeDot} />}
             </TouchableOpacity>
@@ -205,19 +234,19 @@ function MainAppContent() {
               style={[styles.navTab, activeTab === 'BOOKINGS' && styles.navTabActive]}
               onPress={() => handleTabChange('BOOKINGS')}
             >
-              <CalendarIcon color={activeTab === 'BOOKINGS' ? '#fc1c46' : '#6b7280'} size={20} />
+              <CalendarIcon color={activeTab === 'BOOKINGS' ? '#fc1c46' : '#94a3b8'} size={20} />
               <Text style={[styles.navLabel, activeTab === 'BOOKINGS' && styles.navLabelActive]}>Reservas</Text>
               {activeTab === 'BOOKINGS' && <View style={styles.activeDot} />}
             </TouchableOpacity>
 
-            {/* TAB 4: PAGOS */}
+            {/* TAB 4: TURNOS FIJOS */}
             <TouchableOpacity
               activeOpacity={0.7}
               style={[styles.navTab, activeTab === 'PAYMENTS' && styles.navTabActive]}
               onPress={() => handleTabChange('PAYMENTS')}
             >
-              <WalletIcon color={activeTab === 'PAYMENTS' ? '#fc1c46' : '#6b7280'} size={20} />
-              <Text style={[styles.navLabel, activeTab === 'PAYMENTS' && styles.navLabelActive]}>Pagos</Text>
+              <RepeatNavIcon color={activeTab === 'PAYMENTS' ? '#fc1c46' : '#94a3b8'} size={20} />
+              <Text style={[styles.navLabel, activeTab === 'PAYMENTS' && styles.navLabelActive]}>Fijos</Text>
               {activeTab === 'PAYMENTS' && <View style={styles.activeDot} />}
             </TouchableOpacity>
 
@@ -227,7 +256,7 @@ function MainAppContent() {
               style={[styles.navTab, activeTab === 'PROFILE' && styles.navTabActive]}
               onPress={() => handleTabChange('PROFILE')}
             >
-              <ProfileIcon color={activeTab === 'PROFILE' ? '#fc1c46' : '#6b7280'} size={20} />
+              <ProfileIcon color={activeTab === 'PROFILE' ? '#fc1c46' : '#94a3b8'} size={20} />
               <Text style={[styles.navLabel, activeTab === 'PROFILE' && styles.navLabelActive]}>Perfil</Text>
               {activeTab === 'PROFILE' && <View style={styles.activeDot} />}
             </TouchableOpacity>
@@ -249,14 +278,6 @@ export default function App() {
     'PlusJakartaSans-Regular': require('./assets/fonts/PlusJakartaSans-Regular.ttf'),
   });
 
-  if (!fontsLoaded) {
-    return (
-      <View style={{ flex: 1, backgroundColor: '#07080a', justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#fc1c46" />
-      </View>
-    );
-  }
-
   return (
     <AuthProvider>
       <MainAppContent />
@@ -267,7 +288,7 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#07080a',
+    backgroundColor: '#f8fafc',
   },
   screenContainer: {
     flex: 1,
@@ -281,17 +302,17 @@ const styles = StyleSheet.create({
   },
   floatingDock: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(18, 20, 26, 0.94)',
+    backgroundColor: '#0b0e14',
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    paddingVertical: 6,
-    paddingHorizontal: 6,
+    borderColor: 'rgba(252, 28, 70, 0.25)',
+    paddingVertical: 5,
+    paddingHorizontal: 5,
     justifyContent: 'space-between',
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.8,
+    shadowOpacity: 0.35,
     shadowRadius: 20,
     elevation: 16,
   },
@@ -301,19 +322,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 6,
     paddingHorizontal: 4,
-    borderRadius: 16,
+    borderRadius: 18,
     minHeight: 52,
   },
   navTabActive: {
-    backgroundColor: 'rgba(252, 28, 70, 0.14)',
+    backgroundColor: 'rgba(252, 28, 70, 0.16)',
     borderWidth: 1,
-    borderColor: 'rgba(252, 28, 70, 0.3)',
+    borderColor: 'rgba(252, 28, 70, 0.4)',
   },
   navLabel: {
     fontFamily: fonts.medium,
-    color: '#6b7280',
+    color: '#94a3b8',
     fontSize: 10.5,
     marginTop: 3,
+    letterSpacing: 0.1,
   },
   navLabelActive: {
     fontFamily: fonts.bold,
@@ -325,9 +347,5 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: '#fc1c46',
     marginTop: 2,
-    shadowColor: '#fc1c46',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.9,
-    shadowRadius: 4,
   },
 });

@@ -32,7 +32,45 @@ splitRouter.get('/:token', (req, res) => {
   });
 });
 
-// Pay individual split share
+// Create Mercado Pago Checkout Pro preference for an individual split quota
+splitRouter.post('/:token/preference', async (req, res) => {
+  const { token } = req.params;
+  const { participantId, playerName, playerEmail } = req.body;
+
+  const split = db.splitPayments.find(s => s.shareToken === token);
+  if (!split) {
+    return res.status(404).json({ success: false, error: 'Split payment no encontrado' });
+  }
+
+  const booking = db.bookings.find(b => b.id === split.bookingId);
+  let participant = split.participants.find(p => p.id === participantId);
+
+  if (!participant) {
+    participant = split.participants.find(p => p.status === 'PENDING');
+  }
+
+  if (!participant) {
+    return res.status(400).json({ success: false, error: 'No hay cupos disponibles para pagar' });
+  }
+
+  const preference = await mpService.createPreference({
+    bookingId: split.bookingId,
+    title: `Tu cuota en ${booking?.courtName || 'Cancha'} - ${booking?.date || ''} ${booking?.startTime || ''}hs`,
+    totalAmount: participant.amount,
+    payerEmail: playerEmail || 'jugador@hayequipo.com',
+    splitToken: token,
+    participantId: participant.id,
+    isSplitShare: true
+  });
+
+  res.json({
+    success: true,
+    participant,
+    checkout: preference
+  });
+});
+
+// Pay individual split share (direct or webhook callback confirmation)
 splitRouter.post('/:token/pay', async (req, res) => {
   const { token } = req.params;
   const { participantId, playerName, playerPhone } = req.body;

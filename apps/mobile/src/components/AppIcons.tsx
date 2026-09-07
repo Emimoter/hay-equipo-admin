@@ -280,3 +280,9 @@ export const WalletIcon: React.FC<IconProps> = ({ color = '#fc1c46', size = 20, 
     <Circle cx="17" cy="14.5" r="1.2" fill={color} />
   </Svg>
 );
+
+export const ChevronDownIcon: React.FC<IconProps> = ({ color = '#94a3b8', size = 12, strokeWidth = 2.2 }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Polyline points="6 9 12 15 18 9" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);

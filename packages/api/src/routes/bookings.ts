@@ -133,3 +133,48 @@ bookingsRouter.post('/:id/cancel', (req, res) => {
     booking
   });
 });
+
+// Mercado Pago Webhook / IPN Listener
+bookingsRouter.all('/webhook', async (req, res) => {
+  try {
+    const webhookResult = await mpService.processWebhook(req.body, req.query);
+
+    if (webhookResult.approved) {
+      if (webhookResult.isSplitShare && webhookResult.splitToken) {
+        // Participant paid their split share
+        const splitResult = bookingEngine.paySplitShare({
+          shareToken: webhookResult.splitToken,
+          participantId: webhookResult.participantId,
+          playerName: webhookResult.payerName,
+          mpPaymentId: webhookResult.mpPaymentId
+        });
+
+        if (splitResult.isComplete && splitResult.booking) {
+          await notificationService.notifyBookingConfirmed(
+            splitResult.booking.userId,
+            splitResult.booking.clubName || 'el Club',
+            splitResult.booking.date,
+            splitResult.booking.startTime
+          );
+        }
+      } else if (webhookResult.bookingId) {
+        // Full reservation payment approved
+        const confirmedBooking = bookingEngine.confirmBooking(webhookResult.bookingId, webhookResult.mpPaymentId);
+        if (confirmedBooking) {
+          await notificationService.notifyBookingConfirmed(
+            confirmedBooking.userId,
+            confirmedBooking.clubName || 'el Club',
+            confirmedBooking.date,
+            confirmedBooking.startTime
+          );
+        }
+      }
+    }
+
+    return res.status(200).json({ received: true });
+  } catch (err: any) {
+    console.error('[MP Webhook Error]:', err);
+    return res.status(200).json({ received: true, error: err.message });
+  }
+});
+

@@ -10,6 +10,8 @@ import {
   ZapIcon,
   PadelIcon,
 } from '../components/AppIcons';
+import { DoubleBezelCard } from '../components/DoubleBezelCard';
+import { triggerHaptic } from '../services/haptics';
 import { mobileApi } from '../services/api';
 import { Booking } from '@hay-equipo/contracts';
 
@@ -20,7 +22,7 @@ interface MyBookingsScreenProps {
 
 export const MyBookingsScreen: React.FC<MyBookingsScreenProps> = ({
   onNavigateSplit,
-  onNavigateNewBooking
+  onNavigateNewBooking,
 }) => {
   const [activeTab, setActiveTab] = useState<'UPCOMING' | 'FIXED' | 'PAST' | 'CANCELLED'>('UPCOMING');
   const [upcoming, setUpcoming] = useState<Booking[]>([]);
@@ -41,7 +43,13 @@ export const MyBookingsScreen: React.FC<MyBookingsScreenProps> = ({
     setLoading(false);
   };
 
+  const handleTabChange = (tab: 'UPCOMING' | 'FIXED' | 'PAST' | 'CANCELLED') => {
+    triggerHaptic('selection');
+    setActiveTab(tab);
+  };
+
   const handleCancelBooking = (bookingId: string) => {
+    triggerHaptic('warning');
     Alert.alert(
       '¿Cancelar esta reserva?',
       'Si cancelás con más de 24 hs de anticipación, recibirás un reembolso o crédito del 100%.',
@@ -51,37 +59,44 @@ export const MyBookingsScreen: React.FC<MyBookingsScreenProps> = ({
           text: 'Sí, cancelar',
           style: 'destructive',
           onPress: async () => {
+            triggerHaptic('medium');
             await fetch(`http://localhost:4000/api/bookings/${bookingId}/cancel`, { method: 'POST' });
             Alert.alert('Reserva cancelada');
             loadBookings();
-          }
-        }
+          },
+        },
       ]
     );
   };
 
   const handleOpenMaps = (clubName: string) => {
+    triggerHaptic('light');
     const query = encodeURIComponent(`${clubName} Buenos Aires`);
     const url = Platform.select({
       ios: `maps:0,0?q=${query}`,
-      android: `geo:0,0?q=${query}`
+      android: `geo:0,0?q=${query}`,
     }) || `https://www.google.com/maps/search/?api=1&query=${query}`;
     Linking.openURL(url);
   };
 
   const renderBookingCard = (booking: Booking, isUpcoming = true) => {
     return (
-      <View key={booking.id} style={styles.card}>
+      <DoubleBezelCard
+        key={booking.id}
+        variant="black"
+        style={styles.cardOuter}
+        innerStyle={styles.cardInner}
+      >
         <View style={styles.cardHeader}>
-          <View>
+          <View style={{ flex: 1, marginRight: 8 }}>
             <Text style={styles.courtName}>{booking.courtName || 'Cancha Principal'}</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
-              <MapPinIcon size={12} color={colors.textSecondary} strokeWidth={1.8} />
+              <MapPinIcon size={12} color="#94a3b8" strokeWidth={1.8} />
               <Text style={styles.clubName}>{booking.clubName || 'Arena Pádel'}</Text>
             </View>
           </View>
           <View style={[styles.statusBadge, booking.status === 'CONFIRMED' ? styles.badgeConfirmed : styles.badgeHeld]}>
-            <Text style={styles.statusBadgeText}>
+            <Text style={[styles.statusBadgeText, booking.status === 'CONFIRMED' ? styles.statusBadgeTextConfirmed : styles.statusBadgeTextHeld]}>
               {booking.status === 'CONFIRMED' ? 'CONFIRMADA' : 'PENDIENTE'}
             </Text>
           </View>
@@ -109,7 +124,11 @@ export const MyBookingsScreen: React.FC<MyBookingsScreenProps> = ({
           <View style={styles.actionsGrid}>
             <TouchableOpacity
               style={styles.actionBtnPrimary}
-              onPress={() => onNavigateSplit(booking)}
+              onPress={() => {
+                triggerHaptic('medium');
+                onNavigateSplit(booking);
+              }}
+              activeOpacity={0.85}
             >
               <UsersIcon size={14} color="#ffffff" strokeWidth={2} />
               <Text style={styles.actionBtnPrimaryText}>Ver Split / Invitar</Text>
@@ -117,19 +136,21 @@ export const MyBookingsScreen: React.FC<MyBookingsScreenProps> = ({
             <TouchableOpacity
               style={styles.actionBtnSecondary}
               onPress={() => handleOpenMaps(booking.clubName || 'Arena Padel')}
+              activeOpacity={0.8}
             >
-              <MapPinIcon size={14} color={colors.textPrimary} strokeWidth={2} />
+              <MapPinIcon size={14} color="#ffffff" strokeWidth={2} />
               <Text style={styles.actionBtnSecondaryText}>Cómo llegar</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.cancelBtn}
               onPress={() => handleCancelBooking(booking.id)}
+              activeOpacity={0.8}
             >
               <Text style={styles.cancelBtnText}>Cancelar</Text>
             </TouchableOpacity>
           </View>
         ) : null}
-      </View>
+      </DoubleBezelCard>
     );
   };
 
@@ -162,7 +183,8 @@ export const MyBookingsScreen: React.FC<MyBookingsScreenProps> = ({
             <TouchableOpacity
               key={tabKey}
               style={[styles.tabBtn, isSelected && styles.tabBtnActive]}
-              onPress={() => setActiveTab(tabKey)}
+              onPress={() => handleTabChange(tabKey)}
+              activeOpacity={0.8}
             >
               <Text style={[styles.tabBtnText, isSelected && styles.tabBtnTextActive]}>
                 {labels[tabKey]}
@@ -175,14 +197,21 @@ export const MyBookingsScreen: React.FC<MyBookingsScreenProps> = ({
       {loading ? (
         <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
       ) : list.length === 0 ? (
-        <View style={styles.emptyCard}>
+        <DoubleBezelCard variant="black" style={styles.emptyOuter} innerStyle={styles.emptyInner}>
           <PadelIcon size={36} color="#fc1c46" strokeWidth={1.5} />
           <Text style={styles.emptyTitle}>No tenés reservas {activeTab === 'UPCOMING' ? 'próximas' : 'en esta sección'}</Text>
           <Text style={styles.emptySub}>Buscá una cancha disponible y reservá en menos de 30 segundos.</Text>
-          <TouchableOpacity style={styles.ctaBtn} onPress={onNavigateNewBooking}>
+          <TouchableOpacity
+            style={styles.ctaBtn}
+            onPress={() => {
+              triggerHaptic('medium');
+              onNavigateNewBooking();
+            }}
+            activeOpacity={0.88}
+          >
             <Text style={styles.ctaBtnText}>Buscar Cancha</Text>
           </TouchableOpacity>
-        </View>
+        </DoubleBezelCard>
       ) : (
         list.map(b => renderBookingCard(b, activeTab === 'UPCOMING'))
       )}
@@ -193,102 +222,103 @@ export const MyBookingsScreen: React.FC<MyBookingsScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background
+    backgroundColor: '#f8fafc',
   },
   content: {
     padding: 16,
-    paddingBottom: 40
+    paddingBottom: 95,
   },
   screenTitle: {
     fontFamily: fonts.headingBold,
-    color: colors.textPrimary,
+    color: '#0f172a',
     fontSize: 22,
     letterSpacing: -0.4,
   },
   subtitle: {
-    fontFamily: fonts.regular,
-    color: colors.textMuted,
+    fontFamily: fonts.medium,
+    color: '#64748b',
     fontSize: 13,
     marginTop: 4,
-    marginBottom: 20
+    marginBottom: 20,
   },
   tabsRow: {
     flexDirection: 'row',
-    backgroundColor: colors.card,
-    borderRadius: 12,
+    backgroundColor: '#0b0e14',
+    borderRadius: 16,
     padding: 4,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
-    marginBottom: 20
+    borderColor: 'rgba(252, 28, 70, 0.25)',
+    marginBottom: 20,
   },
   tabBtn: {
     flex: 1,
     paddingVertical: 10,
     alignItems: 'center',
-    borderRadius: 8
+    borderRadius: 12,
   },
   tabBtnActive: {
-    backgroundColor: colors.primary
+    backgroundColor: '#fc1c46',
   },
   tabBtnText: {
     fontFamily: fonts.medium,
-    color: colors.textSecondary,
-    fontSize: 13
+    color: '#94a3b8',
+    fontSize: 13,
   },
   tabBtnTextActive: {
     fontFamily: fonts.bold,
-    color: '#ffffff'
+    color: '#ffffff',
   },
-  card: {
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-    padding: 16,
+  cardOuter: {
     marginBottom: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4
+  },
+  cardInner: {
+    backgroundColor: '#0b0e14',
+    borderWidth: 1,
+    borderColor: 'rgba(252, 28, 70, 0.25)',
+    padding: 16,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 12
+    marginBottom: 12,
   },
   courtName: {
     fontFamily: fonts.headingBold,
-    color: colors.textPrimary,
+    color: '#ffffff',
     fontSize: 16,
-    letterSpacing: -0.2
+    letterSpacing: -0.2,
   },
   clubName: {
     fontFamily: fonts.regular,
-    color: colors.textSecondary,
-    fontSize: 12.5
+    color: '#94a3b8',
+    fontSize: 12.5,
   },
   statusBadge: {
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 6
+    borderRadius: 6,
   },
   badgeConfirmed: {
-    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    backgroundColor: 'rgba(252, 28, 70, 0.15)',
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.3)'
+    borderColor: 'rgba(252, 28, 70, 0.35)',
   },
   badgeHeld: {
-    backgroundColor: 'rgba(234, 179, 8, 0.15)',
+    backgroundColor: 'rgba(245, 158, 11, 0.15)',
     borderWidth: 1,
-    borderColor: 'rgba(234, 179, 8, 0.3)'
+    borderColor: 'rgba(245, 158, 11, 0.35)',
   },
   statusBadgeText: {
     fontFamily: fonts.bold,
-    color: '#22c55e',
     fontSize: 10,
-    letterSpacing: 0.5
+    letterSpacing: 0.5,
+  },
+  statusBadgeTextConfirmed: {
+    color: '#fc1c46',
+  },
+  statusBadgeTextHeld: {
+    color: '#f59e0b',
   },
   timeInfoRow: {
     flexDirection: 'row',
@@ -297,39 +327,39 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
-    marginBottom: 12
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    marginBottom: 12,
   },
   dateTimeText: {
     fontFamily: fonts.medium,
-    color: colors.textPrimary,
-    fontSize: 12.5
+    color: '#ffffff',
+    fontSize: 12.5,
   },
   priceText: {
     fontFamily: fonts.headingBold,
     color: '#fc1c46',
-    fontSize: 15
+    fontSize: 15,
   },
   splitNoticeBox: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(252, 28, 70, 0.08)',
+    backgroundColor: 'rgba(252, 28, 70, 0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(252, 28, 70, 0.2)',
+    borderColor: 'rgba(252, 28, 70, 0.25)',
     padding: 8,
     borderRadius: 8,
-    marginBottom: 12
+    marginBottom: 12,
   },
   splitNoticeText: {
     fontFamily: fonts.medium,
-    color: '#fc1c46',
-    fontSize: 11.5
+    color: '#ff6b8b',
+    fontSize: 11.5,
   },
   actionsGrid: {
     flexDirection: 'row',
     gap: 8,
-    alignItems: 'center'
+    alignItems: 'center',
   },
   actionBtnPrimary: {
     flex: 1.2,
@@ -337,14 +367,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 5,
-    backgroundColor: colors.primary,
+    backgroundColor: '#fc1c46',
     paddingVertical: 9,
-    borderRadius: 10
+    borderRadius: 10,
   },
   actionBtnPrimaryText: {
     fontFamily: fonts.bold,
     color: '#ffffff',
-    fontSize: 12
+    fontSize: 12,
   },
   actionBtnSecondary: {
     flex: 1,
@@ -352,64 +382,65 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 5,
-    backgroundColor: colors.card,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     paddingVertical: 9,
-    borderRadius: 10
+    borderRadius: 10,
   },
   actionBtnSecondaryText: {
     fontFamily: fonts.medium,
-    color: colors.textPrimary,
-    fontSize: 12
+    color: '#ffffff',
+    fontSize: 12,
   },
   cancelBtn: {
     paddingVertical: 9,
     paddingHorizontal: 10,
     borderRadius: 10,
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    backgroundColor: 'rgba(239, 68, 68, 0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.2)'
+    borderColor: 'rgba(239, 68, 68, 0.25)',
   },
   cancelBtnText: {
     fontFamily: fonts.bold,
-    color: colors.danger,
-    fontSize: 12
+    color: '#ef4444',
+    fontSize: 12,
   },
-  emptyCard: {
+  emptyOuter: {
+    marginTop: 20,
+  },
+  emptyInner: {
     padding: 30,
-    backgroundColor: colors.card,
-    borderRadius: 16,
+    backgroundColor: '#0b0e14',
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: 'rgba(252, 28, 70, 0.25)',
     alignItems: 'center',
-    marginTop: 20
   },
   emptyTitle: {
     fontFamily: fonts.headingBold,
-    color: colors.textPrimary,
+    color: '#ffffff',
     fontSize: 15,
     marginTop: 14,
     marginBottom: 6,
-    textAlign: 'center'
+    textAlign: 'center',
   },
   emptySub: {
     fontFamily: fonts.regular,
-    color: colors.textMuted,
+    color: '#94a3b8',
     fontSize: 12.5,
     textAlign: 'center',
     marginBottom: 18,
-    lineHeight: 18
+    lineHeight: 18,
   },
   ctaBtn: {
-    backgroundColor: colors.primary,
+    backgroundColor: '#fc1c46',
     paddingHorizontal: 20,
     paddingVertical: 10,
-    borderRadius: 10
+    borderRadius: 12,
   },
   ctaBtnText: {
     fontFamily: fonts.bold,
     color: '#ffffff',
-    fontSize: 13
-  }
+    fontSize: 13,
+  },
 });

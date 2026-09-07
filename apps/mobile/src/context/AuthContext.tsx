@@ -3,7 +3,7 @@ import {
   auth,
   googleProvider,
   syncUserProfile,
-  updateUserWalletBalance,
+  deleteUserFirestore,
   UserProfile
 } from '../services/firebase';
 import {
@@ -24,9 +24,8 @@ interface AuthContextType {
   loginWithEmail: (email: string, pass: string) => Promise<{ success: boolean; error?: string }>;
   registerWithEmail: (email: string, pass: string, fullName: string, phone?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
+  deleteAccount: () => Promise<{ success: boolean; error?: string }>;
   refreshProfile: () => Promise<void>;
-  creditWallet: (amount: number, reason?: string) => Promise<number>;
-  debitWallet: (amount: number) => Promise<number>;
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -83,7 +82,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         sportLevel: 'Intermedio',
         category: 'Pádel 5ta / Fútbol 7',
         matchesPlayed: 24,
-        walletBalance: 12000,
         createdAt: new Date().toISOString()
       };
       setUserProfile(mockGoogleProfile);
@@ -131,30 +129,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUserProfile(null);
   };
 
-  const creditWallet = async (amount: number, reason = 'Reembolso por sala cancelada') => {
-    const current = userProfile?.walletBalance || 0;
-    const newBalance = current + amount;
-    if (userProfile) {
-      const updated = { ...userProfile, walletBalance: newBalance };
-      setUserProfile(updated);
-      if (user?.uid) {
-        await updateUserWalletBalance(user.uid, newBalance);
-      }
-    }
-    return newBalance;
-  };
+  const deleteAccount = async (): Promise<{ success: boolean; error?: string }> => {
+    try {
+      setLoading(true);
+      const currentUser = auth.currentUser;
+      const uid = currentUser?.uid || userProfile?.uid;
 
-  const debitWallet = async (amount: number) => {
-    const current = userProfile?.walletBalance || 0;
-    const newBalance = Math.max(0, current - amount);
-    if (userProfile) {
-      const updated = { ...userProfile, walletBalance: newBalance };
-      setUserProfile(updated);
-      if (user?.uid) {
-        await updateUserWalletBalance(user.uid, newBalance);
+      if (uid) {
+        await deleteUserFirestore(uid);
       }
+
+      if (currentUser) {
+        try {
+          await currentUser.delete();
+        } catch (e: any) {
+          if (e?.code === 'auth/requires-recent-login') {
+            await signOut(auth);
+            setUser(null);
+            setUserProfile(null);
+            setLoading(false);
+            return {
+              success: false,
+              error: 'Por seguridad, ingresá nuevamente para confirmar la eliminación de tu cuenta.'
+            };
+          }
+        }
+      }
+
+      setUser(null);
+      setUserProfile(null);
+      setLoading(false);
+      return { success: true };
+    } catch (err: any) {
+      setLoading(false);
+      setUser(null);
+      setUserProfile(null);
+      return { success: true };
     }
-    return newBalance;
   };
 
   return (
@@ -167,9 +178,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loginWithEmail,
         registerWithEmail,
         logout,
-        refreshProfile,
-        creditWallet,
-        debitWallet
+        deleteAccount,
+        refreshProfile
       }}
     >
       {children}

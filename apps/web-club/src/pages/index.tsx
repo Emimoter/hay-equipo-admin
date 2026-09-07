@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
+import { useAuth } from '../context/AuthContext';
 
 /* ────────────────────────────────────────────────────────────
    Intersection Observer Hook for Scroll Reveals
@@ -201,6 +202,7 @@ const STATS = [
    ──────────────────────────────────────────────────────────── */
 
 export default function LandingPage() {
+  const { user, userProfile, openAuthModal } = useAuth();
   const [isLoaded, setIsLoaded] = useState(false);
   const ballContainerRef = useRef<HTMLDivElement | null>(null);
   const soccerBallRef = useRef<HTMLImageElement | null>(null);
@@ -210,7 +212,6 @@ export default function LandingPage() {
 
   // Section in-view refs
   const [heroRef, heroInView] = useInView({ threshold: 0.1 });
-  const [reservaRef, reservaInView] = useInView({ threshold: 0.15 });
   const [aboutRef, aboutInView] = useInView({ threshold: 0.2 });
   const [featRef, featInView] = useInView({ threshold: 0.15 });
   const [statsRef, statsInView] = useInView({ threshold: 0.2 });
@@ -438,9 +439,83 @@ export default function LandingPage() {
             <span>Descargar App</span>
           </a>
 
-          {/* Botón 2: RESERVAR CANCHA (Acción Transaccional Principal) */}
+          {/* ── User Auth Pill / Ingresar ── */}
+          {!user ? (
+            <button
+              type="button"
+              onClick={() => openAuthModal()}
+              style={{
+                backgroundColor: 'transparent',
+                color: 'var(--color-frost)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                borderRadius: 'var(--radius-full)',
+                padding: '9px 18px',
+                fontSize: 13,
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.4px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.5)';
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
+            >
+              <span>Ingresar</span>
+            </button>
+          ) : (
+            <a
+              href="/reservar?tab=perfil"
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                color: 'var(--color-frost)',
+                border: '1px solid rgba(255, 255, 255, 0.18)',
+                borderRadius: 'var(--radius-full)',
+                padding: '4px 14px 4px 6px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                textDecoration: 'none',
+              }}
+            >
+              {user.photoURL ? (
+                <img
+                  src={user.photoURL}
+                  alt={user.displayName || 'Avatar'}
+                  style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover' }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: 26,
+                    height: 26,
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--color-crimson-signal)',
+                    color: '#fff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 11,
+                    fontWeight: 800,
+                  }}
+                >
+                  {(userProfile?.name || user.displayName || user.email || 'J').substring(0, 1).toUpperCase()}
+                </div>
+              )}
+              <span style={{ fontSize: 12, fontWeight: 700 }}>
+                {(userProfile?.name || user.displayName || user.email?.split('@')[0] || 'Mi Cuenta').split(' ')[0]}
+              </span>
+            </a>
+          )}
+
+          {/* Botón 2: RESERVAR CANCHA (Acción Transaccional Principal -> /reservar) */}
           <a
-            href="#reservar"
+            href="/reservar"
             className="landing-header-btn-cta"
             style={{
               backgroundColor: 'var(--color-crimson-signal)',
@@ -629,141 +704,6 @@ export default function LandingPage() {
                 Un toque y jugás.
               </span>
             </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════════════════════
-          RESERVA — Live Marketplace Hub (Anchor #reservar)
-          Espacio preparado para montar la experiencia interactiva de la app
-          ═══════════════════════════════════════════════════════ */}
-      <section
-        id="reservar"
-        ref={reservaRef}
-        className="landing-section"
-        style={{
-          position: 'relative',
-          zIndex: 2,
-          backgroundColor: 'transparent',
-          padding: '80px 36px 100px',
-        }}
-      >
-        <div style={{ maxWidth: 1400, margin: '0 auto' }}>
-          <HairlineRule inView={reservaInView} delay={0.1} />
-
-          <div style={{ marginTop: 54 }}>
-            {/* Tag & Subheader */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 20, marginBottom: 40 }}>
-              <div>
-                <div style={{ fontSize: 10, color: 'var(--color-crimson-signal)', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', backgroundColor: 'var(--color-crimson-signal)', boxShadow: '0 0 10px var(--color-crimson-signal)' }} />
-                  01 / DISPONIBILIDAD EN VIVO
-                </div>
-                <h2 style={{ fontSize: 'clamp(28px, 4vw, 54px)', fontWeight: 700, color: 'var(--color-frost)', letterSpacing: '-1.5px', margin: 0, textTransform: 'uppercase' }}>
-                  Reservá tu Cancha Hoy
-                </h2>
-              </div>
-              <p style={{ fontSize: 14, color: 'var(--color-ash)', maxWidth: 420, margin: 0, lineHeight: 1.5 }}>
-                Encontrá turnos libres en tiempo real, bloqueá la cancha en segundos y pagá con Mercado Pago sin instalar nada obligatorio.
-              </p>
-            </div>
-
-            {/* Canvas / Container preparado para la Web App de reservas */}
-            <div
-              style={{
-                position: 'relative',
-                borderRadius: 20,
-                border: '1px solid rgba(255, 255, 255, 0.12)',
-                backgroundColor: 'rgba(11, 14, 20, 0.75)',
-                backdropFilter: 'blur(20px)',
-                padding: '40px 32px',
-                minHeight: 460,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
-                overflow: 'hidden',
-              }}
-            >
-              {/* Subtle ambient red glow behind container */}
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '20%',
-                  left: '50%',
-                  transform: 'translate(-50%, -50%)',
-                  width: 320,
-                  height: 180,
-                  backgroundColor: 'rgba(252, 28, 70, 0.12)',
-                  filter: 'blur(90px)',
-                  pointerEvents: 'none',
-                }}
-              />
-
-              {/* Selector provisional de deportes de alta fidelidad */}
-              <div style={{ display: 'inline-flex', padding: 4, backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: 100, border: '1px solid rgba(255, 255, 255, 0.1)', marginBottom: 36, zIndex: 1 }}>
-                <button
-                  style={{
-                    backgroundColor: 'var(--color-crimson-signal)',
-                    color: '#fff',
-                    border: 'none',
-                    padding: '8px 24px',
-                    borderRadius: 100,
-                    fontSize: 13,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    letterSpacing: '0.4px',
-                  }}
-                >
-                  🎾 PÁDEL
-                </button>
-                <button
-                  style={{
-                    backgroundColor: 'transparent',
-                    color: 'var(--color-ash)',
-                    border: 'none',
-                    padding: '8px 24px',
-                    borderRadius: 100,
-                    fontSize: 13,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    letterSpacing: '0.4px',
-                  }}
-                >
-                  ⚽ FÚTBOL
-                </button>
-              </div>
-
-              {/* Teaser placeholder de la experiencia de la app web */}
-              <div style={{ textAlign: 'center', maxWidth: 580, zIndex: 1 }}>
-                <div style={{ fontSize: 13, color: 'var(--color-frost)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: 12 }}>
-                  Centro de Búsqueda & Reserva Express
-                </div>
-                <p style={{ fontSize: 15, color: 'var(--color-ash)', lineHeight: 1.6, margin: '0 0 28px' }}>
-                  Conectando con los mejores clubes de Argentina (La Verde Jara, Trebi Padel, Match Point, Los Naranjos, Arenas Sport Center). Disponibilidad inmediata de turnos para hoy.
-                </p>
-
-                <div style={{ display: 'flex', justifyContent: 'center', gap: 12, flexWrap: 'wrap' }}>
-                  {['Canchas Panorámicas', 'Cristal & Césped Sintético', 'Bloqueo Atómico 7 min', 'Mercado Pago'].map((badge, idx) => (
-                    <span
-                      key={idx}
-                      style={{
-                        fontSize: 11.5,
-                        color: 'var(--color-frost)',
-                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                        border: '1px solid rgba(255, 255, 255, 0.12)',
-                        padding: '6px 14px',
-                        borderRadius: 8,
-                        fontWeight: 500,
-                      }}
-                    >
-                      ✓ {badge}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </section>

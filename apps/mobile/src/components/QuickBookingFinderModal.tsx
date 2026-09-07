@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  Modal,
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
+  Modal,
   Platform,
 } from 'react-native';
-import Svg, { Circle, Line, Rect } from 'react-native-svg';
+import Svg, { Circle, Line } from 'react-native-svg';
 import { colors, fonts, formatCurrency } from './theme';
 import {
   FootballIcon,
@@ -19,10 +19,10 @@ import {
   ClockIcon,
   MapPinIcon,
   UsersIcon,
-  StarIcon,
 } from './AppIcons';
-import { mobileApi } from '../services/api';
-import { UserLocationState, calculateDistanceKm } from '../services/location';
+import { DoubleBezelCard } from './DoubleBezelCard';
+import { triggerHaptic } from '../services/haptics';
+import { UserLocationState } from '../services/location';
 import { TimeSlot, Club } from '@hay-equipo/contracts';
 
 interface QuickBookingFinderModalProps {
@@ -43,26 +43,16 @@ export const QuickBookingFinderModal: React.FC<QuickBookingFinderModalProps> = (
   onSelectSlot,
   onOpenMap,
 }) => {
-  // Step 1: ¿Qué querés jugar?
-  const [sport, setSport] = useState<SportType>('FUTBOL');
-
-  // Step 2: ¿Cuántos juegan?
-  const [playerCount, setPlayerCount] = useState<number>(10);
-
-  // Step 3: ¿Cuándo? (Fecha y Hora)
-  const [dateChoice, setDateChoice] = useState<DateOption>('TOMORROW');
+  const [sport, setSport] = useState<SportType>('PADEL');
+  const [playerCount, setPlayerCount] = useState<number>(4);
+  const [dateChoice, setDateChoice] = useState<DateOption>('TODAY');
   const [selectedTime, setSelectedTime] = useState<string>('20:00');
-
-  // Step 4: ¿Dónde?
   const [locationType, setLocationType] = useState<'NEARBY' | 'ANY'>('NEARBY');
-
-  // Results state
   const [searching, setSearching] = useState<boolean>(false);
   const [results, setResults] = useState<TimeSlot[] | null>(null);
-  const [matchedClubs, setMatchedClubs] = useState<Club[]>([]);
 
-  // Update default player count when sport changes
   const handleSelectSport = (newSport: SportType) => {
+    triggerHaptic('selection');
     setSport(newSport);
     if (newSport === 'FUTBOL') {
       setPlayerCount(10);
@@ -93,6 +83,7 @@ export const QuickBookingFinderModal: React.FC<QuickBookingFinderModalProps> = (
   };
 
   const handleSearch = async () => {
+    triggerHaptic('medium');
     setSearching(true);
 
     const targetDate = getDateString(dateChoice);
@@ -106,7 +97,6 @@ export const QuickBookingFinderModal: React.FC<QuickBookingFinderModalProps> = (
     const endHour = (parseInt(selectedTime.split(':')[0], 10) + (sport === 'FUTBOL' ? 1 : 1)) % 24;
     const endMin = sport === 'FUTBOL' ? '00' : '30';
 
-    // Immediate instant results
     const sampleSlots: TimeSlot[] = [
       {
         courtId: 'court-1',
@@ -152,129 +142,93 @@ export const QuickBookingFinderModal: React.FC<QuickBookingFinderModalProps> = (
       },
     ];
 
-    setResults(sampleSlots);
-    setSearching(false);
+    setTimeout(() => {
+      setResults(sampleSlots);
+      setSearching(false);
+      triggerHaptic('success');
+    }, 450);
   };
 
   const handleReset = () => {
+    triggerHaptic('light');
     setResults(null);
   };
 
   if (!visible) return null;
 
   return (
-    <View style={styles.sheetOverlay}>
-      <TouchableOpacity
-        style={styles.backdrop}
-        activeOpacity={1}
-        onPress={onClose}
-      />
-      <View style={styles.modalContainer}>
-        {/* Header */}
-        <View style={styles.modalHeader}>
-          <View>
-            <Text style={styles.modalTitle}>Encontrar cancha</Text>
-            <Text style={styles.modalSubtitle}>Mini cuestionario de búsqueda rápida</Text>
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <View style={styles.sheetContainer}>
+          {/* Header Drag handle */}
+          <View style={styles.dragHandleRow}>
+            <View style={styles.dragHandle} />
           </View>
-          <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-            <Text style={styles.closeBtnText}>✕</Text>
-          </TouchableOpacity>
-        </View>
 
-        <ScrollView
-          style={{ flex: 1 }}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
-            {results === null ? (
+          {/* Modal Header */}
+          <View style={styles.headerRow}>
+            <View>
+              <Text style={styles.headerTitle}>Buscador Guiado</Text>
+              <Text style={styles.headerSubtitle}>Encontrá tu cancha ideal en 4 preguntas</Text>
+            </View>
+            <TouchableOpacity style={styles.closeBtn} onPress={onClose} activeOpacity={0.8}>
+              <Text style={styles.closeBtnText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+            {!results ? (
               <>
-                {/* ════════════════════════════════════════════════
-                    PREGUNTA 1: ¿QUÉ QUERÉS JUGAR?
-                    ════════════════════════════════════════════════ */}
+                {/* PREGUNTA 1: DEPORTE */}
                 <View style={styles.questionSection}>
-                  <Text style={styles.questionTitle}>¿Qué querés jugar?</Text>
+                  <Text style={styles.questionTitle}>1. ¿Qué querés jugar?</Text>
                   <View style={styles.sportsRow}>
                     <TouchableOpacity
-                      activeOpacity={0.8}
-                      style={[styles.sportOption, sport === 'FUTBOL' && styles.sportOptionActive]}
-                      onPress={() => handleSelectSport('FUTBOL')}
-                    >
-                      <FootballIcon
-                        size={22}
-                        color={sport === 'FUTBOL' ? '#fc1c46' : '#94a3b8'}
-                        strokeWidth={2}
-                      />
-                      <Text
-                        style={[
-                          styles.sportOptionText,
-                          sport === 'FUTBOL' && styles.sportOptionTextActive,
-                        ]}
-                      >
-                        Fútbol
-                      </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      activeOpacity={0.8}
                       style={[styles.sportOption, sport === 'PADEL' && styles.sportOptionActive]}
                       onPress={() => handleSelectSport('PADEL')}
+                      activeOpacity={0.8}
                     >
-                      <PadelIcon
-                        size={22}
-                        color={sport === 'PADEL' ? '#fc1c46' : '#94a3b8'}
-                        strokeWidth={2}
-                      />
-                      <Text
-                        style={[
-                          styles.sportOptionText,
-                          sport === 'PADEL' && styles.sportOptionTextActive,
-                        ]}
-                      >
-                        Pádel
-                      </Text>
+                      <PadelIcon size={20} color={sport === 'PADEL' ? '#ffffff' : '#fc1c46'} strokeWidth={2.2} />
+                      <Text style={[styles.sportOptionText, sport === 'PADEL' && styles.sportOptionTextActive]}>Pádel</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
+                      style={[styles.sportOption, sport === 'FUTBOL' && styles.sportOptionActive]}
+                      onPress={() => handleSelectSport('FUTBOL')}
                       activeOpacity={0.8}
+                    >
+                      <FootballIcon size={20} color={sport === 'FUTBOL' ? '#ffffff' : '#fc1c46'} strokeWidth={2.2} />
+                      <Text style={[styles.sportOptionText, sport === 'FUTBOL' && styles.sportOptionTextActive]}>Fútbol</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
                       style={[styles.sportOption, sport === 'TENIS' && styles.sportOptionActive]}
                       onPress={() => handleSelectSport('TENIS')}
+                      activeOpacity={0.8}
                     >
-                      <TennisIcon
-                        size={22}
-                        color={sport === 'TENIS' ? '#fc1c46' : '#94a3b8'}
-                        strokeWidth={2}
-                      />
-                      <Text
-                        style={[
-                          styles.sportOptionText,
-                          sport === 'TENIS' && styles.sportOptionTextActive,
-                        ]}
-                      >
-                        Tenis
-                      </Text>
+                      <TennisIcon size={20} color={sport === 'TENIS' ? '#ffffff' : '#fc1c46'} strokeWidth={2.2} />
+                      <Text style={[styles.sportOptionText, sport === 'TENIS' && styles.sportOptionTextActive]}>Tenis</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
 
-                {/* ════════════════════════════════════════════════
-                    PREGUNTA 2: ¿CUÁNTOS JUEGAN?
-                    ════════════════════════════════════════════════ */}
+                {/* PREGUNTA 2: JUGADORES */}
                 <View style={styles.questionSection}>
                   <View style={styles.questionRow}>
-                    <Text style={styles.questionTitle}>¿Cuántos juegan?</Text>
+                    <Text style={styles.questionTitle}>2. ¿Cuántos jugadores son?</Text>
                     <View style={styles.counterChip}>
-                      <UsersIcon size={13} color="#fc1c46" strokeWidth={2} />
-                      <Text style={styles.counterChipText}>
-                        {sport === 'FUTBOL' ? `Fútbol ${playerCount / 2}` : 'Dobles / Singles'}
-                      </Text>
+                      <UsersIcon size={12} color="#fc1c46" strokeWidth={2} />
+                      <Text style={styles.counterChipText}>{playerCount} jugadores</Text>
                     </View>
                   </View>
 
                   <View style={styles.stepperContainer}>
                     <TouchableOpacity
                       style={styles.stepperBtn}
-                      onPress={() => setPlayerCount(Math.max(2, playerCount - 2))}
+                      onPress={() => {
+                        triggerHaptic('light');
+                        setPlayerCount(prev => Math.max(2, prev - 2));
+                      }}
                       activeOpacity={0.8}
                     >
                       <Text style={styles.stepperBtnSymbol}>−</Text>
@@ -282,12 +236,17 @@ export const QuickBookingFinderModal: React.FC<QuickBookingFinderModalProps> = (
 
                     <View style={styles.stepperValueBox}>
                       <Text style={styles.stepperValueText}>{playerCount}</Text>
-                      <Text style={styles.stepperValueLabel}>jugadores</Text>
+                      <Text style={styles.stepperValueLabel}>
+                        {sport === 'FUTBOL' ? `Fútbol ${playerCount / 2} vs ${playerCount / 2}` : sport === 'PADEL' ? '2 vs 2 (Dobles)' : 'Jugadores'}
+                      </Text>
                     </View>
 
                     <TouchableOpacity
                       style={styles.stepperBtn}
-                      onPress={() => setPlayerCount(Math.min(22, playerCount + 2))}
+                      onPress={() => {
+                        triggerHaptic('light');
+                        setPlayerCount(prev => Math.min(18, prev + 2));
+                      }}
                       activeOpacity={0.8}
                     >
                       <Text style={styles.stepperBtnSymbol}>+</Text>
@@ -295,152 +254,104 @@ export const QuickBookingFinderModal: React.FC<QuickBookingFinderModalProps> = (
                   </View>
                 </View>
 
-                {/* ════════════════════════════════════════════════
-                    PREGUNTA 3: ¿CUÁNDO? (FECHA & HORA)
-                    ════════════════════════════════════════════════ */}
+                {/* PREGUNTA 3: FECHA Y HORA */}
                 <View style={styles.questionSection}>
-                  <Text style={styles.questionTitle}>¿Cuándo?</Text>
-
-                  {/* Selector de Días */}
+                  <Text style={styles.questionTitle}>3. ¿Cuándo quieren jugar?</Text>
                   <View style={styles.daysRow}>
                     <TouchableOpacity
                       style={[styles.datePill, dateChoice === 'TODAY' && styles.datePillActive]}
-                      onPress={() => setDateChoice('TODAY')}
+                      onPress={() => {
+                        triggerHaptic('selection');
+                        setDateChoice('TODAY');
+                      }}
+                      activeOpacity={0.8}
                     >
-                      <CalendarIcon
-                        size={13}
-                        color={dateChoice === 'TODAY' ? '#fc1c46' : '#94a3b8'}
-                        strokeWidth={2}
-                      />
-                      <Text
-                        style={[
-                          styles.datePillText,
-                          dateChoice === 'TODAY' && styles.datePillTextActive,
-                        ]}
-                      >
-                        Hoy ({getDateLabel('TODAY')})
-                      </Text>
+                      <CalendarIcon size={13} color={dateChoice === 'TODAY' ? '#ffffff' : '#fc1c46'} strokeWidth={2} />
+                      <Text style={[styles.datePillText, dateChoice === 'TODAY' && styles.datePillTextActive]}>Hoy</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
                       style={[styles.datePill, dateChoice === 'TOMORROW' && styles.datePillActive]}
-                      onPress={() => setDateChoice('TOMORROW')}
+                      onPress={() => {
+                        triggerHaptic('selection');
+                        setDateChoice('TOMORROW');
+                      }}
+                      activeOpacity={0.8}
                     >
-                      <CalendarIcon
-                        size={13}
-                        color={dateChoice === 'TOMORROW' ? '#fc1c46' : '#94a3b8'}
-                        strokeWidth={2}
-                      />
-                      <Text
-                        style={[
-                          styles.datePillText,
-                          dateChoice === 'TOMORROW' && styles.datePillTextActive,
-                        ]}
-                      >
+                      <CalendarIcon size={13} color={dateChoice === 'TOMORROW' ? '#ffffff' : '#fc1c46'} strokeWidth={2} />
+                      <Text style={[styles.datePillText, dateChoice === 'TOMORROW' && styles.datePillTextActive]}>
                         Mañana ({getDateLabel('TOMORROW')})
                       </Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
                       style={[styles.datePill, dateChoice === 'AFTER_TOMORROW' && styles.datePillActive]}
-                      onPress={() => setDateChoice('AFTER_TOMORROW')}
+                      onPress={() => {
+                        triggerHaptic('selection');
+                        setDateChoice('AFTER_TOMORROW');
+                      }}
+                      activeOpacity={0.8}
                     >
-                      <CalendarIcon
-                        size={13}
-                        color={dateChoice === 'AFTER_TOMORROW' ? '#fc1c46' : '#94a3b8'}
-                        strokeWidth={2}
-                      />
-                      <Text
-                        style={[
-                          styles.datePillText,
-                          dateChoice === 'AFTER_TOMORROW' && styles.datePillTextActive,
-                        ]}
-                      >
+                      <CalendarIcon size={13} color={dateChoice === 'AFTER_TOMORROW' ? '#ffffff' : '#fc1c46'} strokeWidth={2} />
+                      <Text style={[styles.datePillText, dateChoice === 'AFTER_TOMORROW' && styles.datePillTextActive]}>
                         {getDateLabel('AFTER_TOMORROW')}
                       </Text>
                     </TouchableOpacity>
                   </View>
 
                   {/* Selector de Horarios */}
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.timesScroll}
-                  >
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.timesScroll}>
                     {['18:00', '19:00', '20:00', '21:00', '22:00', '23:00'].map(t => {
                       const isSelected = selectedTime === t;
                       return (
                         <TouchableOpacity
                           key={t}
                           style={[styles.timeChip, isSelected && styles.timeChipActive]}
-                          onPress={() => setSelectedTime(t)}
+                          onPress={() => {
+                            triggerHaptic('selection');
+                            setSelectedTime(t);
+                          }}
+                          activeOpacity={0.8}
                         >
-                          <ClockIcon
-                            size={12}
-                            color={isSelected ? '#fc1c46' : '#94a3b8'}
-                            strokeWidth={2}
-                          />
-                          <Text
-                            style={[
-                              styles.timeChipText,
-                              isSelected && styles.timeChipTextActive,
-                            ]}
-                          >
-                            {t} hs
-                          </Text>
+                          <ClockIcon size={12} color={isSelected ? '#ffffff' : '#fc1c46'} strokeWidth={2} />
+                          <Text style={[styles.timeChipText, isSelected && styles.timeChipTextActive]}>{t} hs</Text>
                         </TouchableOpacity>
                       );
                     })}
                   </ScrollView>
                 </View>
 
-                {/* ════════════════════════════════════════════════
-                    PREGUNTA 4: ¿DÓNDE?
-                    ════════════════════════════════════════════════ */}
+                {/* PREGUNTA 4: UBICACIÓN */}
                 <View style={styles.questionSection}>
-                  <Text style={styles.questionTitle}>¿Dónde?</Text>
+                  <Text style={styles.questionTitle}>4. ¿Dónde?</Text>
                   <View style={styles.locationOptionsRow}>
                     <TouchableOpacity
-                      style={[
-                        styles.locationOption,
-                        locationType === 'NEARBY' && styles.locationOptionActive,
-                      ]}
-                      onPress={() => setLocationType('NEARBY')}
+                      style={[styles.locationOption, locationType === 'NEARBY' && styles.locationOptionActive]}
+                      onPress={() => {
+                        triggerHaptic('selection');
+                        setLocationType('NEARBY');
+                      }}
+                      activeOpacity={0.8}
                     >
-                      <MapPinIcon
-                        size={15}
-                        color={locationType === 'NEARBY' ? '#fc1c46' : '#94a3b8'}
-                        strokeWidth={2}
-                      />
+                      <MapPinIcon size={15} color={locationType === 'NEARBY' ? '#ffffff' : '#fc1c46'} strokeWidth={2} />
                       <View style={{ flex: 1 }}>
-                        <Text
-                          style={[
-                            styles.locationOptionTitle,
-                            locationType === 'NEARBY' && styles.locationOptionTitleActive,
-                          ]}
-                        >
+                        <Text style={[styles.locationOptionTitle, locationType === 'NEARBY' && styles.locationOptionTitleActive]}>
                           Cerca mío
                         </Text>
-                        <Text style={styles.locationOptionSub}>
-                          {userLocation.formattedLocation || 'Mar del Plata'} · GPS activo
-                        </Text>
+                        <Text style={styles.locationOptionSub}>{userLocation.formattedLocation || 'Mar del Plata'} · GPS activo</Text>
                       </View>
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                      style={[
-                        styles.locationOption,
-                        locationType === 'ANY' && styles.locationOptionActive,
-                      ]}
-                      onPress={() => setLocationType('ANY')}
+                      style={[styles.locationOption, locationType === 'ANY' && styles.locationOptionActive]}
+                      onPress={() => {
+                        triggerHaptic('selection');
+                        setLocationType('ANY');
+                      }}
+                      activeOpacity={0.8}
                     >
                       <View style={{ flex: 1 }}>
-                        <Text
-                          style={[
-                            styles.locationOptionTitle,
-                            locationType === 'ANY' && styles.locationOptionTitleActive,
-                          ]}
-                        >
+                        <Text style={[styles.locationOptionTitle, locationType === 'ANY' && styles.locationOptionTitleActive]}>
                           Toda la ciudad
                         </Text>
                         <Text style={styles.locationOptionSub}>Cualquier zona disponible</Text>
@@ -449,9 +360,7 @@ export const QuickBookingFinderModal: React.FC<QuickBookingFinderModalProps> = (
                   </View>
                 </View>
 
-                {/* ════════════════════════════════════════════════
-                    BOTÓN GRANDE FINAL: ENCONTRAR CANCHA
-                    ════════════════════════════════════════════════ */}
+                {/* BOTÓN GRANDE: ENCONTRAR CANCHA */}
                 <TouchableOpacity
                   style={styles.searchBigBtn}
                   onPress={handleSearch}
@@ -462,18 +371,6 @@ export const QuickBookingFinderModal: React.FC<QuickBookingFinderModalProps> = (
                     <ActivityIndicator color="#ffffff" />
                   ) : (
                     <>
-                      <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-                        <Circle cx="11" cy="11" r="7" stroke="#ffffff" strokeWidth={2.5} />
-                        <Line
-                          x1="16.5"
-                          y1="16.5"
-                          x2="21.5"
-                          y2="21.5"
-                          stroke="#ffffff"
-                          strokeWidth={3}
-                          strokeLinecap="round"
-                        />
-                      </Svg>
                       <Text style={styles.searchBigBtnText}>Encontrar cancha</Text>
                       <View style={styles.searchBigBtnArrow}>
                         <Text style={{ color: '#ffffff', fontWeight: '800', fontSize: 13 }}>→</Text>
@@ -483,141 +380,117 @@ export const QuickBookingFinderModal: React.FC<QuickBookingFinderModalProps> = (
                 </TouchableOpacity>
               </>
             ) : (
-              /* ════════════════════════════════════════════════
-                 RESULTADOS ENCONTRADOS
-                 ════════════════════════════════════════════════ */
+              /* RESULTADOS ENCONTRADOS */
               <View style={styles.resultsContainer}>
                 <View style={styles.resultsHeaderRow}>
                   <View>
-                    <Text style={styles.resultsCountText}>
-                      {results.length} canchas disponibles
-                    </Text>
+                    <Text style={styles.resultsCountText}>{results.length} canchas disponibles</Text>
                     <Text style={styles.resultsFilterSummary}>
                       {sport === 'FUTBOL' ? 'Fútbol' : sport === 'PADEL' ? 'Pádel' : 'Tenis'} · {selectedTime} hs · {getDateLabel(dateChoice)}
                     </Text>
                   </View>
-                  <TouchableOpacity style={styles.modifySearchBtn} onPress={handleReset}>
+                  <TouchableOpacity style={styles.modifySearchBtn} onPress={handleReset} activeOpacity={0.8}>
                     <Text style={styles.modifySearchBtnText}>Modificar</Text>
                   </TouchableOpacity>
                 </View>
 
-                {results.length === 0 ? (
-                  <View style={styles.emptyResultsBox}>
-                    <Text style={styles.emptyResultsTitle}>No se encontraron turnos exactos</Text>
-                    <Text style={styles.emptyResultsSub}>
-                      Probá cambiando el horario o buscando para otro día.
-                    </Text>
-                    <TouchableOpacity style={styles.retryBtn} onPress={handleReset}>
-                      <Text style={styles.retryBtnText}>Volver al cuestionario</Text>
-                    </TouchableOpacity>
-                  </View>
-                ) : (
-                  results.map((slot, idx) => {
-                    const pricePerPlayer = Math.round(slot.price / (playerCount || 10));
-                    return (
-                      <View key={idx} style={styles.resultCard}>
-                        <View style={styles.resultCardHeader}>
-                          <View style={{ flex: 1 }}>
-                            <Text style={styles.resultCourtName}>{slot.courtName}</Text>
-                            <View style={styles.resultClubRow}>
-                              <MapPinIcon size={12} color={colors.textSecondary} strokeWidth={1.8} />
-                              <Text style={styles.resultClubName}>
-                                {slot.clubName} · a 0.8 km
-                              </Text>
-                            </View>
-                          </View>
-                          <View style={styles.resultTimeBadge}>
-                            <ClockIcon size={12} color="#fc1c46" strokeWidth={2} />
-                            <Text style={styles.resultTimeText}>{slot.startTime} hs</Text>
-                          </View>
-                        </View>
-
-                        <View style={styles.resultCardFooter}>
-                          <View>
-                            <Text style={styles.resultPricePerPlayer}>
-                              {formatCurrency(pricePerPlayer)} / jugador
-                            </Text>
-                            <Text style={styles.resultTotalPrice}>
-                              Total: {formatCurrency(slot.price)} ({playerCount} jug.)
-                            </Text>
-                          </View>
-                          <TouchableOpacity
-                            style={styles.bookResultBtn}
-                            onPress={() => {
-                              onClose();
-                              onSelectSlot(slot);
-                            }}
-                          >
-                            <Text style={styles.bookResultBtnText}>Reservar →</Text>
-                          </TouchableOpacity>
+                {results.map((slot, idx) => (
+                  <DoubleBezelCard
+                    key={idx}
+                    variant="black"
+                    style={styles.resultCardOuter}
+                    innerStyle={styles.resultCardInner}
+                    onPress={() => onSelectSlot(slot)}
+                  >
+                    <View style={styles.resultCardHeader}>
+                      <View style={{ flex: 1, marginRight: 8 }}>
+                        <Text style={styles.resultCourtName}>{slot.courtName}</Text>
+                        <View style={styles.resultClubRow}>
+                          <MapPinIcon size={12} color="#94a3b8" strokeWidth={1.8} />
+                          <Text style={styles.resultClubName}>{slot.clubName}</Text>
                         </View>
                       </View>
-                    );
-                  })
-                )}
+                      <View style={styles.resultTimeBadge}>
+                        <ClockIcon size={11} color="#fc1c46" strokeWidth={2.2} />
+                        <Text style={styles.resultTimeText}>{slot.startTime} – {slot.endTime}</Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.resultCardFooter}>
+                      <View>
+                        <Text style={styles.resultPricePerPlayer}>
+                          {formatCurrency(Math.round(slot.price / playerCount))} / jugador
+                        </Text>
+                        <Text style={styles.resultTotalPrice}>Total: {formatCurrency(slot.price)}</Text>
+                      </View>
+                      <TouchableOpacity style={styles.bookResultBtn} onPress={() => onSelectSlot(slot)} activeOpacity={0.85}>
+                        <Text style={styles.bookResultBtnText}>Reservar</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </DoubleBezelCard>
+                ))}
 
                 <TouchableOpacity
                   style={styles.openMapBtn}
-                  onPress={() => {
-                    onClose();
-                    onOpenMap(sport);
-                  }}
+                  onPress={() => onOpenMap(sport)}
+                  activeOpacity={0.85}
                 >
-                  <MapPinIcon size={14} color="#fc1c46" strokeWidth={2} />
-                  <Text style={styles.openMapBtnText}>Ver opciones en el mapa interactivo →</Text>
+                  <MapPinIcon size={15} color="#ffffff" strokeWidth={2} />
+                  <Text style={styles.openMapBtnText}>Ver todas en el mapa interactivo →</Text>
                 </TouchableOpacity>
               </View>
             )}
           </ScrollView>
         </View>
       </View>
-    );
-  };
+    </Modal>
+  );
+};
 
 const styles = StyleSheet.create({
-  sheetOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 99999,
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
     justifyContent: 'flex-end',
   },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.78)',
-  },
-  modalContainer: {
-    backgroundColor: '#0c0e14',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+  sheetContainer: {
+    backgroundColor: '#0b0e14',
+    borderTopLeftRadius: 26,
+    borderTopRightRadius: 26,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-    height: '88%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -10 },
-    shadowOpacity: 0.8,
-    shadowRadius: 25,
-    elevation: 30,
-    zIndex: 100000,
+    borderColor: 'rgba(252, 28, 70, 0.3)',
+    maxHeight: '88%',
+    paddingBottom: Platform.OS === 'ios' ? 34 : 20,
   },
-  modalHeader: {
+  dragHandleRow: {
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  dragHandle: {
+    width: 42,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 18,
     paddingBottom: 14,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.07)',
+    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
   },
-  modalTitle: {
+  headerTitle: {
     fontFamily: fonts.headingBold,
     color: '#ffffff',
-    fontSize: 20,
+    fontSize: 18,
     letterSpacing: -0.3,
   },
-  modalSubtitle: {
+  headerSubtitle: {
     fontFamily: fonts.regular,
-    color: colors.textMuted,
-    fontSize: 12.5,
+    color: '#94a3b8',
+    fontSize: 12,
     marginTop: 2,
   },
   closeBtn: {
@@ -636,10 +509,8 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 20,
   },
-
-  /* Secciones de Preguntas */
   questionSection: {
-    marginBottom: 22,
+    marginBottom: 20,
   },
   questionRow: {
     flexDirection: 'row',
@@ -649,13 +520,11 @@ const styles = StyleSheet.create({
   },
   questionTitle: {
     fontFamily: fonts.headingBold,
-    color: '#f8fafc',
-    fontSize: 16,
+    color: '#ffffff',
+    fontSize: 15,
     letterSpacing: -0.2,
     marginBottom: 10,
   },
-
-  /* Pregunta 1: Deportes */
   sportsRow: {
     flexDirection: 'row',
     gap: 10,
@@ -664,15 +533,15 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: '#121624',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 16,
     paddingVertical: 14,
     gap: 8,
   },
   sportOptionActive: {
-    backgroundColor: 'rgba(252, 28, 70, 0.14)',
+    backgroundColor: '#fc1c46',
     borderColor: '#fc1c46',
   },
   sportOptionText: {
@@ -684,13 +553,11 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bold,
     color: '#ffffff',
   },
-
-  /* Pregunta 2: Stepper Jugadores */
   counterChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: 'rgba(252, 28, 70, 0.1)',
+    backgroundColor: 'rgba(252, 28, 70, 0.15)',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 8,
@@ -704,10 +571,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: '#121624',
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     padding: 6,
   },
   stepperBtn: {
@@ -734,11 +601,9 @@ const styles = StyleSheet.create({
   },
   stepperValueLabel: {
     fontFamily: fonts.regular,
-    color: colors.textMuted,
+    color: '#94a3b8',
     fontSize: 11,
   },
-
-  /* Pregunta 3: Fecha y Horarios */
   daysRow: {
     flexDirection: 'row',
     gap: 8,
@@ -749,15 +614,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: '#121624',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     paddingVertical: 10,
     borderRadius: 12,
     gap: 6,
   },
   datePillActive: {
-    backgroundColor: 'rgba(252, 28, 70, 0.14)',
+    backgroundColor: '#fc1c46',
     borderColor: '#fc1c46',
   },
   datePillText: {
@@ -776,15 +641,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: '#121624',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 10,
   },
   timeChipActive: {
-    backgroundColor: 'rgba(252, 28, 70, 0.14)',
+    backgroundColor: '#fc1c46',
     borderColor: '#fc1c46',
   },
   timeChipText: {
@@ -796,8 +661,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bold,
     color: '#ffffff',
   },
-
-  /* Pregunta 4: Ubicación */
   locationOptionsRow: {
     flexDirection: 'row',
     gap: 10,
@@ -806,15 +669,15 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: '#121624',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 14,
     padding: 12,
     gap: 8,
   },
   locationOptionActive: {
-    backgroundColor: 'rgba(252, 28, 70, 0.12)',
+    backgroundColor: '#fc1c46',
     borderColor: '#fc1c46',
   },
   locationOptionTitle: {
@@ -827,19 +690,9 @@ const styles = StyleSheet.create({
   },
   locationOptionSub: {
     fontFamily: fonts.regular,
-    color: colors.textMuted,
+    color: '#94a3b8',
     fontSize: 10.5,
     marginTop: 2,
-  },
-
-  /* Botón Grande CTA Sticky Footer */
-  modalFooter: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 16,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.08)',
-    backgroundColor: '#0c0e14',
   },
   searchBigBtn: {
     flexDirection: 'row',
@@ -851,7 +704,7 @@ const styles = StyleSheet.create({
     gap: 10,
     shadowColor: '#fc1c46',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.35,
     shadowRadius: 14,
     elevation: 8,
   },
@@ -869,8 +722,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-
-  /* Resultados */
   resultsContainer: {
     paddingBottom: 10,
   },
@@ -887,12 +738,12 @@ const styles = StyleSheet.create({
   },
   resultsFilterSummary: {
     fontFamily: fonts.regular,
-    color: colors.textMuted,
+    color: '#94a3b8',
     fontSize: 12,
     marginTop: 2,
   },
   modifySearchBtn: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
@@ -902,13 +753,14 @@ const styles = StyleSheet.create({
     color: '#fc1c46',
     fontSize: 12,
   },
-  resultCard: {
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    padding: 14,
+  resultCardOuter: {
     marginBottom: 12,
+  },
+  resultCardInner: {
+    backgroundColor: '#0b0e14',
+    borderWidth: 1,
+    borderColor: 'rgba(252, 28, 70, 0.25)',
+    padding: 14,
   },
   resultCardHeader: {
     flexDirection: 'row',
@@ -929,14 +781,14 @@ const styles = StyleSheet.create({
   },
   resultClubName: {
     fontFamily: fonts.regular,
-    color: colors.textSecondary,
+    color: '#94a3b8',
     fontSize: 12,
   },
   resultTimeBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: 'rgba(252, 28, 70, 0.12)',
+    backgroundColor: 'rgba(252, 28, 70, 0.15)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
@@ -951,7 +803,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.06)',
+    borderTopColor: 'rgba(255, 255, 255, 0.08)',
     paddingTop: 10,
   },
   resultPricePerPlayer: {
@@ -961,7 +813,7 @@ const styles = StyleSheet.create({
   },
   resultTotalPrice: {
     fontFamily: fonts.regular,
-    color: colors.textMuted,
+    color: '#94a3b8',
     fontSize: 10.5,
   },
   bookResultBtn: {
@@ -980,44 +832,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: 'rgba(252, 28, 70, 0.1)',
+    backgroundColor: '#0b0e14',
     borderWidth: 1,
-    borderColor: 'rgba(252, 28, 70, 0.3)',
+    borderColor: '#fc1c46',
     borderRadius: 14,
     paddingVertical: 12,
     marginTop: 8,
   },
   openMapBtnText: {
     fontFamily: fonts.bold,
-    color: '#fc1c46',
+    color: '#ffffff',
     fontSize: 13,
-  },
-  emptyResultsBox: {
-    padding: 24,
-    alignItems: 'center',
-  },
-  emptyResultsTitle: {
-    fontFamily: fonts.headingBold,
-    color: '#ffffff',
-    fontSize: 16,
-    marginBottom: 6,
-  },
-  emptyResultsSub: {
-    fontFamily: fonts.regular,
-    color: colors.textMuted,
-    fontSize: 12.5,
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  retryBtn: {
-    backgroundColor: '#fc1c46',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 10,
-  },
-  retryBtnText: {
-    fontFamily: fonts.bold,
-    color: '#ffffff',
-    fontSize: 12.5,
   },
 });
