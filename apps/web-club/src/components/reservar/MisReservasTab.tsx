@@ -331,7 +331,8 @@ export const MisReservasTab: React.FC<MisReservasTabProps> = ({ onNavigateSearch
               backgroundColor: 'rgba(255, 255, 255, 0.08)',
               color: 'var(--color-frost)',
               border: '1px solid rgba(255, 255, 255, 0.2)',
-              padding: '12px 24px',
+              borderRadius: 'var(--radius-buttons)',
+              padding: '12px 28px',
               fontSize: 12,
               fontWeight: 700,
               textTransform: 'uppercase',
@@ -359,21 +360,22 @@ export const MisReservasTab: React.FC<MisReservasTabProps> = ({ onNavigateSearch
         )}
       </div>
 
-      {/* ── Sub-Tabs de Reservas ── */}
-      <div style={{ display: 'flex', gap: 10, borderBottom: '1px solid rgba(76, 76, 76, 0.3)', paddingBottom: 16, marginBottom: 28 }}>
+      {/* ── Sub-Tabs de Reservas (Pills) ── */}
+      <div style={{ display: 'flex', gap: 10, paddingBottom: 16, marginBottom: 28, flexWrap: 'wrap' }}>
         <button
           onClick={() => setSubTab('UPCOMING')}
           style={{
-            background: 'none',
-            border: 'none',
-            color: subTab === 'UPCOMING' ? 'var(--color-crimson-signal)' : 'var(--color-ash)',
-            fontSize: 13,
+            background: subTab === 'UPCOMING' ? 'var(--color-crimson-signal)' : 'rgba(255, 255, 255, 0.05)',
+            border: subTab === 'UPCOMING' ? '1px solid var(--color-crimson-signal)' : '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: 'var(--radius-buttons)',
+            color: subTab === 'UPCOMING' ? '#ffffff' : 'var(--color-ash)',
+            fontSize: 12,
             fontWeight: 700,
             cursor: 'pointer',
-            padding: '6px 12px',
-            borderBottom: subTab === 'UPCOMING' ? '2px solid var(--color-crimson-signal)' : '2px solid transparent',
+            padding: '8px 18px',
             textTransform: 'uppercase',
             letterSpacing: '0.5px',
+            transition: 'all 0.2s ease',
           }}
         >
           Próximas ({filteredBookings.length})
@@ -382,16 +384,17 @@ export const MisReservasTab: React.FC<MisReservasTabProps> = ({ onNavigateSearch
         <button
           onClick={() => setSubTab('PAST')}
           style={{
-            background: 'none',
-            border: 'none',
-            color: subTab === 'PAST' ? 'var(--color-crimson-signal)' : 'var(--color-ash)',
-            fontSize: 13,
+            background: subTab === 'PAST' ? 'var(--color-crimson-signal)' : 'rgba(255, 255, 255, 0.05)',
+            border: subTab === 'PAST' ? '1px solid var(--color-crimson-signal)' : '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: 'var(--radius-buttons)',
+            color: subTab === 'PAST' ? '#ffffff' : 'var(--color-ash)',
+            fontSize: 12,
             fontWeight: 700,
             cursor: 'pointer',
-            padding: '6px 12px',
-            borderBottom: subTab === 'PAST' ? '2px solid var(--color-crimson-signal)' : '2px solid transparent',
+            padding: '8px 18px',
             textTransform: 'uppercase',
             letterSpacing: '0.5px',
+            transition: 'all 0.2s ease',
           }}
         >
           Historial / Canceladas
@@ -555,7 +558,8 @@ export const MisReservasTab: React.FC<MisReservasTabProps> = ({ onNavigateSearch
                             gap: 6,
                             backgroundColor: 'var(--color-crimson-signal)',
                             color: '#ffffff',
-                            padding: '6px 12px',
+                            borderRadius: 'var(--radius-buttons)',
+                            padding: '6px 14px',
                             fontSize: 11,
                             fontWeight: 700,
                             textDecoration: 'none',
@@ -573,7 +577,8 @@ export const MisReservasTab: React.FC<MisReservasTabProps> = ({ onNavigateSearch
                             backgroundColor: 'rgba(255, 255, 255, 0.08)',
                             color: 'var(--color-frost)',
                             border: '1px solid rgba(255, 255, 255, 0.2)',
-                            padding: '6px 10px',
+                            borderRadius: 'var(--radius-buttons)',
+                            padding: '6px 12px',
                             fontSize: 11,
                             fontWeight: 600,
                             cursor: 'pointer',
@@ -604,7 +609,8 @@ export const MisReservasTab: React.FC<MisReservasTabProps> = ({ onNavigateSearch
                       backgroundColor: 'rgba(255, 255, 255, 0.06)',
                       color: 'var(--color-frost)',
                       border: '1px solid rgba(255, 255, 255, 0.15)',
-                      padding: '10px 14px',
+                      borderRadius: 'var(--radius-buttons)',
+                      padding: '10px 16px',
                       fontSize: 12,
                       fontWeight: 700,
                       textDecoration: 'none',
@@ -629,7 +635,8 @@ export const MisReservasTab: React.FC<MisReservasTabProps> = ({ onNavigateSearch
                       backgroundColor: 'rgba(37, 211, 102, 0.08)',
                       color: '#25D366',
                       border: '1px solid rgba(37, 211, 102, 0.3)',
-                      padding: '10px 14px',
+                      borderRadius: 'var(--radius-buttons)',
+                      padding: '10px 16px',
                       fontSize: 12,
                       fontWeight: 700,
                       textDecoration: 'none',

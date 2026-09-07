@@ -1665,7 +1665,7 @@ export default function ReservarPage() {
                     </div>
 
                     {/* Month & Year Navigation Header */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#141414', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '6px 10px', borderRadius: 4 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#141414', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '6px 10px', borderRadius: 0 }}>
                       <button
                         type="button"
                         onClick={() => {
@@ -1687,7 +1687,7 @@ export default function ReservarPage() {
                           justifyContent: 'center',
                           backgroundColor: 'rgba(255, 255, 255, 0.04)',
                           border: '1px solid rgba(255, 255, 255, 0.08)',
-                          borderRadius: 3,
+                          borderRadius: 'var(--radius-full)',
                           color: (calendarMonth.getFullYear() === new Date().getFullYear() && calendarMonth.getMonth() === new Date().getMonth()) ? '#3a3a3a' : 'var(--color-frost)',
                           cursor: (calendarMonth.getFullYear() === new Date().getFullYear() && calendarMonth.getMonth() === new Date().getMonth()) ? 'not-allowed' : 'pointer',
                         }}
@@ -1713,7 +1713,7 @@ export default function ReservarPage() {
                           justifyContent: 'center',
                           backgroundColor: 'rgba(255, 255, 255, 0.04)',
                           border: '1px solid rgba(255, 255, 255, 0.08)',
-                          borderRadius: 3,
+                          borderRadius: 'var(--radius-full)',
                           color: 'var(--color-frost)',
                           cursor: 'pointer',
                         }}
@@ -1771,7 +1771,7 @@ export default function ReservarPage() {
                             backgroundColor: isActive ? 'var(--color-crimson-signal)' : '#141414',
                             border: isActive ? '1px solid var(--color-crimson-signal)' : '1px solid rgba(255, 255, 255, 0.08)',
                             color: isActive ? '#ffffff' : 'var(--color-ash)',
-                            borderRadius: 3,
+                            borderRadius: 'var(--radius-full)',
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
@@ -1788,7 +1788,7 @@ export default function ReservarPage() {
                   </div>
 
                   {/* Calendar Grid Container */}
-                  <div style={{ backgroundColor: '#0e0e0e', border: '1px solid rgba(255, 255, 255, 0.06)', padding: '10px 8px', borderRadius: 4 }}>
+                  <div style={{ backgroundColor: '#0e0e0e', border: '1px solid rgba(255, 255, 255, 0.06)', padding: '10px 8px', borderRadius: 0 }}>
                     {/* Weekdays Header */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, marginBottom: 8, textAlign: 'center' }}>
                       {WEEKDAYS_ES.map((wd) => (
@@ -1830,6 +1830,7 @@ export default function ReservarPage() {
                             }}
                             style={{
                               height: 32,
+                              width: 32,
                               display: 'flex',
                               flexDirection: 'column',
                               alignItems: 'center',
@@ -1846,7 +1847,7 @@ export default function ReservarPage() {
                                 : isToday
                                 ? '1px solid var(--color-crimson-signal)'
                                 : '1px solid transparent',
-                              borderRadius: 4,
+                              borderRadius: 'var(--radius-full)',
                               color: isPast
                                 ? '#3a3a3a'
                                 : isSelected
@@ -1862,18 +1863,6 @@ export default function ReservarPage() {
                             }}
                           >
                             {dayNum}
-                            {isToday && !isSelected && (
-                              <span
-                                style={{
-                                  position: 'absolute',
-                                  bottom: 2,
-                                  width: 3,
-                                  height: 3,
-                                  borderRadius: '50%',
-                                  backgroundColor: 'var(--color-crimson-signal)',
-                                }}
-                              />
-                            )}
                           </button>
                         );
                       })}
@@ -1908,7 +1897,7 @@ export default function ReservarPage() {
                         color: '#fff',
                         border: 'none',
                         padding: '6px 14px',
-                        borderRadius: 3,
+                        borderRadius: 'var(--radius-full)',
                         fontSize: 10.5,
                         fontWeight: 700,
                         textTransform: 'uppercase',
@@ -1956,6 +1945,7 @@ export default function ReservarPage() {
                   backgroundColor: 'var(--color-crimson-signal)',
                   color: 'var(--color-frost)',
                   border: 'none',
+                  borderRadius: 'var(--radius-full)',
                   padding: '14px 28px',
                   fontWeight: 700,
                   fontSize: 13,
@@ -2389,8 +2379,9 @@ export default function ReservarPage() {
                               style={{
                                 backgroundColor: '#111111',
                                 border: '1px solid var(--color-graphite)',
+                                borderRadius: 'var(--radius-full)',
                                 color: 'var(--color-frost)',
-                                padding: '10px 16px',
+                                padding: '8px 18px',
                                 textAlign: 'left',
                                 cursor: 'pointer',
                                 transition: 'all 0.2s ease',
@@ -2623,7 +2614,8 @@ export default function ReservarPage() {
                           gap: 8,
                           backgroundColor: '#009EE3',
                           color: '#fff',
-                          padding: '13px 20px',
+                          borderRadius: 'var(--radius-full)',
+                          padding: '13px 24px',
                           textDecoration: 'none',
                           fontWeight: 700,
                           fontSize: 13,
@@ -2672,7 +2664,8 @@ export default function ReservarPage() {
                             backgroundColor: copiedLink ? '#25D366' : '#222',
                             color: '#fff',
                             border: 'none',
-                            padding: '8px 16px',
+                            borderRadius: 'var(--radius-full)',
+                            padding: '8px 18px',
                             fontSize: 12,
                             fontWeight: 700,
                             cursor: 'pointer',
@@ -2697,7 +2690,8 @@ export default function ReservarPage() {
                           gap: 8,
                           backgroundColor: '#25D366',
                           color: '#000',
-                          padding: '12px',
+                          borderRadius: 'var(--radius-full)',
+                          padding: '13px 20px',
                           textDecoration: 'none',
                           fontWeight: 700,
                           fontSize: 13,
@@ -2854,7 +2848,8 @@ export default function ReservarPage() {
                                 backgroundColor: splitPlayers === num ? 'var(--color-crimson-signal)' : '#1a1a1a',
                                 color: '#fff',
                                 border: 'none',
-                                padding: '4px 10px',
+                                borderRadius: 'var(--radius-full)',
+                                padding: '5px 12px',
                                 fontSize: 11,
                                 fontWeight: 700,
                                 cursor: 'pointer',
@@ -3092,7 +3087,8 @@ export default function ReservarPage() {
                       backgroundColor: 'var(--color-crimson-signal)',
                       color: 'var(--color-frost)',
                       border: 'none',
-                      padding: '16px',
+                      borderRadius: 'var(--radius-full)',
+                      padding: '16px 28px',
                       fontSize: 14,
                       fontWeight: 700,
                       textTransform: 'uppercase',
@@ -3245,7 +3241,8 @@ export default function ReservarPage() {
                   backgroundColor: '#161616',
                   color: '#fff',
                   border: '1px solid var(--color-graphite)',
-                  padding: '12px',
+                  borderRadius: 'var(--radius-full)',
+                  padding: '12px 24px',
                   textDecoration: 'none',
                   fontSize: 13,
                   fontWeight: 600,

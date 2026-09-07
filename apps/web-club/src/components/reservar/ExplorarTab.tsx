@@ -263,23 +263,23 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
               {/* Amenity Badges */}
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 20 }}>
                 {club.amenities.covered && (
-                  <span style={{ fontSize: 10, padding: '3px 8px', backgroundColor: 'rgba(255, 255, 255, 0.06)', color: 'var(--color-frost)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                  <span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 'var(--radius-full)', backgroundColor: 'rgba(255, 255, 255, 0.06)', color: 'var(--color-frost)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
                     Techada
                   </span>
                 )}
                 {club.amenities.parking && (
-                  <span style={{ fontSize: 10, padding: '3px 8px', backgroundColor: 'rgba(255, 255, 255, 0.06)', color: 'var(--color-frost)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                  <span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 'var(--radius-full)', backgroundColor: 'rgba(255, 255, 255, 0.06)', color: 'var(--color-frost)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
                     Estacionamiento
                   </span>
                 )}
                 {club.amenities.buffet && (
-                  <span style={{ fontSize: 10, padding: '3px 8px', backgroundColor: 'rgba(255, 255, 255, 0.06)', color: 'var(--color-frost)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                  <span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 'var(--radius-full)', backgroundColor: 'rgba(255, 255, 255, 0.06)', color: 'var(--color-frost)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
                     Buffet & Bar
                   </span>
                 )}
               </div>
 
-              {/* Botón Acción */}
+              {/* Botón Acción (Pills) */}
               <div style={{ marginTop: 'auto', paddingTop: 16, borderTop: '1px solid rgba(76, 76, 76, 0.3)', display: 'flex', gap: 10 }}>
                 <button
                   onClick={() => onSelectClub(club)}
@@ -288,7 +288,8 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
                     backgroundColor: 'rgba(255, 255, 255, 0.08)',
                     color: 'var(--color-frost)',
                     border: '1px solid rgba(255, 255, 255, 0.2)',
-                    padding: '10px 14px',
+                    borderRadius: 'var(--radius-buttons)',
+                    padding: '10px 16px',
                     fontSize: 12,
                     fontWeight: 700,
                     cursor: 'pointer',
@@ -305,7 +306,8 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
                     backgroundColor: 'var(--color-crimson-signal)',
                     color: '#ffffff',
                     border: 'none',
-                    padding: '10px 14px',
+                    borderRadius: 'var(--radius-buttons)',
+                    padding: '10px 16px',
                     fontSize: 12,
                     fontWeight: 700,
                     cursor: 'pointer',

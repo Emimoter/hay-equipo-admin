@@ -388,6 +388,7 @@ export default function LoginPage() {
               style={{
                 backgroundColor: 'transparent',
                 border: 'none',
+                borderRadius: 'var(--radius-buttons)',
                 color: 'var(--color-graphite)',
                 fontSize: 13,
                 cursor: 'pointer',

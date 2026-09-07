@@ -1051,7 +1051,7 @@ export default function LandingPage() {
                   position: 'relative',
                   width: '100%',
                   maxWidth: 620,
-                  borderRadius: 16,
+                  borderRadius: 0,
                   overflow: 'hidden',
                   border: '1px solid rgba(255, 255, 255, 0.08)',
                   boxShadow: '0 25px 60px -15px rgba(252, 28, 70, 0.18)',

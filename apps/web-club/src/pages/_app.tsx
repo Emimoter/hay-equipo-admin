@@ -52,9 +52,19 @@ export default function App({ Component, pageProps }: AppProps) {
           color: var(--color-frost);
         }
 
-        input, select, textarea, button {
+        input, select, textarea {
           font-family: var(--font-sui);
           outline: none;
+          border-radius: var(--radius-inputs);
+        }
+
+        button,
+        input[type="button"],
+        input[type="submit"],
+        input[type="reset"] {
+          font-family: var(--font-sui);
+          outline: none;
+          border-radius: var(--radius-buttons);
         }
 
         select option {
