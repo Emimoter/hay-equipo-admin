@@ -43,6 +43,8 @@ Thumbs.db
 .agent/
 .agents/
 !.agents/skills/hay-equipo-system/
+!.agents/skills/hay-equipo-ux/
+!.agents/skills/hay-equipo-designer/
 .tempmediaStorage/
 
 # Android native build folders

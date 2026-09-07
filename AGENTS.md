@@ -4,9 +4,11 @@
 
 Every AI agent, developer, and automated process working in this repository MUST comply with the following rules:
 
-1. **CONSULT THE DESIGN SYSTEM:**
-   - Refer directly to `.agents/skills/hay-equipo-system/SKILL.md` and `DESIGN_SYSTEM.md`.
-   - Never invent new UI themes, random border-radiuses, or arbitrary color schemes.
+1. **CONSULT THE CORE SKILLS TRIAD:**
+   - **UI & Geometry Tokens:** `.agents/skills/hay-equipo-system/SKILL.md` and `DESIGN_SYSTEM.md`.
+   - **UX & Conversational Copy:** `.agents/skills/hay-equipo-ux/SKILL.md`.
+   - **Reusable Icons & Blueprints:** `.agents/skills/hay-equipo-designer/SKILL.md`.
+   - Never invent new UI themes, random border-radiuses, arbitrary flows, or non-vector assets.
 
 2. **THE DUAL GEOMETRY RULE:**
    - **Structural Containers:** (Cards, Modals, Drawers, Sheets, Bento Panels, Grid Blocks, Input Fields) must be **STRICTLY 90° RECTANGLES** (`border-radius: 0px` / `rounded-none`).
