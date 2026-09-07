@@ -54,6 +54,12 @@ const Icons = {
       <polyline points="20 6 9 17 4 12" />
     </svg>
   ),
+  RotateCcw: ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 4v6h6" />
+      <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+    </svg>
+  ),
   ArrowRight: ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <line x1="5" y1="12" x2="19" y2="12" />
@@ -205,9 +211,85 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
         </div>
       </div>
 
-      {/* ── Grid de Clubes ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 24 }}>
-        {filteredClubs.map((club) => (
+      {/* ── Grid de Clubes / Empty State (hay-equipo-ux) ── */}
+      {filteredClubs.length === 0 ? (
+        <div
+          style={{
+            backgroundColor: '#0a0a0a',
+            border: '1px solid rgba(76, 76, 76, 0.4)',
+            padding: '64px 24px',
+            textAlign: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <div
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: 'var(--radius-full)',
+              backgroundColor: 'rgba(252, 28, 70, 0.1)',
+              border: '1px solid rgba(252, 28, 70, 0.3)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 16,
+              color: 'var(--color-crimson-signal)',
+            }}
+          >
+            <Icons.Search size={24} color="var(--color-crimson-signal)" />
+          </div>
+          <span
+            style={{
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: '1.5px',
+              textTransform: 'uppercase',
+              color: 'var(--color-crimson-signal)',
+              marginBottom: 8,
+            }}
+          >
+            01 / SIN RESULTADOS
+          </span>
+          <h3 style={{ fontSize: 20, fontWeight: 700, color: 'var(--color-frost)', margin: '0 0 8px', textTransform: 'uppercase' }}>
+            No encontramos clubes con esos filtros
+          </h3>
+          <p style={{ fontSize: 13, color: 'var(--color-ash)', margin: '0 0 24px', maxWidth: 420, lineHeight: 1.5 }}>
+            Probá buscando por otra zona, cambiando el deporte seleccionado o quitando filtros de servicios.
+          </p>
+          <button
+            onClick={() => {
+              setSearchTerm('');
+              setSportFilter('ALL');
+              setSelectedAmenity('ALL');
+            }}
+            style={{
+              backgroundColor: 'var(--color-crimson-signal)',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: 'var(--radius-buttons)',
+              padding: '12px 24px',
+              fontSize: 12,
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.6px',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              boxShadow: '0 4px 20px rgba(252, 28, 70, 0.4)',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <Icons.RotateCcw size={14} color="#ffffff" />
+            <span>Limpiar filtros</span>
+          </button>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 24 }}>
+          {filteredClubs.map((club) => (
           <div
             key={club.id}
             style={{
@@ -219,7 +301,7 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
               transition: 'border-color 0.2s ease',
             }}
           >
-            {/* Foto del Club */}
+            {/* Foto del Club con Scrim Gradient Overlay (hay-equipo-designer) */}
             <div style={{ height: 200, position: 'relative', overflow: 'hidden' }}>
               <img
                 src={club.coverImage || club.images?.[0] || 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&q=80'}
@@ -229,10 +311,20 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
               <div
                 style={{
                   position: 'absolute',
+                  inset: 0,
+                  background: 'linear-gradient(to top, rgba(10, 10, 10, 0.95) 0%, rgba(10, 10, 10, 0.2) 60%, transparent 100%)',
+                  pointerEvents: 'none',
+                }}
+              />
+              <div
+                style={{
+                  position: 'absolute',
                   top: 12,
                   right: 12,
                   backgroundColor: 'rgba(0, 0, 0, 0.8)',
                   backdropFilter: 'blur(8px)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  borderRadius: 'var(--radius-full)',
                   padding: '4px 10px',
                   display: 'flex',
                   alignItems: 'center',
@@ -326,7 +418,8 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
             </div>
           </div>
         ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

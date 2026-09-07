@@ -1552,6 +1552,7 @@ export default function ReservarPage() {
                               textTransform: 'uppercase',
                               letterSpacing: '0.6px',
                               padding: '2px 8px',
+                              borderRadius: 'var(--radius-full)',
                               backgroundColor: isSelected ? 'var(--color-crimson-signal)' : '#181818',
                               color: isSelected ? '#ffffff' : 'var(--color-graphite)',
                               border: '1px solid ' + (isSelected ? 'transparent' : 'rgba(255, 255, 255, 0.1)'),
@@ -2013,6 +2014,7 @@ export default function ReservarPage() {
                     padding: '4px 12px',
                     backgroundColor: 'rgba(252, 28, 70, 0.12)',
                     border: '1px solid rgba(252, 28, 70, 0.4)',
+                    borderRadius: 'var(--radius-full)',
                     fontSize: 10,
                     fontWeight: 700,
                     color: 'var(--color-crimson-signal)',
@@ -2028,6 +2030,7 @@ export default function ReservarPage() {
                     padding: '4px 10px',
                     backgroundColor: '#161616',
                     border: '1px solid rgba(255, 255, 255, 0.15)',
+                    borderRadius: 'var(--radius-full)',
                     fontSize: 10,
                     fontWeight: 700,
                     color: 'var(--color-frost)',
@@ -2155,6 +2158,7 @@ export default function ReservarPage() {
                     padding: '4px 12px',
                     backgroundColor: '#121212',
                     border: '1px solid rgba(255, 255, 255, 0.15)',
+                    borderRadius: 'var(--radius-full)',
                     fontSize: 11,
                     color: 'var(--color-frost)',
                     fontWeight: 700,
@@ -2256,6 +2260,7 @@ export default function ReservarPage() {
                         backgroundColor: 'rgba(0, 0, 0, 0.75)',
                         backdropFilter: 'blur(8px)',
                         border: '1px solid rgba(255, 255, 255, 0.2)',
+                        borderRadius: 'var(--radius-full)',
                         fontSize: 10,
                         fontWeight: 700,
                         color: 'var(--color-frost)',
@@ -2276,6 +2281,7 @@ export default function ReservarPage() {
                         backgroundColor: 'rgba(0, 0, 0, 0.75)',
                         backdropFilter: 'blur(8px)',
                         border: '1px solid rgba(255, 255, 255, 0.2)',
+                        borderRadius: 'var(--radius-full)',
                         fontSize: 11,
                         fontWeight: 700,
                         color: 'var(--color-frost)',
@@ -2337,25 +2343,25 @@ export default function ReservarPage() {
                       </button>
                     </div>
 
-                    {/* Amenities Badges */}
+                    {/* Amenities Badges (Pills) */}
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
                       {club.amenities.covered && (
-                        <div style={{ padding: '4px 10px', backgroundColor: '#141414', border: '1px solid rgba(255, 255, 255, 0.08)', fontSize: 11, color: 'var(--color-ash)' }}>
+                        <div style={{ padding: '4px 10px', backgroundColor: '#141414', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 'var(--radius-full)', fontSize: 11, color: 'var(--color-ash)' }}>
                           Techada / Indoor
                         </div>
                       )}
                       {club.amenities.parking && (
-                        <div style={{ padding: '4px 10px', backgroundColor: '#141414', border: '1px solid rgba(255, 255, 255, 0.08)', fontSize: 11, color: 'var(--color-ash)' }}>
+                        <div style={{ padding: '4px 10px', backgroundColor: '#141414', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 'var(--radius-full)', fontSize: 11, color: 'var(--color-ash)' }}>
                           Parking Custodiado
                         </div>
                       )}
                       {club.amenities.buffet && (
-                        <div style={{ padding: '4px 10px', backgroundColor: '#141414', border: '1px solid rgba(255, 255, 255, 0.08)', fontSize: 11, color: 'var(--color-ash)' }}>
+                        <div style={{ padding: '4px 10px', backgroundColor: '#141414', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 'var(--radius-full)', fontSize: 11, color: 'var(--color-ash)' }}>
                           Buffet & Bar
                         </div>
                       )}
                       {club.amenities.lighting && (
-                        <div style={{ padding: '4px 10px', backgroundColor: '#141414', border: '1px solid rgba(255, 255, 255, 0.08)', fontSize: 11, color: 'var(--color-ash)' }}>
+                        <div style={{ padding: '4px 10px', backgroundColor: '#141414', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 'var(--radius-full)', fontSize: 11, color: 'var(--color-ash)' }}>
                           Iluminación LED Pro
                         </div>
                       )}
@@ -2773,8 +2779,11 @@ export default function ReservarPage() {
                           padding: '4px 10px',
                           backgroundColor: 'var(--color-crimson-signal)',
                           color: '#fff',
+                          borderRadius: 'var(--radius-full)',
                           fontSize: 11,
                           fontWeight: 700,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.6px',
                         }}
                       >
                         {selectedSlot.sport}

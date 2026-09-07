@@ -438,6 +438,7 @@ export const AuthModal: React.FC = () => {
             display: 'flex',
             backgroundColor: 'rgba(255, 255, 255, 0.04)',
             border: '1px solid rgba(255, 255, 255, 0.08)',
+            borderRadius: 'var(--radius-full)',
             marginBottom: 20,
             padding: 3,
           }}

@@ -472,9 +472,10 @@ export const MisReservasTab: React.FC<MisReservasTabProps> = ({ onNavigateSearch
                         backgroundColor: b.status === 'CONFIRMED' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(252, 28, 70, 0.15)',
                         color: b.status === 'CONFIRMED' ? '#10b981' : 'var(--color-crimson-signal)',
                         border: `1px solid ${b.status === 'CONFIRMED' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(252, 28, 70, 0.3)'}`,
+                        borderRadius: 'var(--radius-full)',
                         fontSize: 10,
                         fontWeight: 800,
-                        padding: '3px 8px',
+                        padding: '3px 10px',
                         letterSpacing: '0.8px',
                         textTransform: 'uppercase',
                       }}

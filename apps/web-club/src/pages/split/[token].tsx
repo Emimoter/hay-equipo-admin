@@ -204,7 +204,7 @@ export default function SplitInvitationPage() {
       >
         <a href="/" style={{ textDecoration: 'none', color: '#fff', display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 16, fontWeight: 900, letterSpacing: '-0.5px' }}>HAY EQUIPO?</span>
-          <span style={{ fontSize: 11, padding: '2px 8px', backgroundColor: 'rgba(252, 28, 70, 0.2)', color: 'var(--color-crimson-signal)', border: '1px solid rgba(252, 28, 70, 0.4)', fontWeight: 700 }}>
+          <span style={{ fontSize: 11, padding: '2px 10px', backgroundColor: 'rgba(252, 28, 70, 0.2)', color: 'var(--color-crimson-signal)', border: '1px solid rgba(252, 28, 70, 0.4)', borderRadius: 'var(--radius-full)', fontWeight: 700 }}>
             SPLIT
           </span>
         </a>
@@ -284,6 +284,7 @@ export default function SplitInvitationPage() {
                   padding: '4px 12px',
                   backgroundColor: 'rgba(252, 28, 70, 0.12)',
                   border: '1px solid rgba(252, 28, 70, 0.4)',
+                  borderRadius: 'var(--radius-full)',
                   fontSize: 10.5,
                   fontWeight: 700,
                   color: 'var(--color-crimson-signal)',
@@ -433,7 +434,8 @@ export default function SplitInvitationPage() {
                         style={{
                           fontSize: 10.5,
                           fontWeight: 700,
-                          padding: '3px 8px',
+                          padding: '3px 10px',
+                          borderRadius: 'var(--radius-full)',
                           textTransform: 'uppercase',
                           letterSpacing: '0.6px',
                           backgroundColor: isPaid ? 'rgba(252, 28, 70, 0.15)' : 'rgba(255, 255, 255, 0.05)',
