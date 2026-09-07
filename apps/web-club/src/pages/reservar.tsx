@@ -2059,12 +2059,13 @@ export default function ReservarPage() {
               </p>
 
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 16 }}>
-                <a
-                  href="/#descargar"
+                <button
+                  type="button"
+                  onClick={() => handleTabChange('FIJOS')}
                   style={{
                     backgroundColor: 'var(--color-crimson-signal)',
                     color: 'var(--color-frost)',
-                    textDecoration: 'none',
+                    border: 'none',
                     padding: '12px 28px',
                     borderRadius: 'var(--radius-full)',
                     fontSize: 13,
@@ -2074,12 +2075,16 @@ export default function ReservarPage() {
                     display: 'flex',
                     alignItems: 'center',
                     gap: 8,
+                    cursor: 'pointer',
                     boxShadow: '0 0 20px rgba(252, 28, 70, 0.35)',
+                    transition: 'transform 0.2s ease',
                   }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.03)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}
                 >
-                  <span>Asegurar cupo en la app</span>
+                  <span>Asegurar Turno Fijo</span>
                   <Icons.ArrowUpRight size={14} color="#ffffff" />
-                </a>
+                </button>
                 <span style={{ fontSize: 12, color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                   Sin permanencia mínima
                 </span>

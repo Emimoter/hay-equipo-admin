@@ -6,7 +6,7 @@ import {
   getUserFixedSlotsFirestore,
   liberateOccurrenceFirestore,
   FixedSlotSubscriptionFirestore,
-  RecurringOccurrenceFirestore
+  RecurringOccurrenceFirestore,
 } from '../../services/firebase';
 
 interface TurnosFijosTabProps {
@@ -14,6 +14,9 @@ interface TurnosFijosTabProps {
   clubs?: any[];
 }
 
+/* ────────────────────────────────────────────────────────────
+   100% Custom Vector SVG Icons — Strict Zero Emojis
+   ──────────────────────────────────────────────────────────── */
 const Icons = {
   Repeat: ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -42,9 +45,51 @@ const Icons = {
       <line x1="3" y1="10" x2="21" y2="10" />
     </svg>
   ),
+  Clock: ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </svg>
+  ),
   Check: ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
       <polyline points="20 6 9 17 4 12" />
+    </svg>
+  ),
+  Lock: ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
+  ),
+  Tag: ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m20.59 13.41-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+      <line x1="7" y1="7" x2="7.01" y2="7" />
+    </svg>
+  ),
+  Sparkles: ({ size = 15, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+    </svg>
+  ),
+  Close: ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  ),
+  Padel: ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="10" cy="10" r="7" />
+      <line x1="15" y1="15" x2="21" y2="21" />
+      <line x1="18" y1="18" x2="22" y2="22" strokeWidth="3" />
+    </svg>
+  ),
+  Soccer: ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <polygon points="12 7 15.5 9.5 14 13.5 10 13.5 8.5 9.5" />
     </svg>
   ),
 };
@@ -81,7 +126,7 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
   const [liberateModalOcc, setLiberateModalOcc] = useState<RecurringOccurrenceFirestore | null>(null);
   const [liberatingLoading, setLiberatingLoading] = useState<boolean>(false);
 
-  // Success toast
+  // Success message banner
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Load clubs & subscriptions on mount and when user changes
@@ -123,10 +168,10 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
   }, [user, propClubs]);
 
   // Selected Club details
-  const currentClub = availableClubs.find(c => c.id === selectedClubId) || availableClubs[0] || {
+  const currentClub = availableClubs.find((c) => c.id === selectedClubId) || availableClubs[0] || {
     id: 'club-laverde-jara',
     name: 'Laverde Jara - Canchas de Césped Sintético',
-    minPrice: 32000
+    minPrice: 32000,
   };
 
   // Pricing calculation matching mobile app
@@ -143,17 +188,23 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
     try {
       const ok = await liberateOccurrenceFirestore(user.uid, liberateModalOcc.subscriptionId, liberateModalOcc.id);
       if (ok) {
-        setOccurrences(prev => prev.map(o => o.id === liberateModalOcc.id ? { ...o, status: 'RELEASED_TO_MARKETPLACE' } : o));
-        setSubscriptions(prev => prev.map(s => {
-          if (s.id === liberateModalOcc.subscriptionId) {
-            return {
-              ...s,
-              occurrences: s.occurrences.map(o => o.id === liberateModalOcc.id ? { ...o, status: 'RELEASED_TO_MARKETPLACE' } : o)
-            };
-          }
-          return s;
-        }));
-        setSuccessMessage('¡Fecha liberada al Marketplace! Si alguien la reserva, recibirás el reintegro directo.');
+        setOccurrences((prev) =>
+          prev.map((o) => (o.id === liberateModalOcc.id ? { ...o, status: 'RELEASED_TO_MARKETPLACE' } : o))
+        );
+        setSubscriptions((prev) =>
+          prev.map((s) => {
+            if (s.id === liberateModalOcc.subscriptionId) {
+              return {
+                ...s,
+                occurrences: s.occurrences.map((o) =>
+                  o.id === liberateModalOcc.id ? { ...o, status: 'RELEASED_TO_MARKETPLACE' } : o
+                ),
+              };
+            }
+            return s;
+          })
+        );
+        setSuccessMessage('Fecha liberada al Marketplace. Si otro grupo la reserva, recibirás el reintegro directo.');
       }
     } catch (err) {
       console.error('Error liberating occurrence:', err);
@@ -197,7 +248,7 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
 
       for (let i = 0; i < totalWeeks; i++) {
         const occDate = new Date();
-        occDate.setDate(occDate.getDate() + (i * 7) + ((selectedDay - occDate.getDay() + 7) % 7));
+        occDate.setDate(occDate.getDate() + i * 7 + ((selectedDay - occDate.getDay() + 7) % 7));
         const occDateStr = occDate.toISOString().split('T')[0];
 
         generatedOccurrences.push({
@@ -211,7 +262,7 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
           clubName: currentClub.name,
           status: 'SCHEDULED',
           isPaid: i === 0,
-          price: discountedPrice
+          price: discountedPrice,
         });
       }
 
@@ -233,19 +284,16 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
         pricePerOccurrence: discountedPrice,
         discountMonthlyTotal: monthlySavings,
         status: 'ACTIVE',
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       };
 
       const saved = await saveUserFixedSlotFirestore(user.uid, newSub, generatedOccurrences);
 
       if (saved) {
-        setSubscriptions(prev => [
-          { ...newSub, occurrences: generatedOccurrences },
-          ...prev
-        ]);
-        setOccurrences(prev => [...generatedOccurrences, ...prev]);
+        setSubscriptions((prev) => [{ ...newSub, occurrences: generatedOccurrences }, ...prev]);
+        setOccurrences((prev) => [...generatedOccurrences, ...prev]);
         setActiveTab('MY_SLOTS');
-        setSuccessMessage(`¡Turno Fijo Asegurado con éxito! Ahorrás $${monthlySavings.toLocaleString('es-AR')} por mes.`);
+        setSuccessMessage(`Turno Fijo confirmado. Ahorro estimado de $${monthlySavings.toLocaleString('es-AR')} por mes.`);
       }
     } catch (err) {
       console.error('Error creating fixed slot:', err);
@@ -257,25 +305,43 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
 
   return (
     <div style={{ maxWidth: 1240, margin: '0 auto', padding: '120px 24px 80px' }}>
-      {/* ── Encabezado ── */}
+      {/* ── Encabezado Estilo Swiss Brutalist ── */}
       <div style={{ marginBottom: 32 }}>
-        <div style={{ fontSize: 11, color: 'var(--color-crimson-signal)', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 700, marginBottom: 8 }}>
+        <div
+          style={{
+            fontSize: 11,
+            color: 'var(--color-crimson-signal)',
+            textTransform: 'uppercase',
+            letterSpacing: '2px',
+            fontWeight: 700,
+            marginBottom: 8,
+          }}
+        >
           04 / SISTEMA DE TURNOS PERMANENTES
         </div>
-        <h1 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 800, color: 'var(--color-frost)', textTransform: 'uppercase', letterSpacing: '-1px', margin: 0 }}>
+        <h1
+          style={{
+            fontSize: 'clamp(28px, 4vw, 42px)',
+            fontWeight: 800,
+            color: 'var(--color-frost)',
+            textTransform: 'uppercase',
+            letterSpacing: '-1px',
+            margin: 0,
+          }}
+        >
           Turnos Fijos Semanales
         </h1>
         <p style={{ color: 'var(--color-ash)', fontSize: 14, marginTop: 6, marginBottom: 0, maxWidth: 680 }}>
-          Tu cancha fija asegurada todos los meses con tarifa congelada, descuento exclusivo y la opción de liberar fechas sueltas al marketplace si una semana no juegan.
+          Cancha fija asegurada todos los meses con tarifa congelada, bonificación por frecuencia y garantía de liberación al marketplace si una semana tu grupo no asiste.
         </p>
       </div>
 
-      {/* ── Toast de Éxito ── */}
+      {/* ── Banner de Éxito ── */}
       {successMessage && (
         <div
           style={{
-            backgroundColor: 'rgba(16, 185, 129, 0.12)',
-            border: '1px solid rgba(16, 185, 129, 0.35)',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            border: '1px solid rgba(16, 185, 129, 0.3)',
             color: '#10b981',
             padding: '12px 18px',
             marginBottom: 24,
@@ -286,61 +352,74 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
             fontWeight: 600,
           }}
         >
-          <span>✓ {successMessage}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Icons.Check size={16} color="#10b981" />
+            <span>{successMessage}</span>
+          </div>
           <button
+            type="button"
             onClick={() => setSuccessMessage(null)}
-            style={{ background: 'none', border: 'none', color: '#10b981', cursor: 'pointer', fontSize: 16 }}
+            style={{ background: 'none', border: 'none', color: '#10b981', cursor: 'pointer', padding: 4 }}
           >
-            ✕
+            <Icons.Close size={14} color="#10b981" />
           </button>
         </div>
       )}
 
-      {/* ── Navegación de Pestañas (Idéntico a Mobile: Mis Turnos vs Contratar) ── */}
+      {/* ── Sub-Tabs Idénticas a MisReservasTab ── */}
       <div
         style={{
           display: 'flex',
-          backgroundColor: '#0b0e14',
-          border: '1px solid rgba(252, 28, 70, 0.25)',
-          padding: 4,
-          borderRadius: 12,
-          maxWidth: 480,
+          gap: 12,
+          borderBottom: '1px solid rgba(76, 76, 76, 0.3)',
+          paddingBottom: 16,
           marginBottom: 32,
         }}
       >
         <button
+          type="button"
           onClick={() => setActiveTab('MY_SLOTS')}
           style={{
-            flex: 1,
-            padding: '10px 16px',
-            backgroundColor: activeTab === 'MY_SLOTS' ? 'var(--color-crimson-signal)' : 'transparent',
-            color: activeTab === 'MY_SLOTS' ? '#ffffff' : 'var(--color-ash)',
+            background: 'none',
             border: 'none',
-            borderRadius: 8,
+            color: activeTab === 'MY_SLOTS' ? 'var(--color-crimson-signal)' : 'var(--color-ash)',
             fontSize: 13,
             fontWeight: 700,
             cursor: 'pointer',
-            transition: 'all 0.2s ease',
+            padding: '6px 12px',
+            borderBottom: activeTab === 'MY_SLOTS' ? '2px solid var(--color-crimson-signal)' : '2px solid transparent',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 8,
           }}
         >
-          Mis Turnos Activos ({subscriptions.length})
+          <Icons.Repeat size={14} color={activeTab === 'MY_SLOTS' ? 'var(--color-crimson-signal)' : 'var(--color-ash)'} />
+          <span>Mis Turnos Activos ({subscriptions.length})</span>
         </button>
+
         <button
+          type="button"
           onClick={() => setActiveTab('NEW_SLOT')}
           style={{
-            flex: 1,
-            padding: '10px 16px',
-            backgroundColor: activeTab === 'NEW_SLOT' ? 'var(--color-crimson-signal)' : 'transparent',
-            color: activeTab === 'NEW_SLOT' ? '#ffffff' : 'var(--color-ash)',
+            background: 'none',
             border: 'none',
-            borderRadius: 8,
+            color: activeTab === 'NEW_SLOT' ? 'var(--color-crimson-signal)' : 'var(--color-ash)',
             fontSize: 13,
             fontWeight: 700,
             cursor: 'pointer',
-            transition: 'all 0.2s ease',
+            padding: '6px 12px',
+            borderBottom: activeTab === 'NEW_SLOT' ? '2px solid var(--color-crimson-signal)' : '2px solid transparent',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 8,
           }}
         >
-          + Contratar Turno Fijo
+          <Icons.Zap size={14} color={activeTab === 'NEW_SLOT' ? 'var(--color-crimson-signal)' : 'var(--color-ash)'} />
+          <span>+ Contratar Turno Fijo</span>
         </button>
       </div>
 
@@ -350,36 +429,40 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
           {activeTab === 'MY_SLOTS' ? (
             <div>
               {loading ? (
-                <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--color-ash)', fontSize: 14 }}>
-                  Cargando tus turnos fijos...
+                <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--color-ash)', fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Cargando abonos permanentes...
                 </div>
               ) : !user ? (
                 /* Estado no autenticado */
                 <div
                   style={{
-                    backgroundColor: '#0b0e14',
-                    border: '1px solid rgba(76, 76, 76, 0.4)',
-                    padding: '44px 32px',
                     textAlign: 'center',
+                    padding: '60px 24px',
+                    backgroundColor: '#0a0a0a',
+                    border: '1px dashed rgba(76, 76, 76, 0.4)',
                   }}
                 >
-                  <div style={{ fontSize: 36, marginBottom: 12 }}>🔒</div>
+                  <div style={{ marginBottom: 16, color: 'var(--color-graphite)' }}>
+                    <Icons.Lock size={38} color="var(--color-ash)" />
+                  </div>
                   <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-frost)', textTransform: 'uppercase', marginBottom: 8 }}>
                     Iniciá sesión para ver tus turnos
                   </h3>
-                  <p style={{ color: 'var(--color-ash)', fontSize: 13, maxWidth: 380, margin: '0 auto 20px', lineHeight: 1.5 }}>
+                  <p style={{ color: 'var(--color-ash)', fontSize: 13, maxWidth: 420, margin: '0 auto 24px', lineHeight: 1.5 }}>
                     Accedé a tus abonos mensuales activos, consultá tus próximas fechas o liberá tu cancha si esta semana no juegan.
                   </p>
                   <button
+                    type="button"
                     onClick={() => openAuthModal()}
                     style={{
                       backgroundColor: 'var(--color-crimson-signal)',
                       color: '#ffffff',
                       border: 'none',
-                      padding: '12px 24px',
-                      fontSize: 13,
+                      padding: '12px 26px',
+                      fontSize: 12,
                       fontWeight: 700,
                       textTransform: 'uppercase',
+                      letterSpacing: '0.6px',
                       cursor: 'pointer',
                       boxShadow: '0 0 16px rgba(252, 28, 70, 0.4)',
                     }}
@@ -388,87 +471,104 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
                   </button>
                 </div>
               ) : subscriptions.length === 0 ? (
-                /* Estado vacío (Empty state idéntico a mobile) */
+                /* Estado vacío idéntico a MisReservasTab */
                 <div
                   style={{
-                    backgroundColor: '#0b0e14',
-                    border: '1px solid rgba(252, 28, 70, 0.25)',
-                    padding: '50px 32px',
                     textAlign: 'center',
+                    padding: '60px 24px',
+                    backgroundColor: '#0a0a0a',
+                    border: '1px dashed rgba(76, 76, 76, 0.4)',
                   }}
                 >
-                  <div style={{ fontSize: 40, marginBottom: 12 }}>📅</div>
-                  <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-frost)', textTransform: 'uppercase', marginBottom: 6 }}>
-                    Aún no tenés turnos fijos
+                  <div style={{ marginBottom: 16, color: 'var(--color-graphite)' }}>
+                    <Icons.Calendar size={42} color="var(--color-ash)" />
+                  </div>
+                  <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-frost)', textTransform: 'uppercase', marginBottom: 8 }}>
+                    No tenés turnos fijos registrados
                   </h3>
                   <p style={{ color: 'var(--color-ash)', fontSize: 13, maxWidth: 420, margin: '0 auto 24px', lineHeight: 1.5 }}>
-                    Contratá un horario semanal para jugar siempre con tu grupo con precio congelado y 12% de descuento.
+                    Asegurá un horario semanal para jugar siempre con tu grupo con tarifa congelada y 12% de bonificación mensual.
                   </p>
                   <button
+                    type="button"
                     onClick={() => setActiveTab('NEW_SLOT')}
                     style={{
                       backgroundColor: 'var(--color-crimson-signal)',
                       color: '#ffffff',
                       border: 'none',
-                      padding: '12px 24px',
-                      fontSize: 13,
+                      padding: '12px 26px',
+                      fontSize: 12,
                       fontWeight: 700,
                       textTransform: 'uppercase',
+                      letterSpacing: '0.6px',
                       cursor: 'pointer',
                       boxShadow: '0 0 16px rgba(252, 28, 70, 0.4)',
                     }}
                   >
-                    Buscar y Contratar Turno Fijo
+                    Contratar Turno Fijo
                   </button>
                 </div>
               ) : (
-                /* Lista de Subscriptions Activas */
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                /* Lista de Subscriptions Activas con estética MisReservasTab */
+                <div style={{ display: 'grid', gap: 20 }}>
                   {subscriptions.map((sub) => {
-                    const subOccurrences = occurrences.filter(o => o.subscriptionId === sub.id);
+                    const subOccurrences = occurrences.filter((o) => o.subscriptionId === sub.id);
                     return (
                       <div
                         key={sub.id}
                         style={{
-                          backgroundColor: '#0b0e14',
-                          border: '1px solid rgba(252, 28, 70, 0.25)',
+                          backgroundColor: '#0a0a0a',
+                          border: '1px solid rgba(76, 76, 76, 0.5)',
                           padding: '24px 28px',
-                          boxShadow: '0 8px 30px rgba(0, 0, 0, 0.5)',
                         }}
                       >
                         {/* Sub Header */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
-                          <div>
-                            <div style={{ fontSize: 18, fontWeight: 700, color: '#ffffff', letterSpacing: '-0.3px' }}>
-                              {sub.clubName}
-                            </div>
-                            <div style={{ fontSize: 13, color: 'var(--color-ash)', marginTop: 2 }}>
-                              {sub.courtName} · {sub.sportType === 'PADEL' ? 'Pádel' : 'Fútbol'}
-                            </div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <span
+                              style={{
+                                backgroundColor: 'rgba(252, 28, 70, 0.15)',
+                                color: 'var(--color-crimson-signal)',
+                                border: '1px solid rgba(252, 28, 70, 0.3)',
+                                fontSize: 10,
+                                fontWeight: 800,
+                                padding: '3px 8px',
+                                letterSpacing: '0.8px',
+                                textTransform: 'uppercase',
+                              }}
+                            >
+                              ACTIVO
+                            </span>
+                            <span style={{ fontSize: 12, color: 'var(--color-ash)', fontFamily: 'Space Grotesk, monospace', fontWeight: 600 }}>
+                              ID: {sub.id}
+                            </span>
+                            <span style={{ fontSize: 11, color: 'var(--color-graphite)' }}>·</span>
+                            <span style={{ fontSize: 11, color: 'var(--color-graphite)', textTransform: 'uppercase', fontWeight: 700 }}>
+                              {sub.sportType === 'PADEL' ? 'PÁDEL' : 'FÚTBOL'}
+                            </span>
                           </div>
-                          <span
-                            style={{
-                              backgroundColor: 'rgba(252, 28, 70, 0.15)',
-                              color: 'var(--color-crimson-signal)',
-                              border: '1px solid rgba(252, 28, 70, 0.35)',
-                              padding: '4px 8px',
-                              fontSize: 10,
-                              fontWeight: 800,
-                              letterSpacing: '0.6px',
-                              textTransform: 'uppercase',
-                            }}
-                          >
-                            ACTIVO
-                          </span>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-frost)' }}>
+                            ${sub.pricePerOccurrence?.toLocaleString('es-AR')} <span style={{ fontSize: 11, color: 'var(--color-ash)', fontWeight: 400 }}>/ partido</span>
+                          </div>
                         </div>
 
-                        {/* Sub Schedule Row */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
-                          <div style={{ color: 'var(--color-crimson-signal)', fontSize: 13, fontWeight: 700 }}>
-                            🗓️ Todos los {DAYS_OF_WEEK[sub.dayOfWeek]} · ⏰ {sub.startTime} hs ({sub.durationMonths} meses)
+                        {/* Court & Club Name */}
+                        <h3 style={{ fontSize: 20, fontWeight: 700, color: 'var(--color-frost)', margin: '0 0 4px', textTransform: 'uppercase' }}>
+                          {sub.courtName}
+                        </h3>
+                        <div style={{ fontSize: 13, color: 'var(--color-ash)', marginBottom: 16 }}>
+                          {sub.clubName}
+                        </div>
+
+                        {/* Schedule Row */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap', fontSize: 13, color: 'var(--color-frost)', marginBottom: 16 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <Icons.Calendar size={14} color="var(--color-crimson-signal)" />
+                            <span>Todos los {DAYS_OF_WEEK[sub.dayOfWeek]}</span>
                           </div>
-                          <div style={{ color: '#ffffff', fontSize: 15, fontWeight: 800 }}>
-                            ${sub.pricePerOccurrence?.toLocaleString('es-AR')} <span style={{ fontSize: 11, color: 'var(--color-ash)', fontWeight: 400 }}>/ partido</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <Icons.Clock size={14} color="var(--color-crimson-signal)" />
+                            <span>{sub.startTime} hs ({sub.durationMonths} meses)</span>
                           </div>
                         </div>
 
@@ -476,24 +576,26 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
                         <div
                           style={{
                             backgroundColor: 'rgba(252, 28, 70, 0.08)',
-                            border: '1px solid rgba(252, 28, 70, 0.2)',
+                            border: '1px solid rgba(252, 28, 70, 0.25)',
                             padding: '10px 14px',
-                            borderRadius: 6,
-                            marginBottom: 20,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8,
                             fontSize: 12,
                             color: '#ff6b8b',
                             fontWeight: 600,
-                            textAlign: 'center',
+                            marginBottom: 20,
                           }}
                         >
-                          🎉 Ahorrás ${sub.discountMonthlyTotal?.toLocaleString('es-AR')} al mes con este abono fijo
+                          <Icons.Sparkles size={14} color="var(--color-crimson-signal)" />
+                          <span>Bonificación activa: Ahorrás ${sub.discountMonthlyTotal?.toLocaleString('es-AR')} por mes respecto a la tarifa estándar</span>
                         </div>
 
                         {/* Upcoming Occurrences */}
-                        <div style={{ fontSize: 12, color: 'var(--color-frost)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 12 }}>
-                          Próximas Fechas:
+                        <div style={{ fontSize: 11, color: 'var(--color-ash)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 12 }}>
+                          Próximas Fechas del Abono:
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        <div style={{ display: 'grid', gap: 8 }}>
                           {subOccurrences.slice(0, 4).map((occ) => {
                             const isLiberated = occ.status === 'RELEASED_TO_MARKETPLACE';
                             return (
@@ -505,56 +607,59 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
                                   alignItems: 'center',
                                   padding: '10px 14px',
                                   backgroundColor: 'rgba(255, 255, 255, 0.02)',
-                                  border: '1px solid rgba(255, 255, 255, 0.06)',
-                                  borderRadius: 4,
+                                  border: '1px solid rgba(76, 76, 76, 0.25)',
                                 }}
                               >
-                                <div>
-                                  <div style={{ fontSize: 13, fontWeight: 600, color: '#ffffff' }}>
-                                    📅 {occ.date} · {occ.startTime} hs
-                                  </div>
-                                  <div style={{ fontSize: 11, color: isLiberated ? '#f59e0b' : '#10b981', marginTop: 2 }}>
-                                    {isLiberated ? '🏷️ En Venta en Marketplace (esperando comprador)' : '✅ Confirmado para tu grupo'}
-                                  </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                  <Icons.Calendar size={13} color={isLiberated ? '#f59e0b' : '#10b981'} />
+                                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-frost)' }}>
+                                    {occ.date} · {occ.startTime} hs
+                                  </span>
+                                  <span
+                                    style={{
+                                      fontSize: 10,
+                                      fontWeight: 700,
+                                      textTransform: 'uppercase',
+                                      color: isLiberated ? '#f59e0b' : '#10b981',
+                                      backgroundColor: isLiberated ? 'rgba(245, 158, 11, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                                      padding: '2px 6px',
+                                      border: `1px solid ${isLiberated ? 'rgba(245, 158, 11, 0.3)' : 'rgba(16, 185, 129, 0.3)'}`,
+                                    }}
+                                  >
+                                    {isLiberated ? 'EN VENTA' : 'CONFIRMADO'}
+                                  </span>
                                 </div>
 
                                 {!isLiberated ? (
                                   <button
+                                    type="button"
                                     onClick={() => setLiberateModalOcc(occ)}
                                     style={{
-                                      backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                                      backgroundColor: 'transparent',
                                       color: 'var(--color-ash)',
-                                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                                      border: '1px solid rgba(76, 76, 76, 0.5)',
                                       padding: '6px 12px',
                                       fontSize: 11,
-                                      fontWeight: 600,
+                                      fontWeight: 700,
+                                      textTransform: 'uppercase',
+                                      letterSpacing: '0.4px',
                                       cursor: 'pointer',
                                       transition: 'all 0.2s ease',
                                     }}
                                     onMouseEnter={(e) => {
-                                      e.currentTarget.style.color = '#ef4444';
-                                      e.currentTarget.style.borderColor = '#ef4444';
+                                      e.currentTarget.style.color = 'var(--color-crimson-signal)';
+                                      e.currentTarget.style.borderColor = 'var(--color-crimson-signal)';
                                     }}
                                     onMouseLeave={(e) => {
                                       e.currentTarget.style.color = 'var(--color-ash)';
-                                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                                      e.currentTarget.style.borderColor = 'rgba(76, 76, 76, 0.5)';
                                     }}
                                   >
-                                    No vamos esta semana
+                                    Liberar esta semana
                                   </button>
                                 ) : (
-                                  <span
-                                    style={{
-                                      backgroundColor: 'rgba(245, 158, 11, 0.12)',
-                                      color: '#f59e0b',
-                                      border: '1px solid rgba(245, 158, 11, 0.3)',
-                                      padding: '4px 8px',
-                                      fontSize: 10,
-                                      fontWeight: 700,
-                                      textTransform: 'uppercase',
-                                    }}
-                                  >
-                                    En Venta
+                                  <span style={{ fontSize: 11, color: '#f59e0b', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                                    Publicado en Marketplace
                                   </span>
                                 )}
                               </div>
@@ -568,18 +673,17 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
               )}
             </div>
           ) : (
-            /* ── TAB 2: Formulario de Contratación (Idéntico a Mobile) ── */
+            /* ── TAB 2: Formulario de Contratación (Estilo Swiss Brutalist) ── */
             <div
               style={{
-                backgroundColor: '#0b0e14',
-                border: '1px solid rgba(252, 28, 70, 0.25)',
+                backgroundColor: '#0a0a0a',
+                border: '1px solid rgba(76, 76, 76, 0.5)',
                 padding: '30px 32px',
-                boxShadow: '0 8px 30px rgba(0, 0, 0, 0.5)',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
                 <Icons.Repeat size={18} color="var(--color-crimson-signal)" />
-                <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-frost)', margin: 0, textTransform: 'uppercase' }}>
+                <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-frost)', margin: 0, textTransform: 'uppercase', letterSpacing: '-0.3px' }}>
                   Configurá tu Turno Semanal
                 </h2>
               </div>
@@ -606,9 +710,15 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
                           fontWeight: 700,
                           cursor: 'pointer',
                           textTransform: 'uppercase',
+                          letterSpacing: '0.5px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 8,
                         }}
                       >
-                        {s === 'PADEL' ? '🎾 Pádel' : '⚽ Fútbol'}
+                        {s === 'PADEL' ? <Icons.Padel size={15} color="#fff" /> : <Icons.Soccer size={15} color="#fff" />}
+                        <span>{s === 'PADEL' ? 'Pádel' : 'Fútbol'}</span>
                       </button>
                     ))}
                   </div>
@@ -623,7 +733,7 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
                     value={selectedClubId}
                     onChange={(e) => {
                       setSelectedClubId(e.target.value);
-                      const club = availableClubs.find(c => c.id === e.target.value);
+                      const club = availableClubs.find((c) => c.id === e.target.value);
                       if (club) {
                         setSelectedCourtName(`Cancha 1 — ${selectedSport === 'PADEL' ? 'Pádel Panorámica Cristal' : 'Fútbol Césped Sintético'}`);
                       }
@@ -632,22 +742,22 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
                       width: '100%',
                       backgroundColor: 'rgba(255, 255, 255, 0.04)',
                       border: '1px solid rgba(76, 76, 76, 0.4)',
-                      color: '#ffffff',
-                      padding: '10px 12px',
+                      color: 'var(--color-frost)',
+                      padding: '11px 14px',
                       fontSize: 13,
                       fontFamily: 'Space Grotesk, sans-serif',
                       outline: 'none',
                     }}
                   >
                     {availableClubs.map((club) => (
-                      <option key={club.id} value={club.id} style={{ backgroundColor: '#0b0e14', color: '#ffffff' }}>
+                      <option key={club.id} value={club.id} style={{ backgroundColor: '#0a0a0a', color: '#ffffff' }}>
                         {club.name} ({club.city || 'Mar del Plata'})
                       </option>
                     ))}
                   </select>
                 </div>
 
-                {/* Día de la semana (Chips idénticos a Mobile) */}
+                {/* Día de la semana */}
                 <div>
                   <label style={{ display: 'block', fontSize: 11, color: 'var(--color-ash)', textTransform: 'uppercase', fontWeight: 700, marginBottom: 8 }}>
                     Día de la semana
@@ -659,13 +769,14 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
                         key={idx}
                         onClick={() => setSelectedDay(idx)}
                         style={{
-                          backgroundColor: selectedDay === idx ? 'rgba(252, 28, 70, 0.15)' : 'rgba(255, 255, 255, 0.04)',
+                          backgroundColor: selectedDay === idx ? 'rgba(252, 28, 70, 0.18)' : 'rgba(255, 255, 255, 0.04)',
                           color: selectedDay === idx ? 'var(--color-crimson-signal)' : 'var(--color-frost)',
                           border: `1px solid ${selectedDay === idx ? 'var(--color-crimson-signal)' : 'rgba(76, 76, 76, 0.4)'}`,
                           padding: '8px 10px',
                           fontSize: 12,
                           fontWeight: 700,
                           cursor: 'pointer',
+                          textTransform: 'uppercase',
                         }}
                       >
                         {dayName}
@@ -687,7 +798,7 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
                         onClick={() => setSelectedTime(t)}
                         style={{
                           flex: 1,
-                          backgroundColor: selectedTime === t ? 'rgba(252, 28, 70, 0.15)' : 'rgba(255, 255, 255, 0.04)',
+                          backgroundColor: selectedTime === t ? 'rgba(252, 28, 70, 0.18)' : 'rgba(255, 255, 255, 0.04)',
                           color: selectedTime === t ? 'var(--color-crimson-signal)' : 'var(--color-frost)',
                           border: `1px solid ${selectedTime === t ? 'var(--color-crimson-signal)' : 'rgba(76, 76, 76, 0.4)'}`,
                           padding: '8px 10px',
@@ -705,13 +816,13 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
                 {/* Duración */}
                 <div>
                   <label style={{ display: 'block', fontSize: 11, color: 'var(--color-ash)', textTransform: 'uppercase', fontWeight: 700, marginBottom: 8 }}>
-                    Duración del Turno Fijo
+                    Duración del Abono
                   </label>
                   <div style={{ display: 'flex', gap: 10 }}>
                     {[
                       { m: 1, label: '1 Mes' },
-                      { m: 3, label: '3 Meses (Recomendado)' },
-                      { m: 6, label: '6 Meses' },
+                      { m: 3, label: '3 Meses (-12% OFF)' },
+                      { m: 6, label: '6 Meses (-15% OFF)' },
                     ].map((d) => (
                       <button
                         type="button"
@@ -719,7 +830,7 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
                         onClick={() => setDurationMonths(d.m)}
                         style={{
                           flex: 1,
-                          backgroundColor: durationMonths === d.m ? 'rgba(252, 28, 70, 0.15)' : 'rgba(255, 255, 255, 0.04)',
+                          backgroundColor: durationMonths === d.m ? 'rgba(252, 28, 70, 0.18)' : 'rgba(255, 255, 255, 0.04)',
                           color: durationMonths === d.m ? 'var(--color-crimson-signal)' : 'var(--color-ash)',
                           border: `1px solid ${durationMonths === d.m ? 'var(--color-crimson-signal)' : 'rgba(76, 76, 76, 0.4)'}`,
                           padding: '8px 10px',
@@ -735,26 +846,26 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
                   </div>
                 </div>
 
-                {/* Cotizador y Ahorro (Quote Box idéntico a Mobile) */}
+                {/* Cotizador y Ahorro */}
                 <div
                   style={{
                     backgroundColor: 'rgba(252, 28, 70, 0.06)',
                     border: '1px solid rgba(252, 28, 70, 0.3)',
                     padding: '16px 20px',
-                    borderRadius: 8,
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13 }}>
-                    <span style={{ color: 'var(--color-ash)' }}>Precio normal por partido:</span>
+                    <span style={{ color: 'var(--color-ash)' }}>Tarifa estándar por partido:</span>
                     <span style={{ textDecoration: 'line-through', color: 'var(--color-ash)' }}>${basePricePerMatch.toLocaleString('es-AR')}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, fontSize: 14, fontWeight: 700 }}>
-                    <span style={{ color: '#ffffff' }}>Precio con Turno Fijo (-{Math.round(discountRate * 100)}%):</span>
+                    <span style={{ color: 'var(--color-frost)' }}>Tarifa con Turno Fijo (-{Math.round(discountRate * 100)}%):</span>
                     <span style={{ color: 'var(--color-crimson-signal)' }}>${discountedPrice.toLocaleString('es-AR')}</span>
                   </div>
                   <div style={{ height: 1, backgroundColor: 'rgba(252, 28, 70, 0.2)', marginBottom: 10 }} />
-                  <div style={{ color: '#ff6b8b', fontSize: 13, fontWeight: 700, textAlign: 'center' }}>
-                    🎉 ¡Ahorrás ${monthlySavings.toLocaleString('es-AR')} al mes en total!
+                  <div style={{ color: '#ff6b8b', fontSize: 13, fontWeight: 700, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                    <Icons.Tag size={13} color="var(--color-crimson-signal)" />
+                    <span>Ahorro mensual del grupo: ${monthlySavings.toLocaleString('es-AR')}</span>
                   </div>
                 </div>
 
@@ -774,7 +885,7 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
                         width: '100%',
                         backgroundColor: 'rgba(255, 255, 255, 0.04)',
                         border: '1px solid rgba(76, 76, 76, 0.4)',
-                        color: '#ffffff',
+                        color: 'var(--color-frost)',
                         padding: '10px 12px',
                         fontSize: 13,
                         fontFamily: 'Space Grotesk, sans-serif',
@@ -796,7 +907,7 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
                         width: '100%',
                         backgroundColor: 'rgba(255, 255, 255, 0.04)',
                         border: '1px solid rgba(76, 76, 76, 0.4)',
-                        color: '#ffffff',
+                        color: 'var(--color-frost)',
                         padding: '10px 12px',
                         fontSize: 13,
                         fontFamily: 'Space Grotesk, sans-serif',
@@ -829,9 +940,10 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
                     opacity: submitting ? 0.7 : 1,
                   }}
                 >
-                  {submitting ? 'Asegurando Turno...' : (
-                    user ? 'Asegurar Turno Fijo' : 'Iniciar Sesión y Asegurar Turno'
-                  )}
+                  <Icons.Check size={16} color="#fff" />
+                  <span>
+                    {submitting ? 'Asegurando Turno...' : user ? 'Asegurar Turno Fijo' : 'Iniciar Sesión y Asegurar Turno'}
+                  </span>
                 </button>
               </form>
             </div>
@@ -896,7 +1008,7 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
           style={{
             position: 'fixed',
             inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            backgroundColor: 'rgba(0, 0, 0, 0.88)',
             backdropFilter: 'blur(8px)',
             zIndex: 9999,
             display: 'flex',
@@ -907,7 +1019,7 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
         >
           <div
             style={{
-              backgroundColor: '#0b0e14',
+              backgroundColor: '#0a0a0a',
               border: '1px solid rgba(252, 28, 70, 0.4)',
               maxWidth: 480,
               width: '100%',
@@ -915,7 +1027,9 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
               boxShadow: '0 20px 60px rgba(0, 0, 0, 0.9)',
             }}
           >
-            <div style={{ fontSize: 24, marginBottom: 12 }}>🏷️</div>
+            <div style={{ marginBottom: 12 }}>
+              <Icons.Tag size={24} color="var(--color-crimson-signal)" />
+            </div>
             <h3 style={{ fontSize: 18, fontWeight: 800, color: '#ffffff', textTransform: 'uppercase', marginBottom: 8 }}>
               ¿Liberar esta fecha al Marketplace?
             </h3>
@@ -927,13 +1041,16 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
                 backgroundColor: 'rgba(16, 185, 129, 0.08)',
                 border: '1px solid rgba(16, 185, 129, 0.25)',
                 padding: '12px 14px',
-                borderRadius: 6,
                 fontSize: 12,
                 color: '#10b981',
                 marginBottom: 24,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
               }}
             >
-              💡 Si otro grupo reserva tu cancha, no se te cobrará penalización y recibirás el reintegro directo en tu Mercado Pago.
+              <Icons.Zap size={14} color="#10b981" />
+              <span>Si otro grupo reserva tu cancha, no se te cobrará penalización y recibirás el reintegro directo en tu Mercado Pago.</span>
             </div>
 
             <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
@@ -948,6 +1065,7 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
                   padding: '10px 16px',
                   fontSize: 12,
                   fontWeight: 700,
+                  textTransform: 'uppercase',
                   cursor: 'pointer',
                 }}
               >
@@ -969,7 +1087,7 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
                   boxShadow: '0 0 16px rgba(252, 28, 70, 0.4)',
                 }}
               >
-                {liberatingLoading ? 'Liberando...' : 'Sí, Liberar Fecha'}
+                {liberatingLoading ? 'Liberando...' : 'Confirmar y Liberar Fecha'}
               </button>
             </div>
           </div>
