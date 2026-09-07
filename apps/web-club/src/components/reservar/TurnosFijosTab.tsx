@@ -1,7 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import {
+  getClubsFirestore,
+  saveUserFixedSlotFirestore,
+  getUserFixedSlotsFirestore,
+  liberateOccurrenceFirestore,
+  FixedSlotSubscriptionFirestore,
+  RecurringOccurrenceFirestore
+} from '../../services/firebase';
 
 interface TurnosFijosTabProps {
   onNavigateHome: () => void;
+  clubs?: any[];
 }
 
 const Icons = {
@@ -32,11 +42,6 @@ const Icons = {
       <line x1="3" y1="10" x2="21" y2="10" />
     </svg>
   ),
-  WhatsApp: ({ size = 14, color = '#25D366' }: { size?: number; color?: string }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
-      <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2zm0 18.13c-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.16 8.16 0 0 1-1.25-4.37c0-4.54 3.7-8.24 8.24-8.24 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.83c0 4.54-3.7 8.22-8.23 8.22zm4.52-6.17c-.25-.12-1.47-.72-1.7-.81-.23-.08-.39-.12-.56.12-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.12-1.05-.39-2-1.23-.74-.66-1.24-1.47-1.39-1.72-.14-.25-.02-.38.11-.51.11-.11.25-.29.37-.43.12-.15.17-.25.25-.42.08-.17.04-.31-.02-.43s-.56-1.36-.77-1.86c-.2-.49-.41-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.22.25-.86.84-.86 2.05s.88 2.38 1 2.55c.12.17 1.73 2.65 4.2 3.71.59.25 1.05.4 1.41.51.59.19 1.13.16 1.56.1.47-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.14-1.18-.06-.11-.23-.17-.47-.3z" />
-    </svg>
-  ),
   Check: ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
       <polyline points="20 6 9 17 4 12" />
@@ -44,257 +49,796 @@ const Icons = {
   ),
 };
 
-const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-const TIMES = ['18:00', '19:30', '21:00', '22:30'];
+const DAYS_OF_WEEK = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+const DEFAULT_TIMES = ['18:00', '19:30', '21:00', '22:30'];
 
-export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome }) => {
-  const [selectedSport, setSelectedSport] = useState<'PADEL' | 'FUTBOL'>('PADEL');
-  const [selectedDay, setSelectedDay] = useState('Jueves');
-  const [selectedTime, setSelectedTime] = useState('21:00');
-  const [duration, setDuration] = useState('3 Meses');
-  const [applicantName, setApplicantName] = useState('');
-  const [applicantPhone, setApplicantPhone] = useState('');
-  const [formSent, setFormSent] = useState(false);
+export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, clubs: propClubs }) => {
+  const { user, openAuthModal } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Navigation tabs matching mobile FixedSlotScreen: 'MY_SLOTS' | 'NEW_SLOT'
+  const [activeTab, setActiveTab] = useState<'MY_SLOTS' | 'NEW_SLOT'>('MY_SLOTS');
+  const [loading, setLoading] = useState<boolean>(true);
+  const [submitting, setSubmitting] = useState<boolean>(false);
+
+  // Subscriptions & Occurrences
+  const [subscriptions, setSubscriptions] = useState<FixedSlotSubscriptionFirestore[]>([]);
+  const [occurrences, setOccurrences] = useState<RecurringOccurrenceFirestore[]>([]);
+
+  // Club & Court data for new subscription form
+  const [availableClubs, setAvailableClubs] = useState<any[]>(propClubs || []);
+  const [selectedClubId, setSelectedClubId] = useState<string>('club-laverde-jara');
+  const [selectedCourtName, setSelectedCourtName] = useState<string>('Cancha 1 — Pádel Panorámica Cristal');
+  const [selectedSport, setSelectedSport] = useState<'PADEL' | 'FUTBOL_5'>('PADEL');
+
+  // New Subscription Form State
+  const [selectedDay, setSelectedDay] = useState<number>(4); // Jueves
+  const [selectedTime, setSelectedTime] = useState<string>('21:00');
+  const [durationMonths, setDurationMonths] = useState<number>(3);
+  const [applicantName, setApplicantName] = useState<string>('');
+  const [applicantPhone, setApplicantPhone] = useState<string>('');
+
+  // Liberation Modal State
+  const [liberateModalOcc, setLiberateModalOcc] = useState<RecurringOccurrenceFirestore | null>(null);
+  const [liberatingLoading, setLiberatingLoading] = useState<boolean>(false);
+
+  // Success toast
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Load clubs & subscriptions on mount and when user changes
+  useEffect(() => {
+    async function loadData() {
+      setLoading(true);
+      try {
+        // 1. Load clubs if not passed as prop
+        if (!propClubs || propClubs.length === 0) {
+          const fetchedClubs = await getClubsFirestore();
+          if (fetchedClubs && fetchedClubs.length > 0) {
+            setAvailableClubs(fetchedClubs);
+            setSelectedClubId(fetchedClubs[0].id);
+          }
+        } else {
+          setAvailableClubs(propClubs);
+          setSelectedClubId(propClubs[0].id);
+        }
+
+        // 2. Load user subscriptions if logged in
+        if (user) {
+          const { subscriptions: subs, occurrences: occs } = await getUserFixedSlotsFirestore(user.uid);
+          setSubscriptions(subs);
+          setOccurrences(occs);
+          if (user.displayName) setApplicantName(user.displayName);
+          if (user.phoneNumber) setApplicantPhone(user.phoneNumber);
+        } else {
+          setSubscriptions([]);
+          setOccurrences([]);
+        }
+      } catch (e) {
+        console.error('Error loading fixed slot data:', e);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadData();
+  }, [user, propClubs]);
+
+  // Selected Club details
+  const currentClub = availableClubs.find(c => c.id === selectedClubId) || availableClubs[0] || {
+    id: 'club-laverde-jara',
+    name: 'Laverde Jara - Canchas de Césped Sintético',
+    minPrice: 32000
+  };
+
+  // Pricing calculation matching mobile app
+  const basePricePerMatch = currentClub.minPrice || 32000;
+  const discountRate = durationMonths === 1 ? 0.05 : durationMonths === 3 ? 0.12 : 0.15;
+  const discountedPrice = Math.round(basePricePerMatch * (1 - discountRate));
+  const matchesPerMonth = 4;
+  const monthlySavings = (basePricePerMatch - discountedPrice) * matchesPerMonth;
+
+  // Handle Liberation of an occurrence
+  const handleConfirmLiberate = async () => {
+    if (!liberateModalOcc || !user) return;
+    setLiberatingLoading(true);
+    try {
+      const ok = await liberateOccurrenceFirestore(user.uid, liberateModalOcc.subscriptionId, liberateModalOcc.id);
+      if (ok) {
+        setOccurrences(prev => prev.map(o => o.id === liberateModalOcc.id ? { ...o, status: 'RELEASED_TO_MARKETPLACE' } : o));
+        setSubscriptions(prev => prev.map(s => {
+          if (s.id === liberateModalOcc.subscriptionId) {
+            return {
+              ...s,
+              occurrences: s.occurrences.map(o => o.id === liberateModalOcc.id ? { ...o, status: 'RELEASED_TO_MARKETPLACE' } : o)
+            };
+          }
+          return s;
+        }));
+        setSuccessMessage('¡Fecha liberada al Marketplace! Si alguien la reserva, recibirás el reintegro directo.');
+      }
+    } catch (err) {
+      console.error('Error liberating occurrence:', err);
+    } finally {
+      setLiberatingLoading(false);
+      setLiberateModalOcc(null);
+    }
+  };
+
+  // Handle Contract / Subscribe Fixed Slot
+  const handleCreateFixedSlot = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!applicantName.trim() || !applicantPhone.trim()) {
-      alert('Por favor completá tu nombre y WhatsApp de contacto.');
+
+    // Require Auth
+    if (!user) {
+      openAuthModal();
       return;
     }
 
-    const message = encodeURIComponent(
-      `Hola Hay Equipo! Quiero contratar un Turno Fijo de ${selectedSport === 'PADEL' ? 'Pádel' : 'Fútbol'}.\n` +
-      `Día: ${selectedDay}\nHorario: ${selectedTime} hs\nDuración: ${duration}\nNombre: ${applicantName}\nWhatsApp: ${applicantPhone}`
-    );
-    window.open(`https://wa.me/5492235550199?text=${message}`, '_blank');
-    setFormSent(true);
+    if (!applicantName.trim() || !applicantPhone.trim()) {
+      alert('Por favor completá tu nombre y teléfono de WhatsApp.');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const subId = `sub_${Date.now()}`;
+      const startDate = new Date().toISOString().split('T')[0];
+
+      // End time (90 min padel / 60 min futbol)
+      const durationMins = selectedSport === 'PADEL' ? 90 : 60;
+      const [h, m] = selectedTime.split(':').map(Number);
+      const totalMinutes = h * 60 + m + durationMins;
+      const endH = Math.floor(totalMinutes / 60) % 24;
+      const endM = totalMinutes % 60;
+      const endTime = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
+
+      // Generate 4 weekly occurrences per month
+      const totalWeeks = durationMonths * 4;
+      const generatedOccurrences: RecurringOccurrenceFirestore[] = [];
+
+      for (let i = 0; i < totalWeeks; i++) {
+        const occDate = new Date();
+        occDate.setDate(occDate.getDate() + (i * 7) + ((selectedDay - occDate.getDay() + 7) % 7));
+        const occDateStr = occDate.toISOString().split('T')[0];
+
+        generatedOccurrences.push({
+          id: `occ_${subId}_${i + 1}`,
+          subscriptionId: subId,
+          date: occDateStr,
+          dayOfWeek: selectedDay,
+          startTime: selectedTime,
+          endTime,
+          courtName: selectedCourtName,
+          clubName: currentClub.name,
+          status: 'SCHEDULED',
+          isPaid: i === 0,
+          price: discountedPrice
+        });
+      }
+
+      const newSub: Omit<FixedSlotSubscriptionFirestore, 'occurrences'> = {
+        id: subId,
+        userId: user.uid,
+        userName: applicantName,
+        userPhone: applicantPhone,
+        clubId: currentClub.id,
+        clubName: currentClub.name,
+        courtId: `court_${selectedClubId}_1`,
+        courtName: selectedCourtName,
+        sportType: selectedSport,
+        dayOfWeek: selectedDay,
+        startTime: selectedTime,
+        endTime,
+        startDate,
+        durationMonths,
+        pricePerOccurrence: discountedPrice,
+        discountMonthlyTotal: monthlySavings,
+        status: 'ACTIVE',
+        createdAt: new Date().toISOString()
+      };
+
+      const saved = await saveUserFixedSlotFirestore(user.uid, newSub, generatedOccurrences);
+
+      if (saved) {
+        setSubscriptions(prev => [
+          { ...newSub, occurrences: generatedOccurrences },
+          ...prev
+        ]);
+        setOccurrences(prev => [...generatedOccurrences, ...prev]);
+        setActiveTab('MY_SLOTS');
+        setSuccessMessage(`¡Turno Fijo Asegurado con éxito! Ahorrás $${monthlySavings.toLocaleString('es-AR')} por mes.`);
+      }
+    } catch (err) {
+      console.error('Error creating fixed slot:', err);
+      alert('Hubo un error al guardar el turno fijo. Intentá nuevamente.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '120px 24px 80px' }}>
+    <div style={{ maxWidth: 1240, margin: '0 auto', padding: '120px 24px 80px' }}>
       {/* ── Encabezado ── */}
-      <div style={{ marginBottom: 36 }}>
+      <div style={{ marginBottom: 32 }}>
         <div style={{ fontSize: 11, color: 'var(--color-crimson-signal)', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 700, marginBottom: 8 }}>
           04 / SISTEMA DE TURNOS PERMANENTES
         </div>
-        <h1 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 700, color: 'var(--color-frost)', textTransform: 'uppercase', letterSpacing: '-1px', margin: 0 }}>
+        <h1 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 800, color: 'var(--color-frost)', textTransform: 'uppercase', letterSpacing: '-1px', margin: 0 }}>
           Turnos Fijos Semanales
         </h1>
-        <p style={{ color: 'var(--color-ash)', fontSize: 14, marginTop: 6, marginBottom: 0, maxWidth: 650 }}>
-          Asegurá tu cancha el mismo día y a la misma hora todas las semanas. Sin pelear por turnos, con precio congelado y garantía de liberación si no podés asistir.
+        <p style={{ color: 'var(--color-ash)', fontSize: 14, marginTop: 6, marginBottom: 0, maxWidth: 680 }}>
+          Tu cancha fija asegurada todos los meses con tarifa congelada, descuento exclusivo y la opción de liberar fechas sueltas al marketplace si una semana no juegan.
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 1.2fr) minmax(300px, 1fr)', gap: 32, alignItems: 'start' }}>
-        {/* ── Formulario de Cotización / Solicitud ── */}
+      {/* ── Toast de Éxito ── */}
+      {successMessage && (
         <div
           style={{
-            backgroundColor: '#0a0a0a',
-            border: '1px solid rgba(76, 76, 76, 0.4)',
-            padding: '30px 32px',
+            backgroundColor: 'rgba(16, 185, 129, 0.12)',
+            border: '1px solid rgba(16, 185, 129, 0.35)',
+            color: '#10b981',
+            padding: '12px 18px',
+            marginBottom: 24,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            fontSize: 13,
+            fontWeight: 600,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-            <Icons.Repeat size={18} color="var(--color-crimson-signal)" />
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-frost)', margin: 0, textTransform: 'uppercase' }}>
-              Configurá tu Turno Fijo
-            </h2>
-          </div>
+          <span>✓ {successMessage}</span>
+          <button
+            onClick={() => setSuccessMessage(null)}
+            style={{ background: 'none', border: 'none', color: '#10b981', cursor: 'pointer', fontSize: 16 }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            {/* Deporte */}
+      {/* ── Navegación de Pestañas (Idéntico a Mobile: Mis Turnos vs Contratar) ── */}
+      <div
+        style={{
+          display: 'flex',
+          backgroundColor: '#0b0e14',
+          border: '1px solid rgba(252, 28, 70, 0.25)',
+          padding: 4,
+          borderRadius: 12,
+          maxWidth: 480,
+          marginBottom: 32,
+        }}
+      >
+        <button
+          onClick={() => setActiveTab('MY_SLOTS')}
+          style={{
+            flex: 1,
+            padding: '10px 16px',
+            backgroundColor: activeTab === 'MY_SLOTS' ? 'var(--color-crimson-signal)' : 'transparent',
+            color: activeTab === 'MY_SLOTS' ? '#ffffff' : 'var(--color-ash)',
+            border: 'none',
+            borderRadius: 8,
+            fontSize: 13,
+            fontWeight: 700,
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+          }}
+        >
+          Mis Turnos Activos ({subscriptions.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('NEW_SLOT')}
+          style={{
+            flex: 1,
+            padding: '10px 16px',
+            backgroundColor: activeTab === 'NEW_SLOT' ? 'var(--color-crimson-signal)' : 'transparent',
+            color: activeTab === 'NEW_SLOT' ? '#ffffff' : 'var(--color-ash)',
+            border: 'none',
+            borderRadius: 8,
+            fontSize: 13,
+            fontWeight: 700,
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+          }}
+        >
+          + Contratar Turno Fijo
+        </button>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 1.4fr) minmax(280px, 1fr)', gap: 32, alignItems: 'start' }}>
+        {/* ── Columna Izquierda: Mis Turnos Activos O Formulario ── */}
+        <div>
+          {activeTab === 'MY_SLOTS' ? (
             <div>
-              <label style={{ display: 'block', fontSize: 11, color: 'var(--color-ash)', textTransform: 'uppercase', fontWeight: 700, marginBottom: 8 }}>
-                Deporte
-              </label>
-              <div style={{ display: 'flex', gap: 10 }}>
-                {(['PADEL', 'FUTBOL'] as const).map((s) => (
+              {loading ? (
+                <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--color-ash)', fontSize: 14 }}>
+                  Cargando tus turnos fijos...
+                </div>
+              ) : !user ? (
+                /* Estado no autenticado */
+                <div
+                  style={{
+                    backgroundColor: '#0b0e14',
+                    border: '1px solid rgba(76, 76, 76, 0.4)',
+                    padding: '44px 32px',
+                    textAlign: 'center',
+                  }}
+                >
+                  <div style={{ fontSize: 36, marginBottom: 12 }}>🔒</div>
+                  <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-frost)', textTransform: 'uppercase', marginBottom: 8 }}>
+                    Iniciá sesión para ver tus turnos
+                  </h3>
+                  <p style={{ color: 'var(--color-ash)', fontSize: 13, maxWidth: 380, margin: '0 auto 20px', lineHeight: 1.5 }}>
+                    Accedé a tus abonos mensuales activos, consultá tus próximas fechas o liberá tu cancha si esta semana no juegan.
+                  </p>
                   <button
-                    type="button"
-                    key={s}
-                    onClick={() => setSelectedSport(s)}
+                    onClick={() => openAuthModal()}
                     style={{
-                      flex: 1,
-                      backgroundColor: selectedSport === s ? 'var(--color-crimson-signal)' : 'rgba(255, 255, 255, 0.04)',
+                      backgroundColor: 'var(--color-crimson-signal)',
                       color: '#ffffff',
-                      border: `1px solid ${selectedSport === s ? 'var(--color-crimson-signal)' : 'rgba(76, 76, 76, 0.4)'}`,
-                      padding: '10px 14px',
-                      fontSize: 12,
+                      border: 'none',
+                      padding: '12px 24px',
+                      fontSize: 13,
                       fontWeight: 700,
-                      cursor: 'pointer',
                       textTransform: 'uppercase',
+                      cursor: 'pointer',
+                      boxShadow: '0 0 16px rgba(252, 28, 70, 0.4)',
                     }}
                   >
-                    {s === 'PADEL' ? 'Pádel' : 'Fútbol'}
+                    Iniciar Sesión / Registrarme
                   </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Día de la semana */}
-            <div>
-              <label style={{ display: 'block', fontSize: 11, color: 'var(--color-ash)', textTransform: 'uppercase', fontWeight: 700, marginBottom: 8 }}>
-                Día Preferido
-              </label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: 8 }}>
-                {DAYS.map((d) => (
+                </div>
+              ) : subscriptions.length === 0 ? (
+                /* Estado vacío (Empty state idéntico a mobile) */
+                <div
+                  style={{
+                    backgroundColor: '#0b0e14',
+                    border: '1px solid rgba(252, 28, 70, 0.25)',
+                    padding: '50px 32px',
+                    textAlign: 'center',
+                  }}
+                >
+                  <div style={{ fontSize: 40, marginBottom: 12 }}>📅</div>
+                  <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-frost)', textTransform: 'uppercase', marginBottom: 6 }}>
+                    Aún no tenés turnos fijos
+                  </h3>
+                  <p style={{ color: 'var(--color-ash)', fontSize: 13, maxWidth: 420, margin: '0 auto 24px', lineHeight: 1.5 }}>
+                    Contratá un horario semanal para jugar siempre con tu grupo con precio congelado y 12% de descuento.
+                  </p>
                   <button
-                    type="button"
-                    key={d}
-                    onClick={() => setSelectedDay(d)}
+                    onClick={() => setActiveTab('NEW_SLOT')}
                     style={{
-                      backgroundColor: selectedDay === d ? 'rgba(252, 28, 70, 0.15)' : 'rgba(255, 255, 255, 0.04)',
-                      color: selectedDay === d ? 'var(--color-crimson-signal)' : 'var(--color-frost)',
-                      border: `1px solid ${selectedDay === d ? 'var(--color-crimson-signal)' : 'rgba(76, 76, 76, 0.4)'}`,
-                      padding: '8px 10px',
-                      fontSize: 12,
+                      backgroundColor: 'var(--color-crimson-signal)',
+                      color: '#ffffff',
+                      border: 'none',
+                      padding: '12px 24px',
+                      fontSize: 13,
                       fontWeight: 700,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {d}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Horario */}
-            <div>
-              <label style={{ display: 'block', fontSize: 11, color: 'var(--color-ash)', textTransform: 'uppercase', fontWeight: 700, marginBottom: 8 }}>
-                Horario Central
-              </label>
-              <div style={{ display: 'flex', gap: 10 }}>
-                {TIMES.map((t) => (
-                  <button
-                    type="button"
-                    key={t}
-                    onClick={() => setSelectedTime(t)}
-                    style={{
-                      flex: 1,
-                      backgroundColor: selectedTime === t ? 'rgba(252, 28, 70, 0.15)' : 'rgba(255, 255, 255, 0.04)',
-                      color: selectedTime === t ? 'var(--color-crimson-signal)' : 'var(--color-frost)',
-                      border: `1px solid ${selectedTime === t ? 'var(--color-crimson-signal)' : 'rgba(76, 76, 76, 0.4)'}`,
-                      padding: '8px 10px',
-                      fontSize: 12,
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {t} hs
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Duración */}
-            <div>
-              <label style={{ display: 'block', fontSize: 11, color: 'var(--color-ash)', textTransform: 'uppercase', fontWeight: 700, marginBottom: 8 }}>
-                Duración del Contrato
-              </label>
-              <div style={{ display: 'flex', gap: 10 }}>
-                {['3 Meses', '6 Meses', 'Temporada Anual'].map((dur) => (
-                  <button
-                    type="button"
-                    key={dur}
-                    onClick={() => setDuration(dur)}
-                    style={{
-                      flex: 1,
-                      backgroundColor: duration === dur ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.04)',
-                      color: duration === dur ? '#ffffff' : 'var(--color-ash)',
-                      border: `1px solid ${duration === dur ? '#ffffff' : 'rgba(76, 76, 76, 0.4)'}`,
-                      padding: '8px 10px',
-                      fontSize: 11,
-                      fontWeight: 700,
-                      cursor: 'pointer',
                       textTransform: 'uppercase',
+                      cursor: 'pointer',
+                      boxShadow: '0 0 16px rgba(252, 28, 70, 0.4)',
                     }}
                   >
-                    {dur}
+                    Buscar y Contratar Turno Fijo
                   </button>
-                ))}
-              </div>
+                </div>
+              ) : (
+                /* Lista de Subscriptions Activas */
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                  {subscriptions.map((sub) => {
+                    const subOccurrences = occurrences.filter(o => o.subscriptionId === sub.id);
+                    return (
+                      <div
+                        key={sub.id}
+                        style={{
+                          backgroundColor: '#0b0e14',
+                          border: '1px solid rgba(252, 28, 70, 0.25)',
+                          padding: '24px 28px',
+                          boxShadow: '0 8px 30px rgba(0, 0, 0, 0.5)',
+                        }}
+                      >
+                        {/* Sub Header */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+                          <div>
+                            <div style={{ fontSize: 18, fontWeight: 700, color: '#ffffff', letterSpacing: '-0.3px' }}>
+                              {sub.clubName}
+                            </div>
+                            <div style={{ fontSize: 13, color: 'var(--color-ash)', marginTop: 2 }}>
+                              {sub.courtName} · {sub.sportType === 'PADEL' ? 'Pádel' : 'Fútbol'}
+                            </div>
+                          </div>
+                          <span
+                            style={{
+                              backgroundColor: 'rgba(252, 28, 70, 0.15)',
+                              color: 'var(--color-crimson-signal)',
+                              border: '1px solid rgba(252, 28, 70, 0.35)',
+                              padding: '4px 8px',
+                              fontSize: 10,
+                              fontWeight: 800,
+                              letterSpacing: '0.6px',
+                              textTransform: 'uppercase',
+                            }}
+                          >
+                            ACTIVO
+                          </span>
+                        </div>
+
+                        {/* Sub Schedule Row */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
+                          <div style={{ color: 'var(--color-crimson-signal)', fontSize: 13, fontWeight: 700 }}>
+                            🗓️ Todos los {DAYS_OF_WEEK[sub.dayOfWeek]} · ⏰ {sub.startTime} hs ({sub.durationMonths} meses)
+                          </div>
+                          <div style={{ color: '#ffffff', fontSize: 15, fontWeight: 800 }}>
+                            ${sub.pricePerOccurrence?.toLocaleString('es-AR')} <span style={{ fontSize: 11, color: 'var(--color-ash)', fontWeight: 400 }}>/ partido</span>
+                          </div>
+                        </div>
+
+                        {/* Savings Banner */}
+                        <div
+                          style={{
+                            backgroundColor: 'rgba(252, 28, 70, 0.08)',
+                            border: '1px solid rgba(252, 28, 70, 0.2)',
+                            padding: '10px 14px',
+                            borderRadius: 6,
+                            marginBottom: 20,
+                            fontSize: 12,
+                            color: '#ff6b8b',
+                            fontWeight: 600,
+                            textAlign: 'center',
+                          }}
+                        >
+                          🎉 Ahorrás ${sub.discountMonthlyTotal?.toLocaleString('es-AR')} al mes con este abono fijo
+                        </div>
+
+                        {/* Upcoming Occurrences */}
+                        <div style={{ fontSize: 12, color: 'var(--color-frost)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 12 }}>
+                          Próximas Fechas:
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          {subOccurrences.slice(0, 4).map((occ) => {
+                            const isLiberated = occ.status === 'RELEASED_TO_MARKETPLACE';
+                            return (
+                              <div
+                                key={occ.id}
+                                style={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                  padding: '10px 14px',
+                                  backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                                  border: '1px solid rgba(255, 255, 255, 0.06)',
+                                  borderRadius: 4,
+                                }}
+                              >
+                                <div>
+                                  <div style={{ fontSize: 13, fontWeight: 600, color: '#ffffff' }}>
+                                    📅 {occ.date} · {occ.startTime} hs
+                                  </div>
+                                  <div style={{ fontSize: 11, color: isLiberated ? '#f59e0b' : '#10b981', marginTop: 2 }}>
+                                    {isLiberated ? '🏷️ En Venta en Marketplace (esperando comprador)' : '✅ Confirmado para tu grupo'}
+                                  </div>
+                                </div>
+
+                                {!isLiberated ? (
+                                  <button
+                                    onClick={() => setLiberateModalOcc(occ)}
+                                    style={{
+                                      backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                                      color: 'var(--color-ash)',
+                                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                                      padding: '6px 12px',
+                                      fontSize: 11,
+                                      fontWeight: 600,
+                                      cursor: 'pointer',
+                                      transition: 'all 0.2s ease',
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.color = '#ef4444';
+                                      e.currentTarget.style.borderColor = '#ef4444';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.color = 'var(--color-ash)';
+                                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                                    }}
+                                  >
+                                    No vamos esta semana
+                                  </button>
+                                ) : (
+                                  <span
+                                    style={{
+                                      backgroundColor: 'rgba(245, 158, 11, 0.12)',
+                                      color: '#f59e0b',
+                                      border: '1px solid rgba(245, 158, 11, 0.3)',
+                                      padding: '4px 8px',
+                                      fontSize: 10,
+                                      fontWeight: 700,
+                                      textTransform: 'uppercase',
+                                    }}
+                                  >
+                                    En Venta
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-
-            {/* Datos Personales */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div>
-                <label style={{ display: 'block', fontSize: 11, color: 'var(--color-ash)', textTransform: 'uppercase', fontWeight: 700, marginBottom: 6 }}>
-                  Tu Nombre
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ej: Emiliano"
-                  value={applicantName}
-                  onChange={(e) => setApplicantName(e.target.value)}
-                  style={{
-                    width: '100%',
-                    backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                    border: '1px solid rgba(76, 76, 76, 0.4)',
-                    color: '#ffffff',
-                    padding: '10px 12px',
-                    fontSize: 13,
-                    fontFamily: 'Space Grotesk, sans-serif',
-                  }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: 11, color: 'var(--color-ash)', textTransform: 'uppercase', fontWeight: 700, marginBottom: 6 }}>
-                  WhatsApp
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ej: 11 5555-0001"
-                  value={applicantPhone}
-                  onChange={(e) => setApplicantPhone(e.target.value)}
-                  style={{
-                    width: '100%',
-                    backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                    border: '1px solid rgba(76, 76, 76, 0.4)',
-                    color: '#ffffff',
-                    padding: '10px 12px',
-                    fontSize: 13,
-                    fontFamily: 'Space Grotesk, sans-serif',
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Botón Enviar */}
-            <button
-              type="submit"
+          ) : (
+            /* ── TAB 2: Formulario de Contratación (Idéntico a Mobile) ── */
+            <div
               style={{
-                backgroundColor: 'var(--color-crimson-signal)',
-                color: '#ffffff',
-                border: 'none',
-                padding: '14px 20px',
-                fontSize: 13,
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                letterSpacing: '0.6px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                marginTop: 8,
-                boxShadow: '0 0 20px rgba(252, 28, 70, 0.4)',
+                backgroundColor: '#0b0e14',
+                border: '1px solid rgba(252, 28, 70, 0.25)',
+                padding: '30px 32px',
+                boxShadow: '0 8px 30px rgba(0, 0, 0, 0.5)',
               }}
             >
-              <Icons.WhatsApp size={16} color="#ffffff" />
-              <span>Solicitar Turno Fijo Vía WhatsApp</span>
-            </button>
-
-            {formSent && (
-              <div style={{ fontSize: 12, color: '#10b981', textAlign: 'center', fontWeight: 600 }}>
-                ¡Solicitud enviada! Nuestro equipo coordinará la disponibilidad con el club seleccionado.
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+                <Icons.Repeat size={18} color="var(--color-crimson-signal)" />
+                <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-frost)', margin: 0, textTransform: 'uppercase' }}>
+                  Configurá tu Turno Semanal
+                </h2>
               </div>
-            )}
-          </form>
+
+              <form onSubmit={handleCreateFixedSlot} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                {/* Deporte */}
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, color: 'var(--color-ash)', textTransform: 'uppercase', fontWeight: 700, marginBottom: 8 }}>
+                    Deporte
+                  </label>
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    {(['PADEL', 'FUTBOL_5'] as const).map((s) => (
+                      <button
+                        type="button"
+                        key={s}
+                        onClick={() => setSelectedSport(s)}
+                        style={{
+                          flex: 1,
+                          backgroundColor: selectedSport === s ? 'var(--color-crimson-signal)' : 'rgba(255, 255, 255, 0.04)',
+                          color: '#ffffff',
+                          border: `1px solid ${selectedSport === s ? 'var(--color-crimson-signal)' : 'rgba(76, 76, 76, 0.4)'}`,
+                          padding: '10px 14px',
+                          fontSize: 12,
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        {s === 'PADEL' ? '🎾 Pádel' : '⚽ Fútbol'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Club y Cancha */}
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, color: 'var(--color-ash)', textTransform: 'uppercase', fontWeight: 700, marginBottom: 8 }}>
+                    Club / Complejo Seleccionado
+                  </label>
+                  <select
+                    value={selectedClubId}
+                    onChange={(e) => {
+                      setSelectedClubId(e.target.value);
+                      const club = availableClubs.find(c => c.id === e.target.value);
+                      if (club) {
+                        setSelectedCourtName(`Cancha 1 — ${selectedSport === 'PADEL' ? 'Pádel Panorámica Cristal' : 'Fútbol Césped Sintético'}`);
+                      }
+                    }}
+                    style={{
+                      width: '100%',
+                      backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                      border: '1px solid rgba(76, 76, 76, 0.4)',
+                      color: '#ffffff',
+                      padding: '10px 12px',
+                      fontSize: 13,
+                      fontFamily: 'Space Grotesk, sans-serif',
+                      outline: 'none',
+                    }}
+                  >
+                    {availableClubs.map((club) => (
+                      <option key={club.id} value={club.id} style={{ backgroundColor: '#0b0e14', color: '#ffffff' }}>
+                        {club.name} ({club.city || 'Mar del Plata'})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Día de la semana (Chips idénticos a Mobile) */}
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, color: 'var(--color-ash)', textTransform: 'uppercase', fontWeight: 700, marginBottom: 8 }}>
+                    Día de la semana
+                  </label>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: 8 }}>
+                    {DAYS_OF_WEEK.map((dayName, idx) => (
+                      <button
+                        type="button"
+                        key={idx}
+                        onClick={() => setSelectedDay(idx)}
+                        style={{
+                          backgroundColor: selectedDay === idx ? 'rgba(252, 28, 70, 0.15)' : 'rgba(255, 255, 255, 0.04)',
+                          color: selectedDay === idx ? 'var(--color-crimson-signal)' : 'var(--color-frost)',
+                          border: `1px solid ${selectedDay === idx ? 'var(--color-crimson-signal)' : 'rgba(76, 76, 76, 0.4)'}`,
+                          padding: '8px 10px',
+                          fontSize: 12,
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {dayName}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Horario */}
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, color: 'var(--color-ash)', textTransform: 'uppercase', fontWeight: 700, marginBottom: 8 }}>
+                    Horario Semanal
+                  </label>
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    {DEFAULT_TIMES.map((t) => (
+                      <button
+                        type="button"
+                        key={t}
+                        onClick={() => setSelectedTime(t)}
+                        style={{
+                          flex: 1,
+                          backgroundColor: selectedTime === t ? 'rgba(252, 28, 70, 0.15)' : 'rgba(255, 255, 255, 0.04)',
+                          color: selectedTime === t ? 'var(--color-crimson-signal)' : 'var(--color-frost)',
+                          border: `1px solid ${selectedTime === t ? 'var(--color-crimson-signal)' : 'rgba(76, 76, 76, 0.4)'}`,
+                          padding: '8px 10px',
+                          fontSize: 12,
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {t} hs
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Duración */}
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, color: 'var(--color-ash)', textTransform: 'uppercase', fontWeight: 700, marginBottom: 8 }}>
+                    Duración del Turno Fijo
+                  </label>
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    {[
+                      { m: 1, label: '1 Mes' },
+                      { m: 3, label: '3 Meses (Recomendado)' },
+                      { m: 6, label: '6 Meses' },
+                    ].map((d) => (
+                      <button
+                        type="button"
+                        key={d.m}
+                        onClick={() => setDurationMonths(d.m)}
+                        style={{
+                          flex: 1,
+                          backgroundColor: durationMonths === d.m ? 'rgba(252, 28, 70, 0.15)' : 'rgba(255, 255, 255, 0.04)',
+                          color: durationMonths === d.m ? 'var(--color-crimson-signal)' : 'var(--color-ash)',
+                          border: `1px solid ${durationMonths === d.m ? 'var(--color-crimson-signal)' : 'rgba(76, 76, 76, 0.4)'}`,
+                          padding: '8px 10px',
+                          fontSize: 11,
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        {d.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Cotizador y Ahorro (Quote Box idéntico a Mobile) */}
+                <div
+                  style={{
+                    backgroundColor: 'rgba(252, 28, 70, 0.06)',
+                    border: '1px solid rgba(252, 28, 70, 0.3)',
+                    padding: '16px 20px',
+                    borderRadius: 8,
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13 }}>
+                    <span style={{ color: 'var(--color-ash)' }}>Precio normal por partido:</span>
+                    <span style={{ textDecoration: 'line-through', color: 'var(--color-ash)' }}>${basePricePerMatch.toLocaleString('es-AR')}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, fontSize: 14, fontWeight: 700 }}>
+                    <span style={{ color: '#ffffff' }}>Precio con Turno Fijo (-{Math.round(discountRate * 100)}%):</span>
+                    <span style={{ color: 'var(--color-crimson-signal)' }}>${discountedPrice.toLocaleString('es-AR')}</span>
+                  </div>
+                  <div style={{ height: 1, backgroundColor: 'rgba(252, 28, 70, 0.2)', marginBottom: 10 }} />
+                  <div style={{ color: '#ff6b8b', fontSize: 13, fontWeight: 700, textAlign: 'center' }}>
+                    🎉 ¡Ahorrás ${monthlySavings.toLocaleString('es-AR')} al mes en total!
+                  </div>
+                </div>
+
+                {/* Datos del Titular */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, color: 'var(--color-ash)', textTransform: 'uppercase', fontWeight: 700, marginBottom: 6 }}>
+                      Nombre del Titular
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ej: Emiliano"
+                      value={applicantName}
+                      onChange={(e) => setApplicantName(e.target.value)}
+                      required
+                      style={{
+                        width: '100%',
+                        backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                        border: '1px solid rgba(76, 76, 76, 0.4)',
+                        color: '#ffffff',
+                        padding: '10px 12px',
+                        fontSize: 13,
+                        fontFamily: 'Space Grotesk, sans-serif',
+                        outline: 'none',
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, color: 'var(--color-ash)', textTransform: 'uppercase', fontWeight: 700, marginBottom: 6 }}>
+                      WhatsApp
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ej: +54 9 223 555-0199"
+                      value={applicantPhone}
+                      onChange={(e) => setApplicantPhone(e.target.value)}
+                      required
+                      style={{
+                        width: '100%',
+                        backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                        border: '1px solid rgba(76, 76, 76, 0.4)',
+                        color: '#ffffff',
+                        padding: '10px 12px',
+                        fontSize: 13,
+                        fontFamily: 'Space Grotesk, sans-serif',
+                        outline: 'none',
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Botón Contratar */}
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  style={{
+                    backgroundColor: 'var(--color-crimson-signal)',
+                    color: '#ffffff',
+                    border: 'none',
+                    padding: '14px 20px',
+                    fontSize: 13,
+                    fontWeight: 800,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.6px',
+                    cursor: submitting ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                    marginTop: 6,
+                    boxShadow: '0 0 20px rgba(252, 28, 70, 0.4)',
+                    opacity: submitting ? 0.7 : 1,
+                  }}
+                >
+                  {submitting ? 'Asegurando Turno...' : (
+                    user ? 'Asegurar Turno Fijo' : 'Iniciar Sesión y Asegurar Turno'
+                  )}
+                </button>
+              </form>
+            </div>
+          )}
         </div>
 
-        {/* ── Ventajas & Liberación al Marketplace ── */}
+        {/* ── Columna Derecha: Tarjetas Explicativas y Garantías ── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           {/* Card: Liberación al Marketplace */}
           <div
@@ -311,7 +855,7 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome }
               </h3>
             </div>
             <p style={{ fontSize: 13, color: 'var(--color-ash)', lineHeight: 1.6, margin: 0 }}>
-              ¿Te vas de viaje o una semana no juntan los 4 jugadores? <strong>No perdés tu dinero</strong>. Con 1 clic en la app o web liberás esa fecha específica al marketplace de Hay Equipo. Si otro grupo la reserva, recibís el <strong>100% de reintegro</strong> en tu cuenta.
+              ¿Te vas de viaje o una semana no juntan los 4 jugadores? <strong>No perdés tu dinero</strong>. Con 1 solo clic en la web o app liberás esa fecha específica al marketplace de Hay Equipo. Si otro grupo la reserva, recibís el <strong>100% de reintegro</strong> en tu cuenta.
             </p>
           </div>
 
@@ -345,6 +889,92 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome }
           </div>
         </div>
       </div>
+
+      {/* ── Modal de Confirmación para Liberar Ocurrencia ── */}
+      {liberateModalOcc && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(8px)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 20,
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: '#0b0e14',
+              border: '1px solid rgba(252, 28, 70, 0.4)',
+              maxWidth: 480,
+              width: '100%',
+              padding: 28,
+              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.9)',
+            }}
+          >
+            <div style={{ fontSize: 24, marginBottom: 12 }}>🏷️</div>
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: '#ffffff', textTransform: 'uppercase', marginBottom: 8 }}>
+              ¿Liberar esta fecha al Marketplace?
+            </h3>
+            <p style={{ fontSize: 13, color: 'var(--color-ash)', lineHeight: 1.6, marginBottom: 16 }}>
+              Vas a poner en venta el turno del <strong>{liberateModalOcc.date} a las {liberateModalOcc.startTime} hs</strong> en {liberateModalOcc.clubName}.
+            </p>
+            <div
+              style={{
+                backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                border: '1px solid rgba(16, 185, 129, 0.25)',
+                padding: '12px 14px',
+                borderRadius: 6,
+                fontSize: 12,
+                color: '#10b981',
+                marginBottom: 24,
+              }}
+            >
+              💡 Si otro grupo reserva tu cancha, no se te cobrará penalización y recibirás el reintegro directo en tu Mercado Pago.
+            </div>
+
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => setLiberateModalOcc(null)}
+                disabled={liberatingLoading}
+                style={{
+                  backgroundColor: 'transparent',
+                  color: 'var(--color-ash)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  padding: '10px 16px',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmLiberate}
+                disabled={liberatingLoading}
+                style={{
+                  backgroundColor: 'var(--color-crimson-signal)',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '10px 18px',
+                  fontSize: 12,
+                  fontWeight: 800,
+                  textTransform: 'uppercase',
+                  cursor: liberatingLoading ? 'not-allowed' : 'pointer',
+                  boxShadow: '0 0 16px rgba(252, 28, 70, 0.4)',
+                }}
+              >
+                {liberatingLoading ? 'Liberando...' : 'Sí, Liberar Fecha'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

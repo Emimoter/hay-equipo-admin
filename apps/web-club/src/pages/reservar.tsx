@@ -1295,7 +1295,10 @@ export default function ReservarPage() {
       )}
 
       {activeNavTab === 'FIJOS' && (
-        <TurnosFijosTab onNavigateHome={() => handleTabChange('INICIO')} />
+        <TurnosFijosTab
+          onNavigateHome={() => handleTabChange('INICIO')}
+          clubs={CLUBS_DATA}
+        />
       )}
 
       {activeNavTab === 'PERFIL' && (

@@ -443,3 +443,124 @@ export async function getUserProfileFirestore(uid: string): Promise<any | null> 
   return null;
 }
 
+/* ────────────────────────────────────────────────────────────
+   Fixed Slots (Turnos Fijos Semanales)
+   ──────────────────────────────────────────────────────────── */
+
+export interface FixedSlotSubscriptionFirestore {
+  id: string;
+  userId: string;
+  userName: string;
+  userPhone: string;
+  clubId: string;
+  clubName: string;
+  courtId: string;
+  courtName: string;
+  sportType: 'PADEL' | 'FUTBOL_5' | 'FUTBOL_7';
+  dayOfWeek: number; // 0 = Domingo, 1 = Lunes, ...
+  startTime: string;
+  endTime: string;
+  startDate: string;
+  durationMonths: number;
+  pricePerOccurrence: number;
+  discountMonthlyTotal: number;
+  status: 'ACTIVE' | 'PAUSED' | 'CANCELLED';
+  occurrences: RecurringOccurrenceFirestore[];
+  createdAt: string;
+}
+
+export interface RecurringOccurrenceFirestore {
+  id: string;
+  subscriptionId: string;
+  date: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  courtName: string;
+  clubName: string;
+  status: 'SCHEDULED' | 'RELEASED_TO_MARKETPLACE' | 'COMPLETED';
+  isPaid: boolean;
+  price: number;
+}
+
+export async function saveUserFixedSlotFirestore(
+  userId: string,
+  sub: Omit<FixedSlotSubscriptionFirestore, 'occurrences'>,
+  occurrences: RecurringOccurrenceFirestore[]
+): Promise<boolean> {
+  try {
+    const fullSub: FixedSlotSubscriptionFirestore = {
+      ...sub,
+      occurrences,
+      createdAt: new Date().toISOString()
+    };
+    const subRef = doc(dbFirestore, 'users', userId, 'fixed_slots', sub.id);
+    await setDoc(subRef, fullSub);
+
+    // Also persist in global collection for club panel
+    const globalRef = doc(dbFirestore, 'fixed_slots', sub.id);
+    await setDoc(globalRef, fullSub);
+
+    return true;
+  } catch (e) {
+    console.error('Error saving fixed slot to Firestore:', e);
+    return false;
+  }
+}
+
+export async function getUserFixedSlotsFirestore(userId: string): Promise<{
+  subscriptions: FixedSlotSubscriptionFirestore[];
+  occurrences: RecurringOccurrenceFirestore[];
+}> {
+  try {
+    const subsRef = collection(dbFirestore, 'users', userId, 'fixed_slots');
+    const snap = await getDocs(subsRef);
+    const subscriptions: FixedSlotSubscriptionFirestore[] = [];
+    const occurrences: RecurringOccurrenceFirestore[] = [];
+
+    snap.forEach((d) => {
+      const data = d.data() as FixedSlotSubscriptionFirestore;
+      subscriptions.push(data);
+      if (data.occurrences && Array.isArray(data.occurrences)) {
+        occurrences.push(...data.occurrences);
+      }
+    });
+
+    return { subscriptions, occurrences };
+  } catch (e) {
+    console.error('Error fetching fixed slots from Firestore:', e);
+    return { subscriptions: [], occurrences: [] };
+  }
+}
+
+export async function liberateOccurrenceFirestore(
+  userId: string,
+  subscriptionId: string,
+  occurrenceId: string
+): Promise<boolean> {
+  try {
+    const subRef = doc(dbFirestore, 'users', userId, 'fixed_slots', subscriptionId);
+    const snap = await getDoc(subRef);
+    if (!snap.exists()) return false;
+
+    const data = snap.data() as FixedSlotSubscriptionFirestore;
+    const updatedOccurrences = (data.occurrences || []).map(occ => {
+      if (occ.id === occurrenceId) {
+        return { ...occ, status: 'RELEASED_TO_MARKETPLACE' as const };
+      }
+      return occ;
+    });
+
+    await updateDoc(subRef, { occurrences: updatedOccurrences });
+
+    // Also update global
+    const globalRef = doc(dbFirestore, 'fixed_slots', subscriptionId);
+    await updateDoc(globalRef, { occurrences: updatedOccurrences }).catch(() => {});
+
+    return true;
+  } catch (e) {
+    console.error('Error liberating occurrence in Firestore:', e);
+    return false;
+  }
+}
+
