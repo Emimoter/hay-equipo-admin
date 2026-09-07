@@ -256,8 +256,12 @@ export const MisReservasTab: React.FC<MisReservasTabProps> = ({ onNavigateSearch
           }}
         >
           <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-frost)', marginBottom: 2 }}>
-              🔒 Sincronizá tus reservas con tu cuenta
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-frost)', marginBottom: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-crimson-signal)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+              <span>Sincronizá tus reservas con tu cuenta</span>
             </div>
             <div style={{ fontSize: 12, color: 'var(--color-ash)' }}>
               Iniciá sesión o registrate para acceder a tus turnos confirmados y pagos divididos desde cualquier dispositivo.

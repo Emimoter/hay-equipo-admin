@@ -992,8 +992,10 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
                 'Opción de Split automático: el cobro se divide entre los 4 titulares.',
                 'Acceso preferencial a torneos internos y eventos del club.',
               ].map((benefit, i) => (
-                <li key={i} style={{ display: 'flex', alignItems: 'baseline', gap: 10, fontSize: 13, color: 'var(--color-frost)' }}>
-                  <span style={{ color: '#10b981', fontWeight: 800 }}>✓</span>
+                <li key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: 'var(--color-frost)' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
                   <span>{benefit}</span>
                 </li>
               ))}

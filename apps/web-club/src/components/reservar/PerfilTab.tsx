@@ -404,8 +404,11 @@ export const PerfilTab: React.FC<PerfilTabProps> = ({
                 </button>
 
                 {savedSuccess && (
-                  <div style={{ fontSize: 12, color: '#10b981', textAlign: 'center', fontWeight: 600 }}>
-                    ✓ Preferencias actualizadas correctamente en tu cuenta
+                  <div style={{ fontSize: 12, color: '#10b981', textAlign: 'center', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    <span>Preferencias actualizadas correctamente en tu cuenta</span>
                   </div>
                 )}
               </form>

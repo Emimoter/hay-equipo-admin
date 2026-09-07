@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "hay-equipo-system": {
+      "source": "local/hay-equipo-system",
+      "sourceType": "local",
+      "skillPath": ".agents/skills/hay-equipo-system/SKILL.md",
+      "computedHash": "local"
+    },
     "brandkit": {
       "source": "Leonxlnx/taste-skill",
       "sourceType": "github",

@@ -2899,8 +2899,11 @@ export default function ReservarPage() {
                           <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-frost)' }}>
                             Reservando como: {userProfile?.name || user.displayName || user.email}
                           </div>
-                          <div style={{ fontSize: 11, color: '#a7f3d0' }}>
-                            ✓ Turno vinculado permanentemente a tu cuenta
+                          <div style={{ fontSize: 11, color: '#a7f3d0', display: 'flex', alignItems: 'center', gap: 5 }}>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                            <span>Turno vinculado permanentemente a tu cuenta</span>
                           </div>
                         </div>
                       </div>
@@ -2934,8 +2937,12 @@ export default function ReservarPage() {
                       }}
                     >
                       <div>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-frost)', marginBottom: 2 }}>
-                          🔒 Identificate para reservar
+                        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-frost)', marginBottom: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--color-crimson-signal)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="3" y="11" width="18" height="11" />
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                          </svg>
+                          <span>Identificate para reservar</span>
                         </div>
                         <div style={{ fontSize: 11, color: 'var(--color-ash)' }}>
                           Accedé con Google, Email o Teléfono para asegurar este turno y rastrearlo cuando quieras.

@@ -751,9 +751,15 @@ export const AuthModal: React.FC = () => {
                     padding: '8px 12px',
                     backgroundColor: 'rgba(16, 185, 129, 0.1)',
                     border: '1px solid rgba(16, 185, 129, 0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
                   }}
                 >
-                  ✓ Código enviado a {phoneNumber}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span>Código enviado a {phoneNumber}</span>
                 </div>
 
                 <div>

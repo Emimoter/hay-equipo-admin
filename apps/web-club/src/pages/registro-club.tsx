@@ -8,11 +8,59 @@ import { useRouter } from 'next/router';
 
 type SportOption = 'FUTBOL' | 'PADEL' | 'TENIS' | 'BASQUET';
 
-const SPORT_CONFIG: { id: SportOption; label: string; icon: string }[] = [
-  { id: 'FUTBOL', label: 'Fútbol', icon: '⚽' },
-  { id: 'PADEL', label: 'Pádel', icon: '🎾' },
-  { id: 'TENIS', label: 'Tenis', icon: '🎾' },
-  { id: 'BASQUET', label: 'Básquet', icon: '🏀' },
+const SPORT_CONFIG: { id: SportOption; label: string; renderIcon: () => React.ReactNode }[] = [
+  {
+    id: 'FUTBOL',
+    label: 'Fútbol',
+    renderIcon: () => (
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <polygon points="12 7 15 10 14 14 10 14 9 10" />
+        <line x1="12" y1="2" x2="12" y2="7" />
+        <line x1="21.5" y1="8.5" x2="15" y2="10" />
+        <line x1="18" y1="19.5" x2="14" y2="14" />
+        <line x1="6" y1="19.5" x2="10" y2="14" />
+        <line x1="2.5" y1="8.5" x2="9" y2="10" />
+      </svg>
+    ),
+  },
+  {
+    id: 'PADEL',
+    label: 'Pádel',
+    renderIcon: () => (
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="9" r="6" />
+        <line x1="12" y1="15" x2="12" y2="22" />
+        <circle cx="10.5" cy="8" r="0.75" fill="currentColor" />
+        <circle cx="13.5" cy="8" r="0.75" fill="currentColor" />
+        <circle cx="12" cy="10.5" r="0.75" fill="currentColor" />
+      </svg>
+    ),
+  },
+  {
+    id: 'TENIS',
+    label: 'Tenis',
+    renderIcon: () => (
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <path d="M5 5a14 14 0 0 0 14 14" />
+        <path d="M19 5a14 14 0 0 1-14 14" />
+      </svg>
+    ),
+  },
+  {
+    id: 'BASQUET',
+    label: 'Básquet',
+    renderIcon: () => (
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <line x1="2" y1="12" x2="22" y2="12" />
+        <line x1="12" y1="2" x2="12" y2="22" />
+        <path d="M4.93 4.93a10 10 0 0 1 14.14 14.14" />
+        <path d="M4.93 19.07a10 10 0 0 1 14.14-14.14" />
+      </svg>
+    ),
+  },
 ];
 
 export default function RegistroClubPage() {
@@ -391,8 +439,8 @@ export default function RegistroClubPage() {
                       type="button"
                       onClick={() => toggleSport(item.id)}
                       style={{
-                        padding: '14px 12px',
-                        borderRadius: 12,
+                        padding: '12px 16px',
+                        borderRadius: 'var(--radius-full)',
                         border: isSelected ? '1px solid var(--color-crimson-signal)' : '1px solid rgba(255,255,255,0.1)',
                         backgroundColor: isSelected ? 'rgba(252, 28, 70, 0.15)' : '#101216',
                         color: isSelected ? '#ffffff' : 'var(--color-ash)',
@@ -406,7 +454,7 @@ export default function RegistroClubPage() {
                         transition: 'all 0.2s ease',
                       }}
                     >
-                      <span>{item.icon}</span>
+                      {item.renderIcon()}
                       <span>{item.label}</span>
                       {isSelected && (
                         <span style={{
@@ -574,7 +622,7 @@ export default function RegistroClubPage() {
             maxWidth: 520,
             backgroundColor: '#0f1115',
             border: '1px solid rgba(252, 28, 70, 0.3)',
-            borderRadius: 24,
+            borderRadius: 0,
             padding: '36px 32px',
             boxShadow: '0 30px 80px rgba(0, 0, 0, 0.9), 0 0 50px rgba(252, 28, 70, 0.15)',
             textAlign: 'center',
@@ -632,7 +680,7 @@ export default function RegistroClubPage() {
             <div style={{
               backgroundColor: '#16181e',
               border: '1px solid rgba(255,255,255,0.06)',
-              borderRadius: 14,
+              borderRadius: 0,
               padding: '14px 18px',
               textAlign: 'left',
               fontSize: 13,
@@ -666,7 +714,7 @@ export default function RegistroClubPage() {
                 onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.02)')}
                 onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
               >
-                ← Volver al Inicio
+                Volver al Inicio
               </button>
 
               <button
@@ -682,11 +730,18 @@ export default function RegistroClubPage() {
                   fontWeight: 600,
                   cursor: 'pointer',
                   transition: 'color 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
                 }}
                 onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
                 onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-graphite)')}
               >
-                ⚡ Ver cómo funciona el Panel Demo
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                </svg>
+                <span>Ver cómo funciona el Panel Demo</span>
               </button>
             </div>
           </div>

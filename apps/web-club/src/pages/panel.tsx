@@ -3642,8 +3642,13 @@ export default function ClubPanel() {
                   }}
                 />
                 {isDuplicateCourtName && (
-                  <div style={{ color: '#ef4444', fontSize: 11.5, marginTop: 5, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
-                    ⚠️ Ya existe una cancha con este nombre. Elegí otro nombre diferente.
+                  <div style={{ color: '#ef4444', fontSize: 11.5, marginTop: 5, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                      <line x1="12" y1="9" x2="12" y2="13" />
+                      <line x1="12" y1="17" x2="12.01" y2="17" />
+                    </svg>
+                    <span>Ya existe una cancha con este nombre. Elegí otro nombre diferente.</span>
                   </div>
                 )}
               </div>

@@ -373,7 +373,10 @@ export default function LoginPage() {
                 e.currentTarget.style.transform = 'scale(1)';
               }}
             >
-              <span>⚡ Probar Demo (Club Padel Center)</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-crimson-signal)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+              </svg>
+              <span>Probar Demo (Club Padel Center)</span>
             </button>
           </form>
 
