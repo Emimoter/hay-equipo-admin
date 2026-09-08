@@ -1101,6 +1101,7 @@ export default function ReservarPage() {
             <button
               type="button"
               onClick={() => openAuthModal()}
+              className="landing-header-btn-cta"
               style={{
                 backgroundColor: 'var(--color-crimson-signal)',
                 color: '#ffffff',

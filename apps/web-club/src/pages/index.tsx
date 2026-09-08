@@ -390,6 +390,7 @@ export default function LandingPage() {
           {/* Enlace discreto B2B para Clubes */}
           <a
             href="/registro-club"
+            className="landing-header-link-club"
             style={{
               color: 'var(--color-ash)',
               fontSize: 13,

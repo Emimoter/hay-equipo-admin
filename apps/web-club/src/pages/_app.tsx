@@ -83,18 +83,22 @@ export default function App({ Component, pageProps }: AppProps) {
           background: var(--color-graphite);
         }
 
+        /* ── Header & Navigation Responsive Rules (max-width 960px) ── */
+        @media (max-width: 960px) {
+          .landing-header-logo-sub {
+            display: none !important;
+          }
+          .landing-header-btn-outline {
+            display: none !important;
+          }
+        }
+
         /* ── Landing Mobile Fixes (max-width 768px) ── */
         @media (max-width: 768px) {
           /* Header */
           .landing-header {
             padding: 0 18px !important;
             height: 60px !important;
-          }
-          .landing-header-logo-sub {
-            display: none !important;
-          }
-          .landing-header-btn-outline {
-            display: none !important;
           }
           .landing-header-btn-cta {
             padding: 8px 16px !important;
@@ -132,14 +136,20 @@ export default function App({ Component, pageProps }: AppProps) {
             gap: 0 !important;
           }
 
-          /* Footer */
+          /* Footer (Safe bottom padding for floating mobile dock) */
           .landing-footer {
-            padding: 28px 18px !important;
+            padding: 28px 18px 96px !important;
           }
           .landing-footer-inner {
             flex-direction: column !important;
             align-items: flex-start !important;
             gap: 6px !important;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .landing-header-link-club {
+            display: none !important;
           }
         }
 

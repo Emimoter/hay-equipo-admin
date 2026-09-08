@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useSlidingIndicator } from '../../hooks/useSlidingIndicator';
 
 export type NavTabType = 'INICIO' | 'EXPLORAR' | 'RESERVAS' | 'FIJOS' | 'PERFIL';
@@ -59,7 +60,116 @@ export const ReservarNavTabs: React.FC<ReservarNavTabsProps> = ({
   onChangeTab,
   bookingCount = 0,
 }) => {
-  const { containerRef, setItemRef, indicatorStyle } = useSlidingIndicator(activeTab);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Desktop sliding indicator
+  const {
+    containerRef: desktopContainerRef,
+    setItemRef: setDesktopItemRef,
+    indicatorStyle: desktopIndicatorStyle,
+  } = useSlidingIndicator(activeTab);
+
+  // Mobile dock sliding indicator
+  const {
+    containerRef: mobileContainerRef,
+    setItemRef: setMobileItemRef,
+    indicatorStyle: mobileIndicatorStyle,
+  } = useSlidingIndicator(activeTab);
+
+  const mobileDock = (
+    <aside aria-label="Navegación móvil" className="reservar-mobile-dock">
+      <div
+        ref={mobileContainerRef as any}
+        style={{
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          backgroundColor: 'rgba(10, 10, 10, 0.95)',
+          border: '1px solid rgba(255, 255, 255, 0.14)',
+          borderRadius: '9999px',
+          padding: '4px',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          boxShadow: '0 12px 40px rgba(0, 0, 0, 0.85), 0 0 24px rgba(252, 28, 70, 0.15)',
+          maxWidth: '460px',
+          margin: '0 auto',
+          width: '100%',
+        }}
+      >
+        {/* Mobile Sliding Indicator Pill (hay-equipo-system) */}
+        <div
+          style={{
+            ...mobileIndicatorStyle,
+            backgroundColor: 'var(--color-crimson-signal)',
+            borderRadius: 'var(--radius-full)',
+            boxShadow: '0 0 18px rgba(252, 28, 70, 0.45)',
+          }}
+        />
+
+        {TABS.map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              ref={setMobileItemRef(tab.id)}
+              onClick={() => onChangeTab(tab.id)}
+              style={{
+                position: 'relative',
+                zIndex: 2,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '2px',
+                padding: '7px 2px',
+                minHeight: '46px',
+                borderRadius: '9999px',
+                border: 'none',
+                backgroundColor: 'transparent',
+                color: isActive ? '#ffffff' : 'var(--color-ash)',
+                fontSize: '10px',
+                fontWeight: isActive ? 700 : 500,
+                letterSpacing: '0.2px',
+                cursor: 'pointer',
+                transition: 'color 0.2s ease',
+                flex: 1,
+                WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              <div style={{ position: 'relative' }}>
+                {tab.icon(isActive ? '#ffffff' : 'var(--color-ash)', 17)}
+                {tab.id === 'RESERVAS' && bookingCount > 0 && (
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: -4,
+                      right: -8,
+                      backgroundColor: isActive ? '#ffffff' : 'var(--color-crimson-signal)',
+                      color: isActive ? 'var(--color-crimson-signal)' : '#ffffff',
+                      fontSize: '9px',
+                      fontWeight: 800,
+                      padding: '1px 4px',
+                      borderRadius: '9999px',
+                      lineHeight: '1.2',
+                    }}
+                  >
+                    {bookingCount}
+                  </span>
+                )}
+              </div>
+              <span style={{ fontSize: '10px', textTransform: 'capitalize' }}>
+                {tab.id === 'RESERVAS' ? 'Reservas' : tab.id === 'FIJOS' ? 'Fijos' : tab.label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </aside>
+  );
 
   return (
     <>
@@ -67,12 +177,11 @@ export const ReservarNavTabs: React.FC<ReservarNavTabsProps> = ({
           DESKTOP TABS (Barra superior elegante estilo Swiss Brutalist)
           ──────────────────────────────────────────────────────────── */}
       <nav
-        ref={containerRef as any}
+        ref={desktopContainerRef as any}
         aria-label="Navegación principal de reservas"
         className="reservar-desktop-nav"
         style={{
           position: 'relative',
-          display: 'flex',
           alignItems: 'center',
           gap: '6px',
           padding: '4px',
@@ -83,14 +192,14 @@ export const ReservarNavTabs: React.FC<ReservarNavTabsProps> = ({
         }}
       >
         {/* Sliding Pill Indicator (hay-equipo-system) */}
-        <div style={indicatorStyle} />
+        <div style={desktopIndicatorStyle} />
 
         {TABS.map((tab) => {
           const isActive = activeTab === tab.id;
           return (
             <button
               key={tab.id}
-              ref={setItemRef(tab.id)}
+              ref={setDesktopItemRef(tab.id)}
               onClick={() => onChangeTab(tab.id)}
               style={{
                 position: 'relative',
@@ -144,110 +253,34 @@ export const ReservarNavTabs: React.FC<ReservarNavTabsProps> = ({
       </nav>
 
       {/* ────────────────────────────────────────────────────────────
-          MOBILE FLOATING DOCK (Idéntico a la app mobile nativa)
+          MOBILE FLOATING DOCK (Teleportado al body para escapar el header)
           ──────────────────────────────────────────────────────────── */}
-      <aside aria-label="Navegación móvil" className="reservar-mobile-dock">
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-around',
-            backgroundColor: 'rgba(10, 10, 10, 0.94)',
-            border: '1px solid rgba(255, 255, 255, 0.14)',
-            borderRadius: '9999px',
-            padding: '8px 12px',
-            backdropFilter: 'blur(20px)',
-            boxShadow: '0 12px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(252, 28, 70, 0.1)',
-            maxWidth: '500px',
-            margin: '0 auto',
-          }}
-        >
-          {TABS.map((tab) => {
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => onChangeTab(tab.id)}
-                style={{
-                  position: 'relative',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '4px',
-                  padding: '6px 14px',
-                  borderRadius: '9999px',
-                  border: 'none',
-                  backgroundColor: 'transparent',
-                  color: isActive ? 'var(--color-crimson-signal)' : '#888888',
-                  fontSize: '10px',
-                  fontWeight: isActive ? 700 : 500,
-                  letterSpacing: '0.2px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  flex: 1,
-                }}
-              >
-                <div style={{ position: 'relative' }}>
-                  {tab.icon(isActive ? 'var(--color-crimson-signal)' : '#888888', 18)}
-                  {tab.id === 'RESERVAS' && bookingCount > 0 && (
-                    <span
-                      style={{
-                        position: 'absolute',
-                        top: -4,
-                        right: -8,
-                        backgroundColor: 'var(--color-crimson-signal)',
-                        color: '#ffffff',
-                        fontSize: '9px',
-                        fontWeight: 800,
-                        padding: '1px 4px',
-                        borderRadius: '10px',
-                        minWidth: '14px',
-                        textAlign: 'center',
-                      }}
-                    >
-                      {bookingCount}
-                    </span>
-                  )}
-                </div>
-                <span style={{ fontSize: '10px', textTransform: 'capitalize' }}>
-                  {tab.id === 'RESERVAS' ? 'Reservas' : tab.id === 'FIJOS' ? 'Fijos' : tab.label}
-                </span>
-                {isActive && (
-                  <div
-                    style={{
-                      width: '4px',
-                      height: '4px',
-                      borderRadius: '50%',
-                      backgroundColor: 'var(--color-crimson-signal)',
-                      position: 'absolute',
-                      bottom: 0,
-                    }}
-                  />
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </aside>
+      {mounted && typeof document !== 'undefined'
+        ? createPortal(mobileDock, document.body)
+        : null}
 
-      <style jsx>{`
+      <style jsx global>{`
         .reservar-desktop-nav {
-          display: flex;
+          display: flex !important;
         }
         .reservar-mobile-dock {
-          display: none;
+          display: none !important;
         }
         @media (max-width: 960px) {
           .reservar-desktop-nav {
-            display: none;
+            display: none !important;
           }
           .reservar-mobile-dock {
-            display: block;
-            position: fixed;
-            bottom: 16px;
-            left: 16px;
-            right: 16px;
-            z-index: 99;
+            display: block !important;
+            position: fixed !important;
+            bottom: max(16px, env(safe-area-inset-bottom, 16px)) !important;
+            left: 16px !important;
+            right: 16px !important;
+            margin: 0 auto !important;
+            max-width: 460px !important;
+            width: calc(100% - 32px) !important;
+            z-index: 900 !important;
+            pointer-events: auto !important;
           }
         }
       `}</style>
