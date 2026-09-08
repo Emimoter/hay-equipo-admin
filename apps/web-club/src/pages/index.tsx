@@ -606,6 +606,83 @@ export default function LandingPage() {
             <TrackingBlurReveal inView={isLoaded} delay={0.7} style={{ fontSize: '18px', color: 'var(--color-ash)', marginTop: 26, maxWidth: 520, lineHeight: 1.3 }}>
               La plataforma que conecta jugadores con las mejores canchas deportivas de Argentina. Reservá al instante, dividí los gastos y armá tu equipo.
             </TrackingBlurReveal>
+
+            {/* Action CTAs: Reservar Cancha + Descargar App */}
+            <TrackingBlurReveal inView={isLoaded} delay={0.85} style={{ marginTop: 32, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+              <a
+                href="/reservar"
+                className="landing-hero-cta-primary"
+                style={{
+                  backgroundColor: 'var(--color-crimson-signal)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: 'var(--radius-full)',
+                  padding: '13px 30px',
+                  fontSize: 13.5,
+                  fontWeight: 700,
+                  textDecoration: 'none',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.6px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  boxShadow: '0 0 24px rgba(252, 28, 70, 0.45)',
+                  transition: 'transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease',
+                  cursor: 'pointer',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.filter = 'brightness(1.15)';
+                  e.currentTarget.style.transform = 'scale(1.03)';
+                  e.currentTarget.style.boxShadow = '0 0 32px rgba(252, 28, 70, 0.65)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.filter = 'none';
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.boxShadow = '0 0 24px rgba(252, 28, 70, 0.45)';
+                }}
+              >
+                <span>Reservá tu Cancha</span>
+                <span style={{ fontSize: 14, lineHeight: 1 }}>→</span>
+              </a>
+
+              <a
+                href="#descargar"
+                className="landing-hero-cta-secondary"
+                style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                  color: 'var(--color-frost)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  borderRadius: 'var(--radius-full)',
+                  padding: '13px 26px',
+                  fontSize: 13.5,
+                  fontWeight: 600,
+                  textDecoration: 'none',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  backdropFilter: 'blur(12px)',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.45)';
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
+                  e.currentTarget.style.transform = 'scale(1.02)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.04)';
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
+                  <line x1="12" y1="18" x2="12.01" y2="18" />
+                </svg>
+                <span>Descargar App</span>
+              </a>
+            </TrackingBlurReveal>
           </div>
         </div>
 

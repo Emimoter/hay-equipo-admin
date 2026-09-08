@@ -157,6 +157,12 @@ export default function App({ Component, pageProps }: AppProps) {
           .landing-header-logo {
             font-size: 20px !important;
           }
+          .landing-hero-cta-primary,
+          .landing-hero-cta-secondary {
+            width: 100% !important;
+            justify-content: center !important;
+            text-align: center !important;
+          }
         }
       `}</style>
       <Component {...pageProps} />
