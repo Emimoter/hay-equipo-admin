@@ -989,7 +989,7 @@ export default function ClubPanel() {
 
   if (!authed) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#07080a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ minHeight: '100vh', backgroundColor: '#000000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#fc1c46', margin: '0 auto 16px', animation: 'pulse 1.4s infinite' }} />
           <div style={{ fontSize: 11, color: '#888', textTransform: 'uppercase', letterSpacing: '2px' }}>CARGANDO PANEL DEL CLUB...</div>
@@ -1000,15 +1000,16 @@ export default function ClubPanel() {
 
   return (
     <div className="panel-viewport" style={{
+      width: '100vw',
       height: '100vh',
       maxHeight: '100vh',
-      backgroundColor: '#07080a',
-      color: '#f0f2f5',
-      fontFamily: 'var(--font-sui)',
+      backgroundColor: '#000000',
+      color: '#ffffff',
+      fontFamily: "'Inter', sans-serif",
       display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 'clamp(8px, 1.5vh, 16px) clamp(10px, 2vw, 20px)',
+      alignItems: 'stretch',
+      justifyContent: 'stretch',
+      padding: 0,
       boxSizing: 'border-box',
       overflow: 'hidden',
     }}>
@@ -1055,7 +1056,7 @@ export default function ClubPanel() {
             left: 0 !important;
             right: 0 !important;
             height: 60px !important;
-            background-color: #0b0c0f !important;
+            background-color: #0a0a0a !important;
             border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
             z-index: 950 !important;
             overflow-x: auto !important;
@@ -1090,7 +1091,7 @@ export default function ClubPanel() {
             overflow-x: auto !important;
             -webkit-overflow-scrolling: touch !important;
             width: 100% !important;
-            border-radius: 12px !important;
+            border-radius: 0 !important;
           }
 
           .panel-matrix-grid-inner {
@@ -1105,7 +1106,7 @@ export default function ClubPanel() {
           .panel-modal-box {
             max-width: 100% !important;
             width: 100% !important;
-            border-radius: 20px 20px 0 0 !important;
+            border-radius: 0 !important;
             max-height: 88vh !important;
             overflow-y: auto !important;
             padding: 20px 16px !important;
@@ -1126,7 +1127,7 @@ export default function ClubPanel() {
             overflow-x: auto !important;
             -webkit-overflow-scrolling: touch !important;
             padding: 12px !important;
-            border-radius: 14px !important;
+            border-radius: 0 !important;
           }
 
           .panel-monthly-calendar-inner {
@@ -1164,13 +1165,12 @@ export default function ClubPanel() {
           ═══════════════════════════════════════════════════════ */}
       <div className="panel-app-shell" style={{
         width: '100%',
-        maxWidth: 1220,
-        height: 'calc(100vh - clamp(16px, 3vh, 32px))',
-        maxHeight: 740,
-        backgroundColor: '#0f1115',
-        borderRadius: 20,
-        border: '1px solid rgba(255, 255, 255, 0.07)',
-        boxShadow: '0 30px 80px -20px rgba(0, 0, 0, 0.8), 0 0 50px -10px rgba(252, 28, 70, 0.08)',
+        maxWidth: '100%',
+        height: '100vh',
+        maxHeight: '100vh',
+        backgroundColor: '#000000',
+        borderRadius: 0,
+        border: 'none',
         display: 'flex',
         overflow: 'hidden',
         position: 'relative',
@@ -1181,9 +1181,7 @@ export default function ClubPanel() {
             LEFT SIDEBAR
             ──────────────────────────────────────────────────────────── */}
         <aside className="panel-desktop-sidebar" style={{
-          width: 64,
-          backgroundColor: '#0b0c0f',
-          borderRight: '1px solid rgba(255, 255, 255, 0.05)',
+          width: 64, backgroundColor: '#0a0a0a', borderRight: '1px solid rgba(255, 255, 255, 0.08)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -1227,8 +1225,7 @@ export default function ClubPanel() {
                 style={{
                   width: 40, height: 40, borderRadius: '50%',
                   border: 'none',
-                  backgroundColor: activeTab === 'DASHBOARD' ? '#241217' : 'transparent',
-                  color: activeTab === 'DASHBOARD' ? '#fc1c46' : '#6b7280',
+                  backgroundColor: activeTab === 'DASHBOARD' ? '#fc1c46' : 'transparent', color: activeTab === 'DASHBOARD' ? '#ffffff' : '#9ca3af', boxShadow: activeTab === 'DASHBOARD' ? '0 0 16px rgba(252, 28, 70, 0.45)' : 'none',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1251,8 +1248,7 @@ export default function ClubPanel() {
                 style={{
                   width: 40, height: 40, borderRadius: '50%',
                   border: 'none',
-                  backgroundColor: activeTab === 'COURTS' ? '#241217' : 'transparent',
-                  color: activeTab === 'COURTS' ? '#fc1c46' : '#6b7280',
+                  backgroundColor: activeTab === 'COURTS' ? '#fc1c46' : 'transparent', color: activeTab === 'COURTS' ? '#ffffff' : '#9ca3af', boxShadow: activeTab === 'COURTS' ? '0 0 16px rgba(252, 28, 70, 0.45)' : 'none',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1274,8 +1270,7 @@ export default function ClubPanel() {
                 style={{
                   width: 40, height: 40, borderRadius: '50%',
                   border: 'none',
-                  backgroundColor: activeTab === 'REVENUE' ? '#241217' : 'transparent',
-                  color: activeTab === 'REVENUE' ? '#fc1c46' : '#6b7280',
+                  backgroundColor: activeTab === 'REVENUE' ? '#fc1c46' : 'transparent', color: activeTab === 'REVENUE' ? '#ffffff' : '#9ca3af', boxShadow: activeTab === 'REVENUE' ? '0 0 16px rgba(252, 28, 70, 0.45)' : 'none',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1297,8 +1292,7 @@ export default function ClubPanel() {
                 style={{
                   width: 40, height: 40, borderRadius: '50%',
                   border: 'none',
-                  backgroundColor: activeTab === 'CALENDAR' ? '#241217' : 'transparent',
-                  color: activeTab === 'CALENDAR' ? '#fc1c46' : '#6b7280',
+                  backgroundColor: activeTab === 'CALENDAR' ? '#fc1c46' : 'transparent', color: activeTab === 'CALENDAR' ? '#ffffff' : '#9ca3af', boxShadow: activeTab === 'CALENDAR' ? '0 0 16px rgba(252, 28, 70, 0.45)' : 'none',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1321,8 +1315,7 @@ export default function ClubPanel() {
                 style={{
                   width: 40, height: 40, borderRadius: '50%',
                   border: 'none',
-                  backgroundColor: activeTab === 'PLAYERS' ? '#241217' : 'transparent',
-                  color: activeTab === 'PLAYERS' ? '#fc1c46' : '#6b7280',
+                  backgroundColor: activeTab === 'PLAYERS' ? '#fc1c46' : 'transparent', color: activeTab === 'PLAYERS' ? '#ffffff' : '#9ca3af', boxShadow: activeTab === 'PLAYERS' ? '0 0 16px rgba(252, 28, 70, 0.45)' : 'none',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1345,8 +1338,7 @@ export default function ClubPanel() {
                 style={{
                   width: 40, height: 40, borderRadius: '50%',
                   border: 'none',
-                  backgroundColor: activeTab === 'FIXED_SLOTS' ? '#241217' : 'transparent',
-                  color: activeTab === 'FIXED_SLOTS' ? '#fc1c46' : '#6b7280',
+                  backgroundColor: activeTab === 'FIXED_SLOTS' ? '#fc1c46' : 'transparent', color: activeTab === 'FIXED_SLOTS' ? '#ffffff' : '#9ca3af', boxShadow: activeTab === 'FIXED_SLOTS' ? '0 0 16px rgba(252, 28, 70, 0.45)' : 'none',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1369,8 +1361,7 @@ export default function ClubPanel() {
                 style={{
                   width: 40, height: 40, borderRadius: '50%',
                   border: 'none',
-                  backgroundColor: activeTab === 'SETTINGS' ? '#241217' : 'transparent',
-                  color: activeTab === 'SETTINGS' ? '#fc1c46' : '#6b7280',
+                  backgroundColor: activeTab === 'SETTINGS' ? '#fc1c46' : 'transparent', color: activeTab === 'SETTINGS' ? '#ffffff' : '#9ca3af', boxShadow: activeTab === 'SETTINGS' ? '0 0 16px rgba(252, 28, 70, 0.45)' : 'none',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1441,12 +1432,12 @@ export default function ClubPanel() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: 7,
-                backgroundColor: '#16181e',
+                backgroundColor: '#0a0a0a',
                 border: '1px solid rgba(255, 255, 255, 0.08)',
-                borderRadius: 20,
+                borderRadius: 'var(--radius-full)',
                 padding: '6px 14px',
               }}>
-                <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: '#4ade80', boxShadow: '0 0 8px #4ade80' }} />
+                <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: '#10b981', boxShadow: '0 0 8px #10b981' }} />
                 {allClubs.length > 0 ? (
                   <select
                     value={selectedClubId}
@@ -1464,7 +1455,7 @@ export default function ClubPanel() {
                     }}
                   >
                     {allClubs.map((c: any) => (
-                      <option key={c.id} value={c.id} style={{ backgroundColor: '#16181e', color: '#ffffff' }}>
+                      <option key={c.id} value={c.id} style={{ backgroundColor: '#0a0a0a', color: '#ffffff' }}>
                         {c.name}
                       </option>
                     ))}
@@ -1480,9 +1471,9 @@ export default function ClubPanel() {
             {/* Middle: Dynamic Sport Filter Tabs (Only sports registered in current courts) */}
             <div className="panel-sports-filter" style={{
               display: 'flex',
-              backgroundColor: '#16181e',
+              backgroundColor: '#0a0a0a',
               padding: 3,
-              borderRadius: 10,
+              borderRadius: 0,
               border: '1px solid rgba(255,255,255,0.06)',
             }}>
               {availableSportFilters.map(sport => (
@@ -1512,7 +1503,7 @@ export default function ClubPanel() {
                 onClick={handlePrintDailyRoster}
                 title="Imprimir planilla del día"
                 style={{
-                  backgroundColor: '#16181e',
+                  backgroundColor: '#0a0a0a',
                   color: '#d1d5db',
                   border: '1px solid rgba(255,255,255,0.08)',
                   borderRadius: 9999,
@@ -1536,7 +1527,7 @@ export default function ClubPanel() {
                     width: 34,
                     height: 34,
                     borderRadius: '50%',
-                    backgroundColor: showNotificationDropdown ? '#20242f' : '#16181e',
+                    backgroundColor: showNotificationDropdown ? '#141414' : '#0a0a0a',
                     border: showNotificationDropdown ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.06)',
                     display: 'flex',
                     alignItems: 'center',
@@ -1567,7 +1558,7 @@ export default function ClubPanel() {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      border: '2px solid #0f1115',
+                      border: '2px solid #0a0a0a',
                       boxShadow: '0 2px 6px rgba(252,28,70,0.4)',
                     }}>
                       {unreadNotificationCount}
@@ -1588,9 +1579,9 @@ export default function ClubPanel() {
                       right: 0,
                       top: 'calc(100% + 8px)',
                       width: 340,
-                      backgroundColor: '#12141a',
+                      backgroundColor: '#0a0a0a',
                       border: '1px solid rgba(255, 255, 255, 0.1)',
-                      borderRadius: 16,
+                      borderRadius: 0,
                       boxShadow: '0 20px 50px rgba(0, 0, 0, 0.85)',
                       zIndex: 10000,
                       overflow: 'hidden',
@@ -1604,12 +1595,12 @@ export default function ClubPanel() {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
-                        backgroundColor: '#161820',
+                        backgroundColor: '#141414',
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <span style={{ fontSize: 13, fontWeight: 800, color: '#ffffff' }}>Notificaciones</span>
                           {unreadNotificationCount > 0 && (
-                            <span style={{ fontSize: 10, fontWeight: 700, backgroundColor: 'rgba(252, 28, 70, 0.15)', color: '#fc1c46', padding: '2px 7px', borderRadius: 10 }}>
+                            <span style={{ fontSize: 10, fontWeight: 700, backgroundColor: 'rgba(252, 28, 70, 0.15)', color: '#fc1c46', padding: '2px 7px', borderRadius: 'var(--radius-full)' }}>
                               {unreadNotificationCount} nuevas
                             </span>
                           )}
@@ -1667,8 +1658,8 @@ export default function ClubPanel() {
                                 width: 28,
                                 height: 28,
                                 borderRadius: '50%',
-                                backgroundColor: n.type === 'PAYMENT' ? 'rgba(74, 222, 128, 0.12)' : n.type === 'CANCEL' ? 'rgba(239, 68, 68, 0.12)' : 'rgba(252, 28, 70, 0.12)',
-                                color: n.type === 'PAYMENT' ? '#4ade80' : n.type === 'CANCEL' ? '#ef4444' : '#fc1c46',
+                                backgroundColor: n.type === 'PAYMENT' ? 'rgba(16, 185, 129, 0.12)' : n.type === 'CANCEL' ? 'rgba(239, 68, 68, 0.12)' : 'rgba(252, 28, 70, 0.12)',
+                                color: n.type === 'PAYMENT' ? '#10b981' : n.type === 'CANCEL' ? '#ef4444' : '#fc1c46',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
@@ -1716,7 +1707,7 @@ export default function ClubPanel() {
                       <div style={{
                         padding: '10px 16px',
                         borderTop: '1px solid rgba(255, 255, 255, 0.06)',
-                        backgroundColor: '#161820',
+                        backgroundColor: '#141414',
                         textAlign: 'center',
                         fontSize: 11,
                         color: '#6b7280',
@@ -1734,7 +1725,7 @@ export default function ClubPanel() {
                   value={dateFilter}
                   onChange={e => setDateFilter(e.target.value)}
                   style={{
-                    backgroundColor: '#16181e',
+                    backgroundColor: '#0a0a0a',
                     color: '#ffffff',
                     border: '1px solid rgba(255,255,255,0.08)',
                     borderRadius: 9999,
@@ -1760,7 +1751,7 @@ export default function ClubPanel() {
           {activeTab === 'DASHBOARD' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div>
-                <h1 style={{ fontSize: 22, fontWeight: 800, color: '#ffffff', margin: 0, letterSpacing: '-0.4px' }}>
+                <h1 style={{ fontSize: 22, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, color: '#ffffff', margin: 0, letterSpacing: '-0.4px' }}>
                   Panel de Gestión y Grilla de Canchas
                 </h1>
                 <p style={{ fontSize: 13, color: '#9ca3af', margin: '4px 0 0' }}>
@@ -1776,8 +1767,8 @@ export default function ClubPanel() {
               }}>
                 {/* KPI 1: Reservas hoy */}
                 <div style={{
-                  backgroundColor: '#14161c',
-                  borderRadius: 16,
+                  backgroundColor: '#0a0a0a',
+                  borderRadius: 0,
                   border: '1px solid rgba(255, 255, 255, 0.05)',
                   padding: '12px 16px',
                   display: 'flex',
@@ -1815,8 +1806,8 @@ export default function ClubPanel() {
                 <div
                   onClick={() => setActiveTab('REVENUE')}
                   style={{
-                    backgroundColor: '#14161c',
-                    borderRadius: 16,
+                    backgroundColor: '#0a0a0a',
+                    borderRadius: 0,
                     border: '1px solid rgba(255, 255, 255, 0.05)',
                     padding: '12px 16px',
                     display: 'flex',
@@ -1826,7 +1817,7 @@ export default function ClubPanel() {
                     transition: 'all 0.15s ease',
                   }}
                   onMouseEnter={e => {
-                    e.currentTarget.style.borderColor = 'rgba(74, 222, 128, 0.4)';
+                    e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.4)';
                     e.currentTarget.style.transform = 'translateY(-2px)';
                   }}
                   onMouseLeave={e => {
@@ -1836,12 +1827,12 @@ export default function ClubPanel() {
                 >
                   <div style={{
                     width: 40, height: 40, borderRadius: '50%',
-                    backgroundColor: 'rgba(74, 222, 128, 0.12)',
-                    border: '1px solid rgba(74, 222, 128, 0.2)',
+                    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                    border: '1px solid rgba(16, 185, 129, 0.2)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#4ade80',
+                    color: '#10b981',
                     flexShrink: 0,
                   }}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1862,8 +1853,8 @@ export default function ClubPanel() {
 
                 {/* KPI 3: Canchas activas */}
                 <div style={{
-                  backgroundColor: '#14161c',
-                  borderRadius: 16,
+                  backgroundColor: '#0a0a0a',
+                  borderRadius: 0,
                   border: '1px solid rgba(255, 255, 255, 0.05)',
                   padding: '12px 16px',
                   display: 'flex',
@@ -1907,8 +1898,8 @@ export default function ClubPanel() {
               }}>
                 {/* LEFT: HORARIOS DEL DÍA */}
                 <div style={{
-                  backgroundColor: '#14161c',
-                  borderRadius: 16,
+                  backgroundColor: '#0a0a0a',
+                  borderRadius: 0,
                   border: '1px solid rgba(255, 255, 255, 0.05)',
                   padding: '14px 18px',
                   display: 'flex',
@@ -1925,7 +1916,7 @@ export default function ClubPanel() {
                         boxShadow: '0 0 8px #fc1c46',
                         display: 'inline-block',
                       }} />
-                      <h2 style={{ fontSize: 15, fontWeight: 700, color: '#ffffff', margin: 0 }}>
+                      <h2 style={{ fontSize: 15, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, color: '#ffffff', margin: 0 }}>
                         Horarios del Día
                       </h2>
                     </div>
@@ -1989,7 +1980,7 @@ export default function ClubPanel() {
                                   style={{
                                     backgroundColor: 'rgba(252, 28, 70, 0.15)',
                                     border: '1px solid rgba(252, 28, 70, 0.35)',
-                                    borderRadius: 8,
+                                    borderRadius: 0,
                                     padding: '6px 8px',
                                     cursor: 'pointer',
                                     transition: 'transform 0.1s ease',
@@ -2018,7 +2009,7 @@ export default function ClubPanel() {
                                   style={{
                                     backgroundColor: 'rgba(245, 158, 11, 0.15)',
                                     border: '1px solid rgba(245, 158, 11, 0.35)',
-                                    borderRadius: 8,
+                                    borderRadius: 0,
                                     padding: '6px 8px',
                                     cursor: 'pointer',
                                     transition: 'transform 0.1s ease',
@@ -2045,7 +2036,7 @@ export default function ClubPanel() {
                                   style={{
                                     backgroundColor: 'rgba(255, 255, 255, 0.015)',
                                     border: '1px dashed rgba(255, 255, 255, 0.04)',
-                                    borderRadius: 8,
+                                    borderRadius: 0,
                                     padding: '6px 8px',
                                     color: '#4b5563',
                                     fontSize: 10,
@@ -2076,9 +2067,9 @@ export default function ClubPanel() {
                                 }}
                                 title="Click para reservar o bloquear horario"
                                 style={{
-                                  backgroundColor: '#181b22',
+                                  backgroundColor: '#141414',
                                   border: '1px solid rgba(255, 255, 255, 0.04)',
-                                  borderRadius: 8,
+                                  borderRadius: 0,
                                   padding: '6px 8px',
                                   cursor: 'pointer',
                                   transition: 'all 0.15s ease',
@@ -2087,11 +2078,11 @@ export default function ClubPanel() {
                                 }}
                                 onMouseEnter={e => {
                                   e.currentTarget.style.borderColor = 'rgba(252, 28, 70, 0.3)';
-                                  e.currentTarget.style.backgroundColor = '#20242f';
+                                  e.currentTarget.style.backgroundColor = '#141414';
                                 }}
                                 onMouseLeave={e => {
                                   e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.04)';
-                                  e.currentTarget.style.backgroundColor = '#181b22';
+                                  e.currentTarget.style.backgroundColor = '#141414';
                                 }}
                               >
                                 <div style={{ fontSize: 11, color: '#6b7280', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -2110,8 +2101,8 @@ export default function ClubPanel() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12, justifyContent: 'space-between' }}>
                   {/* CARD: CURVA DE OCUPACIÓN DINÁMICA */}
                   <div style={{
-                    backgroundColor: '#14161c',
-                    borderRadius: 16,
+                    backgroundColor: '#0a0a0a',
+                    borderRadius: 0,
                     border: '1px solid rgba(255, 255, 255, 0.05)',
                     padding: '16px 18px',
                     display: 'flex',
@@ -2122,10 +2113,10 @@ export default function ClubPanel() {
                   }}>
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                        <h3 style={{ fontSize: 14, fontWeight: 700, color: '#ffffff', margin: 0 }}>
+                        <h3 style={{ fontSize: 14, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, color: '#ffffff', margin: 0 }}>
                           Curva de Ocupación Hoy
                         </h3>
-                        <span style={{ fontSize: 10.5, fontWeight: 700, color: '#fc1c46', backgroundColor: 'rgba(252,28,70,0.12)', padding: '3px 8px', borderRadius: 6 }}>
+                        <span style={{ fontSize: 10.5, fontWeight: 700, color: '#fc1c46', backgroundColor: 'rgba(252,28,70,0.12)', padding: '3px 8px', borderRadius: 9999 }}>
                           Pico {occupancyMetrics.peakTime} hs ({occupancyMetrics.peakPercentage}%)
                         </span>
                       </div>
@@ -2184,13 +2175,13 @@ export default function ClubPanel() {
 
                     {/* Stats Breakdown Row */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 2 }}>
-                      <div style={{ backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.04)', padding: '8px 10px', borderRadius: 8 }}>
+                      <div style={{ backgroundColor: '#141414', border: '1px solid rgba(255,255,255,0.04)', padding: '8px 10px', borderRadius: 0 }}>
                         <div style={{ fontSize: 9.5, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Horario Clave</div>
                         <div style={{ fontSize: 12, fontWeight: 700, color: '#ffffff', marginTop: 2 }}>Noche (19 a 23 hs)</div>
                       </div>
-                      <div style={{ backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.04)', padding: '8px 10px', borderRadius: 8 }}>
+                      <div style={{ backgroundColor: '#141414', border: '1px solid rgba(255,255,255,0.04)', padding: '8px 10px', borderRadius: 0 }}>
                         <div style={{ fontSize: 9.5, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Ocupación Prom.</div>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: '#4ade80', marginTop: 2 }}>{Math.round((totalReservedToday / Math.max(1, filteredCourts.length * 8)) * 100)}% de canchas</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: '#10b981', marginTop: 2 }}>{Math.round((totalReservedToday / Math.max(1, filteredCourts.length * 8)) * 100)}% de canchas</div>
                       </div>
                     </div>
                   </div>
@@ -2233,7 +2224,7 @@ export default function ClubPanel() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <h2 style={{ fontSize: 22, fontWeight: 800, color: '#ffffff', margin: 0, letterSpacing: '-0.4px' }}>
+                  <h2 style={{ fontSize: 22, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, color: '#ffffff', margin: 0, letterSpacing: '-0.4px' }}>
                     Configuración de Canchas y Atributos
                   </h2>
                   <p style={{ fontSize: 13, color: '#9ca3af', margin: '4px 0 0' }}>
@@ -2262,7 +2253,7 @@ export default function ClubPanel() {
                   <div
                     key={court.id}
                     style={{
-                      backgroundColor: '#16181e',
+                      backgroundColor: '#0a0a0a',
                       borderRadius: 0,
                       border: '1px solid rgba(255,255,255,0.08)',
                       padding: '18px 20px',
@@ -2323,13 +2314,13 @@ export default function ClubPanel() {
 
                     {/* Court Title */}
                     <div>
-                      <h3 style={{ fontSize: 16.5, fontWeight: 700, color: '#ffffff', margin: 0, lineHeight: 1.3 }}>
+                      <h3 style={{ fontSize: 16.5, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, color: '#ffffff', margin: 0, lineHeight: 1.3 }}>
                         {court.name}
                       </h3>
                     </div>
 
                     {/* Horarios Habilitados Banner */}
-                    <div style={{ backgroundColor: '#11131a', border: '1px solid rgba(255,255,255,0.05)', padding: '10px 12px', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ backgroundColor: '#141414', border: '1px solid rgba(255,255,255,0.05)', padding: '10px 12px', borderRadius: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ fontSize: 11, color: '#9ca3af', display: 'flex', alignItems: 'center', gap: 6 }}>
                         <Icons.Clock /> Horario:
                       </div>
@@ -2340,22 +2331,22 @@ export default function ClubPanel() {
 
                     {/* Court Feature Badges */}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, backgroundColor: 'rgba(255,255,255,0.05)', color: '#d1d5db', border: '1px solid rgba(255,255,255,0.08)', padding: '4px 9px', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, backgroundColor: 'rgba(255,255,255,0.05)', color: '#d1d5db', border: '1px solid rgba(255,255,255,0.08)', padding: '4px 9px', borderRadius: 9999, fontSize: 11, fontWeight: 600 }}>
                         <Icons.Clock /> {court.slotDuration || 90} min / turno
                       </span>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, backgroundColor: court.indoor ? 'rgba(252,28,70,0.12)' : 'rgba(255,255,255,0.04)', color: court.indoor ? '#fc1c46' : '#9ca3af', border: court.indoor ? '1px solid rgba(252,28,70,0.25)' : '1px solid rgba(255,255,255,0.06)', padding: '4px 9px', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, backgroundColor: court.indoor ? 'rgba(252,28,70,0.12)' : 'rgba(255,255,255,0.04)', color: court.indoor ? '#fc1c46' : '#9ca3af', border: court.indoor ? '1px solid rgba(252,28,70,0.25)' : '1px solid rgba(255,255,255,0.06)', padding: '4px 9px', borderRadius: 9999, fontSize: 11, fontWeight: 600 }}>
                         {court.indoor ? <><Icons.Indoor /> Techada</> : <><Icons.Outdoor /> Descubierta</>}
                       </span>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, backgroundColor: court.lighting ? 'rgba(252,28,70,0.12)' : 'rgba(255,255,255,0.04)', color: court.lighting ? '#fc1c46' : '#9ca3af', border: court.lighting ? '1px solid rgba(252,28,70,0.25)' : '1px solid rgba(255,255,255,0.06)', padding: '4px 9px', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, backgroundColor: court.lighting ? 'rgba(252,28,70,0.12)' : 'rgba(255,255,255,0.04)', color: court.lighting ? '#fc1c46' : '#9ca3af', border: court.lighting ? '1px solid rgba(252,28,70,0.25)' : '1px solid rgba(255,255,255,0.06)', padding: '4px 9px', borderRadius: 9999, fontSize: 11, fontWeight: 600 }}>
                         {court.lighting ? <><Icons.Lighting /> Con Iluminación</> : <><Icons.NoLighting /> Sin Iluminación</>}
                       </span>
                       {court.hasCameras && (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, backgroundColor: 'rgba(252,28,70,0.12)', color: '#fc1c46', border: '1px solid rgba(252,28,70,0.25)', padding: '4px 9px', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, backgroundColor: 'rgba(252,28,70,0.12)', color: '#fc1c46', border: '1px solid rgba(252,28,70,0.25)', padding: '4px 9px', borderRadius: 9999, fontSize: 11, fontWeight: 600 }}>
                           <Icons.Camera /> Con Cámaras
                         </span>
                       )}
                       {court.hasHeating && (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, backgroundColor: 'rgba(252,28,70,0.12)', color: '#fc1c46', border: '1px solid rgba(252,28,70,0.25)', padding: '4px 9px', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, backgroundColor: 'rgba(252,28,70,0.12)', color: '#fc1c46', border: '1px solid rgba(252,28,70,0.25)', padding: '4px 9px', borderRadius: 9999, fontSize: 11, fontWeight: 600 }}>
                           <Icons.Climate /> Climatizada
                         </span>
                       )}
@@ -2383,7 +2374,7 @@ export default function ClubPanel() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
               {/* Header */}
               <div>
-                <h2 style={{ fontSize: 22, fontWeight: 800, color: '#ffffff', margin: 0, letterSpacing: '-0.4px' }}>
+                <h2 style={{ fontSize: 22, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, color: '#ffffff', margin: 0, letterSpacing: '-0.4px' }}>
                   Recaudación ({dateFilter})
                 </h2>
                 <p style={{ fontSize: 13, color: '#9ca3af', margin: '4px 0 0' }}>
@@ -2393,17 +2384,17 @@ export default function ClubPanel() {
 
               {/* SINGLE CLEAN KPI CARD: TOTAL COBRADO */}
               <div style={{
-                backgroundColor: '#14161c',
-                border: '1px solid rgba(74, 222, 128, 0.25)',
-                borderRadius: 18,
+                backgroundColor: '#0a0a0a',
+                border: '1px solid rgba(16, 185, 129, 0.25)',
+                borderRadius: 0,
                 padding: '20px 24px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                background: 'linear-gradient(135deg, #14161c 0%, rgba(74, 222, 128, 0.05) 100%)',
+                background: 'linear-gradient(135deg, #0a0a0a 0%, rgba(16, 185, 129, 0.05) 100%)',
               }}>
                 <div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#4ade80', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#10b981', textTransform: 'uppercase', letterSpacing: '1px' }}>
                     TOTAL COBRADO ({dateFilter.toUpperCase()})
                   </div>
                   <div style={{ fontSize: 'clamp(28px, 3.5vh, 34px)', fontWeight: 800, color: '#ffffff', marginTop: 4, letterSpacing: '-0.5px' }}>
@@ -2414,16 +2405,16 @@ export default function ClubPanel() {
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#ffffff' }}>
                     {financialMetrics.reservedCount} turnos confirmados
                   </div>
-                  <div style={{ fontSize: 11, color: '#4ade80', marginTop: 2, fontWeight: 600 }}>
+                  <div style={{ fontSize: 11, color: '#10b981', marginTop: 2, fontWeight: 600 }}>
                     Recaudación activa
                   </div>
                 </div>
               </div>
 
               {/* Detailed Reservations List for Revenue */}
-              <div style={{ backgroundColor: '#14161c', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: 20 }}>
+              <div style={{ backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 0, padding: 20 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-                  <h3 style={{ fontSize: 15, fontWeight: 700, color: '#fff', margin: 0 }}>
+                  <h3 style={{ fontSize: 15, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, color: '#fff', margin: 0 }}>
                     Reservas que Entraron ({dateFilter}) — {financialMetrics.reservedCount} Turnos
                   </h3>
                   <div style={{ fontSize: 12, color: '#888' }}>
@@ -2441,9 +2432,9 @@ export default function ClubPanel() {
                       <div
                         key={slot.id}
                         style={{
-                          backgroundColor: '#181b22',
+                          backgroundColor: '#141414',
                           border: '1px solid rgba(255, 255, 255, 0.05)',
-                          borderRadius: 12,
+                          borderRadius: 0,
                           padding: '12px 16px',
                           display: 'flex',
                           alignItems: 'center',
@@ -2459,7 +2450,7 @@ export default function ClubPanel() {
                             fontWeight: 700,
                             fontSize: 12,
                             padding: '6px 12px',
-                            borderRadius: 8,
+                            borderRadius: 9999,
                           }}>
                             {slot.time} hs
                           </div>
@@ -2481,9 +2472,9 @@ export default function ClubPanel() {
                           <button
                             onClick={() => handleTogglePaymentStatus(slot.id)}
                             style={{
-                              backgroundColor: slot.isPaid100 ? 'rgba(74, 222, 128, 0.15)' : 'rgba(252, 28, 70, 0.15)',
-                              color: slot.isPaid100 ? '#4ade80' : '#fc1c46',
-                              border: slot.isPaid100 ? '1px solid rgba(74, 222, 128, 0.3)' : '1px solid rgba(252, 28, 70, 0.3)',
+                              backgroundColor: slot.isPaid100 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(252, 28, 70, 0.15)',
+                              color: slot.isPaid100 ? '#10b981' : '#fc1c46',
+                              border: slot.isPaid100 ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(252, 28, 70, 0.3)',
                               borderRadius: 9999,
                               padding: '6px 12px',
                               fontSize: 11,
@@ -2499,7 +2490,7 @@ export default function ClubPanel() {
                           <button
                             onClick={() => handleOpenEditReservation(slot)}
                             style={{
-                              backgroundColor: '#20242f',
+                              backgroundColor: '#141414',
                               color: '#9ca3af',
                               border: '1px solid rgba(255, 255, 255, 0.08)',
                               borderRadius: 9999,
@@ -2528,7 +2519,7 @@ export default function ClubPanel() {
               {/* Header Banner */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
                 <div>
-                  <h2 style={{ fontSize: 22, fontWeight: 800, color: '#ffffff', margin: 0, letterSpacing: '-0.4px' }}>
+                  <h2 style={{ fontSize: 22, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, color: '#ffffff', margin: 0, letterSpacing: '-0.4px' }}>
                     Calendario de Recaudación (Agosto 2026)
                   </h2>
                   <p style={{ fontSize: 13, color: '#9ca3af', margin: '4px 0 0' }}>
@@ -2537,25 +2528,25 @@ export default function ClubPanel() {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div style={{
-                    backgroundColor: '#14161c',
-                    border: '1px solid rgba(74, 222, 128, 0.25)',
-                    borderRadius: 12,
+                    backgroundColor: '#0a0a0a',
+                    border: '1px solid rgba(16, 185, 129, 0.25)',
+                    borderRadius: 0,
                     padding: '8px 16px',
                     display: 'flex',
                     alignItems: 'center',
                     gap: 10,
                   }}>
                     <span style={{ fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', fontWeight: 600 }}>Total Mes:</span>
-                    <span style={{ fontSize: 16, fontWeight: 800, color: '#4ade80' }}>$6.240.000</span>
+                    <span style={{ fontSize: 16, fontWeight: 800, color: '#10b981' }}>$6.240.000</span>
                   </div>
                 </div>
               </div>
 
               {/* Monthly Calendar Container */}
               <div className="panel-monthly-calendar-container" style={{
-                backgroundColor: '#14161c',
+                backgroundColor: '#0a0a0a',
                 border: '1px solid rgba(255, 255, 255, 0.06)',
-                borderRadius: 20,
+                borderRadius: 0,
                 padding: 20,
               }}>
                 <div className="panel-monthly-calendar-inner">
@@ -2597,9 +2588,9 @@ export default function ClubPanel() {
                           className="panel-calendar-day-card"
                           style={{
                             minHeight: 78,
-                            backgroundColor: isToday ? '#1c151c' : '#181b22',
+                            backgroundColor: isToday ? '#141414' : '#141414',
                             border: isToday ? '1px solid #fc1c46' : '1px solid rgba(255, 255, 255, 0.05)',
-                            borderRadius: 12,
+                            borderRadius: 0,
                             padding: '10px 12px',
                             display: 'flex',
                             flexDirection: 'column',
@@ -2633,7 +2624,7 @@ export default function ClubPanel() {
                             <div className="panel-calendar-day-amount" style={{
                               fontSize: 14,
                               fontWeight: 800,
-                              color: isToday ? '#4ade80' : dayData.revenue > 0 ? '#ffffff' : '#4b5563',
+                              color: isToday ? '#10b981' : dayData.revenue > 0 ? '#ffffff' : '#4b5563',
                               letterSpacing: '-0.3px',
                               whiteSpace: 'nowrap',
                               overflow: 'hidden',
@@ -2661,7 +2652,7 @@ export default function ClubPanel() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
                 <div>
-                  <h2 style={{ fontSize: 22, fontWeight: 800, color: '#ffffff', margin: 0, letterSpacing: '-0.4px' }}>Base de Jugadores & Clientes</h2>
+                  <h2 style={{ fontSize: 22, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, color: '#ffffff', margin: 0, letterSpacing: '-0.4px' }}>Base de Jugadores & Clientes</h2>
                   <p style={{ fontSize: 13, color: '#9ca3af', margin: '4px 0 0' }}>Gestión de clientes y abonados del club.</p>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -2671,10 +2662,10 @@ export default function ClubPanel() {
                     onChange={e => setSearchPlayer(e.target.value)}
                     placeholder="Buscar por nombre o teléfono..."
                     style={{
-                      backgroundColor: '#16181e',
+                      backgroundColor: '#0a0a0a',
                       color: '#fff',
                       border: '1px solid rgba(255,255,255,0.08)',
-                      borderRadius: 10,
+                      borderRadius: 0,
                       padding: '8px 16px',
                       fontSize: 13,
                       width: 220,
@@ -2699,8 +2690,8 @@ export default function ClubPanel() {
               </div>
 
               <div style={{
-                backgroundColor: '#14161c',
-                borderRadius: 20,
+                backgroundColor: '#0a0a0a',
+                borderRadius: 0,
                 border: '1px solid rgba(255,255,255,0.05)',
                 padding: '16px 20px',
                 display: 'flex',
@@ -2736,7 +2727,7 @@ export default function ClubPanel() {
                   >
                     <div>
                       <div style={{ fontWeight: 600, color: '#fff' }}>{p.name}</div>
-                      <span style={{ fontSize: 9.5, color: '#fc1c46', backgroundColor: 'rgba(252,28,70,0.12)', padding: '1px 6px', borderRadius: 4, fontWeight: 700, marginTop: 2, display: 'inline-block' }}>
+                      <span style={{ fontSize: 9.5, color: '#fc1c46', backgroundColor: 'rgba(252,28,70,0.12)', padding: '1px 6px', borderRadius: 9999, fontWeight: 700, marginTop: 2, display: 'inline-block' }}>
                         {p.playerTag}
                       </span>
                     </div>
@@ -2757,7 +2748,7 @@ export default function ClubPanel() {
               {/* Header */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
                 <div>
-                  <h2 style={{ fontSize: 22, fontWeight: 800, color: '#ffffff', margin: 0, letterSpacing: '-0.4px' }}>
+                  <h2 style={{ fontSize: 22, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, color: '#ffffff', margin: 0, letterSpacing: '-0.4px' }}>
                     Turnos Fijos & Abonados Semanales
                   </h2>
                   <p style={{ fontSize: 13, color: '#9ca3af', margin: '4px 0 0' }}>
@@ -2783,7 +2774,7 @@ export default function ClubPanel() {
 
               {/* KPI Summary Cards */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
-                <div style={{ backgroundColor: '#14161c', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: '16px 20px' }}>
+                <div style={{ backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 0, padding: '16px 20px' }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
                     TOTAL TURNOS FIJOS
                   </div>
@@ -2795,21 +2786,21 @@ export default function ClubPanel() {
                   </div>
                 </div>
 
-                <div style={{ backgroundColor: 'rgba(74, 222, 128, 0.08)', border: '1px solid rgba(74, 222, 128, 0.25)', borderRadius: 16, padding: '16px 20px' }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#4ade80', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+                <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', borderRadius: 0, padding: '16px 20px' }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
                     INGRESO SEMANAL RECURRENTE
                   </div>
-                  <div style={{ fontSize: 26, fontWeight: 700, color: '#4ade80', marginTop: 6 }}>
+                  <div style={{ fontSize: 26, fontWeight: 700, color: '#10b981', marginTop: 6 }}>
                     ${fixedSlots.filter(f => f.active).reduce((acc, f) => acc + f.price, 0).toLocaleString()}
                   </div>
-                  <div style={{ fontSize: 11, color: '#4ade80', marginTop: 4, opacity: 0.8 }}>
+                  <div style={{ fontSize: 11, color: '#10b981', marginTop: 4, opacity: 0.8 }}>
                     Abonado semanalmente por clientes fijos
                   </div>
                 </div>
               </div>
 
               {/* Fixed Slots Grid */}
-              <div style={{ backgroundColor: '#14161c', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: 20 }}>
+              <div style={{ backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 0, padding: 20 }}>
                 <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', marginBottom: 14 }}>
                   Listado de Turnos Fijos Programados ({fixedSlots.length})
                 </div>
@@ -2819,9 +2810,9 @@ export default function ClubPanel() {
                     <div
                       key={slot.id}
                       style={{
-                        backgroundColor: '#181b22',
+                        backgroundColor: '#141414',
                         border: slot.active ? '1px solid rgba(252, 28, 70, 0.3)' : '1px solid rgba(255,255,255,0.05)',
-                        borderRadius: 14,
+                        borderRadius: 0,
                         padding: 16,
                         display: 'flex',
                         flexDirection: 'column',
@@ -2837,7 +2828,7 @@ export default function ClubPanel() {
                             fontWeight: 800,
                             fontSize: 11,
                             padding: '4px 10px',
-                            borderRadius: 6,
+                            borderRadius: 9999,
                             textTransform: 'uppercase',
                           }}>
                             Todos los {slot.dayOfWeek}s · {slot.time} hs
@@ -2845,9 +2836,9 @@ export default function ClubPanel() {
                           <button
                             onClick={() => handleToggleFixedActive(slot.id)}
                             style={{
-                              backgroundColor: slot.active ? 'rgba(74, 222, 128, 0.15)' : 'rgba(255,255,255,0.05)',
-                              color: slot.active ? '#4ade80' : '#6b7280',
-                              border: slot.active ? '1px solid rgba(74, 222, 128, 0.3)' : '1px solid rgba(255,255,255,0.1)',
+                              backgroundColor: slot.active ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255,255,255,0.05)',
+                              color: slot.active ? '#10b981' : '#6b7280',
+                              border: slot.active ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(255,255,255,0.1)',
                               borderRadius: 9999,
                               padding: '3px 8px',
                               fontSize: 10,
@@ -2903,18 +2894,18 @@ export default function ClubPanel() {
           {activeTab === 'SETTINGS' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
               <div>
-                <h2 style={{ fontSize: 22, fontWeight: 800, color: '#ffffff', margin: 0, letterSpacing: '-0.4px' }}>Configuración del Club</h2>
+                <h2 style={{ fontSize: 22, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, color: '#ffffff', margin: 0, letterSpacing: '-0.4px' }}>Configuración del Club</h2>
                 <p style={{ fontSize: 13, color: '#9ca3af', margin: '4px 0 0' }}>Datos principales del club.</p>
               </div>
 
-              <div style={{ backgroundColor: '#14161c', padding: '24px', borderRadius: 20, border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: 20 }}>
+              <div style={{ backgroundColor: '#0a0a0a', padding: '24px', borderRadius: 0, border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: 20 }}>
                 <div>
                   <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6 }}>Nombre del Club</label>
                   <input
                     type="text"
                     value={clubName}
                     onChange={e => setClubName(e.target.value)}
-                    style={{ width: '100%', backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '12px', color: '#fff', fontSize: 14 }}
+                    style={{ width: '100%', backgroundColor: '#141414', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 0, padding: '12px', color: '#fff', fontSize: 14 }}
                   />
                 </div>
 
@@ -2924,7 +2915,7 @@ export default function ClubPanel() {
                     type="text"
                     value={clubAddress}
                     onChange={e => setClubAddress(e.target.value)}
-                    style={{ width: '100%', backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '12px', color: '#fff', fontSize: 14 }}
+                    style={{ width: '100%', backgroundColor: '#141414', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 0, padding: '12px', color: '#fff', fontSize: 14 }}
                   />
                 </div>
               </div>
@@ -2941,22 +2932,22 @@ export default function ClubPanel() {
             position: 'absolute',
             bottom: 12,
             right: 18,
-            backgroundColor: '#171920',
+            backgroundColor: '#141414',
             border: '1px solid rgba(255, 255, 255, 0.08)',
-            borderRadius: 12,
+            borderRadius: 0,
             padding: '8px 14px 8px 10px',
             display: 'flex',
             alignItems: 'center',
             gap: 10,
-            boxShadow: '0 15px 35px -8px rgba(0, 0, 0, 0.9), 0 0 20px rgba(252, 28, 70, 0.15)',
+            boxShadow: '0 15px 35px -8px rgba(0, 0, 0, 0.9), 0 0 20px rgba(252, 28, 70, 0.15)', borderLeft: '3px solid #fc1c46',
             zIndex: 100,
             animation: 'fadeInUp 0.3s ease-out',
           }}>
             <div style={{
               width: 32,
               height: 32,
-              borderRadius: 10,
-              backgroundColor: '#4ade80',
+              borderRadius: 0,
+              backgroundColor: '#10b981',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -2972,7 +2963,7 @@ export default function ClubPanel() {
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                 <span style={{ fontSize: 12, fontWeight: 700, color: '#ffffff' }}>Nueva reserva confirmada</span>
-                <span style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: '#4ade80', display: 'inline-block' }} />
+                <span style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: '#10b981', display: 'inline-block' }} />
                 <span style={{ fontSize: 10, color: '#6b7280' }}>· ahora</span>
               </div>
               <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 1 }}>
@@ -3107,7 +3098,7 @@ export default function ClubPanel() {
           <div className="panel-modal-box" style={{
             width: '100%',
             maxWidth: 480,
-            backgroundColor: '#12141a',
+            backgroundColor: '#0a0a0a',
             border: '1px solid rgba(255, 255, 255, 0.1)',
             borderRadius: 0,
             padding: '26px 28px',
@@ -3115,10 +3106,10 @@ export default function ClubPanel() {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
               <div>
-                <h3 style={{ fontSize: 19, fontWeight: 700, color: '#ffffff', margin: 0 }}>
+                <h3 style={{ fontSize: 19, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, color: '#ffffff', margin: 0 }}>
                   Nueva Reserva Manual
                 </h3>
-                <div style={{ fontSize: 11, color: '#4ade80', marginTop: 2 }}>Pago anticipado requerido</div>
+                <div style={{ fontSize: 11, color: '#10b981', marginTop: 2 }}>Pago anticipado requerido</div>
               </div>
               <button
                 onClick={() => setShowModal(false)}
@@ -3131,8 +3122,8 @@ export default function ClubPanel() {
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: '1fr 1fr',
-                backgroundColor: '#181b22',
-                borderRadius: 12,
+                backgroundColor: '#141414',
+                borderRadius: 0,
                 padding: 4,
                 border: '1px solid rgba(255,255,255,0.06)',
                 marginBottom: 2,
@@ -3177,7 +3168,7 @@ export default function ClubPanel() {
                 <div style={{
                   backgroundColor: 'rgba(255, 255, 255, 0.03)',
                   border: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: 12,
+                  borderRadius: 0,
                   padding: '10px 14px',
                   display: 'flex',
                   alignItems: 'center',
@@ -3186,7 +3177,7 @@ export default function ClubPanel() {
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#ffffff' }}>
                     {courts.find(c => c.id === modalCourt)?.name}
                   </div>
-                  <span style={{ fontSize: 12, fontWeight: 800, color: '#fc1c46', backgroundColor: '#241217', border: '1px solid rgba(252,28,70,0.3)', padding: '3px 10px', borderRadius: 20 }}>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: '#fc1c46', backgroundColor: '#241217', border: '1px solid rgba(252,28,70,0.3)', padding: '3px 10px', borderRadius: 9999 }}>
                     {modalTime} hs
                   </span>
                 </div>
@@ -3201,9 +3192,9 @@ export default function ClubPanel() {
                       onChange={e => handleModalCourtChange(e.target.value)}
                       style={{
                         width: '100%',
-                        backgroundColor: '#181b22',
+                        backgroundColor: '#141414',
                         border: '1px solid rgba(255,255,255,0.08)',
-                        borderRadius: 10,
+                        borderRadius: 0,
                         padding: '10px 12px',
                         color: '#ffffff',
                         fontSize: 13.5,
@@ -3224,9 +3215,9 @@ export default function ClubPanel() {
                       onChange={e => setModalTime(e.target.value)}
                       style={{
                         width: '100%',
-                        backgroundColor: '#181b22',
+                        backgroundColor: '#141414',
                         border: '1px solid rgba(255,255,255,0.08)',
-                        borderRadius: 10,
+                        borderRadius: 0,
                         padding: '10px 12px',
                         color: '#ffffff',
                         fontSize: 13.5,
@@ -3255,16 +3246,16 @@ export default function ClubPanel() {
                     required
                     style={{
                       width: '100%',
-                      backgroundColor: '#181b22',
+                      backgroundColor: '#141414',
                       border: '1px solid rgba(255,255,255,0.08)',
-                      borderRadius: 10,
+                      borderRadius: 0,
                       padding: '10px 12px',
                       color: '#ffffff',
                       fontSize: 13.5,
                       boxSizing: 'border-box',
                     }}
                   />
-                  <div style={{ fontSize: 11, color: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', padding: '8px 12px', borderRadius: 8, marginTop: 10 }}>
+                  <div style={{ fontSize: 11, color: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', padding: '8px 12px', borderRadius: 0, marginTop: 10 }}>
                     Este horario quedará bloqueado en la grilla del club.
                   </div>
                 </div>
@@ -3277,8 +3268,8 @@ export default function ClubPanel() {
                   <div style={{
                     display: 'grid',
                     gridTemplateColumns: '1fr 1fr',
-                    backgroundColor: '#181b22',
-                    borderRadius: 12,
+                    backgroundColor: '#141414',
+                    borderRadius: 0,
                     padding: 4,
                     border: '1px solid rgba(255,255,255,0.06)',
                     marginBottom: 12,
@@ -3341,9 +3332,9 @@ export default function ClubPanel() {
                           placeholder="Tipeá nombre, apellido o teléfono..."
                           style={{
                             width: '100%',
-                            backgroundColor: '#181b22',
+                            backgroundColor: '#141414',
                             border: isClientSearchOpen ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
-                            borderRadius: 10,
+                            borderRadius: 0,
                             padding: '10px 12px',
                             color: '#ffffff',
                             fontSize: 13.5,
@@ -3381,9 +3372,9 @@ export default function ClubPanel() {
                           top: '100%',
                           left: 0,
                           right: 0,
-                          backgroundColor: '#161820',
+                          backgroundColor: '#141414',
                           border: '1px solid rgba(252, 28, 70, 0.3)',
-                          borderRadius: 12,
+                          borderRadius: 0,
                           marginTop: 4,
                           maxHeight: 180,
                           overflowY: 'auto',
@@ -3429,7 +3420,7 @@ export default function ClubPanel() {
                                 }}
                                 style={{
                                   padding: '8px 12px',
-                                  borderRadius: 8,
+                                  borderRadius: 0,
                                   cursor: 'pointer',
                                   display: 'flex',
                                   justifyContent: 'space-between',
@@ -3449,7 +3440,7 @@ export default function ClubPanel() {
                                   color: '#fc1c46',
                                   backgroundColor: 'rgba(252, 28, 70, 0.15)',
                                   padding: '2px 6px',
-                                  borderRadius: 4,
+                                  borderRadius: 9999,
                                 }}>
                                   {p.playerTag}
                                 </span>
@@ -3462,12 +3453,12 @@ export default function ClubPanel() {
                       {modalPlayer && (
                         <div style={{
                           marginTop: 8,
-                          backgroundColor: 'rgba(74, 222, 128, 0.1)',
-                          border: '1px solid rgba(74, 222, 128, 0.3)',
-                          borderRadius: 8,
+                          backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                          border: '1px solid rgba(16, 185, 129, 0.3)',
+                          borderRadius: 0,
                           padding: '8px 12px',
                           fontSize: 12,
-                          color: '#4ade80',
+                          color: '#10b981',
                           fontWeight: 600,
                         }}>
                           Cliente seleccionado: <strong>{modalPlayer}</strong> {modalPhone && `(${modalPhone})`}
@@ -3488,9 +3479,9 @@ export default function ClubPanel() {
                           required
                           style={{
                             width: '100%',
-                            backgroundColor: '#181b22',
+                            backgroundColor: '#141414',
                             border: '1px solid rgba(255,255,255,0.08)',
-                            borderRadius: 10,
+                            borderRadius: 0,
                             padding: '10px 12px',
                             color: '#ffffff',
                             fontSize: 13.5,
@@ -3510,9 +3501,9 @@ export default function ClubPanel() {
                           required
                           style={{
                             width: '100%',
-                            backgroundColor: '#181b22',
+                            backgroundColor: '#141414',
                             border: '1px solid rgba(255,255,255,0.08)',
-                            borderRadius: 10,
+                            borderRadius: 0,
                             padding: '10px 12px',
                             color: '#ffffff',
                             fontSize: 13.5,
@@ -3520,7 +3511,7 @@ export default function ClubPanel() {
                           }}
                         />
                       </div>
-                      <div style={{ fontSize: 11, color: '#fc1c46', backgroundColor: 'rgba(252,28,70,0.08)', border: '1px solid rgba(252,28,70,0.2)', padding: '6px 10px', borderRadius: 8 }}>
+                      <div style={{ fontSize: 11, color: '#fc1c46', backgroundColor: 'rgba(252,28,70,0.08)', border: '1px solid rgba(252,28,70,0.2)', padding: '6px 10px', borderRadius: 0 }}>
                         Se creará y guardará automáticamente como cliente en la base del club.
                       </div>
                     </div>
@@ -3572,7 +3563,7 @@ export default function ClubPanel() {
             maxWidth: 520,
             maxHeight: '90vh',
             overflowY: 'auto',
-            backgroundColor: '#12141a',
+            backgroundColor: '#0a0a0a',
             border: '1px solid rgba(255, 255, 255, 0.1)',
             borderRadius: 0,
             padding: '26px 28px',
@@ -3580,7 +3571,7 @@ export default function ClubPanel() {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
               <div>
-                <h3 style={{ fontSize: 19, fontWeight: 700, color: '#ffffff', margin: 0 }}>
+                <h3 style={{ fontSize: 19, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, color: '#ffffff', margin: 0 }}>
                   {editingCourtId ? 'Editar Cancha y Horarios' : 'Configurar Nueva Cancha'}
                 </h3>
                 <div style={{ fontSize: 11, color: '#fc1c46', marginTop: 2 }}>Establecé el nombre personalizado, características y horario</div>
@@ -3604,9 +3595,9 @@ export default function ClubPanel() {
                   required
                   style={{
                     width: '100%',
-                    backgroundColor: '#181b22',
+                    backgroundColor: '#141414',
                     border: isDuplicateCourtName ? '1px solid #ef4444' : '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: 10,
+                    borderRadius: 0,
                     padding: '10px 12px',
                     color: '#ffffff',
                     fontSize: 13.5,
@@ -3634,9 +3625,9 @@ export default function ClubPanel() {
                   onChange={e => setCourtSportInput(e.target.value)}
                   style={{
                     width: '100%',
-                    backgroundColor: '#181b22',
+                    backgroundColor: '#141414',
                     border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: 10,
+                    borderRadius: 0,
                     padding: '10px 12px',
                     color: '#ffffff',
                     fontSize: 13.5,
@@ -3651,7 +3642,7 @@ export default function ClubPanel() {
               </div>
 
               {/* Court Features & Attributes Selection */}
-              <div style={{ backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ backgroundColor: '#141414', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 0, padding: '14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: '#fc1c46', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
                   <Icons.SettingsSliders /> Características y Servicios de la Cancha
                 </div>
@@ -3842,7 +3833,7 @@ export default function ClubPanel() {
               </div>
 
               {/* Duración del Turno (60, 90, 120 min) */}
-              <div style={{ backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '14px 16px' }}>
+              <div style={{ backgroundColor: '#141414', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 0, padding: '14px 16px' }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: '#fc1c46', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
                   <Icons.Clock /> Duración de Cada Turno
                 </div>
@@ -3856,7 +3847,7 @@ export default function ClubPanel() {
                         padding: '10px 8px',
                         borderRadius: 9999,
                         border: courtSlotDurationInput === duration ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
-                        backgroundColor: courtSlotDurationInput === duration ? 'rgba(252,28,70,0.18)' : '#11131a',
+                        backgroundColor: courtSlotDurationInput === duration ? 'rgba(252,28,70,0.18)' : '#141414',
                         color: courtSlotDurationInput === duration ? '#ffffff' : '#9ca3af',
                         fontWeight: 700,
                         fontSize: 13,
@@ -3878,7 +3869,7 @@ export default function ClubPanel() {
               </div>
 
               {/* Operating Schedule Configuration */}
-              <div style={{ backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ backgroundColor: '#141414', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 0, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: '#fc1c46', textTransform: 'uppercase', letterSpacing: '0.8px', display: 'flex', alignItems: 'center', gap: 6 }}>
                     <Icons.Clock /> Horario de Funcionamiento
@@ -3890,9 +3881,9 @@ export default function ClubPanel() {
                       display: 'flex',
                       alignItems: 'center',
                       gap: 8,
-                      backgroundColor: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? 'rgba(252,28,70,0.18)' : '#11131a',
+                      backgroundColor: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? 'rgba(252,28,70,0.18)' : '#141414',
                       border: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.1)',
-                      borderRadius: 8,
+                      borderRadius: 0,
                       padding: '5px 12px',
                       cursor: 'pointer',
                       userSelect: 'none',
@@ -3934,9 +3925,9 @@ export default function ClubPanel() {
                       onChange={e => setCourtOpenTimeInput(e.target.value)}
                       style={{
                         width: '100%',
-                        backgroundColor: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '#151720' : '#11131a',
+                        backgroundColor: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '#141414' : '#141414',
                         border: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(252, 28, 70, 0.4)',
-                        borderRadius: 10,
+                        borderRadius: 0,
                         padding: '10px 12px',
                         color: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '#6b7280' : '#ffffff',
                         fontSize: 15,
@@ -3948,7 +3939,7 @@ export default function ClubPanel() {
                       }}
                     >
                       {['00:00', '00:30', '01:00', '01:30', '02:00', '06:00', '06:30', '07:00', '07:30', '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30'].map(t => (
-                        <option key={t} value={t} style={{ backgroundColor: '#11131a', color: '#ffffff' }}>
+                        <option key={t} value={t} style={{ backgroundColor: '#141414', color: '#ffffff' }}>
                           {t} hs
                         </option>
                       ))}
@@ -3964,9 +3955,9 @@ export default function ClubPanel() {
                       onChange={e => setCourtCloseTimeInput(e.target.value)}
                       style={{
                         width: '100%',
-                        backgroundColor: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '#151720' : '#11131a',
+                        backgroundColor: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '#141414' : '#141414',
                         border: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(252, 28, 70, 0.4)',
-                        borderRadius: 10,
+                        borderRadius: 0,
                         padding: '10px 12px',
                         color: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '#6b7280' : '#ffffff',
                         fontSize: 15,
@@ -3978,7 +3969,7 @@ export default function ClubPanel() {
                       }}
                     >
                       {['18:00', '19:00', '19:30', '20:00', '20:30', '21:00', '21:30', '22:00', '22:30', '23:00', '23:30', '24:00', '01:00', '02:00'].map(t => (
-                        <option key={t} value={t} style={{ backgroundColor: '#11131a', color: '#ffffff' }}>
+                        <option key={t} value={t} style={{ backgroundColor: '#141414', color: '#ffffff' }}>
                           {t} hs
                         </option>
                       ))}
@@ -3999,9 +3990,9 @@ export default function ClubPanel() {
                   required
                   style={{
                     width: '100%',
-                    backgroundColor: '#181b22',
+                    backgroundColor: '#141414',
                     border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: 10,
+                    borderRadius: 0,
                     padding: '10px 12px',
                     color: '#ffffff',
                     fontSize: 13.5,
@@ -4055,7 +4046,7 @@ export default function ClubPanel() {
           <div className="panel-modal-box" style={{
             width: '100%',
             maxWidth: 480,
-            backgroundColor: '#12141a',
+            backgroundColor: '#0a0a0a',
             border: '1px solid rgba(255, 255, 255, 0.1)',
             borderRadius: 0,
             padding: '26px 28px',
@@ -4063,7 +4054,7 @@ export default function ClubPanel() {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
               <div>
-                <h3 style={{ fontSize: 19, fontWeight: 700, color: '#ffffff', margin: 0 }}>
+                <h3 style={{ fontSize: 19, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, color: '#ffffff', margin: 0 }}>
                   {editingSlot.status === 'MAINTENANCE' || editingSlot.status === 'BLOCKED' ? 'Gestionar Horario Bloqueado' : 'Gestionar Reserva'}
                 </h3>
                 <div style={{ fontSize: 11, color: editingSlot.status === 'MAINTENANCE' || editingSlot.status === 'BLOCKED' ? '#f59e0b' : '#fc1c46', marginTop: 2 }}>
@@ -4088,9 +4079,9 @@ export default function ClubPanel() {
                   required
                   style={{
                     width: '100%',
-                    backgroundColor: '#181b22',
+                    backgroundColor: '#141414',
                     border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: 10,
+                    borderRadius: 0,
                     padding: '10px 12px',
                     color: '#ffffff',
                     fontSize: 13.5,
@@ -4110,9 +4101,9 @@ export default function ClubPanel() {
                   placeholder="+54 9 11 0000-0000"
                   style={{
                     width: '100%',
-                    backgroundColor: '#181b22',
+                    backgroundColor: '#141414',
                     border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: 10,
+                    borderRadius: 0,
                     padding: '10px 12px',
                     color: '#ffffff',
                     fontSize: 13.5,
@@ -4131,9 +4122,9 @@ export default function ClubPanel() {
                     onChange={e => handleEditCourtChange(e.target.value)}
                     style={{
                       width: '100%',
-                      backgroundColor: '#181b22',
+                      backgroundColor: '#141414',
                       border: '1px solid rgba(255,255,255,0.08)',
-                      borderRadius: 10,
+                      borderRadius: 0,
                       padding: '10px 12px',
                       color: '#ffffff',
                       fontSize: 13.5,
@@ -4154,9 +4145,9 @@ export default function ClubPanel() {
                     onChange={e => setEditTime(e.target.value)}
                     style={{
                       width: '100%',
-                      backgroundColor: '#181b22',
+                      backgroundColor: '#141414',
                       border: '1px solid rgba(255,255,255,0.08)',
-                      borderRadius: 10,
+                      borderRadius: 0,
                       padding: '10px 12px',
                       color: '#ffffff',
                       fontSize: 13.5,
@@ -4240,18 +4231,18 @@ export default function ClubPanel() {
           <div className="panel-modal-box" style={{
             width: '100%',
             maxWidth: 480,
-            backgroundColor: '#12141a',
+            backgroundColor: '#0a0a0a',
             border: '1px solid rgba(255, 255, 255, 0.1)',
-            borderRadius: 20,
+            borderRadius: 0,
             padding: '26px 28px',
             boxShadow: '0 25px 60px rgba(0, 0, 0, 0.9)',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
               <div>
-                <h3 style={{ fontSize: 19, fontWeight: 700, color: '#ffffff', margin: 0 }}>
+                <h3 style={{ fontSize: 19, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, color: '#ffffff', margin: 0 }}>
                   Agendar Turno Fijo
                 </h3>
-                <div style={{ fontSize: 11, color: '#4ade80', marginTop: 2 }}>Programación semanal recurrente</div>
+                <div style={{ fontSize: 11, color: '#10b981', marginTop: 2 }}>Programación semanal recurrente</div>
               </div>
               <button
                 onClick={() => setShowFixedSlotModal(false)}
@@ -4265,7 +4256,7 @@ export default function ClubPanel() {
                 <select
                   value={fixedCourtId}
                   onChange={e => setFixedCourtId(e.target.value)}
-                  style={{ width: '100%', backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '10px 12px', color: '#fff', fontSize: 13.5 }}
+                  style={{ width: '100%', backgroundColor: '#141414', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 0, padding: '10px 12px', color: '#fff', fontSize: 13.5 }}
                 >
                   {courts.map(c => (
                     <option key={c.id} value={c.id}>{c.name} ({c.sport})</option>
@@ -4279,7 +4270,7 @@ export default function ClubPanel() {
                   <select
                     value={fixedDayOfWeek}
                     onChange={e => setFixedDayOfWeek(e.target.value)}
-                    style={{ width: '100%', backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '10px 12px', color: '#fff', fontSize: 13.5 }}
+                    style={{ width: '100%', backgroundColor: '#141414', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 0, padding: '10px 12px', color: '#fff', fontSize: 13.5 }}
                   >
                     {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].map(d => (
                       <option key={d} value={d}>{d}</option>
@@ -4295,7 +4286,7 @@ export default function ClubPanel() {
                     onChange={e => setFixedTime(e.target.value)}
                     placeholder="ej. 20:00"
                     required
-                    style={{ width: '100%', backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '10px 12px', color: '#fff', fontSize: 13.5, boxSizing: 'border-box' }}
+                    style={{ width: '100%', backgroundColor: '#141414', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 0, padding: '10px 12px', color: '#fff', fontSize: 13.5, boxSizing: 'border-box' }}
                   />
                 </div>
               </div>
@@ -4308,8 +4299,8 @@ export default function ClubPanel() {
                 <div style={{
                   display: 'grid',
                   gridTemplateColumns: '1fr 1fr',
-                  backgroundColor: '#181b22',
-                  borderRadius: 12,
+                  backgroundColor: '#141414',
+                  borderRadius: 0,
                   padding: 4,
                   border: '1px solid rgba(255,255,255,0.06)',
                   marginBottom: 12,
@@ -4372,9 +4363,9 @@ export default function ClubPanel() {
                         placeholder="Tipeá nombre, apellido o teléfono..."
                         style={{
                           width: '100%',
-                          backgroundColor: '#181b22',
+                          backgroundColor: '#141414',
                           border: isFixedClientSearchOpen ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
-                          borderRadius: 10,
+                          borderRadius: 0,
                           padding: '10px 12px',
                           color: '#ffffff',
                           fontSize: 13.5,
@@ -4412,9 +4403,9 @@ export default function ClubPanel() {
                         top: '100%',
                         left: 0,
                         right: 0,
-                        backgroundColor: '#161820',
+                        backgroundColor: '#141414',
                         border: '1px solid rgba(252, 28, 70, 0.3)',
-                        borderRadius: 12,
+                        borderRadius: 0,
                         marginTop: 4,
                         maxHeight: 180,
                         overflowY: 'auto',
@@ -4460,7 +4451,7 @@ export default function ClubPanel() {
                               }}
                               style={{
                                 padding: '8px 12px',
-                                borderRadius: 8,
+                                borderRadius: 0,
                                 cursor: 'pointer',
                                 display: 'flex',
                                 justifyContent: 'space-between',
@@ -4480,7 +4471,7 @@ export default function ClubPanel() {
                                 color: '#fc1c46',
                                 backgroundColor: 'rgba(252, 28, 70, 0.15)',
                                 padding: '2px 6px',
-                                borderRadius: 4,
+                                borderRadius: 9999,
                               }}>
                                 {p.playerTag}
                               </span>
@@ -4493,12 +4484,12 @@ export default function ClubPanel() {
                     {fixedPlayerName && (
                       <div style={{
                         marginTop: 8,
-                        backgroundColor: 'rgba(74, 222, 128, 0.1)',
-                        border: '1px solid rgba(74, 222, 128, 0.3)',
-                        borderRadius: 8,
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        border: '1px solid rgba(16, 185, 129, 0.3)',
+                        borderRadius: 0,
                         padding: '8px 12px',
                         fontSize: 12,
-                        color: '#4ade80',
+                        color: '#10b981',
                         fontWeight: 600,
                       }}>
                         Cliente seleccionado: <strong>{fixedPlayerName}</strong> {fixedPlayerPhone && `(${fixedPlayerPhone})`}
@@ -4519,9 +4510,9 @@ export default function ClubPanel() {
                         required
                         style={{
                           width: '100%',
-                          backgroundColor: '#181b22',
+                          backgroundColor: '#141414',
                           border: '1px solid rgba(255,255,255,0.08)',
-                          borderRadius: 10,
+                          borderRadius: 0,
                           padding: '10px 12px',
                           color: '#ffffff',
                           fontSize: 13.5,
@@ -4541,9 +4532,9 @@ export default function ClubPanel() {
                         required
                         style={{
                           width: '100%',
-                          backgroundColor: '#181b22',
+                          backgroundColor: '#141414',
                           border: '1px solid rgba(255,255,255,0.08)',
-                          borderRadius: 10,
+                          borderRadius: 0,
                           padding: '10px 12px',
                           color: '#ffffff',
                           fontSize: 13.5,
@@ -4551,7 +4542,7 @@ export default function ClubPanel() {
                         }}
                       />
                     </div>
-                    <div style={{ fontSize: 11, color: '#fc1c46', backgroundColor: 'rgba(252,28,70,0.08)', border: '1px solid rgba(252,28,70,0.2)', padding: '6px 10px', borderRadius: 8 }}>
+                    <div style={{ fontSize: 11, color: '#fc1c46', backgroundColor: 'rgba(252,28,70,0.08)', border: '1px solid rgba(252,28,70,0.2)', padding: '6px 10px', borderRadius: 0 }}>
                       Se guardará en la base del club automáticamente.
                     </div>
                   </div>
@@ -4565,7 +4556,7 @@ export default function ClubPanel() {
                   value={fixedPrice}
                   onChange={e => setFixedPrice(Number(e.target.value))}
                   required
-                  style={{ width: '100%', backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '10px 12px', color: '#fff', fontSize: 13.5, boxSizing: 'border-box' }}
+                  style={{ width: '100%', backgroundColor: '#141414', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 0, padding: '10px 12px', color: '#fff', fontSize: 13.5, boxSizing: 'border-box' }}
                 />
               </div>
 
@@ -4611,7 +4602,7 @@ export default function ClubPanel() {
           <div style={{
             width: '100%',
             maxWidth: 480,
-            backgroundColor: '#12141a',
+            backgroundColor: '#0a0a0a',
             border: '1px solid rgba(255, 255, 255, 0.1)',
             borderRadius: 0,
             padding: '26px 28px',
@@ -4619,7 +4610,7 @@ export default function ClubPanel() {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
               <div>
-                <h3 style={{ fontSize: 19, fontWeight: 700, color: '#ffffff', margin: 0 }}>
+                <h3 style={{ fontSize: 19, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, color: '#ffffff', margin: 0 }}>
                   Agregar Nuevo Cliente
                 </h3>
                 <div style={{ fontSize: 11, color: '#fc1c46', marginTop: 2 }}>Registrar cliente recurrente en la base del club</div>
@@ -4641,7 +4632,7 @@ export default function ClubPanel() {
                   onChange={e => setNewPlayerName(e.target.value)}
                   placeholder="ej. Gastón Edul"
                   required
-                  style={{ width: '100%', backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '10px 12px', color: '#fff', fontSize: 13.5, boxSizing: 'border-box' }}
+                  style={{ width: '100%', backgroundColor: '#141414', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 0, padding: '10px 12px', color: '#fff', fontSize: 13.5, boxSizing: 'border-box' }}
                 />
               </div>
 
@@ -4655,7 +4646,7 @@ export default function ClubPanel() {
                   onChange={e => setNewPlayerPhone(e.target.value)}
                   placeholder="ej. +54 9 11 8877-6655"
                   required
-                  style={{ width: '100%', backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '10px 12px', color: '#fff', fontSize: 13.5, boxSizing: 'border-box' }}
+                  style={{ width: '100%', backgroundColor: '#141414', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 0, padding: '10px 12px', color: '#fff', fontSize: 13.5, boxSizing: 'border-box' }}
                 />
               </div>
 
@@ -4667,7 +4658,7 @@ export default function ClubPanel() {
                   <select
                     value={newPlayerSport}
                     onChange={e => setNewPlayerSport(e.target.value)}
-                    style={{ width: '100%', backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '10px 12px', color: '#fff', fontSize: 13.5 }}
+                    style={{ width: '100%', backgroundColor: '#141414', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 0, padding: '10px 12px', color: '#fff', fontSize: 13.5 }}
                   >
                     <option value="Pádel">Pádel</option>
                     <option value="Fútbol 5">Fútbol 5</option>
@@ -4685,7 +4676,7 @@ export default function ClubPanel() {
                     value={newPlayerCategory}
                     onChange={e => setNewPlayerCategory(e.target.value)}
                     placeholder="ej. 4ta Categoría"
-                    style={{ width: '100%', backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '10px 12px', color: '#fff', fontSize: 13.5, boxSizing: 'border-box' }}
+                    style={{ width: '100%', backgroundColor: '#141414', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 0, padding: '10px 12px', color: '#fff', fontSize: 13.5, boxSizing: 'border-box' }}
                   />
                 </div>
               </div>
@@ -4697,7 +4688,7 @@ export default function ClubPanel() {
                 <select
                   value={newPlayerTag}
                   onChange={e => setNewPlayerTag(e.target.value)}
-                  style={{ width: '100%', backgroundColor: '#181b22', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '10px 12px', color: '#fff', fontSize: 13.5 }}
+                  style={{ width: '100%', backgroundColor: '#141414', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 0, padding: '10px 12px', color: '#fff', fontSize: 13.5 }}
                 >
                   <option value="ABONADO FIJO">ABONADO FIJO</option>
                   <option value="JUGADOR FRECUENTE">JUGADOR FRECUENTE</option>
