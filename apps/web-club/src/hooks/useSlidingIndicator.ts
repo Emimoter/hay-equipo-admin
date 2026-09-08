@@ -7,7 +7,7 @@ export interface IndicatorDimensions {
   height: number;
 }
 
-export function useSlidingIndicator<T extends string>(activeKey: T) {
+export function useSlidingIndicator<T extends string>(activeKey: T, deps: any[] = []) {
   const containerRef = useRef<HTMLDivElement | HTMLElement | null>(null);
   const itemRefs = useRef<Record<string, HTMLElement | null>>({});
   const [indicator, setIndicator] = useState<IndicatorDimensions>({
@@ -18,48 +18,67 @@ export function useSlidingIndicator<T extends string>(activeKey: T) {
   });
   const [mounted, setMounted] = useState(false);
 
-  const setItemRef = useCallback(
-    (key: string) => (el: HTMLElement | null) => {
-      itemRefs.current[key] = el;
-    },
-    []
-  );
-
-  const update = useCallback(() => {
-    const el = itemRefs.current[activeKey];
-    if (el) {
+  const measure = useCallback((el: HTMLElement | null) => {
+    if (el && el.offsetWidth > 0) {
       setIndicator({
         left: el.offsetLeft,
         top: el.offsetTop,
         width: el.offsetWidth,
         height: el.offsetHeight,
       });
+      return true;
     }
-  }, [activeKey]);
+    return false;
+  }, []);
+
+  const update = useCallback(() => {
+    const el = itemRefs.current[activeKey];
+    if (el) {
+      measure(el);
+    }
+  }, [activeKey, measure]);
+
+  const setItemRef = useCallback(
+    (key: string) => (el: HTMLElement | null) => {
+      itemRefs.current[key] = el;
+      if (el && key === activeKey) {
+        measure(el);
+      }
+    },
+    [activeKey, measure]
+  );
 
   useEffect(() => {
     update();
 
-    const timer = setTimeout(() => {
+    const t1 = setTimeout(update, 10);
+    const t2 = setTimeout(update, 50);
+    const t3 = setTimeout(() => {
       update();
       setMounted(true);
-    }, 20);
+    }, 100);
 
     if (typeof document !== 'undefined' && 'fonts' in document) {
       document.fonts.ready.then(update).catch(() => {});
     }
 
-    const handleResize = () => {
-      update();
-    };
-
+    const handleResize = () => update();
     window.addEventListener('resize', handleResize);
 
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined' && containerRef.current) {
+      ro = new ResizeObserver(() => update());
+      ro.observe(containerRef.current);
+    }
+
     return () => {
-      clearTimeout(timer);
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
       window.removeEventListener('resize', handleResize);
+      if (ro) ro.disconnect();
     };
-  }, [update]);
+  }, [update, ...deps]);
 
   const indicatorStyle = {
     position: 'absolute' as const,

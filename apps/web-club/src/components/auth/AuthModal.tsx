@@ -106,7 +106,22 @@ export const AuthModal: React.FC = () => {
     containerRef: methodContainerRef,
     setItemRef: setMethodItemRef,
     indicatorStyle: methodIndicatorStyle,
-  } = useSlidingIndicator(activeTab);
+    indicator: methodIndicator,
+    update: updateMethodIndicator,
+  } = useSlidingIndicator(activeTab, [isAuthModalOpen]);
+
+  // Ensure indicator updates immediately when modal opens
+  useEffect(() => {
+    if (isAuthModalOpen) {
+      updateMethodIndicator();
+      const t1 = setTimeout(updateMethodIndicator, 15);
+      const t2 = setTimeout(updateMethodIndicator, 80);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
+    }
+  }, [isAuthModalOpen, updateMethodIndicator]);
   const [isRegisterMode, setIsRegisterMode] = useState(false);
 
   // Email form state
@@ -451,8 +466,28 @@ export const AuthModal: React.FC = () => {
             padding: 3,
           }}
         >
-          {/* Sliding Red Pill Thumb */}
-          <div style={methodIndicatorStyle} />
+          {/* Sliding Red Pill Thumb (hay-equipo-system) */}
+          <div
+            style={
+              methodIndicator.width > 0
+                ? methodIndicatorStyle
+                : {
+                    position: 'absolute',
+                    top: 3,
+                    left: 0,
+                    width: 'calc(50% - 3px)',
+                    height: 'calc(100% - 6px)',
+                    transform: activeTab === 'EMAIL' ? 'translate3d(3px, 0, 0)' : 'translate3d(calc(100% + 3px), 0, 0)',
+                    backgroundColor: 'var(--color-crimson-signal)',
+                    borderRadius: 'var(--radius-full)',
+                    boxShadow: '0 0 24px rgba(252, 28, 70, 0.45)',
+                    transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), width 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                    opacity: 1,
+                    pointerEvents: 'none',
+                    zIndex: 1,
+                  }
+            }
+          />
 
           <button
             ref={setMethodItemRef('EMAIL')}
