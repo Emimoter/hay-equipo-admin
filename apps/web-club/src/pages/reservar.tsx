@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useSlidingIndicator } from '../hooks/useSlidingIndicator';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { getBookingByIdFirestore, BookingRecord } from '../services/firebase';
@@ -600,6 +601,11 @@ function formatCurrency(val: number) {
 export default function ReservarPage() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [activeSport, setActiveSport] = useState<'PADEL' | 'FUTBOL'>('PADEL');
+  const {
+    containerRef: sportContainerRef,
+    setItemRef: setSportItemRef,
+    indicatorStyle: sportIndicatorStyle,
+  } = useSlidingIndicator(activeSport);
 
   // Search Bar state
   const [selectedZone, setSelectedZone] = useState<string>('TODAS');
@@ -1351,13 +1357,29 @@ export default function ReservarPage() {
               </div>
             </h1>
 
-            {/* Sport Toggle Switch */}
-            <div style={{ display: 'inline-flex', padding: '5px', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: 'var(--radius-full)', border: '1px solid rgba(255, 255, 255, 0.15)' }}>
+            {/* Sport Toggle Switch (Sliding Pill Switch — hay-equipo-system) */}
+            <div
+              ref={sportContainerRef as any}
+              style={{
+                position: 'relative',
+                display: 'inline-flex',
+                padding: '5px',
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                borderRadius: 'var(--radius-full)',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+              }}
+            >
+              {/* Sliding Red Pill Indicator */}
+              <div style={sportIndicatorStyle} />
+
               <button
+                ref={setSportItemRef('PADEL')}
                 onClick={() => setActiveSport('PADEL')}
                 style={{
-                  backgroundColor: activeSport === 'PADEL' ? 'var(--color-crimson-signal)' : 'transparent',
-                  color: 'var(--color-frost)',
+                  position: 'relative',
+                  zIndex: 2,
+                  backgroundColor: 'transparent',
+                  color: activeSport === 'PADEL' ? 'var(--color-frost)' : 'var(--color-ash)',
                   border: 'none',
                   borderRadius: 'var(--radius-full)',
                   padding: '11px 30px',
@@ -1369,18 +1391,20 @@ export default function ReservarPage() {
                   display: 'flex',
                   alignItems: 'center',
                   gap: 8,
-                  transition: 'all 0.2s ease',
-                  boxShadow: activeSport === 'PADEL' ? '0 0 20px rgba(252, 28, 70, 0.4)' : 'none',
+                  transition: 'color 0.2s ease',
                 }}
               >
-                <Icons.Padel size={15} color="#ffffff" />
+                <Icons.Padel size={15} color={activeSport === 'PADEL' ? '#ffffff' : 'var(--color-ash)'} />
                 <span>Pádel</span>
               </button>
 
               <button
+                ref={setSportItemRef('FUTBOL')}
                 onClick={() => setActiveSport('FUTBOL')}
                 style={{
-                  backgroundColor: activeSport === 'FUTBOL' ? 'var(--color-crimson-signal)' : 'transparent',
+                  position: 'relative',
+                  zIndex: 2,
+                  backgroundColor: 'transparent',
                   color: activeSport === 'FUTBOL' ? 'var(--color-frost)' : 'var(--color-ash)',
                   border: 'none',
                   borderRadius: 'var(--radius-full)',
@@ -1393,8 +1417,7 @@ export default function ReservarPage() {
                   display: 'flex',
                   alignItems: 'center',
                   gap: 8,
-                  transition: 'all 0.2s ease',
-                  boxShadow: activeSport === 'FUTBOL' ? '0 0 20px rgba(252, 28, 70, 0.4)' : 'none',
+                  transition: 'color 0.2s ease',
                 }}
               >
                 <Icons.Football size={15} color={activeSport === 'FUTBOL' ? '#ffffff' : 'var(--color-ash)'} />

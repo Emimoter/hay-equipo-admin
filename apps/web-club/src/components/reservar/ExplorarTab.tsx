@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useSlidingIndicator } from '../../hooks/useSlidingIndicator';
 
 export interface ExplorarClub {
   id: string;
@@ -77,6 +78,12 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
   const [sportFilter, setSportFilter] = useState<'ALL' | 'PADEL' | 'FUTBOL'>('ALL');
   const [selectedAmenity, setSelectedAmenity] = useState<'ALL' | 'COVERED' | 'PARKING' | 'BUFFET'>('ALL');
 
+  const {
+    containerRef: explorarSportContainerRef,
+    setItemRef: setExplorarSportItemRef,
+    indicatorStyle: explorarSportIndicatorStyle,
+  } = useSlidingIndicator(sportFilter);
+
   const filteredClubs = useMemo(() => {
     return clubs.filter((club) => {
       if (sportFilter === 'PADEL' && !club.sports.includes('PADEL')) return false;
@@ -153,14 +160,29 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
             />
           </div>
 
-          {/* Toggle Deporte */}
-          <div style={{ display: 'inline-flex', padding: 4, backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: 'var(--radius-full)' }}>
+          {/* Toggle Deporte (Sliding Pill Switch — hay-equipo-system) */}
+          <div
+            ref={explorarSportContainerRef as any}
+            style={{
+              position: 'relative',
+              display: 'inline-flex',
+              padding: 4,
+              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              borderRadius: 'var(--radius-full)',
+            }}
+          >
+            {/* Sliding Pill Indicator */}
+            <div style={explorarSportIndicatorStyle} />
+
             {(['ALL', 'PADEL', 'FUTBOL'] as const).map((sport) => (
               <button
                 key={sport}
+                ref={setExplorarSportItemRef(sport)}
                 onClick={() => setSportFilter(sport)}
                 style={{
-                  backgroundColor: sportFilter === sport ? 'var(--color-crimson-signal)' : 'transparent',
+                  position: 'relative',
+                  zIndex: 2,
+                  backgroundColor: 'transparent',
                   color: sportFilter === sport ? '#ffffff' : 'var(--color-ash)',
                   border: 'none',
                   borderRadius: 'var(--radius-full)',
@@ -170,7 +192,7 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
                   cursor: 'pointer',
                   textTransform: 'uppercase',
                   letterSpacing: '0.4px',
-                  transition: 'all 0.2s ease',
+                  transition: 'color 0.2s ease',
                 }}
               >
                 {sport === 'ALL' ? 'Todos' : sport === 'PADEL' ? 'Pádel' : 'Fútbol'}

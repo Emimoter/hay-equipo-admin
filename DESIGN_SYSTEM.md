@@ -82,7 +82,99 @@ Always use 24x24 viewBox with clean vector geometry:
 
 ---
 
-## 6. AUDIT CHECKLIST FOR CODING AGENTS
+
+---
+
+## 7. SLIDING PILL SEGMENTED CONTROLS & NAVIGATION SWITCHES (ANIMATION STANDARD)
+
+When creating segmented controls, sport selectors, tab bars, or filter switches:
+* **NEVER jump backgrounds abruptly** between buttons.
+* **MANDATORY:** Use a single fluid sliding pill indicator (`<div style={indicatorStyle} />`) that physically glides across the track with an elastic spring-like cubic bezier curve.
+
+### Motion Tokens & Physics
+| Property | Value | Notes |
+| :--- | :--- | :--- |
+| **Duration** | `0.3s` (300ms) | Responsive, instantaneous feel |
+| **Easing** | `cubic-bezier(0.16, 1, 0.3, 1)` | Natural deceleration spring curve |
+| **Transform** | `translate3d(Xpx, 0, 0)` | 100% GPU hardware-accelerated |
+| **Active Background** | `var(--color-crimson-signal)` (`#fc1c46`) | Solid crimson signal |
+| **Active Halo Glow** | `box-shadow: 0 0 24px rgba(252, 28, 70, 0.45)` | Signature Hay Equipo pulse |
+| **Border Radius** | `9999px` (`var(--radius-full)`) | Strictly 100% Pill |
+
+### Standard Implementation Pattern (`useSlidingIndicator`)
+```tsx
+import { useSlidingIndicator } from '../hooks/useSlidingIndicator';
+
+export function SportSwitch() {
+  const [activeSport, setActiveSport] = useState<'PADEL' | 'FUTBOL'>('PADEL');
+  const { containerRef, setItemRef, indicatorStyle } = useSlidingIndicator(activeSport);
+
+  return (
+    <div
+      ref={containerRef as any}
+      style={{
+        position: 'relative',
+        display: 'inline-flex',
+        padding: '5px',
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        borderRadius: 'var(--radius-full)',
+        border: '1px solid rgba(255, 255, 255, 0.15)',
+      }}
+    >
+      {/* Active Sliding Pill Thumb */}
+      <div style={indicatorStyle} />
+
+      <button
+        ref={setItemRef('PADEL')}
+        onClick={() => setActiveSport('PADEL')}
+        style={{
+          position: 'relative',
+          zIndex: 2,
+          backgroundColor: 'transparent',
+          color: activeSport === 'PADEL' ? '#ffffff' : 'var(--color-ash)',
+          border: 'none',
+          borderRadius: 'var(--radius-full)',
+          padding: '11px 30px',
+          fontSize: 13,
+          fontWeight: 700,
+          cursor: 'pointer',
+          textTransform: 'uppercase',
+          letterSpacing: '0.6px',
+          transition: 'color 0.2s ease',
+        }}
+      >
+        PÁDEL
+      </button>
+
+      <button
+        ref={setItemRef('FUTBOL')}
+        onClick={() => setActiveSport('FUTBOL')}
+        style={{
+          position: 'relative',
+          zIndex: 2,
+          backgroundColor: 'transparent',
+          color: activeSport === 'FUTBOL' ? '#ffffff' : 'var(--color-ash)',
+          border: 'none',
+          borderRadius: 'var(--radius-full)',
+          padding: '11px 30px',
+          fontSize: 13,
+          fontWeight: 700,
+          cursor: 'pointer',
+          textTransform: 'uppercase',
+          letterSpacing: '0.6px',
+          transition: 'color 0.2s ease',
+        }}
+      >
+        FÚTBOL
+      </button>
+    </div>
+  );
+}
+```
+
+---
+
+## 8. AUDIT CHECKLIST FOR CODING AGENTS
 
 When reviewing or generating UI:
 1. Verify no container has rounded corners (must be `borderRadius: 0`).

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useSlidingIndicator } from '../../hooks/useSlidingIndicator';
 
 export type NavTabType = 'INICIO' | 'EXPLORAR' | 'RESERVAS' | 'FIJOS' | 'PERFIL';
 
@@ -58,15 +59,19 @@ export const ReservarNavTabs: React.FC<ReservarNavTabsProps> = ({
   onChangeTab,
   bookingCount = 0,
 }) => {
+  const { containerRef, setItemRef, indicatorStyle } = useSlidingIndicator(activeTab);
+
   return (
     <>
       {/* ────────────────────────────────────────────────────────────
           DESKTOP TABS (Barra superior elegante estilo Swiss Brutalist)
           ──────────────────────────────────────────────────────────── */}
       <nav
+        ref={containerRef as any}
         aria-label="Navegación principal de reservas"
         className="reservar-desktop-nav"
         style={{
+          position: 'relative',
           display: 'flex',
           alignItems: 'center',
           gap: '6px',
@@ -77,40 +82,42 @@ export const ReservarNavTabs: React.FC<ReservarNavTabsProps> = ({
           backdropFilter: 'blur(16px)',
         }}
       >
+        {/* Sliding Pill Indicator (hay-equipo-system) */}
+        <div style={indicatorStyle} />
+
         {TABS.map((tab) => {
           const isActive = activeTab === tab.id;
           return (
             <button
               key={tab.id}
+              ref={setItemRef(tab.id)}
               onClick={() => onChangeTab(tab.id)}
               style={{
                 position: 'relative',
+                zIndex: 2,
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '8px',
                 padding: '9px 18px',
                 borderRadius: '9999px',
                 border: 'none',
-                backgroundColor: isActive ? 'var(--color-crimson-signal)' : 'transparent',
+                backgroundColor: 'transparent',
                 color: isActive ? '#ffffff' : 'var(--color-ash)',
                 fontSize: '12px',
                 fontWeight: isActive ? 700 : 600,
                 letterSpacing: '0.4px',
                 textTransform: 'uppercase',
                 cursor: 'pointer',
-                transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-                boxShadow: isActive ? '0 0 20px rgba(252, 28, 70, 0.45)' : 'none',
+                transition: 'color 0.2s ease',
               }}
               onMouseEnter={(e) => {
                 if (!isActive) {
                   e.currentTarget.style.color = '#ffffff';
-                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
                 }
               }}
               onMouseLeave={(e) => {
                 if (!isActive) {
                   e.currentTarget.style.color = 'var(--color-ash)';
-                  e.currentTarget.style.backgroundColor = 'transparent';
                 }
               }}
             >
