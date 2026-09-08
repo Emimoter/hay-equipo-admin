@@ -235,7 +235,7 @@ export default function LandingPage() {
           const rotation = y * 0.42;
           const translateY = isMobile ? y * 0.12 : y * 0.18;
           // Cleanly fade out & occlude as scroll moves past the hero
-          const fadeStart = isMobile ? 380 : 750;
+          const fadeStart = isMobile ? 320 : 750;
           const fadeRange = isMobile ? 180 : 220;
           const globalOpacity = y > fadeStart ? Math.max(0, 1 - (y - fadeStart) / fadeRange) : 1;
 

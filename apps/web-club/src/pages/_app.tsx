@@ -95,12 +95,12 @@ export default function App({ Component, pageProps }: AppProps) {
 
         /* ── Landing Mobile Fixes (max-width 768px) ── */
         @media (max-width: 768px) {
-          /* 3D Ball Container on Mobile: Shifted cleanly below CTAs, zero overlap with typography */
+          /* 3D Ball Container on Mobile: Positioned in upper right hero area, clear of subtitle */
           .ball-container {
-            top: 78% !important;
-            right: 0 !important;
-            width: min(44vw, 190px) !important;
-            height: min(44vw, 190px) !important;
+            top: 30% !important;
+            right: -2% !important;
+            width: min(46vw, 185px) !important;
+            height: min(46vw, 185px) !important;
           }
 
           /* Header */
@@ -175,9 +175,9 @@ export default function App({ Component, pageProps }: AppProps) {
 
         @media (max-width: 480px) and (max-height: 720px) {
           .ball-container {
-            top: 81% !important;
-            width: 155px !important;
-            height: 155px !important;
+            top: 28% !important;
+            width: 150px !important;
+            height: 150px !important;
           }
         }
       `}</style>
