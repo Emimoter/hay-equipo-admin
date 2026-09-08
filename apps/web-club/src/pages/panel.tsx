@@ -1387,7 +1387,7 @@ export default function ClubPanel() {
               borderRadius: '50%',
               border: 'none',
               backgroundColor: 'transparent',
-              color: '#6b7280',
+              color: '#94a3b8',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -1434,7 +1434,7 @@ export default function ClubPanel() {
                 gap: 7,
                 backgroundColor: '#0a0a0a',
                 border: '1px solid rgba(255, 255, 255, 0.08)',
-                borderRadius: 'var(--radius-full)',
+                borderRadius: 9999,
                 padding: '6px 14px',
               }}>
                 <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: '#10b981', boxShadow: '0 0 8px #10b981' }} />
@@ -1473,7 +1473,7 @@ export default function ClubPanel() {
               display: 'flex',
               backgroundColor: '#0a0a0a',
               padding: 3,
-              borderRadius: 0,
+              borderRadius: 9999,
               border: '1px solid rgba(255,255,255,0.06)',
             }}>
               {availableSportFilters.map(sport => (
@@ -1504,7 +1504,7 @@ export default function ClubPanel() {
                 title="Imprimir planilla del día"
                 style={{
                   backgroundColor: '#0a0a0a',
-                  color: '#d1d5db',
+                  color: '#ffffff',
                   border: '1px solid rgba(255,255,255,0.08)',
                   borderRadius: 9999,
                   padding: '6px 14px',
@@ -1533,7 +1533,7 @@ export default function ClubPanel() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     cursor: 'pointer',
-                    color: showNotificationDropdown ? '#ffffff' : '#d1d5db',
+                    color: showNotificationDropdown ? '#ffffff' : '#94a3b8',
                     transition: 'all 0.15s ease',
                   }}
                   onClick={() => setShowNotificationDropdown(prev => !prev)}
@@ -1600,7 +1600,7 @@ export default function ClubPanel() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <span style={{ fontSize: 13, fontWeight: 800, color: '#ffffff' }}>Notificaciones</span>
                           {unreadNotificationCount > 0 && (
-                            <span style={{ fontSize: 10, fontWeight: 700, backgroundColor: 'rgba(252, 28, 70, 0.15)', color: '#fc1c46', padding: '2px 7px', borderRadius: 'var(--radius-full)' }}>
+                            <span style={{ fontSize: 10, fontWeight: 700, backgroundColor: 'rgba(252, 28, 70, 0.15)', color: '#fc1c46', padding: '2px 7px', borderRadius: 9999 }}>
                               {unreadNotificationCount} nuevas
                             </span>
                           )}
@@ -1633,7 +1633,7 @@ export default function ClubPanel() {
                         flexDirection: 'column',
                       }}>
                         {notifications.length === 0 ? (
-                          <div style={{ padding: 24, textAlign: 'center', color: '#6b7280', fontSize: 12 }}>
+                          <div style={{ padding: 24, textAlign: 'center', color: '#94a3b8', fontSize: 12 }}>
                             No tenés notificaciones registradas.
                           </div>
                         ) : (
@@ -1658,8 +1658,8 @@ export default function ClubPanel() {
                                 width: 28,
                                 height: 28,
                                 borderRadius: '50%',
-                                backgroundColor: n.type === 'PAYMENT' ? 'rgba(16, 185, 129, 0.12)' : n.type === 'CANCEL' ? 'rgba(239, 68, 68, 0.12)' : 'rgba(252, 28, 70, 0.12)',
-                                color: n.type === 'PAYMENT' ? '#10b981' : n.type === 'CANCEL' ? '#ef4444' : '#fc1c46',
+                                backgroundColor: n.type === 'PAYMENT' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(252, 28, 70, 0.12)',
+                                color: n.type === 'PAYMENT' ? '#10b981' : '#fc1c46',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
@@ -1673,10 +1673,10 @@ export default function ClubPanel() {
 
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
-                                  <div style={{ fontSize: 12.5, fontWeight: n.read ? 600 : 800, color: n.read ? '#d1d5db' : '#ffffff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  <div style={{ fontSize: 12.5, fontWeight: n.read ? 600 : 800, color: n.read ? '#94a3b8' : '#ffffff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                     {n.title}
                                   </div>
-                                  <span style={{ fontSize: 10, color: '#6b7280', flexShrink: 0 }}>{n.time}</span>
+                                  <span style={{ fontSize: 10, color: '#94a3b8', flexShrink: 0 }}>{n.time}</span>
                                 </div>
                                 <div style={{ fontSize: 11.5, color: '#9ca3af', marginTop: 2, lineHeight: 1.3 }}>
                                   {n.message}
@@ -1690,13 +1690,13 @@ export default function ClubPanel() {
                                 style={{
                                   backgroundColor: 'transparent',
                                   border: 'none',
-                                  color: '#4b5563',
+                                  color: '#94a3b8',
                                   fontSize: 12,
                                   cursor: 'pointer',
                                   padding: '2px 4px', borderRadius: '50%',
                                 }}
-                                onMouseEnter={e => e.currentTarget.style.color = '#ef4444'}
-                                onMouseLeave={e => e.currentTarget.style.color = '#4b5563'}
+                                onMouseEnter={e => e.currentTarget.style.color = '#fc1c46'}
+                                onMouseLeave={e => e.currentTarget.style.color = '#94a3b8'}
                               ><Icons.Close size={13} /></button>
                             </div>
                           ))
@@ -1710,7 +1710,7 @@ export default function ClubPanel() {
                         backgroundColor: '#141414',
                         textAlign: 'center',
                         fontSize: 11,
-                        color: '#6b7280',
+                        color: '#94a3b8',
                       }}>
                         {unreadNotificationCount === 0 ? 'Todas las notificaciones están leídas' : `${unreadNotificationCount} sin leer`}
                       </div>
@@ -1793,10 +1793,10 @@ export default function ClubPanel() {
                     </svg>
                   </div>
                   <div>
-                    <div style={{ fontSize: 'clamp(20px, 2.5vh, 24px)', fontWeight: 700, color: '#ffffff', lineHeight: 1 }}>
+                    <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 'clamp(20px, 2.5vh, 24px)', fontWeight: 700, color: '#ffffff', lineHeight: 1 }}>
                       {totalReservedToday}
                     </div>
-                    <div style={{ fontSize: 11, color: '#8b92a0', marginTop: 3 }}>
+                    <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 3 }}>
                       reservas confirmadas hoy
                     </div>
                   </div>
@@ -1842,10 +1842,10 @@ export default function ClubPanel() {
                     </svg>
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 'clamp(18px, 2.2vh, 22px)', fontWeight: 700, color: '#ffffff', lineHeight: 1 }}>
+                    <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 'clamp(18px, 2.2vh, 22px)', fontWeight: 700, color: '#ffffff', lineHeight: 1 }}>
                       {financialMetrics.formattedTotal}
                     </div>
-                    <div style={{ fontSize: 11, color: '#8b92a0', marginTop: 3, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 3, display: 'flex', alignItems: 'center', gap: 4 }}>
                       <span>recaudación estimada ({dateFilter.toLowerCase()})</span>
                     </div>
                   </div>
@@ -1879,10 +1879,10 @@ export default function ClubPanel() {
                     </svg>
                   </div>
                   <div>
-                    <div style={{ fontSize: 'clamp(20px, 2.5vh, 24px)', fontWeight: 700, color: '#ffffff', lineHeight: 1 }}>
+                    <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 'clamp(20px, 2.5vh, 24px)', fontWeight: 700, color: '#ffffff', lineHeight: 1 }}>
                       {activeCourtsCount} / {filteredCourts.length}
                     </div>
-                    <div style={{ fontSize: 11, color: '#8b92a0', marginTop: 3 }}>
+                    <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 3 }}>
                       canchas operativas
                     </div>
                   </div>
@@ -1956,7 +1956,7 @@ export default function ClubPanel() {
                           }}
                         >
                           {/* Time Column */}
-                          <div style={{ color: '#d1d5db', fontSize: 12, fontWeight: 700 }}>
+                          <div style={{ color: '#ffffff', fontSize: 12, fontWeight: 700 }}>
                             {time} hs
                           </div>
 
@@ -2019,7 +2019,7 @@ export default function ClubPanel() {
                                   onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.02)')}
                                   onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
                                 >
-                                  <div style={{ fontSize: 11.5, fontWeight: 700, color: '#fef08a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>
+                                  <div style={{ fontSize: 11.5, fontWeight: 700, color: '#f59e0b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>
                                     {slot.player}
                                   </div>
                                   <div style={{ fontSize: 9.5, color: '#f59e0b', fontWeight: 600, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -2038,7 +2038,7 @@ export default function ClubPanel() {
                                     border: '1px dashed rgba(255, 255, 255, 0.04)',
                                     borderRadius: 0,
                                     padding: '6px 8px',
-                                    color: '#4b5563',
+                                    color: '#94a3b8',
                                     fontSize: 10,
                                     fontWeight: 600,
                                     textAlign: 'center',
@@ -2085,7 +2085,7 @@ export default function ClubPanel() {
                                   e.currentTarget.style.backgroundColor = '#141414';
                                 }}
                               >
-                                <div style={{ fontSize: 11, color: '#6b7280', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                <div style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                   Disponible
                                 </div>
                               </div>
@@ -2165,7 +2165,7 @@ export default function ClubPanel() {
                     </div>
 
                     {/* Time Axis Labels */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#6b7280', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 6 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#94a3b8', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 6 }}>
                       <span>08h</span>
                       <span>12h</span>
                       <span>16h</span>
@@ -2276,7 +2276,7 @@ export default function ClubPanel() {
                           style={{
                             backgroundColor: 'transparent',
                             border: 'none',
-                            color: court.active ? '#10b981' : '#6b7280',
+                            color: court.active ? '#10b981' : '#94a3b8',
                             fontSize: 11.5,
                             fontWeight: 700,
                             cursor: 'pointer',
@@ -2286,7 +2286,7 @@ export default function ClubPanel() {
                             gap: 5,
                           }}
                         >
-                          <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: court.active ? '#10b981' : '#6b7280', boxShadow: court.active ? '0 0 6px #10b981' : 'none' }} />
+                          <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: court.active ? '#10b981' : '#94a3b8', boxShadow: court.active ? '0 0 6px #10b981' : 'none' }} />
                           {court.active ? 'Activa' : 'Pausada'}
                         </button>
                       </div>
@@ -2295,7 +2295,7 @@ export default function ClubPanel() {
                         onClick={() => handleOpenCourtModal(court)}
                         style={{
                           backgroundColor: 'rgba(255,255,255,0.04)',
-                          color: '#e2e8f0',
+                          color: '#ffffff',
                           border: '1px solid rgba(255,255,255,0.1)',
                           borderRadius: 9999,
                           padding: '5px 11px',
@@ -2331,7 +2331,7 @@ export default function ClubPanel() {
 
                     {/* Court Feature Badges */}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, backgroundColor: 'rgba(255,255,255,0.05)', color: '#d1d5db', border: '1px solid rgba(255,255,255,0.08)', padding: '4px 9px', borderRadius: 9999, fontSize: 11, fontWeight: 600 }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, backgroundColor: 'rgba(255,255,255,0.05)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.08)', padding: '4px 9px', borderRadius: 9999, fontSize: 11, fontWeight: 600 }}>
                         <Icons.Clock /> {court.slotDuration || 90} min / turno
                       </span>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, backgroundColor: court.indoor ? 'rgba(252,28,70,0.12)' : 'rgba(255,255,255,0.04)', color: court.indoor ? '#fc1c46' : '#9ca3af', border: court.indoor ? '1px solid rgba(252,28,70,0.25)' : '1px solid rgba(255,255,255,0.06)', padding: '4px 9px', borderRadius: 9999, fontSize: 11, fontWeight: 600 }}>
@@ -2424,7 +2424,7 @@ export default function ClubPanel() {
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {financialMetrics.activeReservedSlots.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '40px 20px', color: '#6b7280', fontSize: 13 }}>
+                    <div style={{ textAlign: 'center', padding: '40px 20px', color: '#94a3b8', fontSize: 13 }}>
                       No hay reservas registradas para {dateFilter.toLowerCase()}.
                     </div>
                   ) : (
@@ -2445,7 +2445,7 @@ export default function ClubPanel() {
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                           <div style={{
-                            backgroundColor: '#241217',
+                            backgroundColor: 'rgba(252, 28, 70, 0.15)',
                             color: '#fc1c46',
                             fontWeight: 700,
                             fontSize: 12,
@@ -2559,7 +2559,7 @@ export default function ClubPanel() {
                     textAlign: 'center',
                   }}>
                     {['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'].map(day => (
-                      <div key={day} style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', letterSpacing: '0.8px' }}>
+                      <div key={day} style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', letterSpacing: '0.8px' }}>
                         {day}
                       </div>
                     ))}
@@ -2606,7 +2606,7 @@ export default function ClubPanel() {
                               backgroundColor: isToday ? '#fc1c46' : 'transparent',
                               width: isToday ? 22 : 'auto',
                               height: isToday ? 22 : 'auto',
-                              borderRadius: isToday ? '50%' : 0,
+                              borderRadius: isToday ? 9999 : 0,
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
@@ -2624,7 +2624,7 @@ export default function ClubPanel() {
                             <div className="panel-calendar-day-amount" style={{
                               fontSize: 14,
                               fontWeight: 800,
-                              color: isToday ? '#10b981' : dayData.revenue > 0 ? '#ffffff' : '#4b5563',
+                              color: isToday ? '#10b981' : dayData.revenue > 0 ? '#ffffff' : '#94a3b8',
                               letterSpacing: '-0.3px',
                               whiteSpace: 'nowrap',
                               overflow: 'hidden',
@@ -2632,7 +2632,7 @@ export default function ClubPanel() {
                             }}>
                               ${dayData.revenue.toLocaleString()}
                             </div>
-                            <div style={{ fontSize: 10, color: '#6b7280', marginTop: 2 }}>
+                            <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>
                               {dayData.turnos} turnos
                             </div>
                           </div>
@@ -2704,7 +2704,7 @@ export default function ClubPanel() {
                   borderBottom: '1px solid rgba(255,255,255,0.05)',
                   fontSize: 11,
                   fontWeight: 600,
-                  color: '#6b7280',
+                  color: '#94a3b8',
                   textTransform: 'uppercase',
                 }}>
                   <div>JUGADOR</div>
@@ -2732,7 +2732,7 @@ export default function ClubPanel() {
                       </span>
                     </div>
                     <div style={{ color: '#9ca3af' }}>{p.phone}</div>
-                    <div style={{ color: '#d1d5db', fontSize: 12 }}>{p.category} · {p.sport}</div>
+                    <div style={{ color: '#94a3b8', fontSize: 12 }}>{p.category} · {p.sport}</div>
                     <div style={{ textAlign: 'right', color: '#fff', fontWeight: 600 }}>{p.matchesPlayed} jugados</div>
                   </div>
                 ))}
@@ -2778,10 +2778,10 @@ export default function ClubPanel() {
                   <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
                     TOTAL TURNOS FIJOS
                   </div>
-                  <div style={{ fontSize: 26, fontWeight: 700, color: '#ffffff', marginTop: 6 }}>
+                  <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 26, fontWeight: 700, color: '#ffffff', marginTop: 6 }}>
                     {fixedSlots.length} fijos activos
                   </div>
-                  <div style={{ fontSize: 11, color: '#6b7280', marginTop: 4 }}>
+                  <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>
                     Horarios reservados semanalmente
                   </div>
                 </div>
@@ -2790,7 +2790,7 @@ export default function ClubPanel() {
                   <div style={{ fontSize: 11, fontWeight: 700, color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
                     INGRESO SEMANAL RECURRENTE
                   </div>
-                  <div style={{ fontSize: 26, fontWeight: 700, color: '#10b981', marginTop: 6 }}>
+                  <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 26, fontWeight: 700, color: '#10b981', marginTop: 6 }}>
                     ${fixedSlots.filter(f => f.active).reduce((acc, f) => acc + f.price, 0).toLocaleString()}
                   </div>
                   <div style={{ fontSize: 11, color: '#10b981', marginTop: 4, opacity: 0.8 }}>
@@ -2823,7 +2823,7 @@ export default function ClubPanel() {
                       <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                           <span style={{
-                            backgroundColor: '#241217',
+                            backgroundColor: 'rgba(252, 28, 70, 0.15)',
                             color: '#fc1c46',
                             fontWeight: 800,
                             fontSize: 11,
@@ -2837,7 +2837,7 @@ export default function ClubPanel() {
                             onClick={() => handleToggleFixedActive(slot.id)}
                             style={{
                               backgroundColor: slot.active ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255,255,255,0.05)',
-                              color: slot.active ? '#10b981' : '#6b7280',
+                              color: slot.active ? '#10b981' : '#94a3b8',
                               border: slot.active ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(255,255,255,0.1)',
                               borderRadius: 9999,
                               padding: '3px 8px',
@@ -2856,7 +2856,7 @@ export default function ClubPanel() {
                         <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>
                           {slot.courtName} <span style={{ fontSize: 10, color: '#fc1c46' }}>({slot.sport})</span>
                         </div>
-                        <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>
+                        <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>
                           Contacto: {slot.playerPhone}
                         </div>
                       </div>
@@ -2869,8 +2869,8 @@ export default function ClubPanel() {
                           onClick={() => handleDeleteFixedSlot(slot.id)}
                           style={{
                             backgroundColor: 'transparent',
-                            color: '#ef4444',
-                            border: '1px solid rgba(239, 68, 68, 0.2)',
+                            color: '#fc1c46',
+                            border: '1px solid rgba(252, 28, 70, 0.3)',
                             borderRadius: 9999,
                             padding: '4px 8px',
                             fontSize: 10,
@@ -2964,7 +2964,7 @@ export default function ClubPanel() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                 <span style={{ fontSize: 12, fontWeight: 700, color: '#ffffff' }}>Nueva reserva confirmada</span>
                 <span style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: '#10b981', display: 'inline-block' }} />
-                <span style={{ fontSize: 10, color: '#6b7280' }}>· ahora</span>
+                <span style={{ fontSize: 10, color: '#94a3b8' }}>· ahora</span>
               </div>
               <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 1 }}>
                 Cancha 2 · 21:00 hs ($45.000)
@@ -2976,7 +2976,7 @@ export default function ClubPanel() {
               style={{
                 backgroundColor: 'transparent',
                 border: 'none',
-                color: '#6b7280',
+                color: '#94a3b8',
                 fontSize: 14,
                 cursor: 'pointer',
                 padding: '4px',
@@ -3058,7 +3058,7 @@ export default function ClubPanel() {
                   gap: 2,
                   background: 'none',
                   border: 'none',
-                  color: isActive ? '#fc1c46' : '#6b7280',
+                  color: isActive ? '#fc1c46' : '#94a3b8',
                   padding: '4px 6px',
                   cursor: 'pointer',
                   minWidth: 46,
@@ -3113,7 +3113,7 @@ export default function ClubPanel() {
               </div>
               <button
                 onClick={() => setShowModal(false)}
-                style={{ backgroundColor: 'transparent', border: 'none', color: '#6b7280', fontSize: 18, cursor: 'pointer' }}
+                style={{ backgroundColor: 'transparent', border: 'none', color: '#94a3b8', fontSize: 18, cursor: 'pointer' }}
               ><Icons.Close size={13} /></button>
             </div>
 
@@ -3135,7 +3135,7 @@ export default function ClubPanel() {
                     padding: '8px 12px',
                     borderRadius: 9999,
                     border: 'none',
-                    backgroundColor: modalReservationType === 'RESERVED' ? '#241217' : 'transparent',
+                    backgroundColor: modalReservationType === 'RESERVED' ? 'rgba(252, 28, 70, 0.15)' : 'transparent',
                     color: modalReservationType === 'RESERVED' ? '#fc1c46' : '#9ca3af',
                     fontWeight: 700,
                     fontSize: 12,
@@ -3152,7 +3152,7 @@ export default function ClubPanel() {
                     padding: '8px 12px',
                     borderRadius: 9999,
                     border: 'none',
-                    backgroundColor: modalReservationType === 'BLOCKED' ? '#292011' : 'transparent',
+                    backgroundColor: modalReservationType === 'BLOCKED' ? 'rgba(245, 158, 11, 0.15)' : 'transparent',
                     color: modalReservationType === 'BLOCKED' ? '#f59e0b' : '#9ca3af',
                     fontWeight: 700,
                     fontSize: 12,
@@ -3177,7 +3177,7 @@ export default function ClubPanel() {
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#ffffff' }}>
                     {courts.find(c => c.id === modalCourt)?.name}
                   </div>
-                  <span style={{ fontSize: 12, fontWeight: 800, color: '#fc1c46', backgroundColor: '#241217', border: '1px solid rgba(252,28,70,0.3)', padding: '3px 10px', borderRadius: 9999 }}>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: '#fc1c46', backgroundColor: 'rgba(252, 28, 70, 0.15)', border: '1px solid rgba(252,28,70,0.3)', padding: '3px 10px', borderRadius: 9999 }}>
                     {modalTime} hs
                   </span>
                 </div>
@@ -3285,7 +3285,7 @@ export default function ClubPanel() {
                         padding: '8px 12px',
                         borderRadius: 9999,
                         border: 'none',
-                        backgroundColor: clientSelectionMode === 'EXISTING' ? '#241217' : 'transparent',
+                        backgroundColor: clientSelectionMode === 'EXISTING' ? 'rgba(252, 28, 70, 0.15)' : 'transparent',
                         color: clientSelectionMode === 'EXISTING' ? '#fc1c46' : '#9ca3af',
                         fontWeight: 700,
                         fontSize: 12,
@@ -3306,7 +3306,7 @@ export default function ClubPanel() {
                         padding: '8px 12px',
                         borderRadius: 9999,
                         border: 'none',
-                        backgroundColor: clientSelectionMode === 'NEW' ? '#241217' : 'transparent',
+                        backgroundColor: clientSelectionMode === 'NEW' ? 'rgba(252, 28, 70, 0.15)' : 'transparent',
                         color: clientSelectionMode === 'NEW' ? '#fc1c46' : '#9ca3af',
                         fontWeight: 700,
                         fontSize: 12,
@@ -3357,7 +3357,7 @@ export default function ClubPanel() {
                               transform: 'translateY(-50%)',
                               backgroundColor: 'transparent',
                               border: 'none',
-                              color: '#6b7280',
+                              color: '#94a3b8',
                               fontSize: 14,
                               cursor: 'pointer',
                             }}
@@ -3395,7 +3395,7 @@ export default function ClubPanel() {
                                   setIsClientSearchOpen(false);
                                 }}
                                 style={{
-                                  backgroundColor: '#241217',
+                                  backgroundColor: 'rgba(252, 28, 70, 0.15)',
                                   color: '#fc1c46',
                                   border: '1px solid rgba(252, 28, 70, 0.3)',
                                   borderRadius: 9999,
@@ -3578,7 +3578,7 @@ export default function ClubPanel() {
               </div>
               <button
                 onClick={() => setShowCourtModal(false)}
-                style={{ backgroundColor: 'transparent', border: 'none', color: '#6b7280', fontSize: 18, cursor: 'pointer' }}
+                style={{ backgroundColor: 'transparent', border: 'none', color: '#94a3b8', fontSize: 18, cursor: 'pointer' }}
               ><Icons.Close size={13} /></button>
             </div>
 
@@ -3596,7 +3596,7 @@ export default function ClubPanel() {
                   style={{
                     width: '100%',
                     backgroundColor: '#141414',
-                    border: isDuplicateCourtName ? '1px solid #ef4444' : '1px solid rgba(255,255,255,0.08)',
+                    border: isDuplicateCourtName ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
                     borderRadius: 0,
                     padding: '10px 12px',
                     color: '#ffffff',
@@ -3605,8 +3605,8 @@ export default function ClubPanel() {
                   }}
                 />
                 {isDuplicateCourtName && (
-                  <div style={{ color: '#ef4444', fontSize: 11.5, marginTop: 5, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <div style={{ color: '#fc1c46', fontSize: 11.5, marginTop: 5, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fc1c46" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
                       <line x1="12" y1="9" x2="12" y2="13" />
                       <line x1="12" y1="17" x2="12.01" y2="17" />
@@ -3909,7 +3909,7 @@ export default function ClubPanel() {
                         cursor: 'pointer',
                       }}
                     />
-                    <span style={{ fontSize: 11.5, fontWeight: 700, color: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '#ffffff' : '#d1d5db', display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <span style={{ fontSize: 11.5, fontWeight: 700, color: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '#ffffff' : '#94a3b8', display: 'flex', alignItems: 'center', gap: 5 }}>
                       <Icons.Moon /> Abierto 24 Horas
                     </span>
                   </label>
@@ -3929,7 +3929,7 @@ export default function ClubPanel() {
                         border: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(252, 28, 70, 0.4)',
                         borderRadius: 0,
                         padding: '10px 12px',
-                        color: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '#6b7280' : '#ffffff',
+                        color: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '#94a3b8' : '#ffffff',
                         fontSize: 15,
                         fontWeight: 700,
                         cursor: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? 'not-allowed' : 'pointer',
@@ -3959,7 +3959,7 @@ export default function ClubPanel() {
                         border: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(252, 28, 70, 0.4)',
                         borderRadius: 0,
                         padding: '10px 12px',
-                        color: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '#6b7280' : '#ffffff',
+                        color: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '#94a3b8' : '#ffffff',
                         fontSize: 15,
                         fontWeight: 700,
                         cursor: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? 'not-allowed' : 'pointer',
@@ -4007,7 +4007,7 @@ export default function ClubPanel() {
                 style={{
                   marginTop: 8,
                   padding: '13px',
-                  backgroundColor: isDuplicateCourtName ? '#374151' : '#fc1c46',
+                  backgroundColor: isDuplicateCourtName ? '#141414' : '#fc1c46',
                   color: isDuplicateCourtName ? '#9ca3af' : '#ffffff',
                   border: 'none',
                   borderRadius: 9999,
@@ -4063,7 +4063,7 @@ export default function ClubPanel() {
               </div>
               <button
                 onClick={() => setShowEditReservationModal(false)}
-                style={{ backgroundColor: 'transparent', border: 'none', color: '#6b7280', fontSize: 18, cursor: 'pointer' }}
+                style={{ backgroundColor: 'transparent', border: 'none', color: '#94a3b8', fontSize: 18, cursor: 'pointer' }}
               ><Icons.Close size={13} /></button>
             </div>
 
@@ -4189,9 +4189,9 @@ export default function ClubPanel() {
                   style={{
                     flex: 1,
                     padding: '12px',
-                    backgroundColor: 'rgba(239, 68, 68, 0.12)',
-                    color: '#ef4444',
-                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    backgroundColor: 'rgba(252, 28, 70, 0.12)',
+                    color: '#fc1c46',
+                    border: '1px solid rgba(252, 28, 70, 0.3)',
                     borderRadius: 9999,
                     fontSize: 13.5,
                     fontWeight: 700,
@@ -4246,7 +4246,7 @@ export default function ClubPanel() {
               </div>
               <button
                 onClick={() => setShowFixedSlotModal(false)}
-                style={{ backgroundColor: 'transparent', border: 'none', color: '#6b7280', fontSize: 18, cursor: 'pointer' }}
+                style={{ backgroundColor: 'transparent', border: 'none', color: '#94a3b8', fontSize: 18, cursor: 'pointer' }}
               ><Icons.Close size={13} /></button>
             </div>
 
@@ -4316,7 +4316,7 @@ export default function ClubPanel() {
                       padding: '8px 12px',
                       borderRadius: 9999,
                       border: 'none',
-                      backgroundColor: fixedClientSelectionMode === 'EXISTING' ? '#241217' : 'transparent',
+                      backgroundColor: fixedClientSelectionMode === 'EXISTING' ? 'rgba(252, 28, 70, 0.15)' : 'transparent',
                       color: fixedClientSelectionMode === 'EXISTING' ? '#fc1c46' : '#9ca3af',
                       fontWeight: 700,
                       fontSize: 12,
@@ -4337,7 +4337,7 @@ export default function ClubPanel() {
                       padding: '8px 12px',
                       borderRadius: 9999,
                       border: 'none',
-                      backgroundColor: fixedClientSelectionMode === 'NEW' ? '#241217' : 'transparent',
+                      backgroundColor: fixedClientSelectionMode === 'NEW' ? 'rgba(252, 28, 70, 0.15)' : 'transparent',
                       color: fixedClientSelectionMode === 'NEW' ? '#fc1c46' : '#9ca3af',
                       fontWeight: 700,
                       fontSize: 12,
@@ -4388,7 +4388,7 @@ export default function ClubPanel() {
                             transform: 'translateY(-50%)',
                             backgroundColor: 'transparent',
                             border: 'none',
-                            color: '#6b7280',
+                            color: '#94a3b8',
                             fontSize: 14,
                             cursor: 'pointer',
                           }}
@@ -4426,7 +4426,7 @@ export default function ClubPanel() {
                                 setIsFixedClientSearchOpen(false);
                               }}
                               style={{
-                                backgroundColor: '#241217',
+                                backgroundColor: 'rgba(252, 28, 70, 0.15)',
                                 color: '#fc1c46',
                                 border: '1px solid rgba(252, 28, 70, 0.3)',
                                 borderRadius: 9999,
@@ -4617,7 +4617,7 @@ export default function ClubPanel() {
               </div>
               <button
                 onClick={() => setShowAddPlayerModal(false)}
-                style={{ backgroundColor: 'transparent', border: 'none', color: '#6b7280', fontSize: 18, cursor: 'pointer' }}
+                style={{ backgroundColor: 'transparent', border: 'none', color: '#94a3b8', fontSize: 18, cursor: 'pointer' }}
               ><Icons.Close size={13} /></button>
             </div>
 
