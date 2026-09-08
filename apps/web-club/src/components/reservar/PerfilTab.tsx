@@ -120,17 +120,28 @@ export const PerfilTab: React.FC<PerfilTabProps> = ({
   const [bio, setBio] = useState(userProfile?.bio || 'Juego pádel y fútbol todas las semanas. Me gusta jugar con intensidad, fair play y tercer tiempo obligatorio.');
   const [zone, setZone] = useState(userProfile?.zone || 'Palermo / Belgrano, CABA');
 
-  // Sport selection state: 'PADEL' | 'FUTBOL' | 'BOTH'
-  const initialSports = userProfile?.sports || ['PADEL', 'FUTBOL'];
-  const initialMode = initialSports.includes('PADEL') && initialSports.includes('FUTBOL')
-    ? 'BOTH'
-    : initialSports.includes('FUTBOL')
-    ? 'FUTBOL'
-    : 'PADEL';
-  const [sportSelection, setSportSelection] = useState<'PADEL' | 'FUTBOL' | 'BOTH'>(initialMode);
+  // Sport selection state (Pádel, Fútbol o ambos con checkbox/toggle independiente)
+  const initialSports = (userProfile?.sports && userProfile.sports.length > 0)
+    ? userProfile.sports
+    : (['PADEL', 'FUTBOL'] as ('PADEL' | 'FUTBOL')[]);
+  const [selectedSports, setSelectedSports] = useState<('PADEL' | 'FUTBOL')[]>(initialSports);
+
+  const toggleSport = (sport: 'PADEL' | 'FUTBOL') => {
+    if (selectedSports.includes(sport)) {
+      // Garantizar que siempre haya al menos 1 deporte seleccionado
+      if (selectedSports.length > 1) {
+        setSelectedSports(selectedSports.filter((s) => s !== sport));
+      }
+    } else {
+      setSelectedSports([...selectedSports, sport]);
+    }
+  };
+
+  const playsPadel = selectedSports.includes('PADEL');
+  const playsFutbol = selectedSports.includes('FUTBOL');
 
   // Padel specific
-  const [padelCategory, setPadelCategory] = useState(userProfile?.padelCategory || '5ta Categoría');
+  const [padelCategory, setPadelCategory] = useState(userProfile?.padelCategory || '5ta Categoría (Intermedio)');
   const [padelPosition, setPadelPosition] = useState<'DRIVE' | 'REVES' | 'INDISTINTO'>(userProfile?.padelPosition || 'REVES');
   const [padelHand, setPadelHand] = useState<'DIESTRO' | 'ZURDO'>(userProfile?.padelHand || 'DIESTRO');
   const [padelRacket, setPadelRacket] = useState(userProfile?.padelRacket || 'Babolat Counter Viper');
@@ -164,13 +175,7 @@ export const PerfilTab: React.FC<PerfilTabProps> = ({
       if (userProfile.futbolFoot) setFutbolFoot(userProfile.futbolFoot);
 
       if (userProfile.sports && userProfile.sports.length > 0) {
-        if (userProfile.sports.includes('PADEL') && userProfile.sports.includes('FUTBOL')) {
-          setSportSelection('BOTH');
-        } else if (userProfile.sports.includes('FUTBOL')) {
-          setSportSelection('FUTBOL');
-        } else {
-          setSportSelection('PADEL');
-        }
+        setSelectedSports(userProfile.sports);
       }
     } else if (user) {
       if (user.displayName) setName(user.displayName);
@@ -201,16 +206,13 @@ export const PerfilTab: React.FC<PerfilTabProps> = ({
     e.preventDefault();
     setIsSaving(true);
 
-    const resolvedSports: ('PADEL' | 'FUTBOL')[] =
-      sportSelection === 'BOTH' ? ['PADEL', 'FUTBOL'] : [sportSelection];
-
     const dataToSave = {
       name: name.trim(),
       nickname: nickname.trim(),
       phone: phone.trim(),
       bio: bio.trim(),
       zone: zone.trim(),
-      sports: resolvedSports,
+      sports: selectedSports,
       padelCategory,
       padelPosition,
       padelHand,
@@ -238,9 +240,6 @@ export const PerfilTab: React.FC<PerfilTabProps> = ({
       setIsSaving(false);
     }
   };
-
-  const playsPadel = sportSelection === 'PADEL' || sportSelection === 'BOTH';
-  const playsFutbol = sportSelection === 'FUTBOL' || sportSelection === 'BOTH';
 
   const filteredHistory = matchHistory.filter((m) => {
     if (historyFilter === 'PADEL') return m.sport === 'PADEL';
@@ -921,76 +920,137 @@ export const PerfilTab: React.FC<PerfilTabProps> = ({
               <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
                 {/* 1. SELECCIÓN DE DEPORTES */}
                 <div>
-                  <label style={{ display: 'block', fontSize: 11, color: 'var(--color-ash)', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.8px', marginBottom: 8 }}>
-                    ¿Qué deportes practicás?
-                  </label>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
+                    <label style={{ fontSize: 11, color: 'var(--color-ash)', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.8px' }}>
+                      ¿Qué deporte jugás?
+                    </label>
+                    <span style={{ fontSize: 10.5, color: 'var(--color-ash)', opacity: 0.7 }}>
+                      Podés tildar uno o ambos
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--color-ash)', marginBottom: 12, opacity: 0.85 }}>
+                    Seleccioná los deportes que practicás para configurar tu nivel y posición táctica:
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
+                    {/* Botón Tildar Pádel */}
                     <button
                       type="button"
-                      onClick={() => setSportSelection('PADEL')}
+                      onClick={() => toggleSport('PADEL')}
                       style={{
-                        padding: '10px 8px',
+                        padding: '12px 18px',
                         borderRadius: '9999px',
-                        backgroundColor: sportSelection === 'PADEL' ? 'rgba(252, 28, 70, 0.18)' : '#141414',
-                        border: '1px solid ' + (sportSelection === 'PADEL' ? '#fc1c46' : 'rgba(255, 255, 255, 0.1)'),
-                        color: sportSelection === 'PADEL' ? '#ffffff' : '#94a3b8',
-                        fontSize: 11,
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
+                        backgroundColor: playsPadel ? 'rgba(252, 28, 70, 0.16)' : '#121212',
+                        border: playsPadel ? '1.5px solid #fc1c46' : '1px solid rgba(255, 255, 255, 0.12)',
+                        color: playsPadel ? '#ffffff' : '#94a3b8',
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 6,
+                        justifyContent: 'space-between',
+                        transition: 'all 0.15s ease',
+                        boxShadow: playsPadel ? '0 0 18px rgba(252, 28, 70, 0.3)' : 'none',
                       }}
                     >
-                      <Icons.Padel size={13} color={sportSelection === 'PADEL' ? '#fc1c46' : '#94a3b8'} />
-                      <span>Solo Pádel</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div
+                          style={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: '50%',
+                            backgroundColor: playsPadel ? '#fc1c46' : 'rgba(255, 255, 255, 0.06)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.15s ease',
+                          }}
+                        >
+                          <Icons.Padel size={16} color={playsPadel ? '#ffffff' : '#94a3b8'} />
+                        </div>
+                        <div style={{ textAlign: 'left' }}>
+                          <div style={{ fontSize: 13.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                            Pádel
+                          </div>
+                          <div style={{ fontSize: 10, color: playsPadel ? '#fca5a5' : '#64748b', fontWeight: 600 }}>
+                            {playsPadel ? 'Ficha activa' : 'Tildar para activar'}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div
+                        style={{
+                          width: 22,
+                          height: 22,
+                          borderRadius: '50%',
+                          border: playsPadel ? '2px solid #fc1c46' : '2px solid rgba(255, 255, 255, 0.25)',
+                          backgroundColor: playsPadel ? '#fc1c46' : 'transparent',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        {playsPadel && <Icons.Check size={13} color="#ffffff" />}
+                      </div>
                     </button>
 
+                    {/* Botón Tildar Fútbol */}
                     <button
                       type="button"
-                      onClick={() => setSportSelection('FUTBOL')}
+                      onClick={() => toggleSport('FUTBOL')}
                       style={{
-                        padding: '10px 8px',
+                        padding: '12px 18px',
                         borderRadius: '9999px',
-                        backgroundColor: sportSelection === 'FUTBOL' ? 'rgba(59, 130, 246, 0.18)' : '#141414',
-                        border: '1px solid ' + (sportSelection === 'FUTBOL' ? '#3b82f6' : 'rgba(255, 255, 255, 0.1)'),
-                        color: sportSelection === 'FUTBOL' ? '#ffffff' : '#94a3b8',
-                        fontSize: 11,
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
+                        backgroundColor: playsFutbol ? 'rgba(59, 130, 246, 0.16)' : '#121212',
+                        border: playsFutbol ? '1.5px solid #3b82f6' : '1px solid rgba(255, 255, 255, 0.12)',
+                        color: playsFutbol ? '#ffffff' : '#94a3b8',
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 6,
+                        justifyContent: 'space-between',
+                        transition: 'all 0.15s ease',
+                        boxShadow: playsFutbol ? '0 0 18px rgba(59, 130, 246, 0.3)' : 'none',
                       }}
                     >
-                      <Icons.Football size={13} color={sportSelection === 'FUTBOL' ? '#60a5fa' : '#94a3b8'} />
-                      <span>Solo Fútbol</span>
-                    </button>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div
+                          style={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: '50%',
+                            backgroundColor: playsFutbol ? '#3b82f6' : 'rgba(255, 255, 255, 0.06)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.15s ease',
+                          }}
+                        >
+                          <Icons.Football size={16} color={playsFutbol ? '#ffffff' : '#94a3b8'} />
+                        </div>
+                        <div style={{ textAlign: 'left' }}>
+                          <div style={{ fontSize: 13.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                            Fútbol
+                          </div>
+                          <div style={{ fontSize: 10, color: playsFutbol ? '#93c5fd' : '#64748b', fontWeight: 600 }}>
+                            {playsFutbol ? 'Ficha activa' : 'Tildar para activar'}
+                          </div>
+                        </div>
+                      </div>
 
-                    <button
-                      type="button"
-                      onClick={() => setSportSelection('BOTH')}
-                      style={{
-                        padding: '10px 8px',
-                        borderRadius: '9999px',
-                        backgroundColor: sportSelection === 'BOTH' ? 'rgba(252, 28, 70, 0.18)' : '#141414',
-                        border: '1px solid ' + (sportSelection === 'BOTH' ? '#fc1c46' : 'rgba(255, 255, 255, 0.1)'),
-                        color: sportSelection === 'BOTH' ? '#ffffff' : '#94a3b8',
-                        fontSize: 11,
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 4,
-                      }}
-                    >
-                      <span>Ambos Deportes</span>
+                      <div
+                        style={{
+                          width: 22,
+                          height: 22,
+                          borderRadius: '50%',
+                          border: playsFutbol ? '2px solid #3b82f6' : '2px solid rgba(255, 255, 255, 0.25)',
+                          backgroundColor: playsFutbol ? '#3b82f6' : 'transparent',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        {playsFutbol && <Icons.Check size={13} color="#ffffff" />}
+                      </div>
                     </button>
                   </div>
                 </div>
@@ -1001,95 +1061,142 @@ export const PerfilTab: React.FC<PerfilTabProps> = ({
                     style={{
                       backgroundColor: 'rgba(252, 28, 70, 0.04)',
                       border: '1px solid rgba(252, 28, 70, 0.25)',
-                      padding: 16,
+                      padding: 18,
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: 12,
+                      gap: 16,
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#fc1c46', textTransform: 'uppercase', fontWeight: 800 }}>
-                      <Icons.Padel size={14} color="#fc1c46" />
-                      <span>Configuración de Pádel</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11.5, color: '#fc1c46', textTransform: 'uppercase', fontWeight: 800 }}>
+                      <Icons.Padel size={15} color="#fc1c46" />
+                      <span>Ficha de Pádel</span>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                      <div>
-                        <label style={{ display: 'block', fontSize: 10.5, color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, marginBottom: 4 }}>
+                    {/* Categoría Oficial de Pádel */}
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
+                        <label style={{ fontSize: 10.5, color: '#cbd5e1', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.6px' }}>
                           Categoría Oficial
                         </label>
-                        <select
-                          value={padelCategory}
-                          onChange={(e) => setPadelCategory(e.target.value)}
-                          style={{
-                            width: '100%',
-                            backgroundColor: '#141414',
-                            border: '1px solid rgba(255, 255, 255, 0.15)',
-                            color: '#ffffff',
-                            padding: '9px 10px',
-                            fontSize: 12,
-                            fontFamily: 'Space Grotesk, sans-serif',
-                          }}
-                        >
-                          <option value="8va Categoría (Iniciación)">8va Categoría (Iniciación)</option>
-                          <option value="7ma Categoría (Principiante)">7ma Categoría (Principiante)</option>
-                          <option value="6ta Categoría (Intermedio Bajo)">6ta Categoría (Intermedio Bajo)</option>
-                          <option value="5ta Categoría (Intermedio)">5ta Categoría (Intermedio)</option>
-                          <option value="4ta Categoría (Intermedio Alto)">4ta Categoría (Intermedio Alto)</option>
-                          <option value="3ra Categoría (Avanzado)">3ra Categoría (Avanzado)</option>
-                          <option value="2da Categoría (Competitivo)">2da Categoría (Competitivo)</option>
-                          <option value="1ra Categoría (Profesional)">1ra Categoría (Profesional)</option>
-                        </select>
+                        <span style={{ fontSize: 11, color: '#fc1c46', fontWeight: 800 }}>
+                          {padelCategory}
+                        </span>
                       </div>
-
-                      <div>
-                        <label style={{ display: 'block', fontSize: 10.5, color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, marginBottom: 4 }}>
-                          Posición en Cancha
-                        </label>
-                        <select
-                          value={padelPosition}
-                          onChange={(e) => setPadelPosition(e.target.value as any)}
-                          style={{
-                            width: '100%',
-                            backgroundColor: '#141414',
-                            border: '1px solid rgba(255, 255, 255, 0.15)',
-                            color: '#ffffff',
-                            padding: '9px 10px',
-                            fontSize: 12,
-                            fontFamily: 'Space Grotesk, sans-serif',
-                          }}
-                        >
-                          <option value="DRIVE">Drive (Lado Derecho)</option>
-                          <option value="REVES">Revés (Lado Izquierdo)</option>
-                          <option value="INDISTINTO">Indistinto (Ambos Lados)</option>
-                        </select>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(105px, 1fr))', gap: 8 }}>
+                        {[
+                          { id: '8va', label: '8va Cat.', desc: 'Iniciación' },
+                          { id: '7ma', label: '7ma Cat.', desc: 'Principiante' },
+                          { id: '6ta', label: '6ta Cat.', desc: 'Intermedio B' },
+                          { id: '5ta', label: '5ta Cat.', desc: 'Intermedio' },
+                          { id: '4ta', label: '4ta Cat.', desc: 'Intermedio A' },
+                          { id: '3ra', label: '3ra Cat.', desc: 'Avanzado' },
+                          { id: '2da', label: '2da Cat.', desc: 'Competitivo' },
+                          { id: '1ra', label: '1ra Cat.', desc: 'Profesional' },
+                        ].map((cat) => {
+                          const isSelected = padelCategory.startsWith(cat.id);
+                          return (
+                            <button
+                              key={cat.id}
+                              type="button"
+                              onClick={() => setPadelCategory(`${cat.id} Categoría (${cat.desc})`)}
+                              style={{
+                                padding: '9px 8px',
+                                borderRadius: '9999px',
+                                border: isSelected ? '1.5px solid #fc1c46' : '1px solid rgba(255, 255, 255, 0.12)',
+                                backgroundColor: isSelected ? 'rgba(252, 28, 70, 0.22)' : '#141414',
+                                color: isSelected ? '#ffffff' : '#94a3b8',
+                                cursor: 'pointer',
+                                textAlign: 'center',
+                                transition: 'all 0.15s ease',
+                                boxShadow: isSelected ? '0 0 12px rgba(252, 28, 70, 0.35)' : 'none',
+                              }}
+                            >
+                              <div style={{ fontSize: 11.5, fontWeight: 800 }}>{cat.label}</div>
+                              <div style={{ fontSize: 9.5, opacity: isSelected ? 0.95 : 0.6 }}>{cat.desc}</div>
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    {/* Posición en Cancha */}
+                    <div>
+                      <label style={{ display: 'block', fontSize: 10.5, color: '#cbd5e1', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.6px', marginBottom: 8 }}>
+                        Posición en Cancha
+                      </label>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 8 }}>
+                        {[
+                          { id: 'DRIVE', label: 'Drive', desc: 'Lado Derecho' },
+                          { id: 'REVES', label: 'Revés', desc: 'Lado Izquierdo' },
+                          { id: 'INDISTINTO', label: 'Indistinto', desc: 'Ambos Lados' },
+                        ].map((pos) => {
+                          const isSelected = padelPosition === pos.id;
+                          return (
+                            <button
+                              key={pos.id}
+                              type="button"
+                              onClick={() => setPadelPosition(pos.id as any)}
+                              style={{
+                                padding: '10px 12px',
+                                borderRadius: '9999px',
+                                border: isSelected ? '1.5px solid #fc1c46' : '1px solid rgba(255, 255, 255, 0.12)',
+                                backgroundColor: isSelected ? 'rgba(252, 28, 70, 0.22)' : '#141414',
+                                color: isSelected ? '#ffffff' : '#94a3b8',
+                                cursor: 'pointer',
+                                textAlign: 'center',
+                                transition: 'all 0.15s ease',
+                                boxShadow: isSelected ? '0 0 12px rgba(252, 28, 70, 0.35)' : 'none',
+                              }}
+                            >
+                              <div style={{ fontSize: 12, fontWeight: 800 }}>{pos.label}</div>
+                              <div style={{ fontSize: 10, opacity: isSelected ? 0.95 : 0.6 }}>{pos.desc}</div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Mano Hábil y Paleta */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
                       <div>
-                        <label style={{ display: 'block', fontSize: 10.5, color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, marginBottom: 4 }}>
+                        <label style={{ display: 'block', fontSize: 10.5, color: '#cbd5e1', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.6px', marginBottom: 8 }}>
                           Mano Hábil
                         </label>
-                        <select
-                          value={padelHand}
-                          onChange={(e) => setPadelHand(e.target.value as any)}
-                          style={{
-                            width: '100%',
-                            backgroundColor: '#141414',
-                            border: '1px solid rgba(255, 255, 255, 0.15)',
-                            color: '#ffffff',
-                            padding: '9px 10px',
-                            fontSize: 12,
-                            fontFamily: 'Space Grotesk, sans-serif',
-                          }}
-                        >
-                          <option value="DIESTRO">Diestro</option>
-                          <option value="ZURDO">Zurdo</option>
-                        </select>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                          {[
+                            { id: 'DIESTRO', label: 'Diestro' },
+                            { id: 'ZURDO', label: 'Zurdo' },
+                          ].map((hand) => {
+                            const isSelected = padelHand === hand.id;
+                            return (
+                              <button
+                                key={hand.id}
+                                type="button"
+                                onClick={() => setPadelHand(hand.id as any)}
+                                style={{
+                                  padding: '10px 12px',
+                                  borderRadius: '9999px',
+                                  border: isSelected ? '1.5px solid #fc1c46' : '1px solid rgba(255, 255, 255, 0.12)',
+                                  backgroundColor: isSelected ? 'rgba(252, 28, 70, 0.22)' : '#141414',
+                                  color: isSelected ? '#ffffff' : '#94a3b8',
+                                  fontSize: 11.5,
+                                  fontWeight: 800,
+                                  textTransform: 'uppercase',
+                                  cursor: 'pointer',
+                                  textAlign: 'center',
+                                  transition: 'all 0.15s ease',
+                                  boxShadow: isSelected ? '0 0 12px rgba(252, 28, 70, 0.35)' : 'none',
+                                }}
+                              >
+                                {hand.label}
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
 
                       <div>
-                        <label style={{ display: 'block', fontSize: 10.5, color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, marginBottom: 4 }}>
+                        <label style={{ display: 'block', fontSize: 10.5, color: '#cbd5e1', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.6px', marginBottom: 8 }}>
                           Paleta Habitual (Opcional)
                         </label>
                         <input
@@ -1102,9 +1209,10 @@ export const PerfilTab: React.FC<PerfilTabProps> = ({
                             backgroundColor: 'rgba(255, 255, 255, 0.04)',
                             border: '1px solid rgba(255, 255, 255, 0.15)',
                             color: '#ffffff',
-                            padding: '9px 10px',
+                            padding: '10px 14px',
                             fontSize: 12,
                             fontFamily: 'Space Grotesk, sans-serif',
+                            boxSizing: 'border-box',
                           }}
                         />
                       </div>
@@ -1118,88 +1226,130 @@ export const PerfilTab: React.FC<PerfilTabProps> = ({
                     style={{
                       backgroundColor: 'rgba(59, 130, 246, 0.04)',
                       border: '1px solid rgba(59, 130, 246, 0.25)',
-                      padding: 16,
+                      padding: 18,
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: 12,
+                      gap: 16,
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#60a5fa', textTransform: 'uppercase', fontWeight: 800 }}>
-                      <Icons.Football size={14} color="#60a5fa" />
-                      <span>Configuración de Fútbol</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11.5, color: '#60a5fa', textTransform: 'uppercase', fontWeight: 800 }}>
+                      <Icons.Football size={15} color="#60a5fa" />
+                      <span>Ficha de Fútbol</span>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                      <div>
-                        <label style={{ display: 'block', fontSize: 10.5, color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, marginBottom: 4 }}>
-                          Posición Táctica
-                        </label>
-                        <select
-                          value={futbolPosition}
-                          onChange={(e) => setFutbolPosition(e.target.value as any)}
-                          style={{
-                            width: '100%',
-                            backgroundColor: '#141414',
-                            border: '1px solid rgba(255, 255, 255, 0.15)',
-                            color: '#ffffff',
-                            padding: '9px 10px',
-                            fontSize: 12,
-                            fontFamily: 'Space Grotesk, sans-serif',
-                          }}
-                        >
-                          <option value="ARQUERO">Arquero</option>
-                          <option value="DEFENSOR">Defensor</option>
-                          <option value="MEDIOCAMPISTA">Mediocampista</option>
-                          <option value="DELANTERO">Delantero</option>
-                        </select>
+                    {/* Posición Táctica */}
+                    <div>
+                      <label style={{ display: 'block', fontSize: 10.5, color: '#cbd5e1', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.6px', marginBottom: 8 }}>
+                        Posición en Cancha
+                      </label>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 8 }}>
+                        {[
+                          { id: 'ARQUERO', label: 'Arquero' },
+                          { id: 'DEFENSOR', label: 'Defensor' },
+                          { id: 'MEDIOCAMPISTA', label: 'Mediocampista' },
+                          { id: 'DELANTERO', label: 'Delantero' },
+                        ].map((pos) => {
+                          const isSelected = futbolPosition === pos.id;
+                          return (
+                            <button
+                              key={pos.id}
+                              type="button"
+                              onClick={() => setFutbolPosition(pos.id as any)}
+                              style={{
+                                padding: '10px 8px',
+                                borderRadius: '9999px',
+                                border: isSelected ? '1.5px solid #3b82f6' : '1px solid rgba(255, 255, 255, 0.12)',
+                                backgroundColor: isSelected ? 'rgba(59, 130, 246, 0.22)' : '#141414',
+                                color: isSelected ? '#ffffff' : '#94a3b8',
+                                fontSize: 11.5,
+                                fontWeight: 800,
+                                textTransform: 'uppercase',
+                                cursor: 'pointer',
+                                textAlign: 'center',
+                                transition: 'all 0.15s ease',
+                                boxShadow: isSelected ? '0 0 12px rgba(59, 130, 246, 0.35)' : 'none',
+                              }}
+                            >
+                              {pos.label}
+                            </button>
+                          );
+                        })}
                       </div>
+                    </div>
 
+                    {/* Formato y Pierna Hábil */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
                       <div>
-                        <label style={{ display: 'block', fontSize: 10.5, color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, marginBottom: 4 }}>
+                        <label style={{ display: 'block', fontSize: 10.5, color: '#cbd5e1', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.6px', marginBottom: 8 }}>
                           Formato Predilecto
                         </label>
-                        <select
-                          value={futbolFormat}
-                          onChange={(e) => setFutbolFormat(e.target.value)}
-                          style={{
-                            width: '100%',
-                            backgroundColor: '#141414',
-                            border: '1px solid rgba(255, 255, 255, 0.15)',
-                            color: '#ffffff',
-                            padding: '9px 10px',
-                            fontSize: 12,
-                            fontFamily: 'Space Grotesk, sans-serif',
-                          }}
-                        >
-                          <option value="Fútbol 5">Fútbol 5</option>
-                          <option value="Fútbol 7">Fútbol 7</option>
-                          <option value="Fútbol 8">Fútbol 8</option>
-                          <option value="Fútbol 11">Fútbol 11</option>
-                        </select>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
+                          {['Fútbol 5', 'Fútbol 7', 'Fútbol 8', 'Fútbol 11'].map((fmt) => {
+                            const isSelected = futbolFormat === fmt;
+                            return (
+                              <button
+                                key={fmt}
+                                type="button"
+                                onClick={() => setFutbolFormat(fmt)}
+                                style={{
+                                  padding: '10px 4px',
+                                  borderRadius: '9999px',
+                                  border: isSelected ? '1.5px solid #3b82f6' : '1px solid rgba(255, 255, 255, 0.12)',
+                                  backgroundColor: isSelected ? 'rgba(59, 130, 246, 0.22)' : '#141414',
+                                  color: isSelected ? '#ffffff' : '#94a3b8',
+                                  fontSize: 11,
+                                  fontWeight: 800,
+                                  textTransform: 'uppercase',
+                                  cursor: 'pointer',
+                                  textAlign: 'center',
+                                  transition: 'all 0.15s ease',
+                                  boxShadow: isSelected ? '0 0 12px rgba(59, 130, 246, 0.35)' : 'none',
+                                }}
+                              >
+                                {fmt.replace('Fútbol ', 'F')}
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
 
-                    <div>
-                      <label style={{ display: 'block', fontSize: 10.5, color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, marginBottom: 4 }}>
-                        Pierna Hábil
-                      </label>
-                      <select
-                        value={futbolFoot}
-                        onChange={(e) => setFutbolFoot(e.target.value as any)}
-                        style={{
-                          width: '100%',
-                          backgroundColor: '#141414',
-                          border: '1px solid rgba(255, 255, 255, 0.15)',
-                          color: '#ffffff',
-                          padding: '9px 10px',
-                          fontSize: 12,
-                          fontFamily: 'Space Grotesk, sans-serif',
-                        }}
-                      >
-                        <option value="DIESTRA">Diestra</option>
-                        <option value="ZURDA">Zurda</option>
-                        <option value="AMBOS">Ambidiestro</option>
-                      </select>
+                      <div>
+                        <label style={{ display: 'block', fontSize: 10.5, color: '#cbd5e1', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.6px', marginBottom: 8 }}>
+                          Pierna Hábil
+                        </label>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+                          {[
+                            { id: 'DIESTRA', label: 'Diestra' },
+                            { id: 'ZURDA', label: 'Zurda' },
+                            { id: 'AMBOS', label: 'Ambos' },
+                          ].map((foot) => {
+                            const isSelected = futbolFoot === foot.id;
+                            return (
+                              <button
+                                key={foot.id}
+                                type="button"
+                                onClick={() => setFutbolFoot(foot.id as any)}
+                                style={{
+                                  padding: '10px 6px',
+                                  borderRadius: '9999px',
+                                  border: isSelected ? '1.5px solid #3b82f6' : '1px solid rgba(255, 255, 255, 0.12)',
+                                  backgroundColor: isSelected ? 'rgba(59, 130, 246, 0.22)' : '#141414',
+                                  color: isSelected ? '#ffffff' : '#94a3b8',
+                                  fontSize: 11,
+                                  fontWeight: 800,
+                                  textTransform: 'uppercase',
+                                  cursor: 'pointer',
+                                  textAlign: 'center',
+                                  transition: 'all 0.15s ease',
+                                  boxShadow: isSelected ? '0 0 12px rgba(59, 130, 246, 0.35)' : 'none',
+                                }}
+                              >
+                                {foot.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}

@@ -40,11 +40,22 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateLogin })
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
   // Edit fields
-  const [editSports, setEditSports] = useState<'PADEL' | 'FUTBOL' | 'BOTH'>('BOTH');
+  const [editSportsList, setEditSportsList] = useState<('PADEL' | 'FUTBOL')[]>(['PADEL', 'FUTBOL']);
   const [editPadelCat, setEditPadelCat] = useState<string>('5ta');
   const [editPadelPos, setEditPadelPos] = useState<string>('DRIVE');
   const [editFutbolPos, setEditFutbolPos] = useState<string>('MEDIOCAMPISTA');
   const [editBio, setEditBio] = useState<string>('');
+
+  const toggleMobileSport = (sport: 'PADEL' | 'FUTBOL') => {
+    triggerHaptic('selection');
+    if (editSportsList.includes(sport)) {
+      if (editSportsList.length > 1) {
+        setEditSportsList(editSportsList.filter((s) => s !== sport));
+      }
+    } else {
+      setEditSportsList([...editSportsList, sport]);
+    }
+  };
 
   const handleLogout = () => {
     triggerHaptic('warning');
@@ -119,9 +130,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateLogin })
 
   const handleOpenEdit = () => {
     triggerHaptic('selection');
-    if (sports.includes('PADEL') && sports.includes('FUTBOL')) setEditSports('BOTH');
-    else if (sports.includes('FUTBOL')) setEditSports('FUTBOL');
-    else setEditSports('PADEL');
+    setEditSportsList(userProfile?.sports || ['PADEL', 'FUTBOL']);
     setEditPadelCat(userProfile?.padelCategory || '5ta Categoría');
     setEditPadelPos(userProfile?.padelPosition || 'DRIVE');
     setEditFutbolPos(userProfile?.futbolPosition || 'MEDIOCAMPISTA');
@@ -132,11 +141,9 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateLogin })
   const handleSaveProfile = async () => {
     setIsSaving(true);
     triggerHaptic('medium');
-    const resolvedSports: ('PADEL' | 'FUTBOL')[] =
-      editSports === 'BOTH' ? ['PADEL', 'FUTBOL'] : [editSports];
     const uid = user?.uid || userProfile?.uid || 'usr-emi';
     await updateUserProfileFirestore(uid, {
-      sports: resolvedSports,
+      sports: editSportsList,
       padelCategory: editPadelCat,
       padelPosition: editPadelPos,
       futbolPosition: editFutbolPos,
@@ -589,34 +596,55 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateLogin })
           </View>
           <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
             {/* 1. Selector de Deportes */}
-            <Text style={styles.editLabel}>¿Qué deportes practicás?</Text>
+            <Text style={styles.editLabel}>¿Qué deporte jugás?</Text>
+            <Text style={{ fontSize: 11.5, color: '#94a3b8', marginBottom: 12 }}>
+              Podés tildar uno o ambos deportes:
+            </Text>
             <View style={styles.sportChoiceRow}>
               <TouchableOpacity
-                style={[styles.sportChoiceChip, editSports === 'PADEL' && styles.sportChoiceChipActive]}
-                onPress={() => { triggerHaptic('selection'); setEditSports('PADEL'); }}
+                style={[
+                  styles.sportChoiceChip,
+                  editSportsList.includes('PADEL') && styles.sportChoiceChipActive,
+                  { flex: 1, justifyContent: 'center' }
+                ]}
+                onPress={() => toggleMobileSport('PADEL')}
               >
-                <PadelIcon size={14} color={editSports === 'PADEL' ? '#fc1c46' : '#94a3b8'} />
-                <Text style={[styles.sportChoiceText, editSports === 'PADEL' && styles.sportChoiceTextActive]}>Solo Pádel</Text>
+                <PadelIcon size={14} color={editSportsList.includes('PADEL') ? '#fc1c46' : '#94a3b8'} />
+                <Text style={[styles.sportChoiceText, editSportsList.includes('PADEL') && styles.sportChoiceTextActive]}>
+                  Pádel
+                </Text>
+                {editSportsList.includes('PADEL') && (
+                  <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: '#fc1c46', alignItems: 'center', justifyContent: 'center', marginLeft: 6 }}>
+                    <Text style={{ color: '#ffffff', fontSize: 10, fontWeight: '800' }}>✓</Text>
+                  </View>
+                )}
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.sportChoiceChip, editSports === 'FUTBOL' && styles.sportChoiceChipActive]}
-                onPress={() => { triggerHaptic('selection'); setEditSports('FUTBOL'); }}
+                style={[
+                  styles.sportChoiceChip,
+                  editSportsList.includes('FUTBOL') && {
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.18)',
+                  },
+                  { flex: 1, justifyContent: 'center' }
+                ]}
+                onPress={() => toggleMobileSport('FUTBOL')}
               >
-                <FootballIcon size={14} color={editSports === 'FUTBOL' ? '#60a5fa' : '#94a3b8'} />
-                <Text style={[styles.sportChoiceText, editSports === 'FUTBOL' && styles.sportChoiceTextActive]}>Solo Fútbol</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.sportChoiceChip, editSports === 'BOTH' && styles.sportChoiceChipActive]}
-                onPress={() => { triggerHaptic('selection'); setEditSports('BOTH'); }}
-              >
-                <Text style={[styles.sportChoiceText, editSports === 'BOTH' && styles.sportChoiceTextActive]}>Ambos</Text>
+                <FootballIcon size={14} color={editSportsList.includes('FUTBOL') ? '#60a5fa' : '#94a3b8'} />
+                <Text style={[styles.sportChoiceText, editSportsList.includes('FUTBOL') && { color: '#ffffff' }]}>
+                  Fútbol
+                </Text>
+                {editSportsList.includes('FUTBOL') && (
+                  <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: '#3b82f6', alignItems: 'center', justifyContent: 'center', marginLeft: 6 }}>
+                    <Text style={{ color: '#ffffff', fontSize: 10, fontWeight: '800' }}>✓</Text>
+                  </View>
+                )}
               </TouchableOpacity>
             </View>
 
             {/* Configuración Pádel */}
-            {(editSports === 'PADEL' || editSports === 'BOTH') && (
+            {editSportsList.includes('PADEL') && (
               <View style={styles.sportBlockContainer}>
                 <Text style={styles.sportBlockTitle}>Pádel</Text>
 
@@ -657,7 +685,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateLogin })
             )}
 
             {/* Configuración Fútbol */}
-            {(editSports === 'FUTBOL' || editSports === 'BOTH') && (
+            {editSportsList.includes('FUTBOL') && (
               <View style={[styles.sportBlockContainer, { borderColor: 'rgba(59, 130, 246, 0.35)', backgroundColor: 'rgba(59, 130, 246, 0.06)' }]}>
                 <Text style={[styles.sportBlockTitle, { color: '#60a5fa' }]}>Fútbol</Text>
 
