@@ -108,14 +108,13 @@ export const AuthModal: React.FC = () => {
     indicatorStyle: methodIndicatorStyle,
     indicator: methodIndicator,
     update: updateMethodIndicator,
-  } = useSlidingIndicator(activeTab, [isAuthModalOpen]);
+  } = useSlidingIndicator(activeTab);
 
-  // Ensure indicator updates immediately when modal opens
+  // Safely trigger measurement after modal mounts into DOM
   useEffect(() => {
     if (isAuthModalOpen) {
-      updateMethodIndicator();
-      const t1 = setTimeout(updateMethodIndicator, 15);
-      const t2 = setTimeout(updateMethodIndicator, 80);
+      const t1 = setTimeout(() => updateMethodIndicator(), 30);
+      const t2 = setTimeout(() => updateMethodIndicator(), 120);
       return () => {
         clearTimeout(t1);
         clearTimeout(t2);

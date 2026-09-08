@@ -7,7 +7,7 @@ export interface IndicatorDimensions {
   height: number;
 }
 
-export function useSlidingIndicator<T extends string>(activeKey: T, deps: any[] = []) {
+export function useSlidingIndicator<T extends string>(activeKey: T) {
   const containerRef = useRef<HTMLDivElement | HTMLElement | null>(null);
   const itemRefs = useRef<Record<string, HTMLElement | null>>({});
   const [indicator, setIndicator] = useState<IndicatorDimensions>({
@@ -18,45 +18,45 @@ export function useSlidingIndicator<T extends string>(activeKey: T, deps: any[] 
   });
   const [mounted, setMounted] = useState(false);
 
-  const measure = useCallback((el: HTMLElement | null) => {
-    if (el && el.offsetWidth > 0) {
-      setIndicator({
-        left: el.offsetLeft,
-        top: el.offsetTop,
-        width: el.offsetWidth,
-        height: el.offsetHeight,
-      });
-      return true;
-    }
-    return false;
-  }, []);
-
-  const update = useCallback(() => {
-    const el = itemRefs.current[activeKey];
-    if (el) {
-      measure(el);
-    }
-  }, [activeKey, measure]);
-
+  // Pure ref setter — NEVER call setState inside ref callbacks (prevents infinite commit loops)
   const setItemRef = useCallback(
     (key: string) => (el: HTMLElement | null) => {
       itemRefs.current[key] = el;
-      if (el && key === activeKey) {
-        measure(el);
-      }
     },
-    [activeKey, measure]
+    []
   );
+
+  const update = useCallback(() => {
+    const el = itemRefs.current[activeKey];
+    if (el && el.offsetWidth > 0) {
+      setIndicator((prev) => {
+        // Prevent unnecessary re-renders if dimensions haven't changed
+        if (
+          prev.left === el.offsetLeft &&
+          prev.top === el.offsetTop &&
+          prev.width === el.offsetWidth &&
+          prev.height === el.offsetHeight
+        ) {
+          return prev;
+        }
+        return {
+          left: el.offsetLeft,
+          top: el.offsetTop,
+          width: el.offsetWidth,
+          height: el.offsetHeight,
+        };
+      });
+    }
+  }, [activeKey]);
 
   useEffect(() => {
     update();
 
-    const t1 = setTimeout(update, 10);
-    const t2 = setTimeout(update, 50);
-    const t3 = setTimeout(() => {
+    const t1 = setTimeout(update, 20);
+    const t2 = setTimeout(() => {
       update();
       setMounted(true);
-    }, 100);
+    }, 80);
 
     if (typeof document !== 'undefined' && 'fonts' in document) {
       document.fonts.ready.then(update).catch(() => {});
@@ -65,20 +65,12 @@ export function useSlidingIndicator<T extends string>(activeKey: T, deps: any[] 
     const handleResize = () => update();
     window.addEventListener('resize', handleResize);
 
-    let ro: ResizeObserver | null = null;
-    if (typeof ResizeObserver !== 'undefined' && containerRef.current) {
-      ro = new ResizeObserver(() => update());
-      ro.observe(containerRef.current);
-    }
-
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
-      clearTimeout(t3);
       window.removeEventListener('resize', handleResize);
-      if (ro) ro.disconnect();
     };
-  }, [update, ...deps]);
+  }, [update]);
 
   const indicatorStyle = {
     position: 'absolute' as const,
