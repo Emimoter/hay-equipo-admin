@@ -21,10 +21,24 @@ import {
 export interface ExtendedUserProfile {
   uid: string;
   name: string;
+  nickname?: string;
   email: string;
   phone: string;
   photoURL?: string;
+  bio?: string;
+  zone?: string;
+  sports?: ('PADEL' | 'FUTBOL')[];
   padelCategory?: string;
+  padelPosition?: 'DRIVE' | 'REVES' | 'INDISTINTO';
+  padelHand?: 'DIESTRO' | 'ZURDO';
+  padelRacket?: string;
+  futbolFormat?: string;
+  futbolPosition?: 'ARQUERO' | 'DEFENSOR' | 'MEDIOCAMPISTA' | 'DELANTERO';
+  futbolFoot?: 'DIESTRA' | 'ZURDA' | 'AMBOS';
+  matchesPlayed?: number;
+  fairPlayRating?: number;
+  punctualityRate?: number;
+  verified?: boolean;
 }
 
 interface AuthContextType {
@@ -64,10 +78,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const profile: ExtendedUserProfile = {
         uid: firebaseUser.uid,
         name: remoteData?.name || firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Jugador',
+        nickname: remoteData?.nickname || '',
         email: firebaseUser.email || remoteData?.email || '',
         phone: remoteData?.phone || firebaseUser.phoneNumber || '',
         photoURL: firebaseUser.photoURL || remoteData?.photoURL || '',
+        bio: remoteData?.bio || '',
+        zone: remoteData?.zone || 'CABA / GBA',
+        sports: remoteData?.sports || ['PADEL'],
         padelCategory: remoteData?.padelCategory || '5ta Categoría',
+        padelPosition: remoteData?.padelPosition || 'DRIVE',
+        padelHand: remoteData?.padelHand || 'DIESTRO',
+        padelRacket: remoteData?.padelRacket || '',
+        futbolFormat: remoteData?.futbolFormat || 'Fútbol 7',
+        futbolPosition: remoteData?.futbolPosition || 'MEDIOCAMPISTA',
+        futbolFoot: remoteData?.futbolFoot || 'DIESTRA',
+        matchesPlayed: remoteData?.matchesPlayed ?? 24,
+        fairPlayRating: remoteData?.fairPlayRating ?? 4.9,
+        punctualityRate: remoteData?.punctualityRate ?? 98,
+        verified: remoteData?.verified ?? true,
       };
       setUserProfile(profile);
 
@@ -222,9 +250,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     await saveUserProfileFirestore(user.uid, {
       name: updated.name,
+      nickname: updated.nickname || '',
       phone: updated.phone,
       email: updated.email,
-      padelCategory: updated.padelCategory,
+      photoURL: updated.photoURL || '',
+      bio: updated.bio || '',
+      zone: updated.zone || '',
+      sports: updated.sports || ['PADEL'],
+      padelCategory: updated.padelCategory || '5ta Categoría',
+      padelPosition: updated.padelPosition || 'DRIVE',
+      padelHand: updated.padelHand || 'DIESTRO',
+      padelRacket: updated.padelRacket || '',
+      futbolFormat: updated.futbolFormat || 'Fútbol 7',
+      futbolPosition: updated.futbolPosition || 'MEDIOCAMPISTA',
+      futbolFoot: updated.futbolFoot || 'DIESTRA',
+      matchesPlayed: updated.matchesPlayed ?? 24,
+      fairPlayRating: updated.fairPlayRating ?? 4.9,
+      punctualityRate: updated.punctualityRate ?? 98,
+      verified: updated.verified ?? true,
     });
 
     try {

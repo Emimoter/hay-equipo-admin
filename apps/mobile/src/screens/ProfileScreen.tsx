@@ -9,6 +9,7 @@ import {
   Alert,
   Modal,
   ActivityIndicator,
+  TextInput,
 } from 'react-native';
 import Svg, { Path, Circle, Line, Rect, Polyline } from 'react-native-svg';
 import { colors, fonts, formatCurrency } from '../components/theme';
@@ -24,16 +25,26 @@ import {
 } from '../components/AppIcons';
 import { DoubleBezelCard } from '../components/DoubleBezelCard';
 import { triggerHaptic } from '../services/haptics';
+import { updateUserProfileFirestore } from '../services/firebase';
 
 interface ProfileScreenProps {
   onNavigateLogin?: () => void;
 }
 
 export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateLogin }) => {
-  const { user, userProfile, logout, deleteAccount } = useAuth();
+  const { user, userProfile, logout, deleteAccount, refreshProfile } = useAuth();
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState<boolean>(false);
   const [showTermsModal, setShowTermsModal] = useState<boolean>(false);
+  const [showEditModal, setShowEditModal] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+
+  // Edit fields
+  const [editSports, setEditSports] = useState<'PADEL' | 'FUTBOL' | 'BOTH'>('BOTH');
+  const [editPadelCat, setEditPadelCat] = useState<string>('5ta');
+  const [editPadelPos, setEditPadelPos] = useState<string>('DRIVE');
+  const [editFutbolPos, setEditFutbolPos] = useState<string>('MEDIOCAMPISTA');
+  const [editBio, setEditBio] = useState<string>('');
 
   const handleLogout = () => {
     triggerHaptic('warning');
@@ -102,6 +113,44 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateLogin })
   const phone = userProfile?.phone || '+54 9 11 5555-0001';
   const matches = userProfile?.matchesPlayed || 24;
 
+  const sports = userProfile?.sports || ['PADEL', 'FUTBOL'];
+  const playsPadel = sports.includes('PADEL');
+  const playsFutbol = sports.includes('FUTBOL');
+
+  const handleOpenEdit = () => {
+    triggerHaptic('selection');
+    if (sports.includes('PADEL') && sports.includes('FUTBOL')) setEditSports('BOTH');
+    else if (sports.includes('FUTBOL')) setEditSports('FUTBOL');
+    else setEditSports('PADEL');
+    setEditPadelCat(userProfile?.padelCategory || '5ta Categoría');
+    setEditPadelPos(userProfile?.padelPosition || 'DRIVE');
+    setEditFutbolPos(userProfile?.futbolPosition || 'MEDIOCAMPISTA');
+    setEditBio(userProfile?.bio || 'Fanático del pádel y fútbol. Juego con fair play.');
+    setShowEditModal(true);
+  };
+
+  const handleSaveProfile = async () => {
+    setIsSaving(true);
+    triggerHaptic('medium');
+    const resolvedSports: ('PADEL' | 'FUTBOL')[] =
+      editSports === 'BOTH' ? ['PADEL', 'FUTBOL'] : [editSports];
+    const uid = user?.uid || userProfile?.uid || 'usr-emi';
+    await updateUserProfileFirestore(uid, {
+      sports: resolvedSports,
+      padelCategory: editPadelCat,
+      padelPosition: editPadelPos,
+      futbolPosition: editFutbolPos,
+      bio: editBio.trim(),
+    });
+    if (refreshProfile) {
+      await refreshProfile();
+    }
+    setIsSaving(false);
+    setShowEditModal(false);
+    triggerHaptic('success');
+    Alert.alert('Ficha Guardada', 'Tu perfil deportivo se actualizó correctamente.');
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView
@@ -122,16 +171,41 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateLogin })
           <Text style={styles.userName}>{displayName}</Text>
           <Text style={styles.userPhone}>{phone} · {email}</Text>
 
+          {/* Dynamic Badges */}
           <View style={styles.badgesRow}>
-            <View style={styles.levelBadge}>
-              <PadelIcon size={12} color="#fc1c46" strokeWidth={2.2} />
-              <Text style={styles.levelBadgeText}>PÁDEL 5TA</Text>
-            </View>
-            <View style={[styles.levelBadge, styles.levelBadgeSecondary]}>
-              <FootballIcon size={12} color="#94a3b8" strokeWidth={2} />
-              <Text style={[styles.levelBadgeText, { color: '#cbd5e1' }]}>FÚTBOL 7</Text>
-            </View>
+            {playsPadel && (
+              <View style={styles.levelBadge}>
+                <PadelIcon size={12} color="#fc1c46" strokeWidth={2.2} />
+                <Text style={styles.levelBadgeText}>
+                  PÁDEL {userProfile?.padelCategory || '5TA'} · {userProfile?.padelPosition || 'DRIVE'}
+                </Text>
+              </View>
+            )}
+            {playsFutbol && (
+              <View style={[styles.levelBadge, styles.levelBadgeSecondary]}>
+                <FootballIcon size={12} color="#60a5fa" strokeWidth={2} />
+                <Text style={[styles.levelBadgeText, { color: '#cbd5e1' }]}>
+                  {userProfile?.futbolFormat || 'FÚTBOL 7'} · {userProfile?.futbolPosition || 'MEDIOCAMPISTA'}
+                </Text>
+              </View>
+            )}
           </View>
+
+          {/* Bio text */}
+          {userProfile?.bio ? (
+            <View style={styles.bioContainer}>
+              <Text style={styles.bioText}>"{userProfile.bio}"</Text>
+            </View>
+          ) : null}
+
+          {/* Edit Profile Button */}
+          <TouchableOpacity
+            style={styles.editProfileBtn}
+            onPress={handleOpenEdit}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.editProfileBtnText}>Personalizar Ficha Deportiva</Text>
+          </TouchableOpacity>
         </View>
 
         {/* ═══════════════════════════════════════════════════════
@@ -180,6 +254,38 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateLogin })
           >
             <Text style={styles.walletBtnText}>Ver Info</Text>
           </TouchableOpacity>
+        </DoubleBezelCard>
+
+        {/* ═══════════════════════════════════════════════════════
+            SECTION: HISTORIAL DE PARTIDOS JUGADOS
+            ═══════════════════════════════════════════════════════ */}
+        <Text style={styles.sectionTitle}>Historial de Partidos Jugados</Text>
+        <DoubleBezelCard variant="black" style={styles.menuOuter} innerStyle={styles.menuInner}>
+          <View style={styles.matchRowItem}>
+            <View style={styles.matchIconBox}>
+              <PadelIcon size={16} color="#fc1c46" strokeWidth={2} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.matchClubTitle}>Arena Pádel Palermo</Text>
+              <Text style={styles.matchSubTitle}>Cancha 1 Panorámica · Sábado 20:00 hs · 5ta Cat</Text>
+            </View>
+            <View style={styles.completedBadge}>
+              <Text style={styles.completedBadgeText}>COMPLETADO</Text>
+            </View>
+          </View>
+
+          <View style={[styles.matchRowItem, { borderBottomWidth: 0 }]}>
+            <View style={[styles.matchIconBox, { backgroundColor: 'rgba(59, 130, 246, 0.15)' }]}>
+              <FootballIcon size={16} color="#60a5fa" strokeWidth={2} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.matchClubTitle}>Jara Fútbol Club</Text>
+              <Text style={styles.matchSubTitle}>Cancha 7 Sintético Pro · Miércoles 21:00 hs · F7</Text>
+            </View>
+            <View style={styles.completedBadge}>
+              <Text style={styles.completedBadgeText}>COMPLETADO</Text>
+            </View>
+          </View>
         </DoubleBezelCard>
 
         {/* ═══════════════════════════════════════════════════════
@@ -461,6 +567,145 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateLogin })
           </ScrollView>
         </View>
       </Modal>
+
+      {/* ═══════════════════════════════════════════════════════
+          MODAL: EDITAR FICHA DEPORTIVA
+          ═══════════════════════════════════════════════════════ */}
+      <Modal
+        visible={showEditModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowEditModal(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Personalizar Ficha</Text>
+            <TouchableOpacity
+              onPress={() => setShowEditModal(false)}
+              style={styles.modalCloseBtn}
+            >
+              <CloseIcon size={18} color="#ffffff" />
+            </TouchableOpacity>
+          </View>
+          <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+            {/* 1. Selector de Deportes */}
+            <Text style={styles.editLabel}>¿Qué deportes practicás?</Text>
+            <View style={styles.sportChoiceRow}>
+              <TouchableOpacity
+                style={[styles.sportChoiceChip, editSports === 'PADEL' && styles.sportChoiceChipActive]}
+                onPress={() => { triggerHaptic('selection'); setEditSports('PADEL'); }}
+              >
+                <PadelIcon size={14} color={editSports === 'PADEL' ? '#fc1c46' : '#94a3b8'} />
+                <Text style={[styles.sportChoiceText, editSports === 'PADEL' && styles.sportChoiceTextActive]}>Solo Pádel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.sportChoiceChip, editSports === 'FUTBOL' && styles.sportChoiceChipActive]}
+                onPress={() => { triggerHaptic('selection'); setEditSports('FUTBOL'); }}
+              >
+                <FootballIcon size={14} color={editSports === 'FUTBOL' ? '#60a5fa' : '#94a3b8'} />
+                <Text style={[styles.sportChoiceText, editSports === 'FUTBOL' && styles.sportChoiceTextActive]}>Solo Fútbol</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.sportChoiceChip, editSports === 'BOTH' && styles.sportChoiceChipActive]}
+                onPress={() => { triggerHaptic('selection'); setEditSports('BOTH'); }}
+              >
+                <Text style={[styles.sportChoiceText, editSports === 'BOTH' && styles.sportChoiceTextActive]}>Ambos</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Configuración Pádel */}
+            {(editSports === 'PADEL' || editSports === 'BOTH') && (
+              <View style={styles.sportBlockContainer}>
+                <Text style={styles.sportBlockTitle}>Pádel</Text>
+
+                <Text style={styles.inputSubLabel}>Categoría Oficial</Text>
+                <View style={styles.chipsWrap}>
+                  {['8va', '7ma', '6ta', '5ta', '4ta', '3ra', '2da', '1ra'].map(cat => (
+                    <TouchableOpacity
+                      key={cat}
+                      style={[styles.pillOption, editPadelCat.includes(cat) && styles.pillOptionActive]}
+                      onPress={() => { triggerHaptic('selection'); setEditPadelCat(`${cat} Categoría`); }}
+                    >
+                      <Text style={[styles.pillOptionText, editPadelCat.includes(cat) && styles.pillOptionTextActive]}>
+                        {cat}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                <Text style={[styles.inputSubLabel, { marginTop: 12 }]}>Posición en Cancha</Text>
+                <View style={styles.chipsWrap}>
+                  {[
+                    { id: 'DRIVE', label: 'Drive' },
+                    { id: 'REVES', label: 'Revés' },
+                    { id: 'INDISTINTO', label: 'Ambos Lados' }
+                  ].map(pos => (
+                    <TouchableOpacity
+                      key={pos.id}
+                      style={[styles.pillOption, editPadelPos === pos.id && styles.pillOptionActive]}
+                      onPress={() => { triggerHaptic('selection'); setEditPadelPos(pos.id); }}
+                    >
+                      <Text style={[styles.pillOptionText, editPadelPos === pos.id && styles.pillOptionTextActive]}>
+                        {pos.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {/* Configuración Fútbol */}
+            {(editSports === 'FUTBOL' || editSports === 'BOTH') && (
+              <View style={[styles.sportBlockContainer, { borderColor: 'rgba(59, 130, 246, 0.35)', backgroundColor: 'rgba(59, 130, 246, 0.06)' }]}>
+                <Text style={[styles.sportBlockTitle, { color: '#60a5fa' }]}>Fútbol</Text>
+
+                <Text style={styles.inputSubLabel}>Posición Táctica</Text>
+                <View style={styles.chipsWrap}>
+                  {['ARQUERO', 'DEFENSOR', 'MEDIOCAMPISTA', 'DELANTERO'].map(pos => (
+                    <TouchableOpacity
+                      key={pos}
+                      style={[styles.pillOption, editFutbolPos === pos && styles.pillOptionActive]}
+                      onPress={() => { triggerHaptic('selection'); setEditFutbolPos(pos); }}
+                    >
+                      <Text style={[styles.pillOptionText, editFutbolPos === pos && styles.pillOptionTextActive]}>
+                        {pos}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {/* Biografía */}
+            <Text style={[styles.editLabel, { marginTop: 16 }]}>Biografía Deportiva</Text>
+            <TextInput
+              style={styles.bioInput}
+              multiline
+              numberOfLines={3}
+              value={editBio}
+              onChangeText={setEditBio}
+              placeholder="Contale a tus compañeros tu estilo, horarios o cómo te gusta jugar..."
+              placeholderTextColor="#64748b"
+            />
+
+            {/* Guardar Button */}
+            <TouchableOpacity
+              style={styles.saveProfileBtn}
+              onPress={handleSaveProfile}
+              disabled={isSaving}
+              activeOpacity={0.85}
+            >
+              {isSaving ? (
+                <ActivityIndicator color="#ffffff" />
+              ) : (
+                <Text style={styles.saveProfileBtnText}>Guardar Preferencias</Text>
+              )}
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -716,6 +961,196 @@ const styles = StyleSheet.create({
     fontSize: 13.5,
     lineHeight: 21,
     marginBottom: 10,
+  },
+  bioContainer: {
+    backgroundColor: '#0b0e14',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    marginTop: 10,
+    marginHorizontal: 10,
+  },
+  bioText: {
+    fontFamily: fonts.regular,
+    color: '#cbd5e1',
+    fontSize: 12.5,
+    fontStyle: 'italic',
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  editProfileBtn: {
+    marginTop: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 18,
+    borderRadius: 9999,
+    borderWidth: 1,
+    borderColor: 'rgba(252, 28, 70, 0.4)',
+    backgroundColor: 'rgba(252, 28, 70, 0.08)',
+  },
+  editProfileBtnText: {
+    fontFamily: fonts.bold,
+    color: '#fc1c46',
+    fontSize: 11,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  matchRowItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 13,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
+    gap: 12,
+  },
+  matchIconBox: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(252, 28, 70, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(252, 28, 70, 0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  matchClubTitle: {
+    fontFamily: fonts.bold,
+    color: '#ffffff',
+    fontSize: 13,
+  },
+  matchSubTitle: {
+    fontFamily: fonts.regular,
+    color: '#94a3b8',
+    fontSize: 11,
+    marginTop: 2,
+  },
+  completedBadge: {
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.35)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 9999,
+  },
+  completedBadgeText: {
+    fontFamily: fonts.bold,
+    color: '#10b981',
+    fontSize: 9.5,
+    letterSpacing: 0.5,
+  },
+  editLabel: {
+    fontFamily: fonts.bold,
+    color: '#ffffff',
+    fontSize: 13,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+  },
+  sportChoiceRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 16,
+  },
+  sportChoiceChip: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 9,
+    paddingHorizontal: 6,
+    borderRadius: 9999,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    gap: 4,
+  },
+  sportChoiceChipActive: {
+    borderColor: '#fc1c46',
+    backgroundColor: 'rgba(252, 28, 70, 0.15)',
+  },
+  sportChoiceText: {
+    fontFamily: fonts.bold,
+    color: '#94a3b8',
+    fontSize: 11,
+    textTransform: 'uppercase',
+  },
+  sportChoiceTextActive: {
+    color: '#ffffff',
+  },
+  sportBlockContainer: {
+    borderWidth: 1,
+    borderColor: 'rgba(252, 28, 70, 0.3)',
+    backgroundColor: 'rgba(252, 28, 70, 0.05)',
+    padding: 14,
+    marginBottom: 14,
+  },
+  sportBlockTitle: {
+    fontFamily: fonts.headingBold,
+    color: '#fc1c46',
+    fontSize: 13,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 8,
+  },
+  inputSubLabel: {
+    fontFamily: fonts.bold,
+    color: '#94a3b8',
+    fontSize: 10.5,
+    textTransform: 'uppercase',
+    marginBottom: 6,
+  },
+  chipsWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  pillOption: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 9999,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+  },
+  pillOptionActive: {
+    borderColor: '#fc1c46',
+    backgroundColor: '#fc1c46',
+  },
+  pillOptionText: {
+    fontFamily: fonts.bold,
+    color: '#cbd5e1',
+    fontSize: 11,
+  },
+  pillOptionTextActive: {
+    color: '#ffffff',
+  },
+  bioInput: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    color: '#ffffff',
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    padding: 12,
+    minHeight: 80,
+    textAlignVertical: 'top',
+    marginBottom: 20,
+  },
+  saveProfileBtn: {
+    backgroundColor: '#fc1c46',
+    borderRadius: 9999,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 30,
+  },
+  saveProfileBtnText: {
+    fontFamily: fonts.headingBold,
+    color: '#ffffff',
+    fontSize: 13,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
   },
 });
 

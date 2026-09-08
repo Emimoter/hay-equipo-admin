@@ -46,11 +46,24 @@ export interface UserProfile {
   uid: string;
   email: string | null;
   displayName: string | null;
+  nickname?: string;
   photoURL: string | null;
   phone?: string;
-  sportLevel: string;
-  category: string;
+  bio?: string;
+  zone?: string;
+  sports?: ('PADEL' | 'FUTBOL')[];
+  padelCategory?: string;
+  padelPosition?: string;
+  padelHand?: string;
+  padelRacket?: string;
+  futbolFormat?: string;
+  futbolPosition?: string;
+  futbolFoot?: string;
+  sportLevel?: string;
+  category?: string;
   matchesPlayed: number;
+  fairPlayRating?: number;
+  punctualityRate?: number;
   createdAt?: string;
 }
 
@@ -64,11 +77,23 @@ export async function syncUserProfile(user: FirebaseUser, extraPhone?: string): 
       uid: user.uid,
       email: user.email,
       displayName: user.displayName || 'Jugador',
+      nickname: 'Dibu',
       photoURL: user.photoURL || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
       phone: extraPhone || user.phoneNumber || '+54 9 11 5555-0001',
+      bio: 'Fanático del pádel y del fútbol de los miércoles. Juego con intensidad y fair play.',
+      zone: 'Palermo, CABA',
+      sports: ['PADEL', 'FUTBOL'],
+      padelCategory: '5ta Categoría',
+      padelPosition: 'REVES',
+      padelHand: 'DIESTRO',
+      futbolFormat: 'Fútbol 7',
+      futbolPosition: 'MEDIOCAMPISTA',
+      futbolFoot: 'DIESTRA',
       sportLevel: 'Intermedio',
       category: 'Pádel 5ta / Fútbol 7',
-      matchesPlayed: 0,
+      matchesPlayed: 24,
+      fairPlayRating: 4.9,
+      punctualityRate: 98,
       createdAt: new Date().toISOString()
     };
     await setDoc(userRef, defaultProfile);
@@ -80,6 +105,17 @@ export async function syncUserProfile(user: FirebaseUser, extraPhone?: string): 
       existing.photoURL = user.photoURL;
     }
     return existing;
+  }
+}
+
+export async function updateUserProfileFirestore(uid: string, data: Partial<UserProfile>): Promise<boolean> {
+  try {
+    const userRef = doc(dbFirestore, 'users', uid);
+    await setDoc(userRef, { ...data, updatedAt: new Date().toISOString() }, { merge: true });
+    return true;
+  } catch (e) {
+    console.error('Error updating user profile in Firestore:', e);
+    return false;
   }
 }
 

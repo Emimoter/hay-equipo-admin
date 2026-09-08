@@ -241,6 +241,56 @@ export const RecurringOccurrenceSchema = z.object({
 export type RecurringOccurrence = z.infer<typeof RecurringOccurrenceSchema>;
 
 // ==========================================
+// 2.5 PLAYER PROFILE SCHEMAS
+// ==========================================
+
+export const PadelPositionEnum = z.enum(["DRIVE", "REVES", "INDISTINTO"]);
+export type PadelPosition = z.infer<typeof PadelPositionEnum>;
+
+export const FutbolPositionEnum = z.enum(["ARQUERO", "DEFENSOR", "MEDIOCAMPISTA", "DELANTERO"]);
+export type FutbolPosition = z.infer<typeof FutbolPositionEnum>;
+
+export const PlayerProfileSchema = z.object({
+  uid: z.string(),
+  name: z.string(),
+  nickname: z.string().optional(),
+  email: z.string().optional(),
+  phone: z.string().optional(),
+  photoURL: z.string().optional(),
+  bio: z.string().max(300).optional(),
+  zone: z.string().optional(),
+  sports: z.array(z.enum(["PADEL", "FUTBOL"])).default(["PADEL"]),
+  padelCategory: z.string().optional(),
+  padelPosition: PadelPositionEnum.optional(),
+  padelHand: z.enum(["DIESTRO", "ZURDO"]).optional(),
+  padelRacket: z.string().optional(),
+  futbolFormat: z.string().optional(),
+  futbolPosition: FutbolPositionEnum.optional(),
+  futbolFoot: z.enum(["DIESTRA", "ZURDA", "AMBOS"]).optional(),
+  matchesPlayed: z.number().default(0),
+  fairPlayRating: z.number().default(5.0),
+  punctualityRate: z.number().default(100),
+  verified: z.boolean().default(true),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional()
+});
+export type PlayerProfile = z.infer<typeof PlayerProfileSchema>;
+
+export const MatchHistoryItemSchema = z.object({
+  id: z.string(),
+  sportType: SportTypeEnum,
+  clubName: z.string(),
+  courtName: z.string(),
+  date: z.string(),
+  startTime: z.string(),
+  endTime: z.string(),
+  status: z.enum(["COMPLETADO", "CONFIRMADO", "CANCELADO"]).default("COMPLETADO"),
+  bookingType: z.enum(["TURNO_SIMPLE", "PAGO_DIVIDIDO", "TURNO_FIJO"]).default("TURNO_SIMPLE"),
+  pricePerPlayer: z.number().optional()
+});
+export type MatchHistoryItem = z.infer<typeof MatchHistoryItemSchema>;
+
+// ==========================================
 // 3. API REQUEST / RESPONSE CONTRACTS
 // ==========================================
 
