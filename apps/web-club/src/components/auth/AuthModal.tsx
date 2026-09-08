@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { RecaptchaVerifier, ConfirmationResult } from 'firebase/auth';
 import { auth } from '../../services/firebase';
 import { useAuth } from '../../context/AuthContext';
+import { useSlidingIndicator } from '../../hooks/useSlidingIndicator';
 
 const GoogleIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24">
@@ -101,6 +102,11 @@ export const AuthModal: React.FC = () => {
   } = useAuth();
 
   const [activeTab, setActiveTab] = useState<'EMAIL' | 'PHONE'>('EMAIL');
+  const {
+    containerRef: methodContainerRef,
+    setItemRef: setMethodItemRef,
+    indicatorStyle: methodIndicatorStyle,
+  } = useSlidingIndicator(activeTab);
   const [isRegisterMode, setIsRegisterMode] = useState(false);
 
   // Email form state
@@ -432,9 +438,11 @@ export const AuthModal: React.FC = () => {
           <div style={{ flex: 1, height: 1, backgroundColor: 'rgba(255, 255, 255, 0.1)' }} />
         </div>
 
-        {/* ── METHOD TABS (EMAIL VS TELEFONO) ── */}
+        {/* ── METHOD TABS (EMAIL VS TELEFONO) — Sliding Pill Switch (hay-equipo-system) ── */}
         <div
+          ref={methodContainerRef as any}
           style={{
+            position: 'relative',
             display: 'flex',
             backgroundColor: 'rgba(255, 255, 255, 0.04)',
             border: '1px solid rgba(255, 255, 255, 0.08)',
@@ -443,15 +451,21 @@ export const AuthModal: React.FC = () => {
             padding: 3,
           }}
         >
+          {/* Sliding Red Pill Thumb */}
+          <div style={methodIndicatorStyle} />
+
           <button
+            ref={setMethodItemRef('EMAIL')}
             type="button"
             onClick={() => {
               setActiveTab('EMAIL');
               setErrorMessage(null);
             }}
             style={{
+              position: 'relative',
+              zIndex: 2,
               flex: 1,
-              backgroundColor: activeTab === 'EMAIL' ? 'var(--color-crimson-signal)' : 'transparent',
+              backgroundColor: 'transparent',
               color: activeTab === 'EMAIL' ? '#ffffff' : 'var(--color-ash)',
               border: 'none',
               borderRadius: 'var(--radius-buttons)',
@@ -465,7 +479,7 @@ export const AuthModal: React.FC = () => {
               alignItems: 'center',
               justifyContent: 'center',
               gap: 6,
-              transition: 'all 0.2s',
+              transition: 'color 0.2s ease',
             }}
           >
             <Icons.Mail size={13} />
@@ -473,14 +487,17 @@ export const AuthModal: React.FC = () => {
           </button>
 
           <button
+            ref={setMethodItemRef('PHONE')}
             type="button"
             onClick={() => {
               setActiveTab('PHONE');
               setErrorMessage(null);
             }}
             style={{
+              position: 'relative',
+              zIndex: 2,
               flex: 1,
-              backgroundColor: activeTab === 'PHONE' ? 'var(--color-crimson-signal)' : 'transparent',
+              backgroundColor: 'transparent',
               color: activeTab === 'PHONE' ? '#ffffff' : 'var(--color-ash)',
               border: 'none',
               borderRadius: 'var(--radius-buttons)',
@@ -494,7 +511,7 @@ export const AuthModal: React.FC = () => {
               alignItems: 'center',
               justifyContent: 'center',
               gap: 6,
-              transition: 'all 0.2s',
+              transition: 'color 0.2s ease',
             }}
           >
             <Icons.Phone size={13} />
