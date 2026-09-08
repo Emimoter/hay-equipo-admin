@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useSlidingIndicator } from '../../hooks/useSlidingIndicator';
 import {
   getClubsFirestore,
   saveUserFixedSlotFirestore,
@@ -114,6 +115,19 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
   const [selectedClubId, setSelectedClubId] = useState<string>('club-laverde-jara');
   const [selectedCourtName, setSelectedCourtName] = useState<string>('Cancha 1 — Pádel Panorámica Cristal');
   const [selectedSport, setSelectedSport] = useState<'PADEL' | 'FUTBOL_5'>('PADEL');
+
+  // Sliding Indicators (hay-equipo-system)
+  const {
+    containerRef: tabsContainerRef,
+    setItemRef: setTabsItemRef,
+    indicatorStyle: tabsIndicatorStyle,
+  } = useSlidingIndicator(activeTab);
+
+  const {
+    containerRef: sportContainerRef,
+    setItemRef: setSportItemRef,
+    indicatorStyle: sportIndicatorStyle,
+  } = useSlidingIndicator(selectedSport);
 
   // New Subscription Form State
   const [selectedDay, setSelectedDay] = useState<number>(4); // Jueves
@@ -304,7 +318,7 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
   };
 
   return (
-    <div style={{ maxWidth: 1240, margin: '0 auto', padding: '120px 24px 80px' }}>
+    <div className="turnos-fijos-container" style={{ maxWidth: 1240, margin: '0 auto', padding: '120px 24px 80px' }}>
       {/* ── Encabezado Estilo Swiss Brutalist ── */}
       <div style={{ marginBottom: 32 }}>
         <div
@@ -366,23 +380,36 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
         </div>
       )}
 
-      {/* ── Sub-Tabs Idénticas a MisReservasTab (Pills) ── */}
+      {/* ── Sub-Tabs con Píldora Deslizante Fluida (hay-equipo-system) ── */}
       <div
+        ref={tabsContainerRef as any}
+        className="turnos-fijos-tabs-track"
         style={{
-          display: 'flex',
-          gap: 12,
-          paddingBottom: 16,
+          position: 'relative',
+          display: 'inline-flex',
+          gap: 4,
+          padding: '4px',
+          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+          border: '1px solid rgba(255, 255, 255, 0.12)',
+          borderRadius: '9999px',
           marginBottom: 32,
-          flexWrap: 'wrap',
+          maxWidth: '100%',
         }}
       >
+        {/* Píldora deslizante activa */}
+        <div style={tabsIndicatorStyle} />
+
         <button
           type="button"
+          ref={setTabsItemRef('MY_SLOTS')}
           onClick={() => setActiveTab('MY_SLOTS')}
+          className="turnos-fijos-tab-btn"
           style={{
-            background: activeTab === 'MY_SLOTS' ? 'var(--color-crimson-signal)' : 'rgba(255, 255, 255, 0.05)',
-            border: activeTab === 'MY_SLOTS' ? '1px solid var(--color-crimson-signal)' : '1px solid rgba(255, 255, 255, 0.1)',
-            borderRadius: 'var(--radius-buttons)',
+            position: 'relative',
+            zIndex: 2,
+            background: 'transparent',
+            border: 'none',
+            borderRadius: '9999px',
             color: activeTab === 'MY_SLOTS' ? '#ffffff' : 'var(--color-ash)',
             fontSize: 12,
             fontWeight: 700,
@@ -392,21 +419,28 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
             letterSpacing: '0.5px',
             display: 'inline-flex',
             alignItems: 'center',
+            justifyContent: 'center',
             gap: 8,
-            transition: 'all 0.2s ease',
+            transition: 'color 0.2s ease',
+            whiteSpace: 'nowrap',
           }}
         >
           <Icons.Repeat size={14} color={activeTab === 'MY_SLOTS' ? '#ffffff' : 'var(--color-ash)'} />
-          <span>Mis Turnos Activos ({subscriptions.length})</span>
+          <span className="turnos-fijos-tab-desktop">Mis Turnos Activos ({subscriptions.length})</span>
+          <span className="turnos-fijos-tab-mobile">Mis Turnos ({subscriptions.length})</span>
         </button>
 
         <button
           type="button"
+          ref={setTabsItemRef('NEW_SLOT')}
           onClick={() => setActiveTab('NEW_SLOT')}
+          className="turnos-fijos-tab-btn"
           style={{
-            background: activeTab === 'NEW_SLOT' ? 'var(--color-crimson-signal)' : 'rgba(255, 255, 255, 0.05)',
-            border: activeTab === 'NEW_SLOT' ? '1px solid var(--color-crimson-signal)' : '1px solid rgba(255, 255, 255, 0.1)',
-            borderRadius: 'var(--radius-buttons)',
+            position: 'relative',
+            zIndex: 2,
+            background: 'transparent',
+            border: 'none',
+            borderRadius: '9999px',
             color: activeTab === 'NEW_SLOT' ? '#ffffff' : 'var(--color-ash)',
             fontSize: 12,
             fontWeight: 700,
@@ -416,16 +450,19 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
             letterSpacing: '0.5px',
             display: 'inline-flex',
             alignItems: 'center',
+            justifyContent: 'center',
             gap: 8,
-            transition: 'all 0.2s ease',
+            transition: 'color 0.2s ease',
+            whiteSpace: 'nowrap',
           }}
         >
           <Icons.Calendar size={14} color={activeTab === 'NEW_SLOT' ? '#ffffff' : 'var(--color-ash)'} />
-          <span>+ Contratar Turno Fijo</span>
+          <span className="turnos-fijos-tab-desktop">+ Contratar Turno Fijo</span>
+          <span className="turnos-fijos-tab-mobile">+ Contratar</span>
         </button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 1.4fr) minmax(280px, 1fr)', gap: 32, alignItems: 'start' }}>
+      <div className="turnos-fijos-grid">
         {/* ── Columna Izquierda: Mis Turnos Activos O Formulario ── */}
         <div>
           {activeTab === 'MY_SLOTS' ? (
@@ -696,23 +733,39 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
               </div>
 
               <form onSubmit={handleCreateFixedSlot} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                {/* Deporte */}
+                {/* Deporte (Sliding Pill Switch — hay-equipo-system) */}
                 <div>
                   <label style={{ display: 'block', fontSize: 11, color: 'var(--color-ash)', textTransform: 'uppercase', fontWeight: 700, marginBottom: 8 }}>
                     Deporte
                   </label>
-                  <div style={{ display: 'flex', gap: 10 }}>
+                  <div
+                    ref={sportContainerRef as any}
+                    style={{
+                      position: 'relative',
+                      display: 'flex',
+                      gap: 4,
+                      padding: '4px',
+                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid rgba(255, 255, 255, 0.12)',
+                      borderRadius: '9999px',
+                      width: '100%',
+                    }}
+                  >
+                    <div style={sportIndicatorStyle} />
                     {(['PADEL', 'FUTBOL_5'] as const).map((s) => (
                       <button
                         type="button"
                         key={s}
+                        ref={setSportItemRef(s)}
                         onClick={() => setSelectedSport(s)}
                         style={{
                           flex: 1,
-                          backgroundColor: selectedSport === s ? 'var(--color-crimson-signal)' : 'rgba(255, 255, 255, 0.04)',
+                          position: 'relative',
+                          zIndex: 2,
+                          backgroundColor: 'transparent',
                           color: '#ffffff',
-                          border: `1px solid ${selectedSport === s ? 'var(--color-crimson-signal)' : 'rgba(76, 76, 76, 0.4)'}`,
-                          borderRadius: 'var(--radius-buttons)',
+                          border: 'none',
+                          borderRadius: '9999px',
                           padding: '10px 14px',
                           fontSize: 12,
                           fontWeight: 700,
@@ -723,6 +776,7 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
                           alignItems: 'center',
                           justifyContent: 'center',
                           gap: 8,
+                          transition: 'color 0.2s ease',
                         }}
                       >
                         {s === 'PADEL' ? <Icons.Padel size={15} color="#fff" /> : <Icons.Soccer size={15} color="#fff" />}
@@ -799,7 +853,7 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
                   <label style={{ display: 'block', fontSize: 11, color: 'var(--color-ash)', textTransform: 'uppercase', fontWeight: 700, marginBottom: 8 }}>
                     Horario Semanal
                   </label>
-                  <div style={{ display: 'flex', gap: 10 }}>
+                  <div className="turnos-fijos-times-grid">
                     {DEFAULT_TIMES.map((t) => (
                       <button
                         type="button"
@@ -828,7 +882,7 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
                   <label style={{ display: 'block', fontSize: 11, color: 'var(--color-ash)', textTransform: 'uppercase', fontWeight: 700, marginBottom: 8 }}>
                     Duración del Abono
                   </label>
-                  <div style={{ display: 'flex', gap: 10 }}>
+                  <div className="turnos-fijos-durations-grid">
                     {[
                       { m: 1, label: '1 Mes' },
                       { m: 3, label: '3 Meses (-12% OFF)' },
@@ -881,7 +935,7 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
                 </div>
 
                 {/* Datos del Titular */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div className="turnos-fijos-titular-grid">
                   <div>
                     <label style={{ display: 'block', fontSize: 11, color: 'var(--color-ash)', textTransform: 'uppercase', fontWeight: 700, marginBottom: 6 }}>
                       Nombre del Titular
@@ -1109,6 +1163,87 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
           </div>
         </div>
       )}
+
+      {/* ── Responsive Styling (hay-equipo-system) ── */}
+      <style jsx>{`
+        .turnos-fijos-grid {
+          display: grid;
+          grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+          gap: 32px;
+          align-items: start;
+        }
+
+        .turnos-fijos-tab-mobile {
+          display: none;
+        }
+        .turnos-fijos-tab-desktop {
+          display: inline;
+        }
+
+        .turnos-fijos-times-grid {
+          display: flex;
+          gap: 10px;
+        }
+
+        .turnos-fijos-durations-grid {
+          display: flex;
+          gap: 10px;
+        }
+
+        .turnos-fijos-titular-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+        }
+
+        @media (max-width: 900px) {
+          .turnos-fijos-grid {
+            grid-template-columns: 1fr !important;
+            gap: 24px !important;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .turnos-fijos-container {
+            padding: 96px 16px 110px !important;
+          }
+        }
+
+        @media (max-width: 600px) {
+          .turnos-fijos-tabs-track {
+            display: flex !important;
+            width: 100% !important;
+          }
+          .turnos-fijos-tab-btn {
+            flex: 1 !important;
+            padding: 8px 6px !important;
+            font-size: 11px !important;
+            gap: 6px !important;
+          }
+          .turnos-fijos-tab-desktop {
+            display: none !important;
+          }
+          .turnos-fijos-tab-mobile {
+            display: inline !important;
+          }
+          .turnos-fijos-titular-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .turnos-fijos-times-grid {
+            display: grid !important;
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 8px !important;
+          }
+          .turnos-fijos-durations-grid {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 8px !important;
+          }
+        }
+      `}</style>
     </div>
   );
 };
