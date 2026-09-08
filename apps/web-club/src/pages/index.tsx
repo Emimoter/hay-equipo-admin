@@ -231,10 +231,13 @@ export default function LandingPage() {
 
         // 1. Hardware Accelerated Ball Parallax Transform (No React state lag)
         if (ballContainerRef.current) {
+          const isMobile = window.innerWidth <= 768;
           const rotation = y * 0.42;
-          const translateY = y * 0.18;
-          // Cleanly fade out & occlude as scroll approaches Section 3 (Funcionalidades)
-          const globalOpacity = y > 750 ? Math.max(0, 1 - (y - 750) / 220) : 1;
+          const translateY = isMobile ? y * 0.12 : y * 0.18;
+          // Cleanly fade out & occlude as scroll moves past the hero
+          const fadeStart = isMobile ? 380 : 750;
+          const fadeRange = isMobile ? 180 : 220;
+          const globalOpacity = y > fadeStart ? Math.max(0, 1 - (y - fadeStart) / fadeRange) : 1;
 
           ballContainerRef.current.style.transform = `translate3d(0, calc(-50% + ${translateY}px), 0) rotate(${rotation}deg)`;
           ballContainerRef.current.style.opacity = String(globalOpacity);
@@ -603,12 +606,12 @@ export default function LandingPage() {
             </h1>
 
             {/* Subtitle: Soft slide up + blur clear */}
-            <TrackingBlurReveal inView={isLoaded} delay={0.7} style={{ fontSize: '18px', color: 'var(--color-ash)', marginTop: 26, maxWidth: 520, lineHeight: 1.3 }}>
+            <TrackingBlurReveal inView={isLoaded} delay={0.7} style={{ fontSize: 'clamp(14px, 3.8vw, 18px)', color: 'var(--color-ash)', marginTop: 20, maxWidth: 520, lineHeight: 1.35 }}>
               La plataforma que conecta jugadores con las mejores canchas deportivas de Argentina. Reservá al instante, dividí los gastos y armá tu equipo.
             </TrackingBlurReveal>
 
             {/* Action CTAs: Reservar Cancha + Descargar App */}
-            <TrackingBlurReveal inView={isLoaded} delay={0.85} style={{ marginTop: 32, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+            <TrackingBlurReveal inView={isLoaded} delay={0.85} style={{ marginTop: 24, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
               <a
                 href="/reservar"
                 className="landing-hero-cta-primary"
