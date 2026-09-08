@@ -95,12 +95,12 @@ export default function App({ Component, pageProps }: AppProps) {
 
         /* ── Landing Mobile Fixes (max-width 768px) ── */
         @media (max-width: 768px) {
-          /* 3D Ball Container on Mobile: Positioned in upper right hero area, clear of subtitle */
+          /* 3D Ball Container on Mobile: Aligned at middle of headline text ("JUGÁ.") */
           .ball-container {
-            top: 30% !important;
+            top: 41% !important;
             right: -2% !important;
-            width: min(46vw, 185px) !important;
-            height: min(46vw, 185px) !important;
+            width: min(44vw, 175px) !important;
+            height: min(44vw, 175px) !important;
           }
 
           /* Header */
@@ -175,9 +175,9 @@ export default function App({ Component, pageProps }: AppProps) {
 
         @media (max-width: 480px) and (max-height: 720px) {
           .ball-container {
-            top: 28% !important;
-            width: 150px !important;
-            height: 150px !important;
+            top: 40% !important;
+            width: 145px !important;
+            height: 145px !important;
           }
         }
       `}</style>
