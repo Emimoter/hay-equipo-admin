@@ -108,7 +108,7 @@ export const ClubImageCarousel: React.FC<ClubImageCarouselProps> = ({
         }}
       >
         {safeImages.map((imgSrc, idx) => {
-          const isLogo = idx === 0 && (imgSrc.startsWith('/logos/') || imgSrc.includes('logo') || safeImages.length > 1);
+          const isLogo = idx === 0 && (imgSrc.startsWith('/logos/') || imgSrc.includes('logo'));
           return (
             <div
               key={`${imgSrc}-${idx}`}
