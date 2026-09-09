@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useSlidingIndicator } from '../../hooks/useSlidingIndicator';
+import { ClubImageCarousel } from './ClubImageCarousel';
 
 export interface ExplorarClub {
   id: string;
@@ -323,46 +324,36 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
               transition: 'border-color 0.2s ease',
             }}
           >
-            {/* Foto del Club con Scrim Gradient Overlay (hay-equipo-designer) */}
-            <div style={{ height: 200, position: 'relative', overflow: 'hidden' }}>
-              <img
-                src={club.coverImage || club.images?.[0] || 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&q=80'}
-                alt={club.name}
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              />
-              <div
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  background: 'linear-gradient(to top, rgba(10, 10, 10, 0.95) 0%, rgba(10, 10, 10, 0.2) 60%, transparent 100%)',
-                  pointerEvents: 'none',
-                }}
-              />
-              <div
-                style={{
-                  position: 'absolute',
-                  top: 12,
-                  right: 12,
-                  backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                  backdropFilter: 'blur(8px)',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  borderRadius: 'var(--radius-full)',
-                  padding: '4px 10px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 5,
-                  fontSize: 12,
-                  fontWeight: 700,
-                  color: '#ffffff',
-                }}
-              >
-                <Icons.Star size={13} color="#FACC15" />
-                <span>{club.rating}</span>
-                <span style={{ color: 'var(--color-ash)', fontSize: 11 }}>
-                  ({club.reviewCount || club.reviewsCount || 45})
-                </span>
-              </div>
-            </div>
+            {/* Carrusel de Imágenes del Club (Logo Oficial N°1 + Fotos Reales al scrollear) */}
+            <ClubImageCarousel
+              images={club.images || (club.coverImage ? [club.coverImage] : [])}
+              clubName={club.name}
+              height={200}
+              onCardClick={() => onSelectClub(club)}
+              topRightBadge={
+                <div
+                  style={{
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    backdropFilter: 'blur(8px)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: 'var(--radius-full)',
+                    padding: '4px 10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: '#ffffff',
+                  }}
+                >
+                  <Icons.Star size={13} color="#FACC15" />
+                  <span>{club.rating}</span>
+                  <span style={{ color: 'var(--color-ash)', fontSize: 11 }}>
+                    ({club.reviewCount || club.reviewsCount || 45})
+                  </span>
+                </div>
+              }
+            />
 
             {/* Contenido */}
             <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', flex: 1 }}>

@@ -8,6 +8,7 @@ import { MisReservasTab } from '../components/reservar/MisReservasTab';
 import { ExplorarTab } from '../components/reservar/ExplorarTab';
 import { TurnosFijosTab } from '../components/reservar/TurnosFijosTab';
 import { PerfilTab } from '../components/reservar/PerfilTab';
+import { ClubImageCarousel } from '../components/reservar/ClubImageCarousel';
 import { useAuth } from '../context/AuthContext';
 
 /* ────────────────────────────────────────────────────────────
@@ -1675,7 +1676,7 @@ export default function ReservarPage() {
           ═══════════════════════════════════════════════════════ */}
       {activeNavTab === 'EXPLORAR' && (
         <ExplorarTab
-          clubs={CLUBS_DATA}
+          clubs={clubsList}
           onSelectClub={(club) => setClubModalData(club)}
           onNavigateHome={() => handleTabChange('INICIO')}
         />
@@ -1688,7 +1689,7 @@ export default function ReservarPage() {
       {activeNavTab === 'FIJOS' && (
         <TurnosFijosTab
           onNavigateHome={() => handleTabChange('INICIO')}
-          clubs={CLUBS_DATA}
+          clubs={clubsList}
         />
       )}
 
@@ -2636,32 +2637,13 @@ export default function ReservarPage() {
                 }}
                 className="club-card-container"
               >
-                {/* Imagen del Club con Badges Superiores */}
-                <div style={{ position: 'relative', minHeight: 240, overflow: 'hidden' }}>
-                  <img
-                    src={club.images[0]}
-                    alt={club.name}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      display: 'block',
-                      filter: 'brightness(0.85)',
-                    }}
-                  />
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      background: 'linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.85) 100%)',
-                    }}
-                  />
-
-                  {/* Floating Tags */}
-                  <div style={{ position: 'absolute', top: 14, left: 14, right: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                {/* Carrusel de Imágenes del Club (Logo Oficial N°1 + Fotos Reales al scrollear) */}
+                <ClubImageCarousel
+                  images={club.images}
+                  clubName={club.name}
+                  height={240}
+                  onCardClick={() => setClubModalData(club)}
+                  topLeftBadge={
                     <div
                       style={{
                         padding: '4px 10px',
@@ -2682,36 +2664,46 @@ export default function ReservarPage() {
                       {activeSport === 'PADEL' ? <Icons.Padel size={11} color="var(--color-crimson-signal)" /> : <Icons.Football size={11} color="var(--color-crimson-signal)" />}
                       <span>{activeSport === 'PADEL' ? 'Pádel' : 'Fútbol'}</span>
                     </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <div
-                        style={{
-                          padding: '4px 10px',
-                          backgroundColor: 'rgba(0, 0, 0, 0.75)',
-                          backdropFilter: 'blur(8px)',
-                          border: '1px solid rgba(255, 255, 255, 0.2)',
-                          borderRadius: 'var(--radius-full)',
-                          fontSize: 11,
-                          fontWeight: 700,
-                          color: 'var(--color-frost)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 4,
-                        }}
-                      >
-                        <Icons.Star size={11} />
-                        <span>{club.rating}</span>
-                        <span style={{ color: 'var(--color-ash)', fontSize: 10 }}>({club.reviewCount})</span>
-                      </div>
+                  }
+                  topRightBadge={
+                    <div
+                      style={{
+                        padding: '4px 10px',
+                        backgroundColor: 'rgba(0, 0, 0, 0.75)',
+                        backdropFilter: 'blur(8px)',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        borderRadius: 'var(--radius-full)',
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: 'var(--color-frost)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
+                      }}
+                    >
+                      <Icons.Star size={11} />
+                      <span>{club.rating}</span>
+                      <span style={{ color: 'var(--color-ash)', fontSize: 10 }}>({club.reviewCount})</span>
                     </div>
-                  </div>
-
-                  <div style={{ position: 'absolute', bottom: 14, left: 14, right: 14 }}>
-                    <div style={{ fontSize: 11, color: 'var(--color-ash)', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+                  }
+                  bottomLeftBadge={
+                    <div
+                      style={{
+                        fontSize: 11,
+                        color: 'var(--color-ash)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.8px',
+                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                        backdropFilter: 'blur(6px)',
+                        padding: '3px 8px',
+                        borderRadius: 'var(--radius-full)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                      }}
+                    >
                       {club.courts.length} {club.courts.length === 1 ? 'cancha' : 'canchas'}
                     </div>
-                  </div>
-                </div>
+                  }
+                />
 
                 {/* Contenido del Club */}
                 <div style={{ padding: '28px 32px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 20 }}>
@@ -3619,29 +3611,35 @@ export default function ReservarPage() {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ position: 'relative', height: 260 }}>
-              <img
-                src={clubModalData.images[0]}
-                alt={clubModalData.name}
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            <div style={{ position: 'relative' }}>
+              <ClubImageCarousel
+                images={clubModalData.images}
+                clubName={clubModalData.name}
+                height={280}
               />
               <button
                 onClick={() => setClubModalData(null)}
                 style={{
                   position: 'absolute',
-                  top: 16,
-                  right: 16,
-                  backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                  top: 14,
+                  right: 14,
+                  backgroundColor: 'rgba(0, 0, 0, 0.75)',
+                  backdropFilter: 'blur(8px)',
                   border: '1px solid rgba(255, 255, 255, 0.3)',
                   color: '#fff',
                   width: 32,
                   height: 32,
-                  borderRadius: '50%',
+                  borderRadius: 'var(--radius-full)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   cursor: 'pointer',
+                  zIndex: 25,
+                  transition: 'background-color 0.2s ease',
                 }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-crimson-signal)')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.75)')}
+                aria-label="Cerrar ficha"
               >
                 <Icons.Close size={16} />
               </button>

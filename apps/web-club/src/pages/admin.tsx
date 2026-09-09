@@ -1963,8 +1963,10 @@ export default function AdminPage() {
           width: 44px;
           height: 44px;
           border-radius: 0px;
-          background-size: cover;
+          background-size: contain;
+          background-repeat: no-repeat;
           background-position: center;
+          background-color: #0c0c0c;
           border: 1px solid rgba(255, 255, 255, 0.1);
           flex-shrink: 0;
         }

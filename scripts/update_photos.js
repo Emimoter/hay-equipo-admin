@@ -60,17 +60,19 @@ async function updatePhotos() {
       photos = harvested['club-indoor-7'] || [];
     }
 
-    if (photos.length > 0) {
-      updatedCount++;
-      console.log(`[UPDATED] ${club.name} (${club.id}) -> ${photos.length} real photos`);
-      return {
-        ...club,
-        images: photos
-      };
-    } else {
-      console.log(`[KEEP] ${club.name} (${club.id}) -> kept existing photos`);
-      return club;
-    }
+    // Filter out duplicate or empty photos
+    const uniquePhotos = Array.from(new Set(photos.filter(p => p && !p.startsWith('/logos/'))));
+    
+    // Logo is strictly images[0]
+    const logoUrl = `/logos/${club.id}.png`;
+    const finalImages = [logoUrl, ...uniquePhotos];
+
+    updatedCount++;
+    console.log(`[LOGO + REAL PHOTOS] ${club.name} (${club.id}) -> Logo: ${logoUrl} + ${uniquePhotos.length} real photos`);
+    return {
+      ...club,
+      images: finalImages
+    };
   });
 
   await setDoc(doc(db, 'settings', 'hay_equipo_clubs'), {
