@@ -1,7 +1,6 @@
 {
   "version": 2,
   "framework": "nextjs",
-  "installCommand": "npm install",
-  "buildCommand": "mkdir -p public && cp -r apps/web-club/public/* public/ && next build apps/web-club",
+  "buildCommand": "next build apps/web-club",
   "outputDirectory": "apps/web-club/.next"
 }
