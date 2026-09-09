@@ -68,6 +68,11 @@ const Icons = {
       <polyline points="12 5 19 12 12 19" />
     </svg>
   ),
+  WhatsApp: ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+    </svg>
+  ),
 };
 
 export const ExplorarTab: React.FC<ExplorarTabProps> = ({
@@ -384,7 +389,7 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
                 )}
               </div>
 
-              {/* Botón Acción (Pills) */}
+              {/* Botones de Acción (Pills) */}
               <div style={{ marginTop: 'auto', paddingTop: 16, borderTop: '1px solid rgba(76, 76, 76, 0.3)', display: 'flex', gap: 10 }}>
                 <button
                   onClick={() => onSelectClub(club)}
@@ -393,9 +398,9 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
                     backgroundColor: 'rgba(255, 255, 255, 0.08)',
                     color: 'var(--color-frost)',
                     border: '1px solid rgba(255, 255, 255, 0.2)',
-                    borderRadius: 'var(--radius-buttons)',
+                    borderRadius: 'var(--radius-full)',
                     padding: '10px 16px',
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: 700,
                     cursor: 'pointer',
                     textTransform: 'uppercase',
@@ -404,29 +409,56 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
                 >
                   Ficha del Club
                 </button>
-                <button
-                  onClick={onNavigateHome}
-                  style={{
-                    flex: 1,
-                    backgroundColor: 'var(--color-crimson-signal)',
-                    color: '#ffffff',
-                    border: 'none',
-                    borderRadius: 'var(--radius-buttons)',
-                    padding: '10px 16px',
-                    fontSize: 12,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.4px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 6,
-                  }}
-                >
-                  <span>Ver Turnos</span>
-                  <Icons.ArrowRight size={13} />
-                </button>
+                {club.whatsappPhone ? (
+                  <a
+                    href={`https://wa.me/${club.whatsappPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
+                      `Hola! Los vi en Hay Equipo y quería consultar disponibilidad de canchas en ${club.name}.`
+                    )}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      flex: 1,
+                      backgroundColor: '#25D366',
+                      color: '#000000',
+                      border: 'none',
+                      borderRadius: 'var(--radius-full)',
+                      padding: '10px 16px',
+                      fontSize: 11,
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                      textDecoration: 'none',
+                      boxShadow: '0 2px 10px rgba(37, 211, 102, 0.25)',
+                    }}
+                  >
+                    <Icons.WhatsApp size={14} color="#000" />
+                    <span>WhatsApp</span>
+                  </a>
+                ) : (
+                  <button
+                    onClick={() => onSelectClub(club)}
+                    style={{
+                      flex: 1,
+                      backgroundColor: 'var(--color-crimson-signal)',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: 'var(--radius-full)',
+                      padding: '10px 16px',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.4px',
+                    }}
+                  >
+                    Ver Contacto
+                  </button>
+                )}
               </div>
             </div>
           </div>

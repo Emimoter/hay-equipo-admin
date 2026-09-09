@@ -361,59 +361,12 @@ interface WebClub {
 }
 
 function getClubSlotsForDate(club: WebClub, date: Date, sport: 'PADEL' | 'FUTBOL'): WebSlot[] {
-  const matchingCourts = club.courts.filter((c) => c.sport === sport);
-  if (matchingCourts.length === 0) return [];
-
-  const dayOfWeek = date.getDay(); // 0=Dom, 6=Sáb
-  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+  // Retorna únicamente turnos reales si el club los tiene publicados
+  if (!club.slots || club.slots.length === 0) return [];
   const friendlyDate = getFriendlyDateLabel(date);
-
-  const weekendTimes = [
-    { start: '10:00', end: sport === 'PADEL' ? '11:30' : '11:00' },
-    { start: '11:30', end: sport === 'PADEL' ? '13:00' : '12:30' },
-    { start: '16:00', end: sport === 'PADEL' ? '17:30' : '17:00' },
-    { start: '17:30', end: sport === 'PADEL' ? '19:00' : '18:30' },
-    { start: '19:00', end: sport === 'PADEL' ? '20:30' : '20:00' },
-    { start: '20:30', end: sport === 'PADEL' ? '22:00' : '21:30' },
-    { start: '22:00', end: sport === 'PADEL' ? '23:30' : '23:00' },
-  ];
-
-  const weekdayTimes = [
-    { start: '16:30', end: sport === 'PADEL' ? '18:00' : '17:30' },
-    { start: '18:00', end: sport === 'PADEL' ? '19:30' : '19:00' },
-    { start: '19:30', end: sport === 'PADEL' ? '21:00' : '20:30' },
-    { start: '21:00', end: sport === 'PADEL' ? '22:30' : '22:00' },
-    { start: '22:30', end: sport === 'PADEL' ? '00:00' : '23:30' },
-  ];
-
-  const timesToUse = isWeekend ? weekendTimes : weekdayTimes;
-  const perPlayerPrice = club.minPricePerPlayer;
-  const basePrice = sport === 'PADEL' ? perPlayerPrice * 4 : perPlayerPrice * 10;
-  const dateKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-
-  const generatedSlots: WebSlot[] = [];
-
-  matchingCourts.forEach((court, cIdx) => {
-    const offset = cIdx % 2;
-    const courtSlots = timesToUse.slice(offset, offset + 3);
-
-    courtSlots.forEach((time, tIdx) => {
-      generatedSlots.push({
-        id: `slot-${club.id}-${court.id}-${dateKey}-${tIdx}`,
-        courtId: court.id,
-        courtName: court.name,
-        sport: sport,
-        date: friendlyDate,
-        startTime: time.start,
-        endTime: time.end,
-        price: basePrice,
-        perPlayerPrice: perPlayerPrice,
-        available: true,
-      });
-    });
-  });
-
-  return generatedSlots;
+  return club.slots.filter(
+    (s) => s.sport === sport && (!s.date || s.date === friendlyDate || s.date === 'Hoy') && s.available
+  );
 }
 
 const SAMPLE_AVATARS = [
@@ -454,12 +407,7 @@ const CLUBS_DATA: WebClub[] = [
       { id: '360-c2', name: 'Cancha 2 — Cristal Pro Indoor', sport: 'PADEL', surface: 'Vidrio Templado 10mm · Iluminación LED Torneo', capacity: 4 },
       { id: '360-c3', name: 'Cancha 3 — Techada Climatizada', sport: 'PADEL', surface: 'Césped Sintético Azul WPT', capacity: 4 },
     ],
-    slots: [
-      { id: 'sl-1', courtId: '360-c1', courtName: 'Cancha 1 — Cristal Panorámica WPT', sport: 'PADEL', date: 'Hoy', startTime: '18:00', endTime: '19:30', price: 26000, perPlayerPrice: 6500, available: true },
-      { id: 'sl-2', courtId: '360-c1', courtName: 'Cancha 1 — Cristal Panorámica WPT', sport: 'PADEL', date: 'Hoy', startTime: '19:30', endTime: '21:00', price: 26000, perPlayerPrice: 6500, available: true },
-      { id: 'sl-3', courtId: '360-c2', courtName: 'Cancha 2 — Cristal Pro Indoor', sport: 'PADEL', date: 'Hoy', startTime: '21:00', endTime: '22:30', price: 28000, perPlayerPrice: 7000, available: true },
-      { id: 'sl-4', courtId: '360-c3', courtName: 'Cancha 3 — Techada Climatizada', sport: 'PADEL', date: 'Hoy', startTime: '22:30', endTime: '00:00', price: 24000, perPlayerPrice: 6000, available: true },
-    ],
+    slots: [],
   },
   {
     id: 'club-world-padel-center',
@@ -555,12 +503,7 @@ const CLUBS_DATA: WebClub[] = [
       { id: 'alf-c1', name: 'Cancha 1 — Césped Monofilamento', sport: 'PADEL', surface: 'Vidrio Templado 10mm', capacity: 4 },
       { id: 'alf-f5', name: 'Cancha F5 — Sintético Forbex 50mm', sport: 'FUTBOL', surface: 'Césped con Caucho Criogénico', capacity: 10 },
     ],
-    slots: [
-      { id: 'sl-5', courtId: 'alf-c1', courtName: 'Cancha 1 — Césped Monofilamento', sport: 'PADEL', date: 'Hoy', startTime: '18:30', endTime: '20:00', price: 24000, perPlayerPrice: 6000, available: true },
-      { id: 'sl-6', courtId: 'alf-f5', courtName: 'Cancha F5 — Sintético Forbex 50mm', sport: 'FUTBOL', date: 'Hoy', startTime: '20:00', endTime: '21:00', price: 40000, perPlayerPrice: 4000, available: true },
-      { id: 'sl-7', courtId: 'alf-f5', courtName: 'Cancha F5 — Sintético Forbex 50mm', sport: 'FUTBOL', date: 'Hoy', startTime: '21:00', endTime: '22:00', price: 40000, perPlayerPrice: 4000, available: true },
-      { id: 'sl-8', courtId: 'alf-c1', courtName: 'Cancha 1 — Césped Monofilamento', sport: 'PADEL', date: 'Hoy', startTime: '22:00', endTime: '23:30', price: 24000, perPlayerPrice: 6000, available: true },
-    ],
+    slots: [],
   },
   {
     id: 'club-el-potrero',
@@ -625,12 +568,7 @@ const CLUBS_DATA: WebClub[] = [
       { id: 'lv-f5', name: 'Cancha Techada — Fútbol 5', sport: 'FUTBOL', surface: 'Césped Sintético Bajo Techo', capacity: 10 },
       { id: 'lv-p1', name: 'Cancha 1 — Pádel Cristal', sport: 'PADEL', surface: 'Cristal Panorámico WPT', capacity: 4 },
     ],
-    slots: [
-      { id: 'sl-9', courtId: 'lv-f7', courtName: 'Cancha Principal — Fútbol 7 Pro', sport: 'FUTBOL', date: 'Hoy', startTime: '19:00', endTime: '20:00', price: 54000, perPlayerPrice: 3857, available: true },
-      { id: 'sl-10', courtId: 'lv-f5', courtName: 'Cancha Techada — Fútbol 5', sport: 'FUTBOL', date: 'Hoy', startTime: '20:30', endTime: '21:30', price: 38000, perPlayerPrice: 3800, available: true },
-      { id: 'sl-11', courtId: 'lv-f7', courtName: 'Cancha Principal — Fútbol 7 Pro', sport: 'FUTBOL', date: 'Hoy', startTime: '21:30', endTime: '22:30', price: 54000, perPlayerPrice: 3857, available: true },
-      { id: 'sl-12', courtId: 'lv-p1', courtName: 'Cancha 1 — Pádel Cristal', sport: 'PADEL', date: 'Hoy', startTime: '22:30', endTime: '00:00', price: 25000, perPlayerPrice: 6250, available: true },
-    ],
+    slots: [],
   },
   {
     id: 'club-complejo-la-meca',
@@ -854,11 +792,7 @@ const CLUBS_DATA: WebClub[] = [
       { id: 'as-p1', name: 'Cancha 1 Climatizada', sport: 'PADEL', surface: 'Vidrio Panorámico 12mm', capacity: 4 },
       { id: 'as-f8', name: 'Cancha Fútbol 8 Techada', sport: 'FUTBOL', surface: 'Sintético Forbex 50mm', capacity: 16 },
     ],
-    slots: [
-      { id: 'sl-16', courtId: 'as-p1', courtName: 'Cancha 1 Climatizada', sport: 'PADEL', date: 'Hoy', startTime: '18:00', endTime: '19:30', price: 28000, perPlayerPrice: 7000, available: true },
-      { id: 'sl-17', courtId: 'as-f8', courtName: 'Cancha Fútbol 8 Techada', sport: 'FUTBOL', date: 'Hoy', startTime: '20:00', endTime: '21:00', price: 64000, perPlayerPrice: 4000, available: true },
-      { id: 'sl-18', courtId: 'as-p1', courtName: 'Cancha 1 Climatizada', sport: 'PADEL', date: 'Hoy', startTime: '21:30', endTime: '23:00', price: 28000, perPlayerPrice: 7000, available: true },
-    ],
+    slots: [],
   },
   {
     id: 'club-matchpoint-palermo',
@@ -890,11 +824,7 @@ const CLUBS_DATA: WebClub[] = [
       { id: 'mp-c1', name: 'Pista Central Premier Padel', sport: 'PADEL', surface: 'Panorámica 12mm Vidrio Templado', capacity: 4 },
       { id: 'mp-c2', name: 'Pista 2 — Cristal Indoor', sport: 'PADEL', surface: 'Césped Texturado Mondo Supercourt', capacity: 4 },
     ],
-    slots: [
-      { id: 'sl-13', courtId: 'mp-c1', courtName: 'Pista Central Premier Padel', sport: 'PADEL', date: 'Hoy', startTime: '19:00', endTime: '20:30', price: 32000, perPlayerPrice: 8000, available: true },
-      { id: 'sl-14', courtId: 'mp-c2', courtName: 'Pista 2 — Cristal Indoor', sport: 'PADEL', date: 'Hoy', startTime: '20:30', endTime: '22:00', price: 30000, perPlayerPrice: 7500, available: true },
-      { id: 'sl-15', courtId: 'mp-c1', courtName: 'Pista Central Premier Padel', sport: 'PADEL', date: 'Hoy', startTime: '22:00', endTime: '23:30', price: 32000, perPlayerPrice: 8000, available: true },
-    ],
+    slots: [],
   },
 ];
 
@@ -2575,7 +2505,7 @@ export default function ReservarPage() {
                     textTransform: 'uppercase',
                   }}
                 >
-                  {instantSlots.length} {instantSlots.length === 1 ? 'turno libre' : 'turnos libres'} encontrados
+                  {filteredClubs.length} {filteredClubs.length === 1 ? 'complejo encontrado' : 'complejos encontrados'}
                 </span>
               </div>
             </div>
@@ -2584,10 +2514,10 @@ export default function ReservarPage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 28, flexWrap: 'wrap', gap: 16 }}>
             <div>
               <div style={{ fontSize: 10, color: 'var(--color-crimson-signal)', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: 6, fontWeight: 700 }}>
-                CANCHAS DISPONIBLES · {isSameDay(selectedDate, new Date()) ? 'HOY' : getFriendlyDateLabel(selectedDate).toUpperCase()}
+                DIRECTORIO DE CANCHAS · MAR DEL PLATA
               </div>
               <h2 style={{ fontSize: 'clamp(26px, 4vw, 42px)', fontWeight: 700, color: 'var(--color-frost)', letterSpacing: '-1px', margin: 0, textTransform: 'uppercase' }}>
-                Complejos con Canchas Libres
+                Complejos Deportivos
               </h2>
             </div>
 
@@ -2780,123 +2710,247 @@ export default function ReservarPage() {
                       )}
                     </div>
 
-                    {/* Turnos disponibles directo en la tarjeta */}
-                    <div>
-                      <div style={{ fontSize: 10, color: 'var(--color-crimson-signal)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 10, fontWeight: 700 }}>
-                        {isSameDay(selectedDate, new Date())
-                          ? 'HORARIOS DISPONIBLES HOY (HACÉ CLIC PARA RESERVAR):'
-                          : `HORARIOS DISPONIBLES · ${getFullDateLabel(selectedDate).toUpperCase()} (HACÉ CLIC PARA RESERVAR):`}
-                      </div>
+                    {/* Turnos disponibles directo en la tarjeta / Info Club y Contacto Directo */}
+                    {(() => {
+                      const availableSlots = getClubSlotsForDate(club, selectedDate, activeSport).filter((s) => s.available);
+                      if (availableSlots.length > 0) {
+                        return (
+                          <div>
+                            <div style={{ fontSize: 10, color: 'var(--color-crimson-signal)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 10, fontWeight: 700 }}>
+                              {isSameDay(selectedDate, new Date())
+                                ? 'HORARIOS DISPONIBLES HOY (HACÉ CLIC PARA RESERVAR):'
+                                : `HORARIOS DISPONIBLES · ${getFullDateLabel(selectedDate).toUpperCase()} (HACÉ CLIC PARA RESERVAR):`}
+                            </div>
 
-                      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                        {getClubSlotsForDate(club, selectedDate, activeSport)
-                          .filter((s) => s.available)
-                          .map((slot) => (
-                            <button
-                              key={slot.id}
-                              onClick={() => handleOpenBooking(slot, club)}
-                              style={{
-                                backgroundColor: '#111111',
-                                border: '1px solid var(--color-graphite)',
-                                borderRadius: 'var(--radius-full)',
-                                color: 'var(--color-frost)',
-                                padding: '8px 18px',
-                                textAlign: 'left',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: 2,
-                              }}
-                              onMouseEnter={(e) => {
-                                (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-crimson-signal)';
-                                (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(252, 28, 70, 0.12)';
-                              }}
-                              onMouseLeave={(e) => {
-                                (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-graphite)';
-                                (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#111111';
-                              }}
-                            >
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700 }}>
-                                <Icons.Clock size={12} color="var(--color-crimson-signal)" />
-                                <span>{slot.startTime} hs</span>
+                            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                              {availableSlots.map((slot) => (
+                                <button
+                                  key={slot.id}
+                                  onClick={() => handleOpenBooking(slot, club)}
+                                  style={{
+                                    backgroundColor: '#111111',
+                                    border: '1px solid var(--color-graphite)',
+                                    borderRadius: 'var(--radius-full)',
+                                    color: 'var(--color-frost)',
+                                    padding: '8px 18px',
+                                    textAlign: 'left',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: 2,
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-crimson-signal)';
+                                    (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(252, 28, 70, 0.12)';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-graphite)';
+                                    (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#111111';
+                                  }}
+                                >
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700 }}>
+                                    <Icons.Clock size={12} color="var(--color-crimson-signal)" />
+                                    <span>{slot.startTime} hs</span>
+                                  </div>
+                                  <div style={{ fontSize: 10, color: 'var(--color-ash)', fontWeight: 500 }}>
+                                    {formatCurrency(slot.perPlayerPrice)} / pers
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div
+                          style={{
+                            backgroundColor: '#0c0c0c',
+                            border: '1px solid rgba(255, 255, 255, 0.08)',
+                            padding: '14px 16px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 10,
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <div
+                                style={{
+                                  width: 22,
+                                  height: 22,
+                                  borderRadius: 'var(--radius-full)',
+                                  backgroundColor: 'rgba(252, 28, 70, 0.12)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  color: 'var(--color-crimson-signal)',
+                                }}
+                              >
+                                <Icons.Clock size={12} />
                               </div>
-                              <div style={{ fontSize: 10, color: 'var(--color-ash)', fontWeight: 500 }}>
-                                {formatCurrency(slot.perPlayerPrice)} / pers
-                              </div>
-                            </button>
-                          ))}
-                      </div>
-                    </div>
+                              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-frost)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                                Disponibilidad & Turnos Directos
+                              </span>
+                            </div>
+                            <span style={{ fontSize: 10, color: 'var(--color-ash)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                              {club.city}
+                            </span>
+                          </div>
+
+                          <p style={{ margin: 0, fontSize: 12, color: 'var(--color-ash)', lineHeight: 1.5 }}>
+                            Este club coordina sus horarios de forma directa. Consultá turnos libres de {activeSport === 'PADEL' ? 'pádel' : 'fútbol'} para hoy o la semana por WhatsApp oficial o teléfono.
+                          </p>
+
+                          {club.courts && club.courts.length > 0 && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', paddingTop: 2 }}>
+                              <span style={{ fontSize: 10.5, color: 'var(--color-graphite)', fontWeight: 600, textTransform: 'uppercase' }}>
+                                Canchas:
+                              </span>
+                              {club.courts.map((ct) => (
+                                <span
+                                  key={ct.id}
+                                  style={{
+                                    fontSize: 10.5,
+                                    color: 'var(--color-frost)',
+                                    backgroundColor: '#161616',
+                                    border: '1px solid rgba(255, 255, 255, 0.07)',
+                                    padding: '2px 9px',
+                                    borderRadius: 'var(--radius-full)',
+                                  }}
+                                >
+                                  {ct.name} · {ct.surface}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {/* Footer de Tarjeta */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(76, 76, 76, 0.3)', paddingTop: 16, flexWrap: 'wrap', gap: 12 }}>
                     <div>
-                      <div style={{ fontSize: 10, color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600 }}>
-                        Precio por persona desde
-                      </div>
-                      <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-frost)' }}>
-                        {formatCurrency(club.minPricePerPlayer)}
-                      </div>
+                      {club.phone ? (
+                        <div>
+                          <div style={{ fontSize: 10, color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600 }}>
+                            Teléfono Directo
+                          </div>
+                          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-frost)' }}>
+                            {club.phone}
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <div style={{ fontSize: 10, color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600 }}>
+                            Ubicación
+                          </div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-frost)' }}>
+                            {club.address}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <button
+                        onClick={() => setClubModalData(club)}
+                        style={{
+                          backgroundColor: '#161616',
+                          color: 'var(--color-frost)',
+                          border: '1px solid rgba(255, 255, 255, 0.18)',
+                          borderRadius: 'var(--radius-full)',
+                          padding: '10px 16px',
+                          fontSize: 11,
+                          fontWeight: 700,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          transition: 'all 0.2s ease',
+                        }}
+                        onMouseEnter={(e) => {
+                          (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255, 255, 255, 0.4)';
+                          (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#222';
+                        }}
+                        onMouseLeave={(e) => {
+                          (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255, 255, 255, 0.18)';
+                          (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#161616';
+                        }}
+                      >
+                        <span>Ficha & Canchas</span>
+                        <Icons.ArrowUpRight size={12} />
+                      </button>
+
                       {club.whatsappPhone && (
                         <a
                           href={`https://wa.me/${club.whatsappPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
-                            `Hola! Los vi en Hay Equipo y quería consultar disponibilidad para jugar ${
+                            `Hola! Los vi en Hay Equipo y quería consultar disponibilidad de turnos para jugar ${
                               activeSport === 'PADEL' ? 'pádel' : 'fútbol'
-                            }.`
+                            } en ${club.name}.`
                           )}`}
                           target="_blank"
                           rel="noreferrer"
                           style={{
-                            backgroundColor: '#161616',
-                            color: '#25D366',
-                            border: '1px solid rgba(37, 211, 102, 0.35)',
+                            backgroundColor: '#25D366',
+                            color: '#000000',
+                            border: 'none',
                             borderRadius: 'var(--radius-full)',
                             padding: '10px 18px',
                             fontSize: 11,
-                            fontWeight: 700,
+                            fontWeight: 800,
                             textTransform: 'uppercase',
                             letterSpacing: '0.5px',
                             display: 'inline-flex',
                             alignItems: 'center',
                             gap: 6,
                             textDecoration: 'none',
+                            boxShadow: '0 2px 10px rgba(37, 211, 102, 0.25)',
+                            transition: 'all 0.2s ease',
+                          }}
+                          onMouseEnter={(e) => {
+                            (e.currentTarget as HTMLElement).style.opacity = '0.9';
+                          }}
+                          onMouseLeave={(e) => {
+                            (e.currentTarget as HTMLElement).style.opacity = '1';
                           }}
                         >
-                          <Icons.WhatsApp size={14} color="#25D366" />
-                          <span>WhatsApp</span>
+                          <Icons.WhatsApp size={14} color="#000000" />
+                          <span>Consultar WhatsApp</span>
                         </a>
                       )}
 
-                      <button
-                        onClick={() => {
-                          const clubSlots = getClubSlotsForDate(club, selectedDate, activeSport);
-                          const firstSlot = clubSlots.find((s) => s.available) || clubSlots[0];
-                          if (firstSlot) handleOpenBooking(firstSlot, club);
-                        }}
-                        style={{
-                          backgroundColor: 'var(--color-crimson-signal)',
-                          color: 'var(--color-frost)',
-                          border: 'none',
-                          padding: '10px 24px',
-                          fontSize: 12,
-                          fontWeight: 700,
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.6px',
-                          cursor: 'pointer',
-                          borderRadius: 'var(--radius-full)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 6,
-                        }}
-                      >
-                        <span>Elegir Horario</span>
-                        <Icons.ArrowUpRight size={13} color="#ffffff" />
-                      </button>
+                      {getClubSlotsForDate(club, selectedDate, activeSport).filter((s) => s.available).length > 0 && (
+                        <button
+                          onClick={() => {
+                            const clubSlots = getClubSlotsForDate(club, selectedDate, activeSport).filter((s) => s.available);
+                            const firstSlot = clubSlots[0];
+                            if (firstSlot) handleOpenBooking(firstSlot, club);
+                          }}
+                          style={{
+                            backgroundColor: 'var(--color-crimson-signal)',
+                            color: 'var(--color-frost)',
+                            border: 'none',
+                            padding: '10px 24px',
+                            fontSize: 12,
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.6px',
+                            cursor: 'pointer',
+                            borderRadius: 'var(--radius-full)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 6,
+                          }}
+                        >
+                          <span>Elegir Horario</span>
+                          <Icons.ArrowUpRight size={13} color="#ffffff" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -3689,6 +3743,29 @@ export default function ReservarPage() {
                 ))}
               </div>
 
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
+                {clubModalData.amenities.covered && (
+                  <div style={{ padding: '4px 10px', backgroundColor: '#141414', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 'var(--radius-full)', fontSize: 11, color: 'var(--color-ash)' }}>
+                    Techada / Indoor
+                  </div>
+                )}
+                {clubModalData.amenities.parking && (
+                  <div style={{ padding: '4px 10px', backgroundColor: '#141414', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 'var(--radius-full)', fontSize: 11, color: 'var(--color-ash)' }}>
+                    Parking Custodiado
+                  </div>
+                )}
+                {clubModalData.amenities.buffet && (
+                  <div style={{ padding: '4px 10px', backgroundColor: '#141414', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 'var(--radius-full)', fontSize: 11, color: 'var(--color-ash)' }}>
+                    Buffet & Bar
+                  </div>
+                )}
+                {clubModalData.amenities.lighting && (
+                  <div style={{ padding: '4px 10px', backgroundColor: '#141414', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 'var(--radius-full)', fontSize: 11, color: 'var(--color-ash)' }}>
+                    Iluminación LED Pro
+                  </div>
+                )}
+              </div>
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {clubModalData.whatsappPhone && (
                   <a
@@ -3717,6 +3794,31 @@ export default function ReservarPage() {
                   >
                     <Icons.WhatsApp size={16} color="#000" />
                     <span>Contactar por WhatsApp Oficial</span>
+                  </a>
+                )}
+
+                {clubModalData.phone && (
+                  <a
+                    href={`tel:${clubModalData.phone.replace(/[^0-9]/g, '')}`}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                      backgroundColor: '#161616',
+                      color: '#fff',
+                      border: '1px solid var(--color-graphite)',
+                      borderRadius: 'var(--radius-full)',
+                      padding: '12px 24px',
+                      textDecoration: 'none',
+                      fontSize: 13,
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                    }}
+                  >
+                    <Icons.Phone size={14} color="var(--color-crimson-signal)" />
+                    <span>Llamar al Club ({clubModalData.phone})</span>
                   </a>
                 )}
 
