@@ -38,37 +38,77 @@ async function updatePhotos() {
   const clubs = snap.data().clubs || [];
   console.log(`Found ${clubs.length} clubs in Firestore.`);
 
-  let updatedCount = 0;
-  const updatedClubs = clubs.map(club => {
-    let photos = harvested[club.id] || [];
+  const PADEL_PHOTOS = [
+    'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=1000&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80'
+  ];
 
-    if (club.id === 'club-laverde-jara') {
-      photos = [
-        'https://www.canchaslaverde.com.ar/assets/images/1.jpg',
-        'https://www.canchaslaverde.com.ar/assets/images/2.jpg',
-        'https://www.canchaslaverde.com.ar/assets/images/3.jpg',
-        ...photos
-      ];
-    } else if (club.id === 'club-laverde-cordoba') {
-      photos = [
-        'https://www.canchaslaverde.com.ar/assets/images/4.jpg',
-        'https://www.canchaslaverde.com.ar/assets/images/5.jpg',
-        'https://www.canchaslaverde.com.ar/assets/images/6.jpg',
-        ...photos
-      ];
-    } else if (club.id === 'club-area-7' && photos.length === 0) {
-      photos = harvested['club-indoor-7'] || [];
+  const FUTBOL_PHOTOS = [
+    'https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=1000&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1551958219-acbc608c6377?w=1000&auto=format&fit=crop&q=80'
+  ];
+
+  const OFFICIAL_ASSETS = {
+    'club-laverde-jara': [
+      'https://www.canchaslaverde.com.ar/assets/images/1.jpg',
+      'https://www.canchaslaverde.com.ar/assets/images/2.jpg',
+      'https://www.canchaslaverde.com.ar/assets/images/3.jpg'
+    ],
+    'club-laverde-cordoba': [
+      'https://www.canchaslaverde.com.ar/assets/images/4.jpg',
+      'https://www.canchaslaverde.com.ar/assets/images/5.jpg',
+      'https://www.canchaslaverde.com.ar/assets/images/6.jpg'
+    ],
+    'club-laverde-telefonos': [
+      'https://www.canchaslaverde.com.ar/assets/images/2.jpg',
+      'https://www.canchaslaverde.com.ar/assets/images/4.jpg'
+    ],
+    'club-el-potrero': [
+      'https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80'
+    ]
+  };
+
+  let padelIdx = 0;
+  let futbolIdx = 0;
+  let updatedCount = 0;
+
+  const updatedClubs = clubs.map(club => {
+    const logoUrl = `/logos/${club.id}.png`;
+    const official = OFFICIAL_ASSETS[club.id] || [];
+
+    // Filter out all expired google session URLs (gps-cs-s)
+    const validExisting = (club.images || []).filter(p => 
+      p && 
+      !p.startsWith('/logos/') && 
+      !p.includes('gps-cs-s') &&
+      !p.includes('googleusercontent')
+    );
+
+    let courtPhotos = [...official, ...validExisting];
+
+    const hasPadel = (club.sports && club.sports.includes('PADEL')) || club.name.toLowerCase().includes('pádel') || club.name.toLowerCase().includes('padel');
+
+    // Ensure every club has at least 3 high-res reliable court photos
+    while (courtPhotos.length < 3) {
+      if (hasPadel) {
+        courtPhotos.push(PADEL_PHOTOS[padelIdx % PADEL_PHOTOS.length]);
+        padelIdx++;
+      } else {
+        courtPhotos.push(FUTBOL_PHOTOS[futbolIdx % FUTBOL_PHOTOS.length]);
+        futbolIdx++;
+      }
     }
 
-    // Filter out duplicate or empty photos
-    const uniquePhotos = Array.from(new Set(photos.filter(p => p && !p.startsWith('/logos/'))));
-    
-    // Logo is strictly images[0]
-    const logoUrl = `/logos/${club.id}.png`;
-    const finalImages = [logoUrl, ...uniquePhotos];
+    const uniqueCourtPhotos = Array.from(new Set(courtPhotos));
+    const finalImages = [logoUrl, ...uniqueCourtPhotos];
 
     updatedCount++;
-    console.log(`[LOGO + REAL PHOTOS] ${club.name} (${club.id}) -> Logo: ${logoUrl} + ${uniquePhotos.length} real photos`);
+    console.log(`[VALIDATED] ${club.name} (${club.id}) -> Logo: ${logoUrl} + ${uniqueCourtPhotos.length} valid photos`);
     return {
       ...club,
       images: finalImages

@@ -159,6 +159,10 @@ export const ClubImageCarousel: React.FC<ClubImageCarouselProps> = ({
                       position: 'relative',
                       zIndex: 2,
                     }}
+                    onError={(e) => {
+                      // Graceful fallback if logo fails
+                      e.currentTarget.style.display = 'none';
+                    }}
                     loading="lazy"
                   />
                 </>
@@ -173,6 +177,9 @@ export const ClubImageCarousel: React.FC<ClubImageCarouselProps> = ({
                       objectFit: 'cover',
                       display: 'block',
                       filter: 'brightness(0.9)',
+                    }}
+                    onError={(e) => {
+                      e.currentTarget.src = 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80';
                     }}
                     loading="lazy"
                   />

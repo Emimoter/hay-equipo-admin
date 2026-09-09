@@ -1258,8 +1258,22 @@ export default function AdminPage() {
 
                 <div className="images-preview-row">
                   {editingClub.images.map((imgUrl, i) => (
-                    <div key={i} className="image-preview-card">
-                      <img src={imgUrl} alt={`Foto ${i + 1}`} />
+                    <div key={i} className="image-preview-card" style={{ position: 'relative' }}>
+                      <img 
+                        src={imgUrl} 
+                        alt={i === 0 ? 'Isotipo' : `Foto ${i + 1}`}
+                        style={{ objectFit: i === 0 ? 'contain' : 'cover', backgroundColor: '#0c0c0c' }}
+                        onError={(e) => {
+                          if (i === 0) {
+                            e.currentTarget.style.display = 'none';
+                          } else {
+                            e.currentTarget.src = 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=300';
+                          }
+                        }} 
+                      />
+                      <div style={{ position: 'absolute', bottom: 2, left: 4, fontSize: 8, fontWeight: 700, color: i === 0 ? '#fc1c46' : '#ffffff', textTransform: 'uppercase', background: 'rgba(0,0,0,0.7)', padding: '1px 4px', borderRadius: 4 }}>
+                        {i === 0 ? 'Isotipo' : `Foto ${i + 1}`}
+                      </div>
                       {editingClub.images.length > 1 && (
                         <button
                           type="button"
