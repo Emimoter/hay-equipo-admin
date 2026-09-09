@@ -15,7 +15,6 @@ import {
    ──────────────────────────────────────────────────────────── */
 
 export type SportType = 'PADEL' | 'FUTBOL_5' | 'FUTBOL_7' | 'FUTBOL_11';
-export type BookingMode = 'ONLINE' | 'DIRECT_CONTACT';
 
 export interface AdminCourt {
   id: string;
@@ -28,7 +27,7 @@ export interface AdminCourt {
   isCovered: boolean;
   hasLighting: boolean;
   priceFixedSlotDiscount?: number;
-  capacity: number; // e.g. 4 for Padel, 10 for F5, 14 for F7, 22 for F11
+  capacity: number; // 4 for Padel, 10 for F5, 14 for F7, 22 for F11
   images: string[];
 }
 
@@ -54,7 +53,6 @@ export interface AdminClub {
   province?: string;
   phone: string;
   whatsapp: string;
-  bookingMode: BookingMode;
   minPrice: number;
   active: boolean;
   description: string;
@@ -75,21 +73,21 @@ export interface AdminClub {
 const Icons = {
   Building: ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="4" y="2" width="16" height="20" rx="0" ry="0" />
+      <rect x="4" y="2" width="16" height="20" />
       <path d="M9 22v-4h6v4" />
       <path d="M8 6h.01" /><path d="M16 6h.01" /><path d="M12 6h.01" />
       <path d="M12 10h.01" /><path d="M12 14h.01" /><path d="M16 10h.01" />
       <path d="M16 14h.01" /><path d="M8 10h.01" /><path d="M8 14h.01" />
     </svg>
   ),
-  Pitch: ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
+  Pitch: ({ size = 15, color = 'currentColor' }: { size?: number; color?: string }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <rect x="2" y="4" width="20" height="16" />
       <line x1="12" y1="4" x2="12" y2="20" />
       <circle cx="12" cy="12" r="3" />
     </svg>
   ),
-  Users: ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
+  Users: ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
       <circle cx="9" cy="7" r="4" />
@@ -97,7 +95,7 @@ const Icons = {
       <path d="M16 3.13a4 4 0 0 1 0 7.75" />
     </svg>
   ),
-  Plus: ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
+  Plus: ({ size = 15, color = 'currentColor' }: { size?: number; color?: string }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <line x1="12" y1="5" x2="12" y2="19" />
       <line x1="5" y1="12" x2="19" y2="12" />
@@ -109,13 +107,13 @@ const Icons = {
       <line x1="21" y1="21" x2="16.65" y2="16.65" />
     </svg>
   ),
-  Edit: ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
+  Edit: ({ size = 13, color = 'currentColor' }: { size?: number; color?: string }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
     </svg>
   ),
-  Trash: ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
+  Trash: ({ size = 13, color = 'currentColor' }: { size?: number; color?: string }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <polyline points="3 6 5 6 21 6" />
       <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
@@ -123,7 +121,7 @@ const Icons = {
       <line x1="14" y1="11" x2="14" y2="17" />
     </svg>
   ),
-  Close: ({ size = 15, color = 'currentColor' }: { size?: number; color?: string }) => (
+  Close: ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <line x1="18" y1="6" x2="6" y2="18" />
       <line x1="6" y1="6" x2="18" y2="18" />
@@ -134,7 +132,7 @@ const Icons = {
       <polyline points="20 6 9 17 4 12" />
     </svg>
   ),
-  Phone: ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
+  Phone: ({ size = 13, color = 'currentColor' }: { size?: number; color?: string }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
     </svg>
@@ -144,20 +142,20 @@ const Icons = {
       <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
     </svg>
   ),
-  MapPin: ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
+  MapPin: ({ size = 13, color = 'currentColor' }: { size?: number; color?: string }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
       <circle cx="12" cy="10" r="3" />
     </svg>
   ),
-  Upload: ({ size = 15, color = 'currentColor' }: { size?: number; color?: string }) => (
+  Upload: ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
       <polyline points="17 8 12 3 7 8" />
       <line x1="12" y1="3" x2="12" y2="15" />
     </svg>
   ),
-  Refresh: ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
+  Refresh: ({ size = 13, color = 'currentColor' }: { size?: number; color?: string }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M23 4v6h-6" />
       <path d="M1 20v-6h6" />
@@ -171,22 +169,17 @@ const Icons = {
       <line x1="10" y1="14" x2="21" y2="3" />
     </svg>
   ),
-  Lock: ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
+  Lock: ({ size = 15, color = 'currentColor' }: { size?: number; color?: string }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="11" width="18" height="11" rx="0" ry="0" />
+      <rect x="3" y="11" width="18" height="11" />
       <path d="M7 11V7a5 5 0 0 1 10 0v4" />
     </svg>
   ),
-  Database: ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
+  Database: ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <ellipse cx="12" cy="5" rx="9" ry="3" />
       <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
       <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
-    </svg>
-  ),
-  Zap: ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
     </svg>
   ),
 };
@@ -219,17 +212,16 @@ export default function AdminPage() {
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  // Search & Filter
+  // Search & Sport Filter
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [sportFilter, setSportFilter] = useState<'ALL' | 'PADEL' | 'FUTBOL'>('ALL');
-  const [bookingModeFilter, setBookingModeFilter] = useState<'ALL' | 'ONLINE' | 'DIRECT_CONTACT'>('ALL');
 
-  // Modal / Drawer state for Club Editing/Creation
+  // Modal state for Club Editing/Creation
   const [isClubModalOpen, setIsClubModalOpen] = useState<boolean>(false);
   const [editingClub, setEditingClub] = useState<AdminClub | null>(null);
   const [isNewClub, setIsNewClub] = useState<boolean>(false);
 
-  // Modal for Court Management of a Club
+  // Modal for Court Management
   const [isCourtsModalOpen, setIsCourtsModalOpen] = useState<boolean>(false);
   const [selectedClubForCourts, setSelectedClubForCourts] = useState<AdminClub | null>(null);
 
@@ -287,10 +279,9 @@ export default function AdminPage() {
         province: c.province || 'Buenos Aires',
         phone: c.phone || '',
         whatsapp: c.whatsapp || c.whatsappPhone || '',
-        bookingMode: c.bookingMode || (c.active ? 'ONLINE' : 'DIRECT_CONTACT'),
         minPrice: c.minPrice || 25000,
         active: c.active ?? true,
-        description: c.description || 'Complejo deportivo adherido a la red Hay Equipo.',
+        description: c.description || 'Complejo deportivo en Mar del Plata.',
         openingTime: c.openingTime || '08:00',
         closingTime: c.closingTime || '23:30',
         latitude: c.latitude || -37.979858,
@@ -327,7 +318,7 @@ export default function AdminPage() {
       setCourts(normalizedCourts);
     } catch (e) {
       console.error('Error fetching admin data:', e);
-      showNotification('error', 'Error al conectar con la base de datos Firestore.');
+      showNotification('error', 'Error al conectar con Firestore.');
     } finally {
       setIsLoading(false);
     }
@@ -355,7 +346,7 @@ export default function AdminPage() {
       localStorage.setItem('hay_equipo_admin_authorized', 'true');
       setAuthError('');
     } else {
-      setAuthError('Clave de acceso incorrecta. Verificá con el equipo.');
+      setAuthError('Clave de acceso incorrecta.');
     }
   };
 
@@ -367,10 +358,6 @@ export default function AdminPage() {
   // Computed metrics
   const stats = useMemo(() => {
     const totalClubs = clubs.length;
-    const activeClubs = clubs.filter(c => c.active).length;
-    const onlineClubs = clubs.filter(c => c.bookingMode === 'ONLINE').length;
-    const directContactClubs = clubs.filter(c => c.bookingMode === 'DIRECT_CONTACT').length;
-
     const totalCourts = courts.length;
     const padelCourts = courts.filter(c => c.sportType === 'PADEL').length;
     const futbol5Courts = courts.filter(c => c.sportType === 'FUTBOL_5').length;
@@ -380,9 +367,6 @@ export default function AdminPage() {
 
     return {
       totalClubs,
-      activeClubs,
-      onlineClubs,
-      directContactClubs,
       totalCourts,
       padelCourts,
       totalFutbolCourts,
@@ -392,7 +376,7 @@ export default function AdminPage() {
     };
   }, [clubs, courts]);
 
-  // Filtered clubs list
+  // Filtered clubs list (Search + Sport only, no modalities)
   const filteredClubs = useMemo(() => {
     return clubs.filter(club => {
       const matchesQuery =
@@ -400,9 +384,6 @@ export default function AdminPage() {
         club.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         club.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
         club.city.toLowerCase().includes(searchQuery.toLowerCase());
-
-      const matchesMode =
-        bookingModeFilter === 'ALL' || club.bookingMode === bookingModeFilter;
 
       const clubCourts = courts.filter(c => c.clubId === club.id);
       const hasPadel = clubCourts.some(c => c.sportType === 'PADEL');
@@ -412,9 +393,9 @@ export default function AdminPage() {
       if (sportFilter === 'PADEL') matchesSport = hasPadel;
       if (sportFilter === 'FUTBOL') matchesSport = hasFutbol;
 
-      return matchesQuery && matchesMode && matchesSport;
+      return matchesQuery && matchesSport;
     });
-  }, [clubs, courts, searchQuery, sportFilter, bookingModeFilter]);
+  }, [clubs, courts, searchQuery, sportFilter]);
 
   // Save changes to Firestore
   const handleSaveAllToFirestore = async (updatedClubsList = clubs, updatedCourtsList = courts) => {
@@ -457,10 +438,9 @@ export default function AdminPage() {
       province: 'Buenos Aires',
       phone: '',
       whatsapp: '',
-      bookingMode: 'DIRECT_CONTACT',
       minPrice: 28000,
       active: true,
-      description: 'Complejo de canchas en Mar del Plata. Turnos disponibles y reservas.',
+      description: 'Complejo de canchas en Mar del Plata.',
       openingTime: '08:00',
       closingTime: '23:30',
       latitude: -37.979858,
@@ -632,7 +612,7 @@ export default function AdminPage() {
           ...prev,
           images: [url, ...prev.images],
         }));
-        showNotification('success', 'Imagen de cancha subida a Storage.');
+        showNotification('success', 'Imagen subida a Storage.');
       }
     } catch (err) {
       console.error(err);
@@ -654,17 +634,17 @@ export default function AdminPage() {
         <div className="login-screen">
           <div className="login-box">
             <div className="login-badge">
-              <Icons.Lock size={12} color="#fc1c46" />
+              <Icons.Lock size={13} color="#fc1c46" />
               <span>SISTEMA INTERNO HAY EQUIPO</span>
             </div>
 
             <h1 className="login-title">PANEL DE CONTROL</h1>
             <p className="login-subtitle">
-              Gestión centralizada de clubes, canchas, teléfonos y base de datos Firestore.
+              Gestión centralizada de clubes, canchas, teléfonos y datos de Mar del Plata.
             </p>
 
             <form onSubmit={handleAuthSubmit} className="login-form">
-              <label className="field-label">CLAVE DE ACCESO ADMINISTRATIVO</label>
+              <label className="field-label">CLAVE DE ACCESO</label>
               <input
                 type="password"
                 placeholder="Ingresá la clave de administrador"
@@ -676,13 +656,13 @@ export default function AdminPage() {
 
               {authError && <div className="error-badge">{authError}</div>}
 
-              <button type="submit" className="btn-pill-primary" style={{ width: '100%', marginTop: '16px' }}>
+              <button type="submit" className="btn-pill-cta" style={{ width: '100%', marginTop: '16px' }}>
                 INGRESAR AL PANEL
               </button>
             </form>
 
             <div className="login-hint">
-              <span>Clave por defecto de desarrollo: <code>hayequipo2026</code> o <code>admin2026</code></span>
+              <span>Clave por defecto: <code>hayequipo2026</code></span>
             </div>
           </div>
         </div>
@@ -690,22 +670,23 @@ export default function AdminPage() {
         <style jsx>{`
           .admin-root {
             min-height: 100vh;
-            background-color: var(--color-void);
-            color: var(--color-frost);
+            background-color: #000000;
+            color: #ffffff;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 24px;
+            font-family: var(--font-sui, 'Space Grotesk', sans-serif);
           }
           .login-screen {
             width: 100%;
-            max-width: 440px;
+            max-width: 420px;
           }
           .login-box {
             background-color: #0a0a0a;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.12);
             border-radius: 0px;
-            padding: 40px 32px;
+            padding: 38px 30px;
           }
           .login-badge {
             display: inline-flex;
@@ -715,10 +696,10 @@ export default function AdminPage() {
             font-weight: 700;
             letter-spacing: 1px;
             color: #fc1c46;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
           }
           .login-title {
-            font-size: 26px;
+            font-size: 24px;
             font-weight: 700;
             letter-spacing: -0.5px;
             color: #ffffff;
@@ -728,14 +709,14 @@ export default function AdminPage() {
             font-size: 13px;
             color: #94a3b8;
             line-height: 1.5;
-            margin-bottom: 28px;
+            margin-bottom: 24px;
           }
           .field-label {
             display: block;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 700;
             letter-spacing: 1px;
-            color: #ffffff;
+            color: #94a3b8;
             margin-bottom: 8px;
           }
           .input-sharp {
@@ -746,6 +727,7 @@ export default function AdminPage() {
             color: #ffffff;
             padding: 12px 16px;
             font-size: 14px;
+            outline: none;
             transition: border-color 0.2s;
           }
           .input-sharp:focus {
@@ -759,23 +741,23 @@ export default function AdminPage() {
             padding: 8px 12px;
             border-left: 2px solid #fc1c46;
           }
-          .btn-pill-primary {
+          .btn-pill-cta {
             background-color: #fc1c46;
-            color: #ffffff;
+            color: #ffffff !important;
             border: none;
             border-radius: 9999px;
             padding: 12px 24px;
             font-size: 12px;
             font-weight: 700;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
             cursor: pointer;
-            transition: opacity 0.2s, transform 0.1s;
+            transition: opacity 0.2s;
           }
-          .btn-pill-primary:hover {
+          .btn-pill-cta:hover {
             opacity: 0.92;
           }
           .login-hint {
-            margin-top: 24px;
+            margin-top: 22px;
             font-size: 11px;
             color: #666666;
             text-align: center;
@@ -796,7 +778,7 @@ export default function AdminPage() {
   return (
     <div className="admin-root">
       <Head>
-        <title>Hay Equipo — Panel de Administración de Clubes y Canchas</title>
+        <title>Hay Equipo — Panel de Control</title>
       </Head>
 
       {/* Toast Notification */}
@@ -813,50 +795,56 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Navigation Bar */}
+      {/* ═══════════════════════════════════════════════════════════
+          HEADER POLISHED & CLEAN (No visited purple colors)
+          ═══════════════════════════════════════════════════════════ */}
       <header className="admin-header">
         <div className="header-container">
           <div className="header-left">
-            <Link href="/" className="brand-badge">
+            <Link href="/" className="brand-link">
               <span className="brand-dot" />
-              <span className="brand-name">HAY EQUIPO</span>
-              <span className="brand-sub">ADMIN</span>
+              <span className="brand-title">HAY EQUIPO</span>
+              <span className="brand-badge">ADMIN</span>
             </Link>
-            <div className="db-status-pill">
-              <span className="status-live-dot" />
-              <span>FIRESTORE ONLINE (hay-equipo-6c320)</span>
+
+            <div className="header-sep" />
+
+            <div className="status-indicator">
+              <span className="pulse-dot" />
+              <span className="status-text">Base de datos activa</span>
+              <span className="status-sub">· Mar del Plata</span>
             </div>
           </div>
 
           <div className="header-right">
-            <Link href="/reservar" target="_blank" className="btn-pill-outline">
-              <Icons.ExternalLink size={13} />
-              <span>VER EXPLORADOR</span>
+            <Link href="/reservar" target="_blank" className="btn-header-ghost">
+              <Icons.ExternalLink size={13} color="#ffffff" />
+              <span>Ver Web</span>
             </Link>
 
             <button
               onClick={() => handleSaveAllToFirestore()}
               disabled={isSaving}
-              className="btn-pill-secondary"
+              className="btn-header-dark"
             >
-              <Icons.Database size={14} color="#10b981" />
-              <span>{isSaving ? 'GUARDANDO...' : 'SINCRONIZAR DB'}</span>
+              <Icons.Database size={13} color="#10b981" />
+              <span>{isSaving ? 'Guardando...' : 'Sincronizar DB'}</span>
             </button>
 
             <button
               onClick={handleOpenNewClub}
-              className="btn-pill-primary"
+              className="btn-header-primary"
             >
-              <Icons.Plus size={15} />
-              <span>NUEVO CLUB</span>
+              <Icons.Plus size={14} color="#ffffff" />
+              <span>Nuevo Club</span>
             </button>
 
             <button
               onClick={handleLogout}
               title="Cerrar sesión"
-              className="btn-pill-icon"
+              className="btn-header-icon"
             >
-              <Icons.Close size={14} />
+              <Icons.Close size={13} color="#94a3b8" />
             </button>
           </div>
         </div>
@@ -870,9 +858,7 @@ export default function AdminPage() {
             <div className="metric-label">TOTAL CLUBES</div>
             <div className="metric-val">{stats.totalClubs}</div>
             <div className="metric-detail">
-              <span className="metric-sub-item emerald">{stats.onlineClubs} Online</span>
-              <span className="metric-divider">/</span>
-              <span className="metric-sub-item">{stats.directContactClubs} Contacto WhatsApp</span>
+              <span>Complejos registrados en Mar del Plata</span>
             </div>
           </div>
 
@@ -881,7 +867,7 @@ export default function AdminPage() {
             <div className="metric-val">{stats.totalCourts}</div>
             <div className="metric-detail">
               <span className="metric-sub-item crimson">{stats.padelCourts} Pádel</span>
-              <span className="metric-divider">/</span>
+              <span className="metric-divider">·</span>
               <span className="metric-sub-item emerald">{stats.totalFutbolCourts} Fútbol</span>
             </div>
           </div>
@@ -903,7 +889,7 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* Action & Filter Bar */}
+        {/* Action & Filter Bar (No modalities) */}
         <div className="action-bar">
           <div className="search-wrapper">
             <Icons.Search size={15} color="#94a3b8" />
@@ -921,55 +907,34 @@ export default function AdminPage() {
             )}
           </div>
 
-          {/* Filter Pills */}
+          {/* Filter Pills: Sport only */}
           <div className="filter-chips">
             <button
               onClick={() => setSportFilter('ALL')}
               className={`filter-chip ${sportFilter === 'ALL' ? 'active' : ''}`}
             >
-              TODOS LOS DEPORTES
+              TODOS LOS DEPORTES ({stats.totalClubs} CLUBES)
             </button>
             <button
               onClick={() => setSportFilter('PADEL')}
               className={`filter-chip ${sportFilter === 'PADEL' ? 'active' : ''}`}
             >
-              PÁDEL ({stats.padelCourts})
+              PÁDEL ({stats.padelCourts} CANCHAS)
             </button>
             <button
               onClick={() => setSportFilter('FUTBOL')}
               className={`filter-chip ${sportFilter === 'FUTBOL' ? 'active' : ''}`}
             >
-              FÚTBOL ({stats.totalFutbolCourts})
-            </button>
-
-            <span className="chip-separator" />
-
-            <button
-              onClick={() => setBookingModeFilter('ALL')}
-              className={`filter-chip ${bookingModeFilter === 'ALL' ? 'active' : ''}`}
-            >
-              TODAS LAS MODALIDADES
-            </button>
-            <button
-              onClick={() => setBookingModeFilter('ONLINE')}
-              className={`filter-chip ${bookingModeFilter === 'ONLINE' ? 'active' : ''}`}
-            >
-              ONLINE INMEDIATO
-            </button>
-            <button
-              onClick={() => setBookingModeFilter('DIRECT_CONTACT')}
-              className={`filter-chip ${bookingModeFilter === 'DIRECT_CONTACT' ? 'active' : ''}`}
-            >
-              WHATSAPP DIRECTO
+              FÚTBOL ({stats.totalFutbolCourts} CANCHAS)
             </button>
           </div>
         </div>
 
-        {/* Clubs Table View */}
+        {/* Clubs Table View (No modalidad column) */}
         <div className="table-container">
           <div className="table-header-meta">
             <span className="results-count">
-              MOSTRANDO {filteredClubs.length} DE {clubs.length} CLUBES REGISTRADOS EN MAR DEL PLATA
+              MOSTRANDO {filteredClubs.length} DE {clubs.length} CLUBES EN MAR DEL PLATA
             </span>
             <button onClick={fetchData} className="btn-refresh" title="Recargar desde Firebase">
               <Icons.Refresh size={13} />
@@ -980,13 +945,13 @@ export default function AdminPage() {
           {isLoading ? (
             <div className="loading-state">
               <div className="spinner" />
-              <span>Cargando clubes y canchas desde Firestore...</span>
+              <span>Cargando datos desde Firestore...</span>
             </div>
           ) : filteredClubs.length === 0 ? (
             <div className="empty-state">
               <p>No se encontraron clubes con los filtros seleccionados.</p>
-              <button onClick={() => { setSearchQuery(''); setSportFilter('ALL'); setBookingModeFilter('ALL'); }} className="btn-pill-outline" style={{ marginTop: '14px' }}>
-                REINICIAR FILTROS
+              <button onClick={() => { setSearchQuery(''); setSportFilter('ALL'); }} className="btn-pill-reset" style={{ marginTop: '14px' }}>
+                REINICIAR BÚSQUEDA
               </button>
             </div>
           ) : (
@@ -996,7 +961,6 @@ export default function AdminPage() {
                   <th>CLUB / COMPLEJO</th>
                   <th>DIRECCIÓN Y CIUDAD</th>
                   <th>CANCHAS ACTIVAS</th>
-                  <th>MODALIDAD</th>
                   <th>CONTACTO</th>
                   <th>ACCIONES</th>
                 </tr>
@@ -1060,21 +1024,6 @@ export default function AdminPage() {
                             )}
                           </div>
                         </div>
-                      </td>
-
-                      {/* Booking Mode */}
-                      <td>
-                        {club.bookingMode === 'ONLINE' ? (
-                          <span className="badge-online">
-                            <Icons.Zap size={11} />
-                            ONLINE DIRECTO
-                          </span>
-                        ) : (
-                          <span className="badge-contact">
-                            <Icons.WhatsApp size={11} />
-                            WHATSAPP DIRECTO
-                          </span>
-                        )}
                       </td>
 
                       {/* Contact Info */}
@@ -1160,9 +1109,9 @@ export default function AdminPage() {
               </div>
               <button
                 onClick={() => { setIsClubModalOpen(false); setEditingClub(null); }}
-                className="btn-pill-icon"
+                className="btn-header-icon"
               >
-                <Icons.Close size={15} />
+                <Icons.Close size={14} color="#ffffff" />
               </button>
             </div>
 
@@ -1230,7 +1179,7 @@ export default function AdminPage() {
                 </div>
 
                 <div>
-                  <label className="form-label">WHATSAPP DE RESERVAS DIRECTAS</label>
+                  <label className="form-label">WHATSAPP DE CONTACTO</label>
                   <input
                     type="text"
                     value={editingClub.whatsapp}
@@ -1243,18 +1192,6 @@ export default function AdminPage() {
 
               <div className="form-grid-2">
                 <div>
-                  <label className="form-label">MODALIDAD DE GESTIÓN</label>
-                  <select
-                    value={editingClub.bookingMode}
-                    onChange={e => setEditingClub({ ...editingClub, bookingMode: e.target.value as BookingMode })}
-                    className="input-sharp select-sharp"
-                  >
-                    <option value="DIRECT_CONTACT">Contacto Directo por WhatsApp (Cold Start)</option>
-                    <option value="ONLINE">Reserva Online Inmediata (Con Pago en Hay Equipo)</option>
-                  </select>
-                </div>
-
-                <div>
                   <label className="form-label">PRECIO BASE DE REFERENCIA (ARS)</label>
                   <input
                     type="number"
@@ -1264,29 +1201,25 @@ export default function AdminPage() {
                     className="input-sharp"
                   />
                 </div>
-              </div>
-
-              <div className="form-grid-2">
-                <div>
-                  <label className="form-label">HORARIO DE APERTURA</label>
-                  <input
-                    type="text"
-                    value={editingClub.openingTime}
-                    onChange={e => setEditingClub({ ...editingClub, openingTime: e.target.value })}
-                    placeholder="08:00"
-                    className="input-sharp"
-                  />
-                </div>
 
                 <div>
-                  <label className="form-label">HORARIO DE CIERRE</label>
-                  <input
-                    type="text"
-                    value={editingClub.closingTime}
-                    onChange={e => setEditingClub({ ...editingClub, closingTime: e.target.value })}
-                    placeholder="23:30"
-                    className="input-sharp"
-                  />
+                  <label className="form-label">HORARIO ESTIMADO (APERTURA Y CIERRE)</label>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <input
+                      type="text"
+                      value={editingClub.openingTime}
+                      onChange={e => setEditingClub({ ...editingClub, openingTime: e.target.value })}
+                      placeholder="08:00"
+                      className="input-sharp"
+                    />
+                    <input
+                      type="text"
+                      value={editingClub.closingTime}
+                      onChange={e => setEditingClub({ ...editingClub, closingTime: e.target.value })}
+                      placeholder="23:30"
+                      className="input-sharp"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -1385,16 +1318,16 @@ export default function AdminPage() {
                 <button
                   type="button"
                   onClick={() => { setIsClubModalOpen(false); setEditingClub(null); }}
-                  className="btn-pill-outline"
+                  className="btn-header-ghost"
                 >
                   CANCELAR
                 </button>
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="btn-pill-primary"
+                  className="btn-header-primary"
                 >
-                  {isSaving ? 'GUARDANDO...' : 'GUARDAR CAMBIOS EN FIRESTORE'}
+                  {isSaving ? 'GUARDANDO...' : 'GUARDAR CAMBIOS'}
                 </button>
               </div>
             </form>
@@ -1415,9 +1348,9 @@ export default function AdminPage() {
               </div>
               <button
                 onClick={() => { setIsCourtsModalOpen(false); setSelectedClubForCourts(null); }}
-                className="btn-pill-icon"
+                className="btn-header-icon"
               >
-                <Icons.Close size={15} />
+                <Icons.Close size={14} color="#ffffff" />
               </button>
             </div>
 
@@ -1601,10 +1534,10 @@ export default function AdminPage() {
                   <button
                     type="submit"
                     disabled={isSaving}
-                    className="btn-pill-primary"
-                    style={{ width: '100%', marginTop: '14px' }}
+                    className="btn-header-primary"
+                    style={{ width: '100%', marginTop: '14px', justifyContent: 'center' }}
                   >
-                    <Icons.Plus size={15} />
+                    <Icons.Plus size={15} color="#ffffff" />
                     <span>AGREGAR ESTA CANCHA AL CLUB</span>
                   </button>
                 </form>
@@ -1615,6 +1548,13 @@ export default function AdminPage() {
       )}
 
       {/* Global & Scoped Styles */}
+      <style jsx global>{`
+        /* Eradicate any browser default purple visited link color */
+        a, a:visited, a:active, a:hover {
+          text-decoration: none !important;
+        }
+      `}</style>
+
       <style jsx>{`
         .admin-root {
           min-height: 100vh;
@@ -1662,154 +1602,173 @@ export default function AdminPage() {
           }
         }
 
-        /* Header */
+        /* ── Header Clean & Polished ── */
         .admin-header {
           position: sticky;
           top: 0;
           z-index: 100;
-          background-color: rgba(10, 10, 10, 0.95);
-          backdrop-filter: blur(12px);
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          height: 64px;
+          background-color: #0a0a0a;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+          display: flex;
+          align-items: center;
         }
         .header-container {
+          width: 100%;
           max-width: 1400px;
           margin: 0 auto;
-          padding: 16px 24px;
+          padding: 0 24px;
           display: flex;
           align-items: center;
           justify-content: space-between;
-          flex-wrap: wrap;
           gap: 16px;
         }
         .header-left {
           display: flex;
           align-items: center;
-          gap: 20px;
+          gap: 14px;
         }
-        .brand-badge {
-          display: flex;
+        .brand-link,
+        .brand-link:visited,
+        .brand-link:hover,
+        .brand-link:active {
+          display: inline-flex;
           align-items: center;
           gap: 8px;
-          text-decoration: none;
-          color: #ffffff;
+          text-decoration: none !important;
+          color: #ffffff !important;
         }
         .brand-dot {
           width: 8px;
           height: 8px;
           border-radius: 50%;
           background-color: #fc1c46;
+          display: inline-block;
         }
-        .brand-name {
-          font-size: 16px;
-          font-weight: 700;
-          letter-spacing: 0.5px;
+        .brand-title {
+          font-size: 15px;
+          font-weight: 800;
+          letter-spacing: -0.3px;
+          color: #ffffff !important;
         }
-        .brand-sub {
+        .brand-badge {
           font-size: 10px;
           font-weight: 700;
-          letter-spacing: 1px;
+          letter-spacing: 0.8px;
           background: rgba(252, 28, 70, 0.15);
-          color: #fc1c46;
-          padding: 2px 8px;
+          color: #fc1c46 !important;
+          border: 1px solid rgba(252, 28, 70, 0.3);
+          padding: 2px 7px;
           border-radius: 9999px;
         }
-        .db-status-pill {
+        .header-sep {
+          width: 1px;
+          height: 18px;
+          background-color: rgba(255, 255, 255, 0.12);
+        }
+        .status-indicator {
           display: flex;
           align-items: center;
-          gap: 8px;
-          font-size: 11px;
-          color: #10b981;
-          background: rgba(16, 185, 129, 0.08);
-          border: 1px solid rgba(16, 185, 129, 0.2);
-          border-radius: 9999px;
-          padding: 4px 12px;
-          font-weight: 600;
+          gap: 6px;
+          font-size: 12px;
         }
-        .status-live-dot {
+        .pulse-dot {
           width: 6px;
           height: 6px;
           border-radius: 50%;
           background-color: #10b981;
-          box-shadow: 0 0 8px #10b981;
+          box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+        }
+        .status-text {
+          color: #cccccc;
+          font-weight: 500;
+        }
+        .status-sub {
+          color: #666666;
+          font-weight: 400;
         }
         .header-right {
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: 10px;
         }
-
-        /* Buttons adhering strictly to Dual Geometry: border-radius 9999px */
-        .btn-pill-primary {
+        .btn-header-ghost,
+        .btn-header-ghost:visited,
+        .btn-header-ghost:active {
           display: inline-flex;
           align-items: center;
-          gap: 8px;
-          background-color: #fc1c46;
-          color: #ffffff;
+          gap: 6px;
+          height: 36px;
+          padding: 0 14px;
+          background: transparent;
+          color: #ffffff !important;
+          border: 1px solid rgba(255, 255, 255, 0.18);
+          border-radius: 9999px;
+          font-size: 12px;
+          font-weight: 600;
+          text-decoration: none !important;
+          transition: background-color 0.2s, border-color 0.2s;
+        }
+        .btn-header-ghost:hover {
+          background-color: rgba(255, 255, 255, 0.08);
+          border-color: rgba(255, 255, 255, 0.35);
+          color: #ffffff !important;
+        }
+        .btn-header-dark {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          height: 36px;
+          padding: 0 14px;
+          background: #141414;
+          color: #ffffff !important;
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          border-radius: 9999px;
+          font-size: 12px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: background-color 0.2s, border-color 0.2s;
+        }
+        .btn-header-dark:hover {
+          background: #1f1f1f;
+          border-color: rgba(255, 255, 255, 0.25);
+        }
+        .btn-header-primary {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          height: 36px;
+          padding: 0 16px;
+          background: #fc1c46;
+          color: #ffffff !important;
           border: none;
           border-radius: 9999px;
-          padding: 9px 20px;
           font-size: 12px;
           font-weight: 700;
-          letter-spacing: 0.5px;
+          letter-spacing: 0.3px;
           cursor: pointer;
-          text-decoration: none;
-          transition: opacity 0.2s;
+          transition: opacity 0.2s, transform 0.1s;
         }
-        .btn-pill-primary:hover {
-          opacity: 0.9;
+        .btn-header-primary:hover {
+          opacity: 0.92;
         }
-        .btn-pill-secondary {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          background-color: #141414;
-          color: #ffffff;
-          border: 1px solid rgba(255, 255, 255, 0.15);
-          border-radius: 9999px;
-          padding: 8px 16px;
-          font-size: 12px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: background-color 0.2s;
-        }
-        .btn-pill-secondary:hover {
-          background-color: #1e1e1e;
-        }
-        .btn-pill-outline {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          background: transparent;
-          color: #94a3b8;
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          border-radius: 9999px;
-          padding: 8px 16px;
-          font-size: 12px;
-          font-weight: 600;
-          cursor: pointer;
-          text-decoration: none;
-          transition: color 0.2s, border-color 0.2s;
-        }
-        .btn-pill-outline:hover {
-          color: #ffffff;
-          border-color: #ffffff;
-        }
-        .btn-pill-icon {
+        .btn-header-icon {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          width: 34px;
-          height: 34px;
+          width: 36px;
+          height: 36px;
           background: #141414;
-          border: 1px solid rgba(255, 255, 255, 0.15);
+          border: 1px solid rgba(255, 255, 255, 0.12);
           border-radius: 9999px;
           color: #94a3b8;
           cursor: pointer;
-          transition: color 0.2s, border-color 0.2s;
+          transition: color 0.2s, border-color 0.2s, background-color 0.2s;
         }
-        .btn-pill-icon:hover {
+        .btn-header-icon:hover {
           color: #ffffff;
           border-color: #fc1c46;
+          background-color: rgba(252, 28, 70, 0.1);
         }
 
         /* Body */
@@ -1819,7 +1778,7 @@ export default function AdminPage() {
           padding: 28px 24px;
         }
 
-        /* Metrics Bento Grid: Structural containers strictly 90° rectangles */
+        /* Metrics Bento Grid */
         .metrics-grid {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
@@ -1903,7 +1862,7 @@ export default function AdminPage() {
           cursor: pointer;
         }
 
-        /* Filter Chips: 100% pills */
+        /* Filter Chips */
         .filter-chips {
           display: flex;
           align-items: center;
@@ -1932,12 +1891,6 @@ export default function AdminPage() {
           background: #ffffff;
           color: #000000;
           border-color: #ffffff;
-        }
-        .chip-separator {
-          width: 1px;
-          height: 18px;
-          background-color: rgba(255, 255, 255, 0.15);
-          margin: 0 4px;
         }
 
         /* Table Container: Sharp 90° */
@@ -2075,34 +2028,6 @@ export default function AdminPage() {
           color: #666666;
         }
 
-        /* Modal badges */
-        .badge-online {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          background: rgba(16, 185, 129, 0.1);
-          color: #10b981;
-          border: 1px solid rgba(16, 185, 129, 0.3);
-          border-radius: 9999px;
-          padding: 4px 10px;
-          font-size: 10px;
-          font-weight: 700;
-          letter-spacing: 0.5px;
-        }
-        .badge-contact {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          background: rgba(255, 255, 255, 0.08);
-          color: #cccccc;
-          border: 1px solid rgba(255, 255, 255, 0.15);
-          border-radius: 9999px;
-          padding: 4px 10px;
-          font-size: 10px;
-          font-weight: 700;
-          letter-spacing: 0.5px;
-        }
-
         /* Contact Cell */
         .contact-cell {
           display: flex;
@@ -2114,21 +2039,21 @@ export default function AdminPage() {
           align-items: center;
           gap: 6px;
           font-size: 12px;
-          text-decoration: none;
-          color: #ffffff;
+          text-decoration: none !important;
+          color: #ffffff !important;
         }
         .contact-link.whatsapp:hover {
-          color: #10b981;
+          color: #10b981 !important;
         }
         .contact-link.phone {
-          color: #94a3b8;
+          color: #94a3b8 !important;
         }
         .text-muted {
           font-size: 12px;
           color: #666666;
         }
 
-        /* Action Buttons: strictly 9999px */
+        /* Action Buttons */
         .action-buttons {
           display: flex;
           align-items: center;
@@ -2178,6 +2103,17 @@ export default function AdminPage() {
           color: #94a3b8;
           font-size: 14px;
         }
+        .btn-pill-reset {
+          background: transparent;
+          color: #ffffff;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          border-radius: 9999px;
+          padding: 8px 18px;
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.5px;
+          cursor: pointer;
+        }
         .spinner {
           width: 32px;
           height: 32px;
@@ -2191,9 +2127,7 @@ export default function AdminPage() {
           to { transform: rotate(360deg); }
         }
 
-        /* ────────────────────────────────────────────────────────────
-           MODALS: Structural window strictly 90° rectangle
-           ──────────────────────────────────────────────────────────── */
+        /* Modals */
         .modal-overlay {
           position: fixed;
           top: 0;
@@ -2254,7 +2188,7 @@ export default function AdminPage() {
           gap: 18px;
         }
 
-        /* Inputs: Sharp 90° per design system */
+        /* Inputs */
         .input-sharp {
           width: 100%;
           background-color: #000000;

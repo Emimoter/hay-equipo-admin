@@ -360,7 +360,6 @@ interface WebClub {
 }
 
 function getClubSlotsForDate(club: WebClub, date: Date, sport: 'PADEL' | 'FUTBOL'): WebSlot[] {
-  if (club.bookingMode === 'DIRECT_CONTACT') return [];
   const matchingCourts = club.courts.filter((c) => c.sport === sport);
   if (matchingCourts.length === 0) return [];
 
@@ -1243,7 +1242,6 @@ export default function ReservarPage() {
         if (!matchName && !matchAddress && !matchCity) return false;
       }
 
-      if (activeAmenityFilter === 'ONLINE' && c.bookingMode !== 'ONLINE') return false;
       if (activeAmenityFilter === 'COVERED' && !c.amenities.covered) return false;
       if (activeAmenityFilter === 'PARKING' && !c.amenities.parking) return false;
       if (activeAmenityFilter === 'BUFFET' && !c.amenities.buffet) return false;
@@ -2596,7 +2594,6 @@ export default function ReservarPage() {
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {[
                 { id: 'ALL', label: 'Todos' },
-                { id: 'ONLINE', label: 'Reserva Online Directa' },
                 { id: 'COVERED', label: 'Techada / Climatizada' },
                 { id: 'PARKING', label: 'Estacionamiento' },
                 { id: 'BUFFET', label: 'Buffet / Bar' },
@@ -2687,36 +2684,6 @@ export default function ReservarPage() {
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <div
-                        style={{
-                          padding: '4px 10px',
-                          backgroundColor: club.bookingMode === 'ONLINE' ? 'rgba(252, 28, 70, 0.85)' : 'rgba(0, 0, 0, 0.75)',
-                          backdropFilter: 'blur(8px)',
-                          border: club.bookingMode === 'ONLINE' ? '1px solid var(--color-crimson-signal)' : '1px solid rgba(255, 255, 255, 0.2)',
-                          borderRadius: 'var(--radius-full)',
-                          fontSize: 9,
-                          fontWeight: 800,
-                          color: 'var(--color-frost)',
-                          letterSpacing: '0.8px',
-                          textTransform: 'uppercase',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 4,
-                        }}
-                      >
-                        {club.bookingMode === 'ONLINE' ? (
-                          <>
-                            <Icons.Zap size={10} color="#ffffff" />
-                            <span>Online Inmediato</span>
-                          </>
-                        ) : (
-                          <>
-                            <Icons.WhatsApp size={11} color="#25D366" />
-                            <span>Contacto Directo</span>
-                          </>
-                        )}
-                      </div>
-
                       <div
                         style={{
                           padding: '4px 10px',
@@ -2821,123 +2788,98 @@ export default function ReservarPage() {
                       )}
                     </div>
 
-                    {/* Turnos disponibles directo en la tarjeta o Banner de Contacto */}
-                    {club.bookingMode === 'ONLINE' ? (
-                      <div>
-                        <div style={{ fontSize: 10, color: 'var(--color-crimson-signal)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 10, fontWeight: 700 }}>
-                          {isSameDay(selectedDate, new Date())
-                            ? 'HORARIOS DISPONIBLES HOY (HACÉ CLIC PARA RESERVAR):'
-                            : `HORARIOS DISPONIBLES · ${getFullDateLabel(selectedDate).toUpperCase()} (HACÉ CLIC PARA RESERVAR):`}
-                        </div>
-
-                        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                          {getClubSlotsForDate(club, selectedDate, activeSport)
-                            .filter((s) => s.available)
-                            .map((slot) => (
-                              <button
-                                key={slot.id}
-                                onClick={() => handleOpenBooking(slot, club)}
-                                style={{
-                                  backgroundColor: '#111111',
-                                  border: '1px solid var(--color-graphite)',
-                                  borderRadius: 'var(--radius-full)',
-                                  color: 'var(--color-frost)',
-                                  padding: '8px 18px',
-                                  textAlign: 'left',
-                                  cursor: 'pointer',
-                                  transition: 'all 0.2s ease',
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  gap: 2,
-                                }}
-                                onMouseEnter={(e) => {
-                                  (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-crimson-signal)';
-                                  (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(252, 28, 70, 0.12)';
-                                }}
-                                onMouseLeave={(e) => {
-                                  (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-graphite)';
-                                  (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#111111';
-                                }}
-                              >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700 }}>
-                                  <Icons.Clock size={12} color="var(--color-crimson-signal)" />
-                                  <span>{slot.startTime} hs</span>
-                                </div>
-                                <div style={{ fontSize: 10, color: 'var(--color-ash)', fontWeight: 500 }}>
-                                  {formatCurrency(slot.perPlayerPrice)} / pers
-                                </div>
-                              </button>
-                            ))}
-                        </div>
+                    {/* Turnos disponibles directo en la tarjeta */}
+                    <div>
+                      <div style={{ fontSize: 10, color: 'var(--color-crimson-signal)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 10, fontWeight: 700 }}>
+                        {isSameDay(selectedDate, new Date())
+                          ? 'HORARIOS DISPONIBLES HOY (HACÉ CLIC PARA RESERVAR):'
+                          : `HORARIOS DISPONIBLES · ${getFullDateLabel(selectedDate).toUpperCase()} (HACÉ CLIC PARA RESERVAR):`}
                       </div>
-                    ) : (
-                      <div
-                        style={{
-                          backgroundColor: 'rgba(255, 255, 255, 0.02)',
-                          border: '1px dashed var(--color-graphite)',
-                          padding: '14px 18px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          gap: 16,
-                          flexWrap: 'wrap',
-                        }}
-                      >
-                        <div>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-frost)', marginBottom: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <Icons.WhatsApp size={14} color="#25D366" />
-                            <span>Club del Directorio Hay Equipo</span>
-                          </div>
-                          <div style={{ fontSize: 11, color: 'var(--color-ash)' }}>
-                            Consultá turnos libres directamente por WhatsApp al complejo oficial sin intermediarios.
-                          </div>
-                        </div>
 
-                        {club.whatsappPhone && (
-                          <a
-                            href={`https://wa.me/${club.whatsappPhone}?text=${encodeURIComponent(
-                              `Hola! Los vi en Hay Equipo y quería consultar si tienen turnos disponibles para jugar ${
-                                activeSport === 'PADEL' ? 'pádel' : 'fútbol'
-                              } hoy o esta semana.`
-                            )}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            style={{
-                              backgroundColor: '#161616',
-                              color: '#25D366',
-                              border: '1px solid rgba(37, 211, 102, 0.35)',
-                              borderRadius: 'var(--radius-full)',
-                              padding: '8px 16px',
-                              fontSize: 11,
-                              fontWeight: 700,
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.5px',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 6,
-                              textDecoration: 'none',
-                            }}
-                          >
-                            <Icons.WhatsApp size={13} color="#25D366" />
-                            <span>Abrir WhatsApp</span>
-                          </a>
-                        )}
+                      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                        {getClubSlotsForDate(club, selectedDate, activeSport)
+                          .filter((s) => s.available)
+                          .map((slot) => (
+                            <button
+                              key={slot.id}
+                              onClick={() => handleOpenBooking(slot, club)}
+                              style={{
+                                backgroundColor: '#111111',
+                                border: '1px solid var(--color-graphite)',
+                                borderRadius: 'var(--radius-full)',
+                                color: 'var(--color-frost)',
+                                padding: '8px 18px',
+                                textAlign: 'left',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 2,
+                              }}
+                              onMouseEnter={(e) => {
+                                (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-crimson-signal)';
+                                (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(252, 28, 70, 0.12)';
+                              }}
+                              onMouseLeave={(e) => {
+                                (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-graphite)';
+                                (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#111111';
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700 }}>
+                                <Icons.Clock size={12} color="var(--color-crimson-signal)" />
+                                <span>{slot.startTime} hs</span>
+                              </div>
+                              <div style={{ fontSize: 10, color: 'var(--color-ash)', fontWeight: 500 }}>
+                                {formatCurrency(slot.perPlayerPrice)} / pers
+                              </div>
+                            </button>
+                          ))}
                       </div>
-                    )}
+                    </div>
                   </div>
 
                   {/* Footer de Tarjeta */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(76, 76, 76, 0.3)', paddingTop: 16 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(76, 76, 76, 0.3)', paddingTop: 16, flexWrap: 'wrap', gap: 12 }}>
                     <div>
                       <div style={{ fontSize: 10, color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600 }}>
-                        {club.bookingMode === 'ONLINE' ? 'Precio por persona desde' : 'Precio referencia desde'}
+                        Precio por persona desde
                       </div>
                       <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-frost)' }}>
                         {formatCurrency(club.minPricePerPlayer)}
                       </div>
                     </div>
 
-                    {club.bookingMode === 'ONLINE' ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      {club.whatsappPhone && (
+                        <a
+                          href={`https://wa.me/${club.whatsappPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
+                            `Hola! Los vi en Hay Equipo y quería consultar disponibilidad para jugar ${
+                              activeSport === 'PADEL' ? 'pádel' : 'fútbol'
+                            }.`
+                          )}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{
+                            backgroundColor: '#161616',
+                            color: '#25D366',
+                            border: '1px solid rgba(37, 211, 102, 0.35)',
+                            borderRadius: 'var(--radius-full)',
+                            padding: '10px 18px',
+                            fontSize: 11,
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 6,
+                            textDecoration: 'none',
+                          }}
+                        >
+                          <Icons.WhatsApp size={14} color="#25D366" />
+                          <span>WhatsApp</span>
+                        </a>
+                      )}
+
                       <button
                         onClick={() => {
                           const clubSlots = getClubSlotsForDate(club, selectedDate, activeSport);
@@ -2963,36 +2905,7 @@ export default function ReservarPage() {
                         <span>Elegir Horario</span>
                         <Icons.ArrowUpRight size={13} color="#ffffff" />
                       </button>
-                    ) : (
-                      <a
-                        href={`https://wa.me/${club.whatsappPhone || '5492236800369'}?text=${encodeURIComponent(
-                          `Hola! Los vi en Hay Equipo y quería consultar si tienen turnos disponibles para jugar ${
-                            activeSport === 'PADEL' ? 'pádel' : 'fútbol'
-                          } hoy o esta semana.`
-                        )}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{
-                          backgroundColor: '#25D366',
-                          color: '#000000',
-                          border: 'none',
-                          padding: '10px 22px',
-                          fontSize: 12,
-                          fontWeight: 800,
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.6px',
-                          cursor: 'pointer',
-                          borderRadius: 'var(--radius-full)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 6,
-                          textDecoration: 'none',
-                        }}
-                      >
-                        <Icons.WhatsApp size={14} color="#000000" />
-                        <span>Consultar por WhatsApp</span>
-                      </a>
-                    )}
+                    </div>
                   </div>
                 </div>
               </div>
