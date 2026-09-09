@@ -973,7 +973,7 @@ export default function ReservarPage() {
               reviewCount: fc.reviewCount || 100,
               sports: sportsList,
               bookingMode: fc.bookingMode || (fc.active ? 'ONLINE' : 'DIRECT_CONTACT'),
-              whatsappPhone: fc.whatsappPhone || fc.whatsapp || '5492236800369',
+              whatsappPhone: String(fc.whatsappPhone || fc.whatsapp || fc.phone || '').replace(/[^0-9]/g, ''),
               phone: fc.phone || '',
               images: (fc.images && fc.images.length > 0) ? fc.images : [
                 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80',
@@ -3692,7 +3692,7 @@ export default function ReservarPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {clubModalData.whatsappPhone && (
                   <a
-                    href={`https://wa.me/${clubModalData.whatsappPhone}?text=${encodeURIComponent(
+                    href={`https://wa.me/${clubModalData.whatsappPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
                       `Hola! Los vi en Hay Equipo y quería consultar disponibilidad de canchas de ${
                         activeSport === 'PADEL' ? 'pádel' : 'fútbol'
                       } en ${clubModalData.name}.`
