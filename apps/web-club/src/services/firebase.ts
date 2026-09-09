@@ -12,6 +12,7 @@ import {
   onSnapshot,
 } from 'firebase/firestore';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import { getStorage } from 'firebase/storage';
 
 export const firebaseConfig = {
   apiKey: "AIzaSyAkcxejcGGvvhgFBXP970GcG4EwKnPn82A",
@@ -26,6 +27,7 @@ export const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 export const dbFirestore = getFirestore(app);
 export const auth = getAuth(app);
+export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
@@ -80,6 +82,23 @@ export async function saveClubsFirestore(updatedClubs: any[]) {
   } catch (e) {
     console.error('Error saving clubs to Firestore:', e);
     return false;
+  }
+}
+
+/**
+ * Uploads an image file to Firebase Storage under clubs/ or courts/
+ */
+export async function uploadImageFirebase(file: File, folder: 'clubs' | 'courts' = 'clubs'): Promise<string | null> {
+  try {
+    const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
+    const cleanName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+    const storageRef = ref(storage, `${folder}/${cleanName}`);
+    const snapshot = await uploadBytes(storageRef, file);
+    const downloadUrl = await getDownloadURL(snapshot.ref);
+    return downloadUrl;
+  } catch (e) {
+    console.error('Error uploading image to Firebase Storage:', e);
+    return null;
   }
 }
 
