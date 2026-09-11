@@ -915,7 +915,7 @@ export default function ReservarPage() {
               bookingMode: fc.bookingMode || (fc.active ? 'ONLINE' : 'DIRECT_CONTACT'),
               whatsappPhone: String(fc.whatsappPhone || fc.whatsapp || fc.phone || '').replace(/[^0-9]/g, ''),
               phone: fc.phone || '',
-              images: (fc.images && fc.images.length > 0) ? fc.images : [
+              images: (fc.images && fc.images.length > 0) ? [fc.images[0]] : [
                 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80',
               ],
               minPricePerPlayer: fc.minPrice ? Math.round(fc.minPrice / 4) : 4500,
@@ -2709,31 +2709,6 @@ export default function ReservarPage() {
                             )}
                           </div>
                         </div>
-
-                        <button
-                          onClick={() => setClubModalData(club)}
-                          style={{
-                            backgroundColor: 'transparent',
-                            color: 'var(--color-frost)',
-                            border: '1px solid rgba(255, 255, 255, 0.2)',
-                            padding: '7px 14px',
-                            fontSize: 11,
-                            fontWeight: 700,
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.6px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 6,
-                            borderRadius: 'var(--radius-full)',
-                            transition: 'border-color 0.2s ease',
-                          }}
-                          onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255, 255, 255, 0.5)')}
-                          onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255, 255, 255, 0.2)')}
-                        >
-                          <span>Ver Fotos & Canchas</span>
-                          <Icons.ArrowUpRight size={12} />
-                        </button>
                       </div>
 
                       {/* Amenities Badges (Pills) */}

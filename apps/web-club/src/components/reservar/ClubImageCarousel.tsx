@@ -23,19 +23,6 @@ const ChevronRightIcon = ({ size = 14, color = '#ffffff' }: { size?: number; col
   </svg>
 );
 
-const ShieldIcon = ({ size = 11, color = 'currentColor' }: { size?: number; color?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-  </svg>
-);
-
-const CameraIcon = ({ size = 11, color = 'currentColor' }: { size?: number; color?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-    <circle cx="12" cy="13" r="4" />
-  </svg>
-);
-
 export const ClubImageCarousel: React.FC<ClubImageCarouselProps> = ({
   images,
   clubName,
@@ -49,9 +36,9 @@ export const ClubImageCarousel: React.FC<ClubImageCarouselProps> = ({
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  // Normalize image list (fallback to default if empty)
+  // Por directiva del usuario: solo foto 1 por ahora de cada club
   const safeImages = Array.isArray(images) && images.length > 0
-    ? images
+    ? images.slice(0, 1)
     : ['https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&q=80'];
 
   const handleScroll = useCallback(() => {
@@ -202,51 +189,22 @@ export const ClubImageCarousel: React.FC<ClubImageCarouselProps> = ({
         })}
       </div>
 
-      {/* Top Left Badge (e.g. Sport or Logo indicator) */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 12,
-          left: 12,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          zIndex: 10,
-        }}
-      >
-        {topLeftBadge}
-
-        {/* Slide Category Pill */}
+      {/* Top Left Badge (e.g. Sport indicator) */}
+      {topLeftBadge && (
         <div
           style={{
-            padding: '3px 9px',
-            backgroundColor: activeIndex === 0 ? 'rgba(252, 28, 70, 0.2)' : 'rgba(0, 0, 0, 0.75)',
-            backdropFilter: 'blur(8px)',
-            border: activeIndex === 0 ? '1px solid rgba(252, 28, 70, 0.5)' : '1px solid rgba(255, 255, 255, 0.15)',
-            borderRadius: 'var(--radius-full)',
-            fontSize: 9,
-            fontWeight: 700,
-            color: activeIndex === 0 ? 'var(--color-crimson-signal)' : 'var(--color-ash)',
-            letterSpacing: '0.6px',
-            textTransform: 'uppercase',
+            position: 'absolute',
+            top: 12,
+            left: 12,
             display: 'flex',
             alignItems: 'center',
-            gap: 4,
+            gap: 6,
+            zIndex: 10,
           }}
         >
-          {activeIndex === 0 ? (
-            <>
-              <ShieldIcon size={10} color="var(--color-crimson-signal)" />
-              <span>ISOTIPO</span>
-            </>
-          ) : (
-            <>
-              <CameraIcon size={10} color="var(--color-ash)" />
-              <span>FOTO REAL</span>
-            </>
-          )}
+          {topLeftBadge}
         </div>
-      </div>
+      )}
 
       {/* Top Right Badges (Rating & Count Indicator) */}
       <div
