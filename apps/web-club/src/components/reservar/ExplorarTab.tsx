@@ -468,7 +468,6 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
                 clubName={club.name}
                 height={200}
                 onCardClick={() => onSelectClub(club)}
-                topLeftBadge={<SportBadge sports={club.sports} size="sm" />}
                 topRightBadge={
                   <div
                     style={{
@@ -496,9 +495,6 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
 
               {/* Contenido */}
               <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', flex: 1 }}>
-                <div style={{ marginBottom: 6 }}>
-                  <SportBadge sports={club.sports} size="sm" />
-                </div>
                 <h3 style={{ fontSize: 19, fontWeight: 700, color: 'var(--color-frost)', margin: '0 0 6px' }}>
                   {club.name}
                 </h3>

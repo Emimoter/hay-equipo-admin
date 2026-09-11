@@ -2612,9 +2612,6 @@ export default function ReservarPage() {
                     height="100%"
                     style={{ minHeight: 220, height: '100%' }}
                     onCardClick={() => setClubModalData(club)}
-                    topLeftBadge={
-                      <SportBadge sports={club.sports} size="sm" />
-                    }
                     topRightBadge={
                       <div
                         style={{
@@ -3637,9 +3634,6 @@ export default function ReservarPage() {
             <div style={{ padding: '24px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                 <div>
-                  <div style={{ marginBottom: 6 }}>
-                    <SportBadge sports={clubModalData.sports} size="md" />
-                  </div>
                   <h3 style={{ fontSize: 24, fontWeight: 700, color: 'var(--color-frost)', textTransform: 'uppercase', margin: '0 0 4px' }}>
                     {clubModalData.name}
                   </h3>

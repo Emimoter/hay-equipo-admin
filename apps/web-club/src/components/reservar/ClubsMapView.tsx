@@ -555,7 +555,6 @@ export const ClubsMapView: React.FC<ClubsMapViewProps> = ({
             {/* Club Meta & Info */}
             <div className="map-card-info">
               <div className="map-card-meta-row">
-                <SportBadge sports={selectedClub.sports} size="sm" />
                 <div className="map-card-rating">
                   <Icons.Star size={11} fill="#FACC15" color="#FACC15" />
                   <span>{selectedClub.rating || 4.8}</span>
