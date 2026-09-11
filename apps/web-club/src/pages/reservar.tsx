@@ -9,6 +9,7 @@ import { ExplorarTab } from '../components/reservar/ExplorarTab';
 import { TurnosFijosTab } from '../components/reservar/TurnosFijosTab';
 import { PerfilTab } from '../components/reservar/PerfilTab';
 import { ClubImageCarousel } from '../components/reservar/ClubImageCarousel';
+import { SportBadge } from '../components/SportBadge';
 import { useAuth } from '../context/AuthContext';
 
 /* ────────────────────────────────────────────────────────────
@@ -339,6 +340,9 @@ interface WebClub {
   sports: ('PADEL' | 'FUTBOL')[];
   images: string[];
   minPricePerPlayer: number;
+  minPrice?: number;
+  latitude?: number;
+  longitude?: number;
   bookingMode?: 'ONLINE' | 'DIRECT_CONTACT';
   whatsappPhone?: string;
   phone?: string;
@@ -482,7 +486,7 @@ const CLUBS_DATA: WebClub[] = [
     distanceKm: 2.1,
     rating: 4.8,
     reviewCount: 98,
-    sports: ['PADEL', 'FUTBOL'],
+    sports: ['FUTBOL'],
     bookingMode: 'ONLINE',
     whatsappPhone: '5492235589812',
     phone: '(0223) 558-9812',
@@ -500,21 +504,20 @@ const CLUBS_DATA: WebClub[] = [
       syntheticWPT: true,
     },
     courts: [
-      { id: 'alf-c1', name: 'Cancha 1 — Césped Monofilamento', sport: 'PADEL', surface: 'Vidrio Templado 10mm', capacity: 4 },
       { id: 'alf-f5', name: 'Cancha F5 — Sintético Forbex 50mm', sport: 'FUTBOL', surface: 'Césped con Caucho Criogénico', capacity: 10 },
     ],
     slots: [],
   },
   {
     id: 'club-el-potrero',
-    name: 'El Potrero (Fútbol & Pádel)',
+    name: 'El Potrero Fútbol 5',
     address: 'Salta 2248',
     city: 'Mar del Plata',
     zone: 'Mar del Plata',
     distanceKm: 1.5,
     rating: 4.9,
     reviewCount: 220,
-    sports: ['FUTBOL', 'PADEL'],
+    sports: ['FUTBOL'],
     bookingMode: 'DIRECT_CONTACT',
     whatsappPhone: '5492234554400',
     phone: '(0223) 496-0303',
@@ -675,7 +678,7 @@ const CLUBS_DATA: WebClub[] = [
     distanceKm: 4.2,
     rating: 4.9,
     reviewCount: 240,
-    sports: ['FUTBOL', 'PADEL'],
+    sports: ['FUTBOL'],
     bookingMode: 'DIRECT_CONTACT',
     whatsappPhone: '5492234808600',
     phone: '(0223) 480-8600',
@@ -694,7 +697,6 @@ const CLUBS_DATA: WebClub[] = [
     },
     courts: [
       { id: 'ps-f7', name: 'Cancha Fútbol 7 Césped Sintético', sport: 'FUTBOL', surface: 'Sintético Pro', capacity: 14 },
-      { id: 'ps-p1', name: 'Pádel Academia Indoor', sport: 'PADEL', surface: 'Cristal Panorámico Climatizado', capacity: 4 },
     ],
     slots: [],
   },
@@ -764,14 +766,14 @@ const CLUBS_DATA: WebClub[] = [
   },
   {
     id: 'club-arenas-sport',
-    name: 'Arenas Sport Complex',
+    name: 'Arenas Fútbol Club',
     address: 'Av. Juan B. Justo 2200',
     city: 'Mar del Plata',
     zone: 'Mar del Plata',
     distanceKm: 3.4,
     rating: 4.8,
     reviewCount: 115,
-    sports: ['PADEL', 'FUTBOL'],
+    sports: ['FUTBOL'],
     bookingMode: 'ONLINE',
     whatsappPhone: '5492234801590',
     phone: '(0223) 480-1590',
@@ -861,6 +863,7 @@ export default function ReservarPage() {
 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeAmenityFilter, setActiveAmenityFilter] = useState<string>('ALL');
+  const [activeSportTypeFilter, setActiveSportTypeFilter] = useState<'ALL' | 'PADEL_ONLY' | 'FUTBOL_ONLY' | 'BOTH'>('ALL');
   const [clubsList, setClubsList] = useState<WebClub[]>(CLUBS_DATA);
 
   // Load clubs & courts dynamically from Firestore database if available
@@ -885,12 +888,16 @@ export default function ReservarPage() {
                 capacity: c.sportType === 'PADEL' ? 4 : (c.name?.includes('7') ? 14 : 10),
               }));
 
-            const hasPadel = clubCourts.some((c: any) => c.sport === 'PADEL') || (fc.sports && fc.sports.includes('PADEL'));
-            const hasFutbol = clubCourts.some((c: any) => c.sport === 'FUTBOL') || (fc.sports && fc.sports.includes('FUTBOL'));
-            const sportsList: ('PADEL' | 'FUTBOL')[] = [];
-            if (hasPadel) sportsList.push('PADEL');
-            if (hasFutbol) sportsList.push('FUTBOL');
-            if (sportsList.length === 0) sportsList.push('PADEL');
+            let sportsList: ('PADEL' | 'FUTBOL')[] = [];
+            if (Array.isArray(fc.sports) && fc.sports.length > 0) {
+              sportsList = fc.sports.filter((s: string) => s === 'PADEL' || s === 'FUTBOL');
+            } else {
+              const hasPadel = clubCourts.some((c: any) => c.sport === 'PADEL');
+              const hasFutbol = clubCourts.some((c: any) => c.sport === 'FUTBOL');
+              if (hasPadel) sportsList.push('PADEL');
+              if (hasFutbol) sportsList.push('FUTBOL');
+              if (sportsList.length === 0) sportsList.push('PADEL');
+            }
 
             return {
               id: fc.id,
@@ -899,6 +906,9 @@ export default function ReservarPage() {
               city: fc.city || 'Mar del Plata',
               zone: fc.zone || fc.city || 'Mar del Plata',
               distanceKm: fc.distanceKm || 2.5,
+              latitude: fc.latitude,
+              longitude: fc.longitude,
+              minPrice: fc.minPrice,
               rating: fc.rating || 4.8,
               reviewCount: fc.reviewCount || 100,
               sports: sportsList,
@@ -1158,7 +1168,15 @@ export default function ReservarPage() {
   // Filtered Clubs
   const filteredClubs = useMemo(() => {
     return clubsList.filter((c) => {
+      // 1. Filtro del deporte activo del buscador
       if (!c.sports.includes(activeSport)) return false;
+
+      // 2. Filtro específico de tipo de club (Solo Pádel, Solo Fútbol, Ambos)
+      const hasPadel = c.sports.includes('PADEL');
+      const hasFutbol = c.sports.includes('FUTBOL');
+      if (activeSportTypeFilter === 'PADEL_ONLY' && (!hasPadel || hasFutbol)) return false;
+      if (activeSportTypeFilter === 'FUTBOL_ONLY' && (!hasFutbol || hasPadel)) return false;
+      if (activeSportTypeFilter === 'BOTH' && (!hasPadel || !hasFutbol)) return false;
 
       if (selectedZone !== 'TODAS') {
         if (selectedZone === 'MDP' && !c.city.toLowerCase().includes('mar del plata')) return false;
@@ -1166,11 +1184,19 @@ export default function ReservarPage() {
       }
 
       if (searchQuery.trim().length > 0) {
-        const q = searchQuery.toLowerCase();
-        const matchName = c.name.toLowerCase().includes(q);
-        const matchAddress = c.address.toLowerCase().includes(q);
-        const matchCity = c.city.toLowerCase().includes(q);
-        if (!matchName && !matchAddress && !matchCity) return false;
+        const clean = (str: string) => (str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        const q = clean(searchQuery);
+
+        // Si el usuario busca explícitamente "padel" o "futbol" por texto en el buscador:
+        if (q.includes('padel') && !c.sports.includes('PADEL')) return false;
+        if (q.includes('futbol') && !c.sports.includes('FUTBOL')) return false;
+
+        const matchName = clean(c.name).includes(q);
+        const matchAddress = clean(c.address).includes(q);
+        const matchCity = clean(c.city).includes(q);
+        const matchSportKeyword = (q.includes('padel') && c.sports.includes('PADEL')) || (q.includes('futbol') && c.sports.includes('FUTBOL'));
+
+        if (!matchName && !matchAddress && !matchCity && !matchSportKeyword) return false;
       }
 
       if (activeAmenityFilter === 'COVERED' && !c.amenities.covered) return false;
@@ -1179,7 +1205,7 @@ export default function ReservarPage() {
 
       return true;
     });
-  }, [clubsList, activeSport, selectedZone, searchQuery, activeAmenityFilter]);
+  }, [clubsList, activeSport, activeSportTypeFilter, selectedZone, searchQuery, activeAmenityFilter]);
 
   // Instant Available Slots for Selected Date and Sport
   const instantSlots = useMemo(() => {
@@ -2521,34 +2547,70 @@ export default function ReservarPage() {
               </h2>
             </div>
 
-            {/* Quick Amenity Filter Chips */}
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {[
-                { id: 'ALL', label: 'Todos' },
-                { id: 'COVERED', label: 'Techada / Climatizada' },
-                { id: 'PARKING', label: 'Estacionamiento' },
-                { id: 'BUFFET', label: 'Buffet / Bar' },
-              ].map((chip) => (
-                <button
-                  key={chip.id}
-                  onClick={() => setActiveAmenityFilter(chip.id)}
-                  style={{
-                    backgroundColor: activeAmenityFilter === chip.id ? '#ffffff' : '#0c0c0c',
-                    color: activeAmenityFilter === chip.id ? '#000000' : 'var(--color-ash)',
-                    border: '1px solid ' + (activeAmenityFilter === chip.id ? '#ffffff' : 'var(--color-graphite)'),
-                    padding: '7px 16px',
-                    fontSize: 11,
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.6px',
-                    cursor: 'pointer',
-                    borderRadius: 'var(--radius-full)',
-                    transition: 'all 0.2s ease',
-                  }}
-                >
-                  {chip.label}
-                </button>
-              ))}
+            {/* Filtros de Disciplina & Amenidades */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'flex-end' }}>
+              {/* Filtro Tipo de Complejo: Todos, Solo Pádel, Solo Fútbol, Ambos */}
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {[
+                  { id: 'ALL', label: 'Todos los Complejos' },
+                  { id: 'PADEL_ONLY', label: 'Solo Pádel', sport: 'PADEL' },
+                  { id: 'FUTBOL_ONLY', label: 'Solo Fútbol', sport: 'FUTBOL' },
+                  { id: 'BOTH', label: 'Pádel & Fútbol (Ambos)' },
+                ].map((st) => (
+                  <button
+                    key={st.id}
+                    onClick={() => setActiveSportTypeFilter(st.id as any)}
+                    style={{
+                      backgroundColor: activeSportTypeFilter === st.id ? 'rgba(252, 28, 70, 0.15)' : '#0c0c0c',
+                      color: activeSportTypeFilter === st.id ? 'var(--color-crimson-signal)' : 'var(--color-ash)',
+                      border: `1px solid ${activeSportTypeFilter === st.id ? 'var(--color-crimson-signal)' : 'rgba(76, 76, 76, 0.4)'}`,
+                      padding: '5px 12px',
+                      fontSize: 10.5,
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      cursor: 'pointer',
+                      borderRadius: 'var(--radius-full)',
+                      transition: 'all 0.2s ease',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                    }}
+                  >
+                    <span>{st.label}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Quick Amenity Filter Chips */}
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {[
+                  { id: 'ALL', label: 'Todos los servicios' },
+                  { id: 'COVERED', label: 'Techada' },
+                  { id: 'PARKING', label: 'Estacionamiento' },
+                  { id: 'BUFFET', label: 'Buffet / Bar' },
+                ].map((chip) => (
+                  <button
+                    key={chip.id}
+                    onClick={() => setActiveAmenityFilter(chip.id)}
+                    style={{
+                      backgroundColor: activeAmenityFilter === chip.id ? '#ffffff' : '#0c0c0c',
+                      color: activeAmenityFilter === chip.id ? '#000000' : 'var(--color-ash)',
+                      border: '1px solid ' + (activeAmenityFilter === chip.id ? '#ffffff' : 'var(--color-graphite)'),
+                      padding: '5px 12px',
+                      fontSize: 10.5,
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      cursor: 'pointer',
+                      borderRadius: 'var(--radius-full)',
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    {chip.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -2574,26 +2636,7 @@ export default function ReservarPage() {
                   height={240}
                   onCardClick={() => setClubModalData(club)}
                   topLeftBadge={
-                    <div
-                      style={{
-                        padding: '4px 10px',
-                        backgroundColor: 'rgba(0, 0, 0, 0.75)',
-                        backdropFilter: 'blur(8px)',
-                        border: '1px solid rgba(255, 255, 255, 0.2)',
-                        borderRadius: 'var(--radius-full)',
-                        fontSize: 10,
-                        fontWeight: 700,
-                        color: 'var(--color-frost)',
-                        letterSpacing: '0.8px',
-                        textTransform: 'uppercase',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 6,
-                      }}
-                    >
-                      {activeSport === 'PADEL' ? <Icons.Padel size={11} color="var(--color-crimson-signal)" /> : <Icons.Football size={11} color="var(--color-crimson-signal)" />}
-                      <span>{activeSport === 'PADEL' ? 'Pádel' : 'Fútbol'}</span>
-                    </div>
+                    <SportBadge sports={club.sports} size="sm" />
                   }
                   topRightBadge={
                     <div
@@ -3702,6 +3745,9 @@ export default function ReservarPage() {
             <div style={{ padding: '24px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                 <div>
+                  <div style={{ marginBottom: 6 }}>
+                    <SportBadge sports={clubModalData.sports} size="md" />
+                  </div>
                   <h3 style={{ fontSize: 24, fontWeight: 700, color: 'var(--color-frost)', textTransform: 'uppercase', margin: '0 0 4px' }}>
                     {clubModalData.name}
                   </h3>

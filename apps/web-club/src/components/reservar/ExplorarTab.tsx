@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { useSlidingIndicator } from '../../hooks/useSlidingIndicator';
 import { ClubImageCarousel } from './ClubImageCarousel';
+import { SportBadge } from '../SportBadge';
+import { ClubsMapView } from './ClubsMapView';
 
 export interface ExplorarClub {
   id: string;
@@ -11,6 +13,10 @@ export interface ExplorarClub {
   rating: number;
   reviewCount?: number;
   sports: ('PADEL' | 'FUTBOL')[];
+  latitude?: number;
+  longitude?: number;
+  minPrice?: number;
+  minPricePerPlayer?: number;
   images?: string[];
   coverImage?: string;
   amenities: {
@@ -38,6 +44,23 @@ const Icons = {
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="11" cy="11" r="8" />
       <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </svg>
+  ),
+  Map: ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
+      <line x1="8" y1="2" x2="8" y2="18" />
+      <line x1="16" y1="6" x2="16" y2="22" />
+    </svg>
+  ),
+  List: ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="8" y1="6" x2="21" y2="6" />
+      <line x1="8" y1="12" x2="21" y2="12" />
+      <line x1="8" y1="18" x2="21" y2="18" />
+      <line x1="3" y1="6" x2="3.01" y2="6" />
+      <line x1="3" y1="12" x2="3.01" y2="12" />
+      <line x1="3" y1="18" x2="3.01" y2="18" />
     </svg>
   ),
   MapPin: ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
@@ -80,8 +103,9 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
   onSelectClub,
   onNavigateHome,
 }) => {
+  const [viewMode, setViewMode] = useState<'MAP' | 'LIST'>('MAP');
   const [searchTerm, setSearchTerm] = useState('');
-  const [sportFilter, setSportFilter] = useState<'ALL' | 'PADEL' | 'FUTBOL'>('ALL');
+  const [sportFilter, setSportFilter] = useState<'ALL' | 'PADEL' | 'FUTBOL' | 'BOTH'>('ALL');
   const [selectedAmenity, setSelectedAmenity] = useState<'ALL' | 'COVERED' | 'PARKING' | 'BUFFET'>('ALL');
 
   const {
@@ -92,19 +116,30 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
 
   const filteredClubs = useMemo(() => {
     return clubs.filter((club) => {
-      if (sportFilter === 'PADEL' && !club.sports.includes('PADEL')) return false;
-      if (sportFilter === 'FUTBOL' && !club.sports.includes('FUTBOL')) return false;
+      const hasPadel = club.sports?.includes('PADEL');
+      const hasFutbol = club.sports?.includes('FUTBOL');
 
-      if (selectedAmenity === 'COVERED' && !club.amenities.covered) return false;
-      if (selectedAmenity === 'PARKING' && !club.amenities.parking) return false;
-      if (selectedAmenity === 'BUFFET' && !club.amenities.buffet) return false;
+      if (sportFilter === 'PADEL' && !hasPadel) return false;
+      if (sportFilter === 'FUTBOL' && !hasFutbol) return false;
+      if (sportFilter === 'BOTH' && (!hasPadel || !hasFutbol)) return false;
+
+      if (selectedAmenity === 'COVERED' && !club.amenities?.covered) return false;
+      if (selectedAmenity === 'PARKING' && !club.amenities?.parking) return false;
+      if (selectedAmenity === 'BUFFET' && !club.amenities?.buffet) return false;
 
       if (searchTerm.trim().length > 0) {
-        const q = searchTerm.toLowerCase();
-        const matchName = club.name.toLowerCase().includes(q);
-        const matchAddress = club.address.toLowerCase().includes(q);
-        const matchCity = club.city.toLowerCase().includes(q);
-        if (!matchName && !matchAddress && !matchCity) return false;
+        const clean = (str: string) => (str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        const q = clean(searchTerm);
+
+        if (q.includes('padel') && !hasPadel) return false;
+        if (q.includes('futbol') && !hasFutbol) return false;
+
+        const matchName = clean(club.name).includes(q);
+        const matchAddress = clean(club.address).includes(q);
+        const matchCity = clean(club.city).includes(q);
+        const matchSportKeyword = (q.includes('padel') && hasPadel) || (q.includes('futbol') && hasFutbol);
+
+        if (!matchName && !matchAddress && !matchCity && !matchSportKeyword) return false;
       }
 
       return true;
@@ -113,8 +148,8 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
 
   return (
     <div style={{ maxWidth: 1400, margin: '0 auto', padding: '120px 24px 80px' }}>
-      {/* ── Header ── */}
-      <div style={{ marginBottom: 36 }}>
+      {/* ── Header & View Toggle ── */}
+      <div style={{ marginBottom: 32 }}>
         <div style={{ fontSize: 11, color: 'var(--color-crimson-signal)', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 700, marginBottom: 8 }}>
           03 / DIRECTORIO NACIONAL DE CLUBES
         </div>
@@ -124,8 +159,70 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
               Explorar Complejos
             </h1>
             <p style={{ color: 'var(--color-ash)', fontSize: 14, marginTop: 6, marginBottom: 0 }}>
-              Encontrá los mejores clubes deportivos con canchas de cristal techadas, buffet, vestuarios y estacionamiento.
+              Encontrá los mejores clubes deportivos en el mapa interactivo con sus canchas y ubicaciones exactas.
             </p>
+          </div>
+
+          {/* Conmutador Vista Mapa / Lista (Idéntico a la App Móvil) */}
+          <div
+            style={{
+              display: 'inline-flex',
+              padding: 4,
+              backgroundColor: '#0a0a0a',
+              border: '1px solid rgba(76, 76, 76, 0.5)',
+              borderRadius: 'var(--radius-full)',
+              gap: 4,
+              boxShadow: '0 4px 14px rgba(0, 0, 0, 0.5)',
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setViewMode('MAP')}
+              style={{
+                backgroundColor: viewMode === 'MAP' ? 'var(--color-crimson-signal)' : 'transparent',
+                color: viewMode === 'MAP' ? '#ffffff' : 'var(--color-ash)',
+                border: 'none',
+                borderRadius: 'var(--radius-full)',
+                padding: '8px 18px',
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer',
+                textTransform: 'uppercase',
+                letterSpacing: '0.6px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 7,
+                boxShadow: viewMode === 'MAP' ? '0 2px 10px rgba(252, 28, 70, 0.35)' : 'none',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <Icons.Map size={14} color={viewMode === 'MAP' ? '#ffffff' : 'var(--color-ash)'} />
+              <span>Mapa</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('LIST')}
+              style={{
+                backgroundColor: viewMode === 'LIST' ? 'var(--color-crimson-signal)' : 'transparent',
+                color: viewMode === 'LIST' ? '#ffffff' : 'var(--color-ash)',
+                border: 'none',
+                borderRadius: 'var(--radius-full)',
+                padding: '8px 18px',
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer',
+                textTransform: 'uppercase',
+                letterSpacing: '0.6px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 7,
+                boxShadow: viewMode === 'LIST' ? '0 2px 10px rgba(252, 28, 70, 0.35)' : 'none',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <Icons.List size={14} color={viewMode === 'LIST' ? '#ffffff' : 'var(--color-ash)'} />
+              <span>Lista</span>
+            </button>
           </div>
         </div>
       </div>
@@ -136,7 +233,7 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
           backgroundColor: '#0a0a0a',
           border: '1px solid rgba(76, 76, 76, 0.4)',
           padding: '16px 20px',
-          marginBottom: 36,
+          marginBottom: 28,
           display: 'flex',
           flexDirection: 'column',
           gap: 16,
@@ -180,7 +277,7 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
             {/* Sliding Pill Indicator */}
             <div style={explorarSportIndicatorStyle} />
 
-            {(['ALL', 'PADEL', 'FUTBOL'] as const).map((sport) => (
+            {(['ALL', 'PADEL', 'FUTBOL', 'BOTH'] as const).map((sport) => (
               <button
                 key={sport}
                 ref={setExplorarSportItemRef(sport)}
@@ -201,7 +298,7 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
                   transition: 'color 0.2s ease',
                 }}
               >
-                {sport === 'ALL' ? 'Todos' : sport === 'PADEL' ? 'Pádel' : 'Fútbol'}
+                {sport === 'ALL' ? 'Todos' : sport === 'PADEL' ? 'Pádel' : sport === 'FUTBOL' ? 'Fútbol' : 'Ambos'}
               </button>
             ))}
           </div>
@@ -239,8 +336,14 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
         </div>
       </div>
 
-      {/* ── Grid de Clubes / Empty State (hay-equipo-ux) ── */}
-      {filteredClubs.length === 0 ? (
+      {/* ── Vista Condicional: MAPA o LISTA ── */}
+      {viewMode === 'MAP' ? (
+        <ClubsMapView
+          clubs={filteredClubs}
+          onSelectClub={onSelectClub}
+          activeSport={sportFilter}
+        />
+      ) : filteredClubs.length === 0 ? (
         <div
           style={{
             backgroundColor: '#0a0a0a',
@@ -297,7 +400,7 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
               backgroundColor: 'var(--color-crimson-signal)',
               color: '#ffffff',
               border: 'none',
-              borderRadius: 'var(--radius-buttons)',
+              borderRadius: 'var(--radius-full)',
               padding: '12px 24px',
               fontSize: 12,
               fontWeight: 700,
@@ -318,135 +421,90 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 24 }}>
           {filteredClubs.map((club) => (
-          <div
-            key={club.id}
-            style={{
-              backgroundColor: '#0a0a0a',
-              border: '1px solid rgba(76, 76, 76, 0.4)',
-              overflow: 'hidden',
-              display: 'flex',
-              flexDirection: 'column',
-              transition: 'border-color 0.2s ease',
-            }}
-          >
-            {/* Carrusel de Imágenes del Club (Logo Oficial N°1 + Fotos Reales al scrollear) */}
-            <ClubImageCarousel
-              images={club.images || (club.coverImage ? [club.coverImage] : [])}
-              clubName={club.name}
-              height={200}
-              onCardClick={() => onSelectClub(club)}
-              topRightBadge={
-                <div
-                  style={{
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    backdropFilter: 'blur(8px)',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    borderRadius: 'var(--radius-full)',
-                    padding: '4px 10px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 5,
-                    fontSize: 12,
-                    fontWeight: 700,
-                    color: '#ffffff',
-                  }}
-                >
-                  <Icons.Star size={13} color="#FACC15" />
-                  <span>{club.rating}</span>
-                  <span style={{ color: 'var(--color-ash)', fontSize: 11 }}>
-                    ({club.reviewCount || club.reviewsCount || 45})
-                  </span>
-                </div>
-              }
-            />
-
-            {/* Contenido */}
-            <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', flex: 1 }}>
-              <h3 style={{ fontSize: 19, fontWeight: 700, color: 'var(--color-frost)', margin: '0 0 6px' }}>
-                {club.name}
-              </h3>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--color-ash)', fontSize: 13, marginBottom: 16 }}>
-                <Icons.MapPin size={13} color="var(--color-crimson-signal)" />
-                <span>{club.address} · {club.city}</span>
-              </div>
-
-              {/* Amenity Badges */}
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 20 }}>
-                {club.amenities.covered && (
-                  <span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 'var(--radius-full)', backgroundColor: 'rgba(255, 255, 255, 0.06)', color: 'var(--color-frost)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                    Techada
-                  </span>
-                )}
-                {club.amenities.parking && (
-                  <span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 'var(--radius-full)', backgroundColor: 'rgba(255, 255, 255, 0.06)', color: 'var(--color-frost)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                    Estacionamiento
-                  </span>
-                )}
-                {club.amenities.buffet && (
-                  <span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 'var(--radius-full)', backgroundColor: 'rgba(255, 255, 255, 0.06)', color: 'var(--color-frost)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                    Buffet & Bar
-                  </span>
-                )}
-              </div>
-
-              {/* Botones de Acción (Pills) */}
-              <div style={{ marginTop: 'auto', paddingTop: 16, borderTop: '1px solid rgba(76, 76, 76, 0.3)', display: 'flex', gap: 10 }}>
-                <button
-                  onClick={() => onSelectClub(club)}
-                  style={{
-                    flex: 1,
-                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                    color: 'var(--color-frost)',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    borderRadius: 'var(--radius-full)',
-                    padding: '10px 16px',
-                    fontSize: 11,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.4px',
-                  }}
-                >
-                  Ficha del Club
-                </button>
-                {club.whatsappPhone ? (
-                  <a
-                    href={`https://wa.me/${club.whatsappPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
-                      `Hola! Los vi en Hay Equipo y quería consultar disponibilidad de canchas en ${club.name}.`
-                    )}`}
-                    target="_blank"
-                    rel="noreferrer"
+            <div
+              key={club.id}
+              style={{
+                backgroundColor: '#0a0a0a',
+                border: '1px solid rgba(76, 76, 76, 0.4)',
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+                transition: 'border-color 0.2s ease',
+              }}
+            >
+              {/* Carrusel de Imágenes del Club */}
+              <ClubImageCarousel
+                images={club.images || (club.coverImage ? [club.coverImage] : [])}
+                clubName={club.name}
+                height={200}
+                onCardClick={() => onSelectClub(club)}
+                topLeftBadge={<SportBadge sports={club.sports} size="sm" />}
+                topRightBadge={
+                  <div
                     style={{
-                      flex: 1,
-                      backgroundColor: '#25D366',
-                      color: '#000000',
-                      border: 'none',
+                      backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                      backdropFilter: 'blur(8px)',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
                       borderRadius: 'var(--radius-full)',
-                      padding: '10px 16px',
-                      fontSize: 11,
-                      fontWeight: 800,
-                      cursor: 'pointer',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.4px',
+                      padding: '4px 10px',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 6,
-                      textDecoration: 'none',
-                      boxShadow: '0 2px 10px rgba(37, 211, 102, 0.25)',
+                      gap: 5,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: '#ffffff',
                     }}
                   >
-                    <Icons.WhatsApp size={14} color="#000" />
-                    <span>WhatsApp</span>
-                  </a>
-                ) : (
+                    <Icons.Star size={13} color="#FACC15" />
+                    <span>{club.rating}</span>
+                    <span style={{ color: 'var(--color-ash)', fontSize: 11 }}>
+                      ({club.reviewCount || club.reviewsCount || 45})
+                    </span>
+                  </div>
+                }
+              />
+
+              {/* Contenido */}
+              <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                <div style={{ marginBottom: 6 }}>
+                  <SportBadge sports={club.sports} size="sm" />
+                </div>
+                <h3 style={{ fontSize: 19, fontWeight: 700, color: 'var(--color-frost)', margin: '0 0 6px' }}>
+                  {club.name}
+                </h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--color-ash)', fontSize: 13, marginBottom: 16 }}>
+                  <Icons.MapPin size={13} color="var(--color-crimson-signal)" />
+                  <span>{club.address} · {club.city}</span>
+                </div>
+
+                {/* Amenity Badges */}
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 20 }}>
+                  {club.amenities?.covered && (
+                    <span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 'var(--radius-full)', backgroundColor: 'rgba(255, 255, 255, 0.06)', color: 'var(--color-frost)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                      Techada
+                    </span>
+                  )}
+                  {club.amenities?.parking && (
+                    <span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 'var(--radius-full)', backgroundColor: 'rgba(255, 255, 255, 0.06)', color: 'var(--color-frost)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                      Estacionamiento
+                    </span>
+                  )}
+                  {club.amenities?.buffet && (
+                    <span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 'var(--radius-full)', backgroundColor: 'rgba(255, 255, 255, 0.06)', color: 'var(--color-frost)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                      Buffet & Bar
+                    </span>
+                  )}
+                </div>
+
+                {/* Botones de Acción (Pills) */}
+                <div style={{ marginTop: 'auto', paddingTop: 16, borderTop: '1px solid rgba(76, 76, 76, 0.3)', display: 'flex', gap: 10 }}>
                   <button
                     onClick={() => onSelectClub(club)}
                     style={{
                       flex: 1,
-                      backgroundColor: 'var(--color-crimson-signal)',
-                      color: '#ffffff',
-                      border: 'none',
+                      backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                      color: 'var(--color-frost)',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
                       borderRadius: 'var(--radius-full)',
                       padding: '10px 16px',
                       fontSize: 11,
@@ -456,13 +514,62 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
                       letterSpacing: '0.4px',
                     }}
                   >
-                    Ver Contacto
+                    Ficha del Club
                   </button>
-                )}
+                  {club.whatsappPhone ? (
+                    <a
+                      href={`https://wa.me/${club.whatsappPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
+                        `Hola! Los vi en Hay Equipo y quería consultar disponibilidad de canchas en ${club.name}.`
+                      )}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        flex: 1,
+                        backgroundColor: '#25D366',
+                        color: '#000000',
+                        border: 'none',
+                        borderRadius: 'var(--radius-full)',
+                        padding: '10px 16px',
+                        fontSize: 11,
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 6,
+                        textDecoration: 'none',
+                        boxShadow: '0 2px 10px rgba(37, 211, 102, 0.25)',
+                      }}
+                    >
+                      <Icons.WhatsApp size={14} color="#000" />
+                      <span>WhatsApp</span>
+                    </a>
+                  ) : (
+                    <button
+                      onClick={() => onSelectClub(club)}
+                      style={{
+                        flex: 1,
+                        backgroundColor: 'var(--color-crimson-signal)',
+                        color: '#ffffff',
+                        border: 'none',
+                        borderRadius: 'var(--radius-full)',
+                        padding: '10px 16px',
+                        fontSize: 11,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.4px',
+                      }}
+                    >
+                      Ver Contacto
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
         </div>
       )}
     </div>

@@ -789,7 +789,7 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
                 {/* Club y Cancha */}
                 <div>
                   <label style={{ display: 'block', fontSize: 11, color: 'var(--color-ash)', textTransform: 'uppercase', fontWeight: 700, marginBottom: 8 }}>
-                    Club / Complejo Seleccionado
+                    Club / Complejo Seleccionado ({selectedSport === 'PADEL' ? 'Canchas de Pádel' : 'Canchas de Fútbol'})
                   </label>
                   <select
                     value={selectedClubId}
@@ -811,11 +811,22 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
                       outline: 'none',
                     }}
                   >
-                    {availableClubs.map((club) => (
-                      <option key={club.id} value={club.id} style={{ backgroundColor: '#0a0a0a', color: '#ffffff' }}>
-                        {club.name} ({club.city || 'Mar del Plata'})
-                      </option>
-                    ))}
+                    {availableClubs
+                      .filter((club) => {
+                        const sports = club.sports || [];
+                        if (selectedSport === 'PADEL') return sports.includes('PADEL') || sports.length === 0;
+                        return sports.some((s: string) => s.startsWith('FUTBOL')) || sports.length === 0;
+                      })
+                      .map((club) => {
+                        const hasP = club.sports?.includes('PADEL');
+                        const hasF = club.sports?.some((s: string) => s.startsWith('FUTBOL'));
+                        const tag = hasP && hasF ? 'PÁDEL & FÚTBOL' : hasP ? 'SOLO PÁDEL' : 'SOLO FÚTBOL';
+                        return (
+                          <option key={club.id} value={club.id} style={{ backgroundColor: '#0a0a0a', color: '#ffffff' }}>
+                            [{tag}] {club.name} ({club.city || 'Mar del Plata'})
+                          </option>
+                        );
+                      })}
                   </select>
                 </div>
 

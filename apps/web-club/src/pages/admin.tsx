@@ -9,6 +9,7 @@ import {
   saveCourtsFirestore,
   uploadImageFirebase,
 } from '../services/firebase';
+import { SportBadge } from '../components/SportBadge';
 
 /* ────────────────────────────────────────────────────────────
    TypeScript Interfaces
@@ -64,6 +65,8 @@ export interface AdminClub {
   reviewCount: number;
   amenities: AdminClubAmenities;
   images: string[];
+  sports?: string[];
+  sportCategory?: 'PADEL' | 'FUTBOL' | 'BOTH';
 }
 
 /* ────────────────────────────────────────────────────────────
@@ -214,7 +217,7 @@ export default function AdminPage() {
 
   // Search & Sport Filter
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [sportFilter, setSportFilter] = useState<'ALL' | 'PADEL' | 'FUTBOL'>('ALL');
+  const [sportFilter, setSportFilter] = useState<'ALL' | 'PADEL' | 'FUTBOL' | 'BOTH'>('ALL');
 
   // Modal state for Club Editing/Creation
   const [isClubModalOpen, setIsClubModalOpen] = useState<boolean>(false);
@@ -365,6 +368,27 @@ export default function AdminPage() {
     const futbol11Courts = courts.filter(c => c.sportType === 'FUTBOL_11').length;
     const totalFutbolCourts = futbol5Courts + futbol7Courts + futbol11Courts;
 
+    const padelOnlyClubs = clubs.filter(c => {
+      const cCourts = courts.filter(ct => ct.clubId === c.id);
+      const hasP = cCourts.some(ct => ct.sportType === 'PADEL') || c.sports?.includes('PADEL');
+      const hasF = cCourts.some(ct => ct.sportType?.startsWith('FUTBOL')) || c.sports?.includes('FUTBOL');
+      return hasP && !hasF;
+    }).length;
+
+    const futbolOnlyClubs = clubs.filter(c => {
+      const cCourts = courts.filter(ct => ct.clubId === c.id);
+      const hasP = cCourts.some(ct => ct.sportType === 'PADEL') || c.sports?.includes('PADEL');
+      const hasF = cCourts.some(ct => ct.sportType?.startsWith('FUTBOL')) || c.sports?.includes('FUTBOL');
+      return hasF && !hasP;
+    }).length;
+
+    const bothClubs = clubs.filter(c => {
+      const cCourts = courts.filter(ct => ct.clubId === c.id);
+      const hasP = cCourts.some(ct => ct.sportType === 'PADEL') || c.sports?.includes('PADEL');
+      const hasF = cCourts.some(ct => ct.sportType?.startsWith('FUTBOL')) || c.sports?.includes('FUTBOL');
+      return hasP && hasF;
+    }).length;
+
     return {
       totalClubs,
       totalCourts,
@@ -373,6 +397,9 @@ export default function AdminPage() {
       futbol5Courts,
       futbol7Courts,
       futbol11Courts,
+      padelOnlyClubs,
+      futbolOnlyClubs,
+      bothClubs,
     };
   }, [clubs, courts]);
 
@@ -386,12 +413,13 @@ export default function AdminPage() {
         club.city.toLowerCase().includes(searchQuery.toLowerCase());
 
       const clubCourts = courts.filter(c => c.clubId === club.id);
-      const hasPadel = clubCourts.some(c => c.sportType === 'PADEL');
-      const hasFutbol = clubCourts.some(c => c.sportType.startsWith('FUTBOL'));
+      const hasPadel = clubCourts.some(c => c.sportType === 'PADEL') || Boolean(club.sports?.includes('PADEL'));
+      const hasFutbol = clubCourts.some(c => c.sportType?.startsWith('FUTBOL')) || Boolean(club.sports?.includes('FUTBOL'));
 
       let matchesSport = true;
       if (sportFilter === 'PADEL') matchesSport = hasPadel;
       if (sportFilter === 'FUTBOL') matchesSport = hasFutbol;
+      if (sportFilter === 'BOTH') matchesSport = hasPadel && hasFutbol;
 
       return matchesQuery && matchesSport;
     });
@@ -858,7 +886,11 @@ export default function AdminPage() {
             <div className="metric-label">TOTAL CLUBES</div>
             <div className="metric-val">{stats.totalClubs}</div>
             <div className="metric-detail">
-              <span>Complejos registrados en Mar del Plata</span>
+              <span className="metric-sub-item crimson">{stats.padelOnlyClubs} Pádel</span>
+              <span className="metric-divider">·</span>
+              <span className="metric-sub-item emerald">{stats.futbolOnlyClubs} Fútbol</span>
+              <span className="metric-divider">·</span>
+              <span className="metric-sub-item" style={{ color: '#f59e0b' }}>{stats.bothClubs} Ambos</span>
             </div>
           </div>
 
@@ -913,7 +945,7 @@ export default function AdminPage() {
               onClick={() => setSportFilter('ALL')}
               className={`filter-chip ${sportFilter === 'ALL' ? 'active' : ''}`}
             >
-              TODOS LOS DEPORTES ({stats.totalClubs} CLUBES)
+              TODOS ({stats.totalClubs} CLUBES)
             </button>
             <button
               onClick={() => setSportFilter('PADEL')}
@@ -926,6 +958,12 @@ export default function AdminPage() {
               className={`filter-chip ${sportFilter === 'FUTBOL' ? 'active' : ''}`}
             >
               FÚTBOL ({stats.totalFutbolCourts} CANCHAS)
+            </button>
+            <button
+              onClick={() => setSportFilter('BOTH')}
+              className={`filter-chip ${sportFilter === 'BOTH' ? 'active' : ''}`}
+            >
+              AMBOS ({stats.bothClubs} CLUBES MIXTOS)
             </button>
           </div>
         </div>
@@ -959,6 +997,7 @@ export default function AdminPage() {
               <thead>
                 <tr>
                   <th>CLUB / COMPLEJO</th>
+                  <th>DISCIPLINA</th>
                   <th>DIRECCIÓN Y CIUDAD</th>
                   <th>CANCHAS ACTIVAS</th>
                   <th>CONTACTO</th>
@@ -973,6 +1012,14 @@ export default function AdminPage() {
                   const f7Count = clubCourts.filter(c => c.sportType === 'FUTBOL_7').length;
                   const f11Count = clubCourts.filter(c => c.sportType === 'FUTBOL_11').length;
                   const cleanWhatsApp = club.whatsapp.replace(/[^0-9]/g, '');
+
+                  // Detectar disciplina del club
+                  const derivedSports = club.sports && club.sports.length > 0 
+                    ? club.sports 
+                    : [
+                        ...(padelCount > 0 ? ['PADEL'] : []),
+                        ...(f5Count > 0 || f7Count > 0 || f11Count > 0 ? ['FUTBOL'] : [])
+                      ];
 
                   return (
                     <tr key={club.id} className={!club.active ? 'row-inactive' : ''}>
@@ -990,6 +1037,11 @@ export default function AdminPage() {
                             <div className="club-cell-slug">ID: {club.id}</div>
                           </div>
                         </div>
+                      </td>
+
+                      {/* Disciplina Badge */}
+                      <td>
+                        <SportBadge sports={derivedSports} size="sm" />
                       </td>
 
                       {/* Address */}
@@ -1163,6 +1215,48 @@ export default function AdminPage() {
                     placeholder="Mar del Plata"
                     className="input-sharp"
                   />
+                </div>
+              </div>
+
+              <div>
+                <label className="form-label">DISCIPLINA DEL COMPLEJO</label>
+                <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+                  {[
+                    { id: 'PADEL', label: 'Solo Pádel', sports: ['PADEL'] },
+                    { id: 'FUTBOL', label: 'Solo Fútbol', sports: ['FUTBOL'] },
+                    { id: 'BOTH', label: 'Ambos (Pádel & Fútbol)', sports: ['PADEL', 'FUTBOL'] },
+                  ].map(disc => {
+                    const currentCategory = (editingClub.sports?.includes('PADEL') && editingClub.sports?.includes('FUTBOL'))
+                      ? 'BOTH'
+                      : editingClub.sports?.includes('PADEL')
+                      ? 'PADEL'
+                      : editingClub.sports?.includes('FUTBOL')
+                      ? 'FUTBOL'
+                      : 'BOTH';
+
+                    const isSelected = currentCategory === disc.id;
+                    return (
+                      <button
+                        type="button"
+                        key={disc.id}
+                        onClick={() => setEditingClub({ ...editingClub, sports: disc.sports, sportCategory: disc.id as any })}
+                        style={{
+                          flex: 1,
+                          padding: '8px 12px',
+                          backgroundColor: isSelected ? 'rgba(252, 28, 70, 0.15)' : '#000000',
+                          color: isSelected ? 'var(--color-crimson-signal)' : 'var(--color-ash)',
+                          border: `1px solid ${isSelected ? 'var(--color-crimson-signal)' : 'rgba(255, 255, 255, 0.2)'}`,
+                          borderRadius: 'var(--radius-full, 9999px)',
+                          fontSize: 11,
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        {disc.label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
