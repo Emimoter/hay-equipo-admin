@@ -1452,7 +1452,20 @@ export default function ReservarPage() {
               gap: 6,
             }}
           >
-            <span>Descargar App</span>
+            <span>App Mobile</span>
+            <span
+              style={{
+                fontSize: 9,
+                padding: '2px 6px',
+                borderRadius: 'var(--radius-full)',
+                backgroundColor: 'rgba(252, 28, 70, 0.15)',
+                color: 'var(--color-crimson-signal)',
+                fontWeight: 700,
+                letterSpacing: '0.4px',
+              }}
+            >
+              PRONTO
+            </span>
           </a>
 
           {/* ── Auth State in Header ── */}

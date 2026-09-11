@@ -440,7 +440,20 @@ export default function LandingPage() {
               (e.currentTarget as HTMLAnchorElement).style.transform = 'scale(1)';
             }}
           >
-            <span>Descargar App</span>
+            <span>App Mobile</span>
+            <span
+              style={{
+                fontSize: 9,
+                padding: '2px 6px',
+                borderRadius: 'var(--radius-full)',
+                backgroundColor: 'rgba(252, 28, 70, 0.15)',
+                color: 'var(--color-crimson-signal)',
+                fontWeight: 700,
+                letterSpacing: '0.4px',
+              }}
+            >
+              PRONTO
+            </span>
           </a>
 
           {/* ── User Auth Pill / Ingresar ── */}
@@ -683,7 +696,20 @@ export default function LandingPage() {
                   <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
                   <line x1="12" y1="18" x2="12.01" y2="18" />
                 </svg>
-                <span>Descargar App</span>
+                <span>App Mobile</span>
+                <span
+                  style={{
+                    fontSize: 9,
+                    padding: '2px 6px',
+                    borderRadius: 'var(--radius-full)',
+                    backgroundColor: 'rgba(252, 28, 70, 0.18)',
+                    color: 'var(--color-crimson-signal)',
+                    fontWeight: 700,
+                    letterSpacing: '0.4px',
+                  }}
+                >
+                  PRONTO
+                </span>
               </a>
             </TrackingBlurReveal>
           </div>
@@ -913,29 +939,62 @@ export default function LandingPage() {
           >
             {/* Left — Heading + description */}
             <div>
-              <TrackingBlurReveal inView={downloadInView} delay={0.2} style={{ fontSize: '10px', color: 'var(--color-crimson-signal)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 9 }}>
-                DISPONIBLE PARA IOS Y ANDROID
-              </TrackingBlurReveal>
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '6px 14px',
+                  borderRadius: 'var(--radius-full)',
+                  backgroundColor: 'rgba(252, 28, 70, 0.1)',
+                  border: '1px solid rgba(252, 28, 70, 0.3)',
+                  marginBottom: 22,
+                  opacity: downloadInView ? 1 : 0,
+                  transform: downloadInView ? 'translateY(0)' : 'translateY(10px)',
+                  transition: 'all 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.15s',
+                }}
+              >
+                <span
+                  style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--color-crimson-signal)',
+                    boxShadow: '0 0 10px var(--color-crimson-signal)',
+                  }}
+                />
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    letterSpacing: '1.2px',
+                    textTransform: 'uppercase',
+                    color: 'var(--color-crimson-signal)',
+                  }}
+                >
+                  EN CONSTRUCCIÓN · VERSIÓN NATIVA 1.0
+                </span>
+              </div>
 
               <h2 style={{ margin: '0 0 22px', padding: 0 }}>
                 <div style={{ display: 'block' }}>
                   <MaskedText inView={downloadInView} delay={0.3} duration={1.0}>
                     <span style={{ display: 'block', fontSize: 'clamp(42px, 8vw, 91px)', fontWeight: 700, color: 'var(--color-frost)', lineHeight: 0.92, letterSpacing: '-1.82px', textTransform: 'uppercase' }}>
-                      DESCARGÁ
+                      APP MOBILE.
                     </span>
                   </MaskedText>
                 </div>
                 <div style={{ display: 'block' }}>
                   <MaskedText inView={downloadInView} delay={0.45} duration={1.0}>
                     <span style={{ display: 'block', fontSize: 'clamp(42px, 8vw, 91px)', fontWeight: 700, color: 'var(--color-frost)', lineHeight: 0.92, letterSpacing: '-1.82px', textTransform: 'uppercase' }}>
-                      LA APP.
+                      PRÓXIMAMENTE.
                     </span>
                   </MaskedText>
                 </div>
               </h2>
 
-              <TrackingBlurReveal inView={downloadInView} delay={0.6} style={{ fontSize: '18px', color: 'var(--color-ash)', lineHeight: 1.25, maxWidth: 480, margin: '0 0 36px' }}>
-                Escaneá el código QR con tu celular o buscá &quot;Hay Equipo&quot; en App Store o Google Play. Creá tu cuenta en segundos y empezá a reservar.
+              <TrackingBlurReveal inView={downloadInView} delay={0.6} style={{ fontSize: '17px', color: 'var(--color-ash)', lineHeight: 1.5, maxWidth: 520, margin: '0 0 36px' }}>
+                Estamos desarrollando la experiencia nativa para iOS y Android. Vas a poder reservar turnos en segundos, armar partidos con amigos y dividir el pago desde la cancha. Mientras tanto, podés usar nuestra versión web 100% optimizada para celulares.
               </TrackingBlurReveal>
 
               <div
@@ -943,77 +1002,226 @@ export default function LandingPage() {
                   display: 'flex',
                   gap: 14,
                   flexWrap: 'wrap',
+                  alignItems: 'center',
                   opacity: downloadInView ? 1 : 0,
                   transform: downloadInView ? 'translateY(0)' : 'translateY(20px)',
                   transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.75s',
                 }}
               >
                 <a
-                  href="#"
+                  href="/reservar"
                   style={{
-                    backgroundColor: 'var(--color-frost)',
-                    color: 'var(--color-void)',
+                    backgroundColor: 'var(--color-crimson-signal)',
+                    color: 'var(--color-frost)',
                     border: 'none',
                     borderRadius: 'var(--radius-full)',
-                    padding: '14px 36px',
-                    fontSize: 14,
+                    padding: '14px 30px',
+                    fontSize: 13.5,
                     fontWeight: 700,
                     textDecoration: 'none',
                     textTransform: 'uppercase',
-                    transition: 'transform 0.2s ease',
+                    letterSpacing: '0.6px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    boxShadow: '0 4px 24px rgba(252, 28, 70, 0.35)',
+                    transition: 'all 0.2s ease',
                   }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.transform = 'scale(1.04)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.transform = 'scale(1)'; }}
+                  onMouseEnter={e => {
+                    (e.currentTarget as HTMLAnchorElement).style.transform = 'scale(1.03)';
+                    (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 6px 30px rgba(252, 28, 70, 0.5)';
+                  }}
+                  onMouseLeave={e => {
+                    (e.currentTarget as HTMLAnchorElement).style.transform = 'scale(1)';
+                    (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 4px 24px rgba(252, 28, 70, 0.35)';
+                  }}
                 >
-                  App Store
+                  <span>Reservar en la Web Ahora</span>
+                  <span style={{ fontSize: 15, lineHeight: 1 }}>→</span>
                 </a>
-                <a
-                  href="#"
+
+                <div
                   style={{
-                    backgroundColor: 'transparent',
-                    color: 'var(--color-frost)',
-                    border: '1px solid var(--color-graphite)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    padding: '13px 20px',
                     borderRadius: 'var(--radius-full)',
-                    padding: '14px 36px',
-                    fontSize: 14,
-                    fontWeight: 400,
-                    textDecoration: 'none',
-                    textTransform: 'uppercase',
-                    transition: 'border-color 0.2s ease, transform 0.2s ease',
+                    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    color: 'var(--color-frost)',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    letterSpacing: '0.4px',
+                    userSelect: 'none',
                   }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--color-frost)'; (e.currentTarget as HTMLAnchorElement).style.transform = 'scale(1.04)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--color-graphite)'; (e.currentTarget as HTMLAnchorElement).style.transform = 'scale(1)'; }}
                 >
-                  Google Play
-                </a>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.63-.77 1.06-1.85.94-2.92-1 .04-2.18.66-2.88 1.48-.56.65-1.04 1.73-.91 2.78 1.12.09 2.22-.57 2.85-1.34z"/>
+                  </svg>
+                  <span>App Store</span>
+                  <span
+                    style={{
+                      fontSize: 9.5,
+                      padding: '3px 8px',
+                      borderRadius: 'var(--radius-full)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                      color: 'var(--color-ash)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.6px',
+                      fontWeight: 700,
+                    }}
+                  >
+                    Próximamente
+                  </span>
+                </div>
+
+                <div
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    padding: '13px 20px',
+                    borderRadius: 'var(--radius-full)',
+                    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    color: 'var(--color-frost)',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    letterSpacing: '0.4px',
+                    userSelect: 'none',
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3.609 1.814L13.793 12 3.61 22.186a2.316 2.316 0 0 1-.36-.615c-.16-.44-.25-.92-.25-1.42V3.85c0-.5.09-.98.25-1.42.09-.24.21-.45.36-.616zm11.242 11.243l2.42 2.42-12.01 6.84 9.59-9.26zm2.42-2.115l3.228 1.834c.854.485.854 1.282 0 1.767l-3.228 1.834-2.224-2.224 2.224-2.211zm-2.42-2.114L5.26 -.427l12.01 6.84-2.42 2.42z"/>
+                  </svg>
+                  <span>Google Play</span>
+                  <span
+                    style={{
+                      fontSize: 9.5,
+                      padding: '3px 8px',
+                      borderRadius: 'var(--radius-full)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                      color: 'var(--color-ash)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.6px',
+                      fontWeight: 700,
+                    }}
+                  >
+                    Próximamente
+                  </span>
+                </div>
               </div>
             </div>
 
-            {/* Right — QR Code with Shutter Box Reveal */}
+            {/* Right — High-Tech Terminal Container (90° Sharp Rectangle) */}
             <div
               style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 14,
                 opacity: downloadInView ? 1 : 0,
-                transform: downloadInView ? 'scale(1) rotate(0deg)' : 'scale(0.85) rotate(-6deg)',
-                filter: downloadInView ? 'blur(0px)' : 'blur(10px)',
-                transition: 'all 1s cubic-bezier(0.16, 1, 0.3, 1) 0.4s',
+                transform: downloadInView ? 'translateY(0)' : 'translateY(24px)',
+                filter: downloadInView ? 'blur(0px)' : 'blur(8px)',
+                transition: 'all 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.4s',
+                backgroundColor: '#0a0a0a',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                borderRadius: 0,
+                padding: '24px 24px 20px',
+                maxWidth: 320,
+                width: '100%',
+                boxShadow: '0 20px 40px rgba(0, 0, 0, 0.6)',
               }}
             >
-              <div style={{
-                width: 200,
-                height: 200,
-                border: '1px solid var(--color-graphite)',
-                padding: 14,
-                backgroundColor: '#000000',
-              }}>
+              {/* Terminal Bar */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  paddingBottom: 14,
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                  marginBottom: 18,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <span
+                    style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: '50%',
+                      backgroundColor: '#10b981',
+                      boxShadow: '0 0 8px #10b981',
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 700,
+                      color: 'var(--color-frost)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '1px',
+                    }}
+                  >
+                    ACCESO WEB MOBILE
+                  </span>
+                </div>
+                <span
+                  style={{
+                    fontSize: 9,
+                    color: '#10b981',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.8px',
+                    fontWeight: 700,
+                    padding: '2px 7px',
+                    borderRadius: 'var(--radius-full)',
+                    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                  }}
+                >
+                  ACTIVO
+                </span>
+              </div>
+
+              {/* QR Box */}
+              <div
+                style={{
+                  width: '100%',
+                  aspectRatio: '1 / 1',
+                  maxWidth: 200,
+                  margin: '0 auto 16px',
+                  backgroundColor: '#000000',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  borderRadius: 0,
+                  padding: 14,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
                 <QRCodeSVG />
               </div>
-              <span style={{ fontSize: 10, color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                ESCANEÁ PARA DESCARGAR
-              </span>
+
+              {/* Terminal Caption */}
+              <div style={{ textAlign: 'center' }}>
+                <div
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: 'var(--color-frost)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.8px',
+                    marginBottom: 6,
+                  }}
+                >
+                  ESCANEÁ CON TU CELULAR
+                </div>
+                <div
+                  style={{
+                    fontSize: 11.5,
+                    color: 'var(--color-ash)',
+                    lineHeight: 1.45,
+                  }}
+                >
+                  Abrí la plataforma web mobile en tu navegador o agregala a tu pantalla de inicio mientras preparamos el lanzamiento en tiendas.
+                </div>
+              </div>
             </div>
           </div>
         </div>
