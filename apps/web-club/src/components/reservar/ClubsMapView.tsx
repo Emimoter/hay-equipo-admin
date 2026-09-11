@@ -116,6 +116,8 @@ export const ClubsMapView: React.FC<ClubsMapViewProps> = ({
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [isLocating, setIsLocating] = useState<boolean>(false);
   const [mapLoaded, setMapLoaded] = useState<boolean>(false);
+  const [zoomLevel, setZoomLevel] = useState<number>(13);
+  const EXPAND_ZOOM_THRESHOLD = 14;
 
   // Mar del Plata default center coordinates
   const DEFAULT_CENTER = { lat: -37.9950, lng: -57.5680 };
@@ -164,6 +166,11 @@ export const ClubsMapView: React.FC<ClubsMapViewProps> = ({
       fadeAnimation: true,
       zoomAnimation: true,
     }).setView([DEFAULT_CENTER.lat, DEFAULT_CENTER.lng], 13);
+
+    // Track dynamic zoom level for Google Maps style pin clustering/expansion
+    map.on('zoomend', () => {
+      setZoomLevel(map.getZoom());
+    });
 
     // Google Maps tile layer (identical to mobile app)
     L.tileLayer('https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
@@ -238,7 +245,7 @@ export const ClubsMapView: React.FC<ClubsMapViewProps> = ({
     );
   };
 
-  // 4. Update Club Markers Reactively
+  // 4. Update Club Markers Reactively (Dynamic Zoom: Teardrop on Zoom-Out / Full Pill on Zoom-In)
   useEffect(() => {
     const L = (window as any).L;
     const map = mapInstanceRef.current;
@@ -246,6 +253,8 @@ export const ClubsMapView: React.FC<ClubsMapViewProps> = ({
     if (!L || !map || !group) return;
 
     group.clearLayers();
+
+    const isZoomExpanded = zoomLevel >= EXPAND_ZOOM_THRESHOLD;
 
     clubs.forEach((club) => {
       // Verify valid coordinates
@@ -268,35 +277,58 @@ export const ClubsMapView: React.FC<ClubsMapViewProps> = ({
       const priceVal = club.minPrice || (club.minPricePerPlayer ? club.minPricePerPlayer * 4 : 28000);
       const formattedPrice = Number(priceVal).toLocaleString('es-AR');
 
-      const pinHtml = `
-        <div class="custom-pin ${isActive ? 'active' : ''}">
-          <span class="pin-icon">${sportIconSvg}</span>
-          <span class="pin-name">${club.name}</span>
-          <span class="pin-price">$${formattedPrice}</span>
-        </div>
-      `;
+      let markerIcon;
 
-      const markerIcon = L.divIcon({
-        className: 'custom-pin-wrapper',
-        html: pinHtml,
-        iconSize: [140, 32],
-        iconAnchor: [70, 16],
-      });
+      if (isActive || isZoomExpanded) {
+        // Expanded Full Pill with Name and Price
+        const pinHtml = `
+          <div class="custom-pin ${isActive ? 'active' : ''}">
+            <span class="pin-icon">${sportIconSvg}</span>
+            <span class="pin-name">${club.name}</span>
+            <span class="pin-price">$${formattedPrice}</span>
+          </div>
+        `;
+
+        markerIcon = L.divIcon({
+          className: 'custom-pin-wrapper',
+          html: pinHtml,
+          iconSize: [140, 32],
+          iconAnchor: [70, 16],
+        });
+      } else {
+        // Compact Teardrop Pin with Needle Tip (Google Maps style — uncluttered)
+        const pinHtml = `
+          <div class="map-teardrop-pin" title="${club.name} · $${formattedPrice}">
+            <div class="pin-tooltip">${club.name} · $${formattedPrice}</div>
+            <div class="teardrop-head">
+              <span class="pin-icon">${sportIconSvg}</span>
+            </div>
+            <div class="teardrop-needle"></div>
+          </div>
+        `;
+
+        markerIcon = L.divIcon({
+          className: 'teardrop-pin-wrapper',
+          html: pinHtml,
+          iconSize: [32, 38],
+          iconAnchor: [16, 38],
+        });
+      }
 
       const marker = L.marker([lat, lng], {
         icon: markerIcon,
-        zIndexOffset: isActive ? 2000 : 100,
+        zIndexOffset: isActive ? 2500 : (isZoomExpanded ? 150 : 100),
       });
 
       marker.on('click', (e: any) => {
         L.DomEvent.stopPropagation(e);
         setSelectedClub(club);
-        map.flyTo([lat, lng], 15, { animate: true, duration: 0.6 });
+        map.flyTo([lat, lng], Math.max(map.getZoom(), 15), { animate: true, duration: 0.6 });
       });
 
       group.addLayer(marker);
     });
-  }, [clubs, selectedClub, mapLoaded]);
+  }, [clubs, selectedClub, mapLoaded, zoomLevel]);
 
   // Zoom controls
   const handleZoomIn = () => {
@@ -492,6 +524,86 @@ export const ClubsMapView: React.FC<ClubsMapViewProps> = ({
         }
         .custom-pin.active .pin-price {
           background: rgba(0, 0, 0, 0.35) !important;
+        }
+
+        /* ── Teardrop Pin (Google Maps style circular marker with needle/pointer) ── */
+        .teardrop-pin-wrapper {
+          background: transparent !important;
+          border: none !important;
+        }
+        .map-teardrop-pin {
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          cursor: pointer;
+          filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.85));
+          transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), filter 0.2s ease;
+        }
+        .map-teardrop-pin:hover {
+          transform: scale(1.18) translateY(-2px);
+          filter: drop-shadow(0 6px 16px rgba(252, 28, 70, 0.6));
+          z-index: 2500 !important;
+        }
+        .map-teardrop-pin .teardrop-head {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          background: #0a0a0a;
+          border: 1.8px solid var(--color-crimson-signal);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: var(--color-crimson-signal);
+          box-shadow: 0 0 10px rgba(252, 28, 70, 0.35);
+          transition: all 0.2s ease;
+        }
+        .map-teardrop-pin:hover .teardrop-head {
+          background: var(--color-crimson-signal);
+          border-color: #ffffff;
+          color: #ffffff;
+          box-shadow: 0 0 16px rgba(252, 28, 70, 0.7);
+        }
+        .map-teardrop-pin .teardrop-needle {
+          width: 0;
+          height: 0;
+          border-left: 5px solid transparent;
+          border-right: 5px solid transparent;
+          border-top: 6px solid var(--color-crimson-signal);
+          margin-top: -1px;
+          transition: border-top-color 0.2s ease;
+        }
+        .map-teardrop-pin:hover .teardrop-needle {
+          border-top-color: #ffffff;
+        }
+
+        /* Tooltip on hover for compact teardrop pin */
+        .map-teardrop-pin .pin-tooltip {
+          position: absolute;
+          bottom: 40px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: rgba(10, 10, 10, 0.95);
+          border: 1px solid rgba(252, 28, 70, 0.45);
+          backdrop-filter: blur(8px);
+          color: #ffffff;
+          font-family: 'Space Grotesk', sans-serif;
+          font-size: 10.5px;
+          font-weight: 700;
+          letter-spacing: 0.4px;
+          text-transform: uppercase;
+          padding: 3px 9px;
+          border-radius: 9999px;
+          white-space: nowrap;
+          pointer-events: none;
+          opacity: 0;
+          transition: opacity 0.15s ease, transform 0.15s ease;
+          box-shadow: 0 4px 14px rgba(0, 0, 0, 0.9);
+          z-index: 3000;
+        }
+        .map-teardrop-pin:hover .pin-tooltip {
+          opacity: 1;
+          transform: translateX(-50%) translateY(-3px);
         }
 
         /* User Location Pulsing Dot */
