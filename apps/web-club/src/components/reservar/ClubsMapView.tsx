@@ -308,57 +308,28 @@ export const ClubsMapView: React.FC<ClubsMapViewProps> = ({
 
   return (
     <div
+      className="clubs-map-container"
       style={{
         position: 'relative',
         width: '100%',
-        height: 'calc(100vh - 220px)',
-        minHeight: 560,
+        height: 'clamp(520px, 72vh, 820px)',
         backgroundColor: '#070707',
         border: '1px solid rgba(76, 76, 76, 0.4)',
         overflow: 'hidden',
+        isolation: 'isolate',
+        zIndex: 1,
       }}
     >
       {/* ── Leaflet Canvas Mount ── */}
       <div ref={mapContainerRef} style={{ width: '100%', height: '100%', zIndex: 1 }} />
 
-      {/* ── Floating Map Controls (Right Top) ── */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 20,
-          right: 20,
-          zIndex: 1000,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 8,
-        }}
-      >
+      {/* ── Floating Map Controls (Right Top — Contained & Protected) ── */}
+      <div className="clubs-map-controls">
         <button
           type="button"
           onClick={handleZoomIn}
           title="Acercar mapa"
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 'var(--radius-full)',
-            backgroundColor: '#0a0a0a',
-            border: '1px solid rgba(76, 76, 76, 0.5)',
-            color: '#ffffff',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            boxShadow: '0 4px 14px rgba(0, 0, 0, 0.6)',
-            transition: 'all 0.2s ease',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = 'rgba(252, 28, 70, 0.2)';
-            e.currentTarget.style.borderColor = 'var(--color-crimson-signal)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = '#0a0a0a';
-            e.currentTarget.style.borderColor = 'rgba(76, 76, 76, 0.5)';
-          }}
+          className="map-control-btn"
         >
           <Icons.Plus size={16} />
         </button>
@@ -367,28 +338,7 @@ export const ClubsMapView: React.FC<ClubsMapViewProps> = ({
           type="button"
           onClick={handleZoomOut}
           title="Alejar mapa"
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 'var(--radius-full)',
-            backgroundColor: '#0a0a0a',
-            border: '1px solid rgba(76, 76, 76, 0.5)',
-            color: '#ffffff',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            boxShadow: '0 4px 14px rgba(0, 0, 0, 0.6)',
-            transition: 'all 0.2s ease',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = 'rgba(252, 28, 70, 0.2)';
-            e.currentTarget.style.borderColor = 'var(--color-crimson-signal)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = '#0a0a0a';
-            e.currentTarget.style.borderColor = 'rgba(76, 76, 76, 0.5)';
-          }}
+          className="map-control-btn"
         >
           <Icons.Minus size={16} />
         </button>
@@ -397,128 +347,36 @@ export const ClubsMapView: React.FC<ClubsMapViewProps> = ({
           type="button"
           onClick={() => handleLocateUser(true)}
           title="Mi ubicación actual"
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 'var(--radius-full)',
-            backgroundColor: isLocating ? 'rgba(252, 28, 70, 0.25)' : '#0a0a0a',
-            border: `1px solid ${isLocating ? 'var(--color-crimson-signal)' : 'rgba(76, 76, 76, 0.5)'}`,
-            color: 'var(--color-crimson-signal)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            boxShadow: '0 4px 14px rgba(0, 0, 0, 0.6)',
-            transition: 'all 0.2s ease',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = 'rgba(252, 28, 70, 0.2)';
-            e.currentTarget.style.borderColor = 'var(--color-crimson-signal)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = isLocating ? 'rgba(252, 28, 70, 0.25)' : '#0a0a0a';
-            e.currentTarget.style.borderColor = isLocating ? 'var(--color-crimson-signal)' : 'rgba(76, 76, 76, 0.5)';
-          }}
+          className={`map-control-btn ${isLocating ? 'locating' : ''}`}
         >
-          <Icons.Locate size={18} />
+          <Icons.Locate size={17} />
         </button>
       </div>
 
       {/* ── Club Counter Badge (Left Top) ── */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 20,
-          left: 20,
-          zIndex: 1000,
-          padding: '6px 14px',
-          backgroundColor: 'rgba(10, 10, 10, 0.85)',
-          backdropFilter: 'blur(10px)',
-          border: '1px solid rgba(76, 76, 76, 0.5)',
-          borderRadius: 'var(--radius-full)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.7)',
-        }}
-      >
-        <span
-          style={{
-            width: 8,
-            height: 8,
-            borderRadius: '50%',
-            backgroundColor: 'var(--color-crimson-signal)',
-            display: 'inline-block',
-            boxShadow: '0 0 8px var(--color-crimson-signal)',
-          }}
-        />
-        <span
-          style={{
-            fontSize: 11,
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            letterSpacing: '0.8px',
-            color: 'var(--color-frost)',
-          }}
-        >
-          {clubs.length} {clubs.length === 1 ? 'complejo en el mapa' : 'complejos en el mapa'}
+      <div className="clubs-map-counter">
+        <span className="pulse-dot" />
+        <span className="counter-text">
+          {clubs.length} {clubs.length === 1 ? 'complejo' : 'complejos'}
         </span>
       </div>
 
       {/* ── Floating Club Preview Card (Bottom Center) ── */}
       {selectedClub && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 24,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: 'calc(100% - 40px)',
-            maxWidth: 640,
-            zIndex: 1000,
-            backgroundColor: '#0a0a0a',
-            border: '1px solid rgba(76, 76, 76, 0.5)',
-            boxShadow: '0 12px 35px rgba(0, 0, 0, 0.85), 0 0 25px rgba(252, 28, 70, 0.15)',
-            padding: 16,
-            animation: 'cardSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
-          }}
-        >
+        <div className="clubs-map-card">
           {/* Close Card Button */}
           <button
             type="button"
             onClick={() => setSelectedClub(null)}
-            style={{
-              position: 'absolute',
-              top: 10,
-              right: 10,
-              width: 28,
-              height: 28,
-              borderRadius: 'var(--radius-full)',
-              backgroundColor: 'rgba(255, 255, 255, 0.06)',
-              border: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              color: 'var(--color-ash)',
-              zIndex: 2,
-            }}
+            className="map-card-close"
+            title="Cerrar vista previa"
           >
-            <Icons.Close size={14} />
+            <Icons.Close size={13} />
           </button>
 
-          <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+          <div className="map-card-inner">
             {/* Club Thumbnail Photo */}
-            <div
-              style={{
-                width: 110,
-                height: 96,
-                flexShrink: 0,
-                position: 'relative',
-                overflow: 'hidden',
-                backgroundColor: '#161616',
-              }}
-            >
+            <div className="map-card-thumb">
               <img
                 src={
                   selectedClub.images?.[0] ||
@@ -526,69 +384,38 @@ export const ClubsMapView: React.FC<ClubsMapViewProps> = ({
                   'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=500&auto=format&fit=crop&q=80'
                 }
                 alt={selectedClub.name}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                }}
               />
             </div>
 
             {/* Club Meta & Info */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
+            <div className="map-card-info">
+              <div className="map-card-meta-row">
                 <SportBadge sports={selectedClub.sports} size="sm" />
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                <div className="map-card-rating">
                   <Icons.Star size={11} fill="#FACC15" color="#FACC15" />
-                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-frost)' }}>
-                    {selectedClub.rating || 4.8}
-                  </span>
+                  <span>{selectedClub.rating || 4.8}</span>
                 </div>
                 {userLocation && selectedClub.latitude && selectedClub.longitude && (
-                  <span style={{ fontSize: 11, color: 'var(--color-ash)' }}>
+                  <span className="map-card-distance">
                     • a {calculateDistanceKm(userLocation.lat, userLocation.lng, selectedClub.latitude, selectedClub.longitude).toFixed(1)} km
                   </span>
                 )}
               </div>
 
-              <h4
-                style={{
-                  fontSize: 16,
-                  fontWeight: 700,
-                  color: 'var(--color-frost)',
-                  margin: '0 0 4px',
-                  textTransform: 'uppercase',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-              >
+              <h4 className="map-card-name">
                 {selectedClub.name}
               </h4>
 
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  fontSize: 12,
-                  color: 'var(--color-ash)',
-                  marginBottom: 10,
-                }}
-              >
+              <div className="map-card-address">
                 <Icons.MapPin size={12} color="var(--color-graphite)" />
-                <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {selectedClub.address}, {selectedClub.city}
-                </span>
+                <span>{selectedClub.address}, {selectedClub.city}</span>
               </div>
 
               {/* Price & Action Row */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="map-card-footer">
                 <div>
-                  <span style={{ fontSize: 10, color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '0.6px', display: 'block' }}>
-                    Turno desde
-                  </span>
-                  <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--color-frost)' }}>
+                  <span className="map-card-price-label">Turno desde</span>
+                  <span className="map-card-price-val">
                     ${Number(selectedClub.minPrice || (selectedClub.minPricePerPlayer ? selectedClub.minPricePerPlayer * 4 : 28000)).toLocaleString('es-AR')}
                   </span>
                 </div>
@@ -596,23 +423,7 @@ export const ClubsMapView: React.FC<ClubsMapViewProps> = ({
                 <button
                   type="button"
                   onClick={() => onSelectClub(selectedClub)}
-                  style={{
-                    backgroundColor: 'var(--color-crimson-signal)',
-                    color: '#ffffff',
-                    border: 'none',
-                    borderRadius: 'var(--radius-full)',
-                    padding: '8px 18px',
-                    fontSize: 11.5,
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.6px',
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    boxShadow: '0 4px 16px rgba(252, 28, 70, 0.4)',
-                    transition: 'all 0.2s ease',
-                  }}
+                  className="map-card-cta"
                 >
                   <span>Ver Canchas</span>
                   <Icons.ArrowRight size={12} />
@@ -725,12 +536,222 @@ export const ClubsMapView: React.FC<ClubsMapViewProps> = ({
         @keyframes cardSlideUp {
           from {
             opacity: 0;
-            transform: translate(-50%, 20px);
+            transform: translate(-50%, 16px);
           }
           to {
             opacity: 1;
             transform: translate(-50%, 0);
           }
+        }
+
+        /* Contained Map Controls */
+        .clubs-map-controls {
+          position: absolute;
+          top: 18px;
+          right: 18px;
+          z-index: 20;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          pointer-events: auto;
+        }
+        .map-control-btn {
+          width: 38px;
+          height: 38px;
+          border-radius: 9999px;
+          background-color: #0a0a0a;
+          border: 1px solid rgba(255, 255, 255, 0.16);
+          color: #ffffff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.7);
+          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .map-control-btn:hover {
+          background-color: rgba(252, 28, 70, 0.18);
+          border-color: var(--color-crimson-signal);
+          transform: scale(1.05);
+        }
+        .map-control-btn.locating {
+          background-color: rgba(252, 28, 70, 0.25);
+          border-color: var(--color-crimson-signal);
+          color: var(--color-crimson-signal);
+        }
+
+        /* Contained Counter Badge */
+        .clubs-map-counter {
+          position: absolute;
+          top: 18px;
+          left: 18px;
+          z-index: 20;
+          padding: 6px 14px;
+          background-color: rgba(10, 10, 10, 0.9);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border: 1px solid rgba(255, 255, 255, 0.16);
+          border-radius: 9999px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
+          pointer-events: auto;
+        }
+        .clubs-map-counter .pulse-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background-color: var(--color-crimson-signal);
+          display: inline-block;
+          box-shadow: 0 0 8px var(--color-crimson-signal);
+        }
+        .clubs-map-counter .counter-text {
+          font-size: 11px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.8px;
+          color: var(--color-frost);
+        }
+
+        /* Contained Preview Card */
+        .clubs-map-card {
+          position: absolute;
+          bottom: 20px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: calc(100% - 36px);
+          max-width: 580px;
+          z-index: 25;
+          background-color: #0a0a0a;
+          border: 1px solid rgba(252, 28, 70, 0.35);
+          box-shadow: 0 16px 40px rgba(0, 0, 0, 0.9), 0 0 25px rgba(252, 28, 70, 0.12);
+          padding: 14px;
+          border-radius: 0px;
+          animation: cardSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+          pointer-events: auto;
+        }
+        .map-card-close {
+          position: absolute;
+          top: 8px;
+          right: 8px;
+          width: 26px;
+          height: 26px;
+          border-radius: 9999px;
+          background-color: rgba(255, 255, 255, 0.08);
+          border: none;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          color: var(--color-ash);
+          z-index: 2;
+          transition: background-color 0.2s;
+        }
+        .map-card-close:hover {
+          background-color: rgba(252, 28, 70, 0.3);
+          color: #ffffff;
+        }
+        .map-card-inner {
+          display: flex;
+          gap: 14px;
+          align-items: center;
+        }
+        .map-card-thumb {
+          width: 104px;
+          height: 94px;
+          flex-shrink: 0;
+          position: relative;
+          overflow: hidden;
+          background-color: #161616;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .map-card-thumb img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+        .map-card-info {
+          flex: 1;
+          min-width: 0;
+        }
+        .map-card-meta-row {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 4px;
+          flex-wrap: wrap;
+        }
+        .map-card-rating {
+          display: inline-flex;
+          align-items: center;
+          gap: 3px;
+          font-size: 11px;
+          font-weight: 700;
+          color: var(--color-frost);
+        }
+        .map-card-distance {
+          font-size: 11px;
+          color: var(--color-ash);
+        }
+        .map-card-name {
+          font-size: 15px;
+          font-weight: 700;
+          color: var(--color-frost);
+          margin: 0 0 3px;
+          text-transform: uppercase;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .map-card-address {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          font-size: 11.5px;
+          color: var(--color-ash);
+          margin-bottom: 8px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .map-card-footer {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        .map-card-price-label {
+          font-size: 9.5px;
+          color: var(--color-graphite);
+          text-transform: uppercase;
+          letter-spacing: 0.6px;
+          display: block;
+        }
+        .map-card-price-val {
+          font-size: 13.5px;
+          font-weight: 800;
+          color: var(--color-frost);
+        }
+        .map-card-cta {
+          background-color: var(--color-crimson-signal);
+          color: #ffffff;
+          border: none;
+          border-radius: 9999px;
+          padding: 7px 16px;
+          font-size: 11px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          box-shadow: 0 4px 16px rgba(252, 28, 70, 0.4);
+          transition: all 0.2s ease;
+        }
+        .map-card-cta:hover {
+          filter: brightness(1.15);
+          transform: scale(1.02);
         }
 
         /* Leaflet Dark Map Adjustments */
@@ -740,6 +761,68 @@ export const ClubsMapView: React.FC<ClubsMapViewProps> = ({
         }
         .leaflet-tile {
           filter: brightness(0.85) contrast(1.15) saturate(0.9);
+        }
+
+        /* Responsive Mobile Adjustments */
+        @media (max-width: 768px) {
+          .clubs-map-container {
+            height: clamp(460px, calc(100dvh - 240px), 640px) !important;
+          }
+          .clubs-map-controls {
+            top: 12px !important;
+            right: 12px !important;
+            gap: 6px !important;
+          }
+          .map-control-btn {
+            width: 36px !important;
+            height: 36px !important;
+          }
+          .clubs-map-counter {
+            top: 12px !important;
+            left: 12px !important;
+            padding: 4px 10px !important;
+          }
+          .clubs-map-counter .counter-text {
+            font-size: 10px !important;
+            letter-spacing: 0.4px !important;
+          }
+          .clubs-map-card {
+            bottom: 10px !important;
+            left: 8px !important;
+            right: 8px !important;
+            width: auto !important;
+            max-width: none !important;
+            transform: none !important;
+            padding: 10px !important;
+          }
+          @keyframes cardSlideUp {
+            from {
+              opacity: 0;
+              transform: translateY(16px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+          .map-card-thumb {
+            width: 76px !important;
+            height: 76px !important;
+          }
+          .map-card-name {
+            font-size: 13.5px !important;
+          }
+          .map-card-address {
+            font-size: 11px !important;
+            margin-bottom: 6px !important;
+          }
+          .map-card-price-val {
+            font-size: 12.5px !important;
+          }
+          .map-card-cta {
+            padding: 6px 12px !important;
+            font-size: 10px !important;
+          }
         }
       `}</style>
     </div>

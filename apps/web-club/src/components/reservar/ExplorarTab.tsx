@@ -147,34 +147,25 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
   }, [clubs, searchTerm, sportFilter, selectedAmenity]);
 
   return (
-    <div style={{ maxWidth: 1400, margin: '0 auto', padding: '120px 24px 80px' }}>
+    <div className="explorar-root">
       {/* ── Header & View Toggle ── */}
-      <div style={{ marginBottom: 32 }}>
-        <div style={{ fontSize: 11, color: 'var(--color-crimson-signal)', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 700, marginBottom: 8 }}>
+      <div className="explorar-header-wrap">
+        <div style={{ fontSize: 10.5, color: 'var(--color-crimson-signal)', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 700, marginBottom: 4 }}>
           03 / DIRECTORIO NACIONAL DE CLUBES
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 16 }}>
-          <div>
-            <h1 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 700, color: 'var(--color-frost)', textTransform: 'uppercase', letterSpacing: '-1px', margin: 0 }}>
+        <div className="explorar-header-flex">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <h1 className="explorar-title">
               Explorar Complejos
             </h1>
-            <p style={{ color: 'var(--color-ash)', fontSize: 14, marginTop: 6, marginBottom: 0 }}>
-              Encontrá los mejores clubes deportivos en el mapa interactivo con sus canchas y ubicaciones exactas.
-            </p>
+            <span className="explorar-counter-badge">
+              <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: 'var(--color-crimson-signal)', display: 'inline-block' }} />
+              <span>{filteredClubs.length} {filteredClubs.length === 1 ? 'complejo' : 'complejos'}</span>
+            </span>
           </div>
 
           {/* Conmutador Vista Mapa / Lista (Idéntico a la App Móvil) */}
-          <div
-            style={{
-              display: 'inline-flex',
-              padding: 4,
-              backgroundColor: '#0a0a0a',
-              border: '1px solid rgba(76, 76, 76, 0.5)',
-              borderRadius: 'var(--radius-full)',
-              gap: 4,
-              boxShadow: '0 4px 14px rgba(0, 0, 0, 0.5)',
-            }}
-          >
+          <div className="explorar-view-toggle">
             <button
               type="button"
               onClick={() => setViewMode('MAP')}
@@ -183,20 +174,20 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
                 color: viewMode === 'MAP' ? '#ffffff' : 'var(--color-ash)',
                 border: 'none',
                 borderRadius: 'var(--radius-full)',
-                padding: '8px 18px',
-                fontSize: 12,
+                padding: '7px 16px',
+                fontSize: 11.5,
                 fontWeight: 700,
                 cursor: 'pointer',
                 textTransform: 'uppercase',
                 letterSpacing: '0.6px',
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: 7,
+                gap: 6,
                 boxShadow: viewMode === 'MAP' ? '0 2px 10px rgba(252, 28, 70, 0.35)' : 'none',
                 transition: 'all 0.2s ease',
               }}
             >
-              <Icons.Map size={14} color={viewMode === 'MAP' ? '#ffffff' : 'var(--color-ash)'} />
+              <Icons.Map size={13} color={viewMode === 'MAP' ? '#ffffff' : 'var(--color-ash)'} />
               <span>Mapa</span>
             </button>
             <button
@@ -207,20 +198,20 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
                 color: viewMode === 'LIST' ? '#ffffff' : 'var(--color-ash)',
                 border: 'none',
                 borderRadius: 'var(--radius-full)',
-                padding: '8px 18px',
-                fontSize: 12,
+                padding: '7px 16px',
+                fontSize: 11.5,
                 fontWeight: 700,
                 cursor: 'pointer',
                 textTransform: 'uppercase',
                 letterSpacing: '0.6px',
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: 7,
+                gap: 6,
                 boxShadow: viewMode === 'LIST' ? '0 2px 10px rgba(252, 28, 70, 0.35)' : 'none',
                 transition: 'all 0.2s ease',
               }}
             >
-              <Icons.List size={14} color={viewMode === 'LIST' ? '#ffffff' : 'var(--color-ash)'} />
+              <Icons.List size={13} color={viewMode === 'LIST' ? '#ffffff' : 'var(--color-ash)'} />
               <span>Lista</span>
             </button>
           </div>
@@ -228,26 +219,16 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
       </div>
 
       {/* ── Barra de Búsqueda & Filtros ── */}
-      <div
-        style={{
-          backgroundColor: '#0a0a0a',
-          border: '1px solid rgba(76, 76, 76, 0.4)',
-          padding: '16px 20px',
-          marginBottom: 28,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 16,
-        }}
-      >
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+      <div className="explorar-filter-box">
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
           {/* Input Buscador */}
-          <div style={{ position: 'relative', flex: 1, minWidth: 280 }}>
+          <div style={{ position: 'relative', flex: 1, minWidth: 240 }}>
             <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-graphite)' }}>
-              <Icons.Search size={16} />
+              <Icons.Search size={15} />
             </span>
             <input
               type="text"
-              placeholder="Buscar por club, barrio o ciudad..."
+              placeholder="Buscar club, barrio o zona..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{
@@ -255,65 +236,92 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
                 backgroundColor: 'rgba(255, 255, 255, 0.04)',
                 border: '1px solid rgba(76, 76, 76, 0.4)',
                 color: 'var(--color-frost)',
-                padding: '12px 14px 12px 42px',
-                fontSize: 13,
+                padding: searchTerm ? '10px 36px 10px 38px' : '10px 14px 10px 38px',
+                fontSize: 12.5,
                 outline: 'none',
                 fontFamily: 'Space Grotesk, sans-serif',
+                borderRadius: '0px',
               }}
             />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm('')}
+                style={{
+                  position: 'absolute',
+                  right: 10,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--color-ash)',
+                  cursor: 'pointer',
+                  padding: 4,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                title="Borrar búsqueda"
+              >
+                ✕
+              </button>
+            )}
           </div>
 
-          {/* Toggle Deporte (Sliding Pill Switch — hay-equipo-system) */}
-          <div
-            ref={explorarSportContainerRef as any}
-            style={{
-              position: 'relative',
-              display: 'inline-flex',
-              padding: 4,
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
-              borderRadius: 'var(--radius-full)',
-            }}
-          >
-            {/* Sliding Pill Indicator */}
-            <div style={explorarSportIndicatorStyle} />
+          {/* Toggle Deporte (Sliding Pill Switch) */}
+          <div className="explorar-sport-scroll">
+            <div
+              ref={explorarSportContainerRef as any}
+              style={{
+                position: 'relative',
+                display: 'inline-flex',
+                padding: 3,
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                borderRadius: 'var(--radius-full)',
+              }}
+            >
+              {/* Sliding Pill Indicator */}
+              <div style={explorarSportIndicatorStyle} />
 
-            {(['ALL', 'PADEL', 'FUTBOL', 'BOTH'] as const).map((sport) => (
-              <button
-                key={sport}
-                ref={setExplorarSportItemRef(sport)}
-                onClick={() => setSportFilter(sport)}
-                style={{
-                  position: 'relative',
-                  zIndex: 2,
-                  backgroundColor: 'transparent',
-                  color: sportFilter === sport ? '#ffffff' : 'var(--color-ash)',
-                  border: 'none',
-                  borderRadius: 'var(--radius-full)',
-                  padding: '8px 16px',
-                  fontSize: 12,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.4px',
-                  transition: 'color 0.2s ease',
-                }}
-              >
-                {sport === 'ALL' ? 'Todos' : sport === 'PADEL' ? 'Pádel' : sport === 'FUTBOL' ? 'Fútbol' : 'Ambos'}
-              </button>
-            ))}
+              {(['ALL', 'PADEL', 'FUTBOL', 'BOTH'] as const).map((sport) => (
+                <button
+                  key={sport}
+                  ref={setExplorarSportItemRef(sport)}
+                  onClick={() => setSportFilter(sport)}
+                  style={{
+                    position: 'relative',
+                    zIndex: 2,
+                    backgroundColor: 'transparent',
+                    color: sportFilter === sport ? '#ffffff' : 'var(--color-ash)',
+                    border: 'none',
+                    borderRadius: 'var(--radius-full)',
+                    padding: '7px 14px',
+                    fontSize: 11.5,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.4px',
+                    transition: 'color 0.2s ease',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {sport === 'ALL' ? 'Todos' : sport === 'PADEL' ? 'Pádel' : sport === 'FUTBOL' ? 'Fútbol' : 'Ambos'}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* Amenity Filters */}
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-          <span style={{ fontSize: 11, color: 'var(--color-graphite)', textTransform: 'uppercase', fontWeight: 700, marginRight: 6 }}>
+        <div className="explorar-amenities-row">
+          <span style={{ fontSize: 10.5, color: 'var(--color-graphite)', textTransform: 'uppercase', fontWeight: 700, marginRight: 4 }}>
             Servicios:
           </span>
           {[
-            { id: 'ALL', label: 'Todos los servicios' },
-            { id: 'COVERED', label: 'Techada / Cubierta' },
+            { id: 'ALL', label: 'Todos' },
+            { id: 'COVERED', label: 'Techada' },
             { id: 'PARKING', label: 'Estacionamiento' },
-            { id: 'BUFFET', label: 'Bar & Buffet' },
+            { id: 'BUFFET', label: 'Buffet & Bar' },
           ].map((item) => (
             <button
               key={item.id}
@@ -323,11 +331,12 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
                 color: selectedAmenity === item.id ? 'var(--color-crimson-signal)' : 'var(--color-ash)',
                 border: `1px solid ${selectedAmenity === item.id ? 'var(--color-crimson-signal)' : 'rgba(76, 76, 76, 0.4)'}`,
                 borderRadius: 'var(--radius-full)',
-                padding: '6px 14px',
-                fontSize: 11,
+                padding: '5px 12px',
+                fontSize: 10.5,
                 fontWeight: 600,
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
+                whiteSpace: 'nowrap',
               }}
             >
               {item.label}
@@ -572,6 +581,108 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
           ))}
         </div>
       )}
+
+      {/* ── Responsive Global Styles for Explorar Tab ── */}
+      <style jsx global>{`
+        .explorar-root {
+          max-width: 1400px;
+          margin: 0 auto;
+          padding: 92px 24px 60px;
+        }
+        .explorar-header-wrap {
+          margin-bottom: 18px;
+        }
+        .explorar-header-flex {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 12px;
+        }
+        .explorar-title {
+          font-size: clamp(22px, 3.5vw, 34px);
+          font-weight: 700;
+          color: var(--color-frost);
+          text-transform: uppercase;
+          letter-spacing: -0.8px;
+          margin: 0;
+        }
+        .explorar-counter-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 3px 10px;
+          border-radius: 9999px;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          font-size: 11px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          color: var(--color-ash);
+        }
+        .explorar-view-toggle {
+          display: inline-flex;
+          padding: 3px;
+          background-color: #0a0a0a;
+          border: 1px solid rgba(76, 76, 76, 0.5);
+          border-radius: 9999px;
+          gap: 4px;
+          box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+        }
+        .explorar-filter-box {
+          background-color: #0a0a0a;
+          border: 1px solid rgba(76, 76, 76, 0.4);
+          padding: 12px 16px;
+          margin-bottom: 18px;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+        .explorar-sport-scroll {
+          display: flex;
+          align-items: center;
+        }
+        .explorar-amenities-row {
+          display: flex;
+          gap: 6px;
+          flex-wrap: wrap;
+          align-items: center;
+        }
+
+        @media (max-width: 768px) {
+          .explorar-root {
+            padding: 82px 12px 90px !important;
+          }
+          .explorar-header-wrap {
+            margin-bottom: 12px !important;
+          }
+          .explorar-header-flex {
+            align-items: flex-start !important;
+          }
+          .explorar-title {
+            font-size: 20px !important;
+          }
+          .explorar-filter-box {
+            padding: 10px 12px !important;
+            margin-bottom: 12px !important;
+            gap: 8px !important;
+          }
+          .explorar-sport-scroll {
+            width: 100% !important;
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+            padding-bottom: 2px !important;
+          }
+          .explorar-amenities-row {
+            width: 100% !important;
+            overflow-x: auto !important;
+            flex-wrap: nowrap !important;
+            -webkit-overflow-scrolling: touch !important;
+            padding-bottom: 2px !important;
+          }
+        }
+      `}</style>
     </div>
   );
 };

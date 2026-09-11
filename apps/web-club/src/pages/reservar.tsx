@@ -1391,7 +1391,7 @@ export default function ReservarPage() {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          zIndex: 40,
+          zIndex: 100,
           background: 'rgba(0, 0, 0, 0.94)',
           backdropFilter: 'blur(16px)',
           borderBottom: '1px solid rgba(76, 76, 76, 0.35)',
