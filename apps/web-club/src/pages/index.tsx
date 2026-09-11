@@ -928,16 +928,12 @@ export default function LandingPage() {
           <HairlineRule inView={downloadInView} delay={0.1} />
 
           <div
-            className="landing-download-grid"
             style={{
               marginTop: 65,
-              display: 'grid',
-              gridTemplateColumns: '1fr auto',
-              gap: 86,
-              alignItems: 'center',
+              maxWidth: 820,
             }}
           >
-            {/* Left — Heading + description */}
+            {/* Heading + description */}
             <div>
               <div
                 style={{
@@ -993,7 +989,7 @@ export default function LandingPage() {
                 </div>
               </h2>
 
-              <TrackingBlurReveal inView={downloadInView} delay={0.6} style={{ fontSize: '17px', color: 'var(--color-ash)', lineHeight: 1.5, maxWidth: 520, margin: '0 0 36px' }}>
+              <TrackingBlurReveal inView={downloadInView} delay={0.6} style={{ fontSize: '17px', color: 'var(--color-ash)', lineHeight: 1.5, maxWidth: 560, margin: '0 0 36px' }}>
                 Estamos desarrollando la experiencia nativa para iOS y Android. Vas a poder reservar turnos en segundos, armar partidos con amigos y dividir el pago desde la cancha. Mientras tanto, podés usar nuestra versión web 100% optimizada para celulares.
               </TrackingBlurReveal>
 
@@ -1110,116 +1106,6 @@ export default function LandingPage() {
                   >
                     Próximamente
                   </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Right — High-Tech Terminal Container (90° Sharp Rectangle) */}
-            <div
-              style={{
-                opacity: downloadInView ? 1 : 0,
-                transform: downloadInView ? 'translateY(0)' : 'translateY(24px)',
-                filter: downloadInView ? 'blur(0px)' : 'blur(8px)',
-                transition: 'all 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.4s',
-                backgroundColor: '#0a0a0a',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
-                borderRadius: 0,
-                padding: '24px 24px 20px',
-                maxWidth: 320,
-                width: '100%',
-                boxShadow: '0 20px 40px rgba(0, 0, 0, 0.6)',
-              }}
-            >
-              {/* Terminal Bar */}
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  paddingBottom: 14,
-                  borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-                  marginBottom: 18,
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                  <span
-                    style={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: '50%',
-                      backgroundColor: '#10b981',
-                      boxShadow: '0 0 8px #10b981',
-                    }}
-                  />
-                  <span
-                    style={{
-                      fontSize: 10,
-                      fontWeight: 700,
-                      color: 'var(--color-frost)',
-                      textTransform: 'uppercase',
-                      letterSpacing: '1px',
-                    }}
-                  >
-                    ACCESO WEB MOBILE
-                  </span>
-                </div>
-                <span
-                  style={{
-                    fontSize: 9,
-                    color: '#10b981',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.8px',
-                    fontWeight: 700,
-                    padding: '2px 7px',
-                    borderRadius: 'var(--radius-full)',
-                    backgroundColor: 'rgba(16, 185, 129, 0.12)',
-                  }}
-                >
-                  ACTIVO
-                </span>
-              </div>
-
-              {/* QR Box */}
-              <div
-                style={{
-                  width: '100%',
-                  aspectRatio: '1 / 1',
-                  maxWidth: 200,
-                  margin: '0 auto 16px',
-                  backgroundColor: '#000000',
-                  border: '1px solid rgba(255, 255, 255, 0.15)',
-                  borderRadius: 0,
-                  padding: 14,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <QRCodeSVG />
-              </div>
-
-              {/* Terminal Caption */}
-              <div style={{ textAlign: 'center' }}>
-                <div
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: 'var(--color-frost)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.8px',
-                    marginBottom: 6,
-                  }}
-                >
-                  ESCANEÁ CON TU CELULAR
-                </div>
-                <div
-                  style={{
-                    fontSize: 11.5,
-                    color: 'var(--color-ash)',
-                    lineHeight: 1.45,
-                  }}
-                >
-                  Abrí la plataforma web mobile en tu navegador o agregala a tu pantalla de inicio mientras preparamos el lanzamiento en tiendas.
                 </div>
               </div>
             </div>
