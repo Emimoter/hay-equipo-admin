@@ -83,10 +83,70 @@ const Icons = {
   ),
 };
 
-// SVG strings for Leaflet custom HTML markers
-const PADEL_SVG = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2a7 7 0 0 0-7 7c0 3.1 2 5.7 4.9 6.6L9 21a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1l-.9-5.4A7.002 7.002 0 0 0 19 9a7 7 0 0 0-7-7z"/><circle cx="10" cy="8" r="1" fill="currentColor"/><circle cx="14" cy="8" r="1" fill="currentColor"/><circle cx="12" cy="11" r="1" fill="currentColor"/></svg>`;
-const FUTBOL_SVG = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polygon points="12 6 15 9 14 13 10 13 9 9" fill="currentColor"/></svg>`;
-const DUAL_SVG = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3a4.5 4.5 0 0 0-4.5 4.5c0 2 1.3 3.7 3.1 4.2L5 15h3l-.6-3.3A4.5 4.5 0 0 0 7 3z"/><circle cx="17" cy="12" r="5"/><polygon points="17 9 18.5 10.5 18 12.5 16 12.5 15.5 10.5" fill="currentColor"/></svg>`;
+// Canonical SVG strings matching the rest of the application (reservar.tsx / design system)
+const PADEL_SVG_PIN = `
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:auto;">
+  <ellipse cx="12" cy="10" rx="7" ry="8"/>
+  <line x1="12" y1="18" x2="12" y2="23" stroke-width="2.5"/>
+  <circle cx="10" cy="8" r="0.9" fill="currentColor"/>
+  <circle cx="14" cy="8" r="0.9" fill="currentColor"/>
+  <circle cx="12" cy="11" r="0.9" fill="currentColor"/>
+</svg>
+`;
+
+const FUTBOL_SVG_PIN = `
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:auto;">
+  <circle cx="12" cy="12" r="10"/>
+  <polygon points="12 7 15 9.5 14 13.5 10 13.5 9 9.5"/>
+  <line x1="12" y1="2" x2="12" y2="7"/>
+  <line x1="2.5" y1="9" x2="9" y2="9.5"/>
+  <line x1="21.5" y1="9" x2="15" y2="9.5"/>
+  <line x1="5.5" y1="19" x2="10" y2="13.5"/>
+  <line x1="18.5" y1="19" x2="14" y2="13.5"/>
+</svg>
+`;
+
+const DUAL_SVG_TEARDROP = `
+<div style="display:flex;align-items:center;justify-content:center;gap:2px;width:100%;height:100%;">
+  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:block;">
+    <ellipse cx="12" cy="10" rx="7" ry="8"/>
+    <line x1="12" y1="18" x2="12" y2="23" stroke-width="2.5"/>
+    <circle cx="10" cy="8" r="1" fill="currentColor"/>
+    <circle cx="14" cy="8" r="1" fill="currentColor"/>
+    <circle cx="12" cy="11" r="1" fill="currentColor"/>
+  </svg>
+  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:block;">
+    <circle cx="12" cy="12" r="10"/>
+    <polygon points="12 7 15 9.5 14 13.5 10 13.5 9 9.5"/>
+    <line x1="12" y1="2" x2="12" y2="7"/>
+    <line x1="2.5" y1="9" x2="9" y2="9.5"/>
+    <line x1="21.5" y1="9" x2="15" y2="9.5"/>
+    <line x1="5.5" y1="19" x2="10" y2="13.5"/>
+    <line x1="18.5" y1="19" x2="14" y2="13.5"/>
+  </svg>
+</div>
+`;
+
+const DUAL_SVG_PILL = `
+<span style="display:inline-flex;align-items:center;gap:3px;">
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <ellipse cx="12" cy="10" rx="7" ry="8"/>
+    <line x1="12" y1="18" x2="12" y2="23" stroke-width="2.5"/>
+    <circle cx="10" cy="8" r="0.9" fill="currentColor"/>
+    <circle cx="14" cy="8" r="0.9" fill="currentColor"/>
+    <circle cx="12" cy="11" r="0.9" fill="currentColor"/>
+  </svg>
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="10"/>
+    <polygon points="12 7 15 9.5 14 13.5 10 13.5 9 9.5"/>
+    <line x1="12" y1="2" x2="12" y2="7"/>
+    <line x1="2.5" y1="9" x2="9" y2="9.5"/>
+    <line x1="21.5" y1="9" x2="15" y2="9.5"/>
+    <line x1="5.5" y1="19" x2="10" y2="13.5"/>
+    <line x1="18.5" y1="19" x2="14" y2="13.5"/>
+  </svg>
+</span>
+`;
 
 function calculateDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371; // km
@@ -117,7 +177,7 @@ export const ClubsMapView: React.FC<ClubsMapViewProps> = ({
   const [isLocating, setIsLocating] = useState<boolean>(false);
   const [mapLoaded, setMapLoaded] = useState<boolean>(false);
   const [zoomLevel, setZoomLevel] = useState<number>(13);
-  const EXPAND_ZOOM_THRESHOLD = 14;
+  const EXPAND_ZOOM_THRESHOLD = 15;
 
   // Mar del Plata default center coordinates
   const DEFAULT_CENTER = { lat: -37.9950, lng: -57.5680 };
@@ -172,10 +232,13 @@ export const ClubsMapView: React.FC<ClubsMapViewProps> = ({
       setZoomLevel(map.getZoom());
     });
 
-    // Google Maps tile layer (identical to mobile app)
+    // Google Maps tile layer (identical to mobile app) with keepBuffer and seamless rendering
     L.tileLayer('https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
       maxZoom: 20,
       subdomains: ['0', '1', '2', '3'],
+      updateWhenIdle: false,
+      updateWhenZooming: true,
+      keepBuffer: 6,
     }).addTo(map);
 
     const markersGroup = L.layerGroup().addTo(map);
@@ -190,7 +253,36 @@ export const ClubsMapView: React.FC<ClubsMapViewProps> = ({
     // Request user location on initial load
     handleLocateUser(false);
 
+    // Staggered invalidation timers to guarantee complete tile render after DOM layout finishes
+    const invTimers = [
+      setTimeout(() => { if (mapInstanceRef.current) mapInstanceRef.current.invalidateSize(); }, 80),
+      setTimeout(() => { if (mapInstanceRef.current) mapInstanceRef.current.invalidateSize(); }, 250),
+      setTimeout(() => { if (mapInstanceRef.current) mapInstanceRef.current.invalidateSize(); }, 600),
+      setTimeout(() => { if (mapInstanceRef.current) mapInstanceRef.current.invalidateSize(); }, 1200),
+    ];
+
+    // ResizeObserver prevents cut rectangles when switching tabs or resizing container
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined' && mapContainerRef.current) {
+      ro = new ResizeObserver(() => {
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.invalidateSize({ debounceMoveend: true });
+        }
+      });
+      ro.observe(mapContainerRef.current);
+    }
+
+    const handleWindowResize = () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.invalidateSize();
+      }
+    };
+    window.addEventListener('resize', handleWindowResize);
+
     return () => {
+      invTimers.forEach(clearTimeout);
+      window.removeEventListener('resize', handleWindowResize);
+      if (ro) ro.disconnect();
       map.remove();
       mapInstanceRef.current = null;
     };
@@ -266,11 +358,15 @@ export const ClubsMapView: React.FC<ClubsMapViewProps> = ({
       const isFutbol = club.sports?.includes('FUTBOL');
       const isBoth = isPadel && isFutbol;
 
-      let sportIconSvg = PADEL_SVG;
+      let teardropIconSvg = PADEL_SVG_PIN;
+      let pillIconSvg = PADEL_SVG_PIN;
+
       if (isBoth) {
-        sportIconSvg = DUAL_SVG;
+        teardropIconSvg = DUAL_SVG_TEARDROP;
+        pillIconSvg = DUAL_SVG_PILL;
       } else if (isFutbol) {
-        sportIconSvg = FUTBOL_SVG;
+        teardropIconSvg = FUTBOL_SVG_PIN;
+        pillIconSvg = FUTBOL_SVG_PIN;
       }
 
       const isActive = selectedClub?.id === club.id;
@@ -283,7 +379,7 @@ export const ClubsMapView: React.FC<ClubsMapViewProps> = ({
         // Expanded Full Pill with Name and Price
         const pinHtml = `
           <div class="custom-pin ${isActive ? 'active' : ''}">
-            <span class="pin-icon">${sportIconSvg}</span>
+            <span class="pin-icon">${pillIconSvg}</span>
             <span class="pin-name">${club.name}</span>
             <span class="pin-price">$${formattedPrice}</span>
           </div>
@@ -296,22 +392,26 @@ export const ClubsMapView: React.FC<ClubsMapViewProps> = ({
           iconAnchor: [70, 16],
         });
       } else {
-        // Compact Teardrop Pin with Needle Tip (Google Maps style — uncluttered)
+        // Compact Teardrop Pin with Needle Tip (Google Maps style — uncluttered & dead centered)
         const pinHtml = `
           <div class="map-teardrop-pin" title="${club.name} · $${formattedPrice}">
             <div class="pin-tooltip">${club.name} · $${formattedPrice}</div>
-            <div class="teardrop-head">
-              <span class="pin-icon">${sportIconSvg}</span>
+            <div class="teardrop-wrapper">
+              <svg class="teardrop-svg" width="34" height="42" viewBox="0 0 34 42" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M17 41C17 41 32 25.5 32 17C32 8.71573 25.2843 2 17 2C8.71573 2 2 8.71573 2 17C2 25.5 17 41 17 41Z" class="teardrop-path" />
+              </svg>
+              <div class="teardrop-icon-slot">
+                ${teardropIconSvg}
+              </div>
             </div>
-            <div class="teardrop-needle"></div>
           </div>
         `;
 
         markerIcon = L.divIcon({
           className: 'teardrop-pin-wrapper',
           html: pinHtml,
-          iconSize: [32, 38],
-          iconAnchor: [16, 38],
+          iconSize: [34, 42],
+          iconAnchor: [17, 41],
         });
       }
 
@@ -323,7 +423,7 @@ export const ClubsMapView: React.FC<ClubsMapViewProps> = ({
       marker.on('click', (e: any) => {
         L.DomEvent.stopPropagation(e);
         setSelectedClub(club);
-        map.flyTo([lat, lng], Math.max(map.getZoom(), 15), { animate: true, duration: 0.6 });
+        map.flyTo([lat, lng], Math.max(map.getZoom(), 15.5), { animate: true, duration: 0.6 });
       });
 
       group.addLayer(marker);
@@ -533,72 +633,80 @@ export const ClubsMapView: React.FC<ClubsMapViewProps> = ({
         }
         .map-teardrop-pin {
           position: relative;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
+          width: 34px;
+          height: 42px;
           cursor: pointer;
           filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.85));
           transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), filter 0.2s ease;
         }
         .map-teardrop-pin:hover {
-          transform: scale(1.18) translateY(-2px);
-          filter: drop-shadow(0 6px 16px rgba(252, 28, 70, 0.6));
+          transform: scale(1.18) translateY(-3px);
+          filter: drop-shadow(0 8px 22px rgba(252, 28, 70, 0.75));
           z-index: 2500 !important;
         }
-        .map-teardrop-pin .teardrop-head {
-          width: 32px;
-          height: 32px;
-          border-radius: 50%;
-          background: #0a0a0a;
-          border: 1.8px solid var(--color-crimson-signal);
+        .map-teardrop-pin .teardrop-wrapper {
+          position: relative;
+          width: 34px;
+          height: 42px;
+        }
+        .map-teardrop-pin .teardrop-svg {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 34px;
+          height: 42px;
+          display: block;
+        }
+        .map-teardrop-pin .teardrop-path {
+          fill: #0a0a0a;
+          stroke: var(--color-crimson-signal);
+          stroke-width: 2;
+          transition: fill 0.2s ease, stroke 0.2s ease;
+        }
+        .map-teardrop-pin:hover .teardrop-path {
+          fill: var(--color-crimson-signal);
+          stroke: #ffffff;
+        }
+        .map-teardrop-pin .teardrop-icon-slot {
+          position: absolute;
+          top: 3px;
+          left: 3px;
+          width: 28px;
+          height: 28px;
           display: flex;
           align-items: center;
           justify-content: center;
-          color: var(--color-crimson-signal);
-          box-shadow: 0 0 10px rgba(252, 28, 70, 0.35);
-          transition: all 0.2s ease;
-        }
-        .map-teardrop-pin:hover .teardrop-head {
-          background: var(--color-crimson-signal);
-          border-color: #ffffff;
           color: #ffffff;
-          box-shadow: 0 0 16px rgba(252, 28, 70, 0.7);
+          pointer-events: none;
+          transition: color 0.2s ease;
         }
-        .map-teardrop-pin .teardrop-needle {
-          width: 0;
-          height: 0;
-          border-left: 5px solid transparent;
-          border-right: 5px solid transparent;
-          border-top: 6px solid var(--color-crimson-signal);
-          margin-top: -1px;
-          transition: border-top-color 0.2s ease;
-        }
-        .map-teardrop-pin:hover .teardrop-needle {
-          border-top-color: #ffffff;
+        .map-teardrop-pin:hover .teardrop-icon-slot {
+          color: #ffffff;
         }
 
         /* Tooltip on hover for compact teardrop pin */
         .map-teardrop-pin .pin-tooltip {
           position: absolute;
-          bottom: 40px;
+          bottom: 46px;
           left: 50%;
           transform: translateX(-50%);
           background: rgba(10, 10, 10, 0.95);
-          border: 1px solid rgba(252, 28, 70, 0.45);
+          border: 1px solid rgba(252, 28, 70, 0.5);
           backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
           color: #ffffff;
           font-family: 'Space Grotesk', sans-serif;
           font-size: 10.5px;
           font-weight: 700;
           letter-spacing: 0.4px;
           text-transform: uppercase;
-          padding: 3px 9px;
+          padding: 4px 10px;
           border-radius: 9999px;
           white-space: nowrap;
           pointer-events: none;
           opacity: 0;
           transition: opacity 0.15s ease, transform 0.15s ease;
-          box-shadow: 0 4px 14px rgba(0, 0, 0, 0.9);
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.9);
           z-index: 3000;
         }
         .map-teardrop-pin:hover .pin-tooltip {
@@ -866,13 +974,18 @@ export const ClubsMapView: React.FC<ClubsMapViewProps> = ({
           transform: scale(1.02);
         }
 
-        /* Leaflet Dark Map Adjustments */
+        /* Leaflet Dark Map Adjustments & Anti-Cut Tiles */
         .leaflet-container {
           background-color: #070707 !important;
           font-family: 'Space Grotesk', sans-serif !important;
+          outline: none;
         }
         .leaflet-tile {
           filter: brightness(0.85) contrast(1.15) saturate(0.9);
+        }
+        .leaflet-tile-container img {
+          outline: 1px solid transparent;
+          image-rendering: -webkit-optimize-contrast;
         }
 
         /* Responsive Mobile Adjustments */
