@@ -2568,121 +2568,13 @@ export default function ReservarPage() {
             </div>
           )}
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 28, flexWrap: 'wrap', gap: 16 }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
-                <div style={{ fontSize: 10, color: 'var(--color-crimson-signal)', textTransform: 'uppercase', letterSpacing: '1.5px', fontWeight: 700 }}>
-                  DIRECTORIO DE CANCHAS · MAR DEL PLATA
-                </div>
-                {userLocation ? (
-                  <span style={{ fontSize: 9.5, color: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '2px 8px', borderRadius: 'var(--radius-full)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                    <Icons.MapPin size={10} color="#10b981" />
-                    <span>Ordenado por cercanía a tu ubicación</span>
-                  </span>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={requestLocation}
-                    style={{
-                      fontSize: 9.5,
-                      color: 'var(--color-ash)',
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                      border: '1px solid rgba(255, 255, 255, 0.15)',
-                      padding: '2px 8px',
-                      borderRadius: 'var(--radius-full)',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.4px',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 4,
-                      transition: 'all 0.2s ease',
-                    }}
-                    onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-crimson-signal)';
-                      (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-frost)';
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255, 255, 255, 0.15)';
-                      (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-ash)';
-                    }}
-                  >
-                    <Icons.MapPin size={10} color="var(--color-crimson-signal)" />
-                    <span>{isLocating ? 'Obteniendo GPS...' : 'Activar GPS para cercanía exacta'}</span>
-                  </button>
-                )}
-              </div>
-              <h2 style={{ fontSize: 'clamp(26px, 4vw, 42px)', fontWeight: 700, color: 'var(--color-frost)', letterSpacing: '-1px', margin: 0, textTransform: 'uppercase' }}>
-                Complejos Deportivos
-              </h2>
+          <div style={{ marginBottom: 28 }}>
+            <div style={{ fontSize: 10, color: 'var(--color-crimson-signal)', textTransform: 'uppercase', letterSpacing: '1.5px', fontWeight: 700, marginBottom: 6 }}>
+              DIRECTORIO DE CANCHAS · MAR DEL PLATA
             </div>
-
-            {/* Filtros de Disciplina & Amenidades */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'flex-end' }}>
-              {/* Filtro Tipo de Complejo: Todos, Solo Pádel, Solo Fútbol, Ambos */}
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {[
-                  { id: 'ALL', label: 'Todos los Complejos' },
-                  { id: 'PADEL_ONLY', label: 'Solo Pádel', sport: 'PADEL' },
-                  { id: 'FUTBOL_ONLY', label: 'Solo Fútbol', sport: 'FUTBOL' },
-                  { id: 'BOTH', label: 'Pádel & Fútbol (Ambos)' },
-                ].map((st) => (
-                  <button
-                    key={st.id}
-                    onClick={() => setActiveSportTypeFilter(st.id as any)}
-                    style={{
-                      backgroundColor: activeSportTypeFilter === st.id ? 'rgba(252, 28, 70, 0.15)' : '#0c0c0c',
-                      color: activeSportTypeFilter === st.id ? 'var(--color-crimson-signal)' : 'var(--color-ash)',
-                      border: `1px solid ${activeSportTypeFilter === st.id ? 'var(--color-crimson-signal)' : 'rgba(76, 76, 76, 0.4)'}`,
-                      padding: '5px 12px',
-                      fontSize: 10.5,
-                      fontWeight: 700,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.5px',
-                      cursor: 'pointer',
-                      borderRadius: 'var(--radius-full)',
-                      transition: 'all 0.2s ease',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 4,
-                    }}
-                  >
-                    <span>{st.label}</span>
-                  </button>
-                ))}
-              </div>
-
-              {/* Quick Amenity Filter Chips */}
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {[
-                  { id: 'ALL', label: 'Todos los servicios' },
-                  { id: 'COVERED', label: 'Techada' },
-                  { id: 'PARKING', label: 'Estacionamiento' },
-                  { id: 'BUFFET', label: 'Buffet / Bar' },
-                ].map((chip) => (
-                  <button
-                    key={chip.id}
-                    onClick={() => setActiveAmenityFilter(chip.id)}
-                    style={{
-                      backgroundColor: activeAmenityFilter === chip.id ? '#ffffff' : '#0c0c0c',
-                      color: activeAmenityFilter === chip.id ? '#000000' : 'var(--color-ash)',
-                      border: '1px solid ' + (activeAmenityFilter === chip.id ? '#ffffff' : 'var(--color-graphite)'),
-                      padding: '5px 12px',
-                      fontSize: 10.5,
-                      fontWeight: 700,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.5px',
-                      cursor: 'pointer',
-                      borderRadius: 'var(--radius-full)',
-                      transition: 'all 0.2s ease',
-                    }}
-                  >
-                    {chip.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <h2 style={{ fontSize: 'clamp(26px, 4vw, 42px)', fontWeight: 700, color: 'var(--color-frost)', letterSpacing: '-1px', margin: 0, textTransform: 'uppercase' }}>
+              Complejos Deportivos
+            </h2>
           </div>
 
           {/* Listado de Tarjetas de Clubes */}
