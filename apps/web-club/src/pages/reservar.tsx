@@ -1804,6 +1804,138 @@ export default function ReservarPage() {
       </section>
 
       {/* ═══════════════════════════════════════════════════════
+          BANNER DE ANUNCIOS & NOVEDADES (ARRIBA DEL BUSCADOR)
+          ═══════════════════════════════════════════════════════ */}
+      <section style={{ padding: '0 36px 14px', position: 'relative', zIndex: 10 }}>
+        <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+          <div
+            style={{
+              position: 'relative',
+              backgroundColor: '#080808',
+              border: '1px solid var(--color-graphite)',
+              padding: '32px 40px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: 28,
+              overflow: 'hidden',
+              boxShadow: '0 0 35px rgba(252, 28, 70, 0.08)',
+            }}
+          >
+            {/* Radial glow halo */}
+            <div
+              style={{
+                position: 'absolute',
+                top: '-40%',
+                right: '10%',
+                width: 450,
+                height: 450,
+                borderRadius: '50%',
+                background: 'radial-gradient(circle, rgba(252, 28, 70, 0.18) 0%, rgba(8, 8, 8, 0) 70%)',
+                pointerEvents: 'none',
+              }}
+            />
+
+            <div style={{ maxWidth: 640, position: 'relative', zIndex: 2 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                <div
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '4px 12px',
+                    backgroundColor: 'rgba(252, 28, 70, 0.12)',
+                    border: '1px solid rgba(252, 28, 70, 0.4)',
+                    borderRadius: 'var(--radius-full)',
+                    fontSize: 10,
+                    fontWeight: 700,
+                    color: 'var(--color-crimson-signal)',
+                    letterSpacing: '1px',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  <Icons.Zap size={11} color="var(--color-crimson-signal)" />
+                  <span>TURNO FIJO SEMANAL</span>
+                </div>
+                <div
+                  style={{
+                    padding: '4px 10px',
+                    backgroundColor: '#161616',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    borderRadius: 'var(--radius-full)',
+                    fontSize: 10,
+                    fontWeight: 700,
+                    color: 'var(--color-frost)',
+                    letterSpacing: '0.5px',
+                  }}
+                >
+                  -15% OFF
+                </div>
+              </div>
+
+              <h2 style={{ fontSize: 'clamp(24px, 3.2vw, 38px)', fontWeight: 700, color: 'var(--color-frost)', letterSpacing: '-1px', margin: '0 0 12px', textTransform: 'uppercase' }}>
+                Asegurá tu Cancha Fija
+              </h2>
+
+              <p style={{ fontSize: 14.5, color: 'var(--color-ash)', lineHeight: 1.45, margin: '0 0 22px', maxWidth: 520 }}>
+                {activeSport === 'PADEL'
+                  ? 'Mismo día y horario cada semana con cobro y split automatizado entre los 4 jugadores. Sin transferencias manuales ni cancelaciones a último minuto.'
+                  : 'Fútbol semanal para tu equipo con link de pago único para el grupo de WhatsApp. Si alguien no paga, el sistema avisa automáticamente.'}
+              </p>
+
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={() => handleTabChange('FIJOS')}
+                  style={{
+                    backgroundColor: 'var(--color-crimson-signal)',
+                    color: 'var(--color-frost)',
+                    border: 'none',
+                    padding: '12px 28px',
+                    borderRadius: 'var(--radius-full)',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    letterSpacing: '0.6px',
+                    textTransform: 'uppercase',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    cursor: 'pointer',
+                    boxShadow: '0 0 20px rgba(252, 28, 70, 0.35)',
+                    transition: 'transform 0.2s ease',
+                  }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.03)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}
+                >
+                  <span>Asegurar Turno Fijo</span>
+                  <Icons.ArrowUpRight size={14} color="#ffffff" />
+                </button>
+                <span style={{ fontSize: 12, color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Sin permanencia mínima
+                </span>
+              </div>
+            </div>
+
+            {/* Dynamic 3D Cutout Image */}
+            <div style={{ position: 'relative', zIndex: 1, paddingRight: 20 }}>
+              <img
+                src={activeSport === 'PADEL' ? '/padel_rackets_cutout.png' : '/soccer_ball_cutout.png'}
+                alt={activeSport}
+                style={{
+                  width: 'clamp(170px, 20vw, 250px)',
+                  height: 'auto',
+                  objectFit: 'contain',
+                  filter: 'drop-shadow(0 20px 30px rgba(0, 0, 0, 0.8))',
+                  transform: 'rotate(-4deg)',
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════
           BUSCADOR ESTRUCTURADO MULTI-SEGMENTO
           (Con Dropdowns Custom Brutalistas Sin Select Nativo de OS)
           ═══════════════════════════════════════════════════════ */}
@@ -1811,7 +1943,7 @@ export default function ReservarPage() {
         ref={searchRef}
         style={{
           position: 'relative',
-          padding: '10px 36px 36px',
+          padding: '12px 36px 36px',
           zIndex: 30,
         }}
       >
@@ -2361,138 +2493,6 @@ export default function ReservarPage() {
                 <span>Buscar Turnos</span>
                 <Icons.ArrowUpRight size={14} color="#ffffff" />
               </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════════════════════
-          BANNER: ASEGURÁ TU CANCHA FIJA (CON ASSET 3D DINÁMICO)
-          ═══════════════════════════════════════════════════════ */}
-      <section style={{ padding: '0 36px 44px', position: 'relative', zIndex: 2 }}>
-        <div style={{ maxWidth: 1400, margin: '0 auto' }}>
-          <div
-            style={{
-              position: 'relative',
-              backgroundColor: '#080808',
-              border: '1px solid var(--color-graphite)',
-              padding: '36px 40px',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: 28,
-              overflow: 'hidden',
-              boxShadow: '0 0 35px rgba(252, 28, 70, 0.08)',
-            }}
-          >
-            {/* Radial glow halo */}
-            <div
-              style={{
-                position: 'absolute',
-                top: '-40%',
-                right: '10%',
-                width: 450,
-                height: 450,
-                borderRadius: '50%',
-                background: 'radial-gradient(circle, rgba(252, 28, 70, 0.18) 0%, rgba(8, 8, 8, 0) 70%)',
-                pointerEvents: 'none',
-              }}
-            />
-
-            <div style={{ maxWidth: 640, position: 'relative', zIndex: 2 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-                <div
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: '4px 12px',
-                    backgroundColor: 'rgba(252, 28, 70, 0.12)',
-                    border: '1px solid rgba(252, 28, 70, 0.4)',
-                    borderRadius: 'var(--radius-full)',
-                    fontSize: 10,
-                    fontWeight: 700,
-                    color: 'var(--color-crimson-signal)',
-                    letterSpacing: '1px',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  <Icons.Zap size={11} color="var(--color-crimson-signal)" />
-                  <span>TURNO FIJO SEMANAL</span>
-                </div>
-                <div
-                  style={{
-                    padding: '4px 10px',
-                    backgroundColor: '#161616',
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
-                    borderRadius: 'var(--radius-full)',
-                    fontSize: 10,
-                    fontWeight: 700,
-                    color: 'var(--color-frost)',
-                    letterSpacing: '0.5px',
-                  }}
-                >
-                  -15% OFF
-                </div>
-              </div>
-
-              <h2 style={{ fontSize: 'clamp(26px, 3.5vw, 42px)', fontWeight: 700, color: 'var(--color-frost)', letterSpacing: '-1px', margin: '0 0 12px', textTransform: 'uppercase' }}>
-                Asegurá tu Cancha Fija
-              </h2>
-
-              <p style={{ fontSize: 15, color: 'var(--color-ash)', lineHeight: 1.45, margin: '0 0 24px', maxWidth: 520 }}>
-                {activeSport === 'PADEL'
-                  ? 'Mismo día y horario cada semana con cobro y split automatizado entre los 4 jugadores. Sin transferencias manuales ni cancelaciones a último minuto.'
-                  : 'Fútbol semanal para tu equipo con link de pago único para el grupo de WhatsApp. Si alguien no paga, el sistema avisa automáticamente.'}
-              </p>
-
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 16 }}>
-                <button
-                  type="button"
-                  onClick={() => handleTabChange('FIJOS')}
-                  style={{
-                    backgroundColor: 'var(--color-crimson-signal)',
-                    color: 'var(--color-frost)',
-                    border: 'none',
-                    padding: '12px 28px',
-                    borderRadius: 'var(--radius-full)',
-                    fontSize: 13,
-                    fontWeight: 700,
-                    letterSpacing: '0.6px',
-                    textTransform: 'uppercase',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    cursor: 'pointer',
-                    boxShadow: '0 0 20px rgba(252, 28, 70, 0.35)',
-                    transition: 'transform 0.2s ease',
-                  }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.03)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}
-                >
-                  <span>Asegurar Turno Fijo</span>
-                  <Icons.ArrowUpRight size={14} color="#ffffff" />
-                </button>
-                <span style={{ fontSize: 12, color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  Sin permanencia mínima
-                </span>
-              </div>
-            </div>
-
-            {/* Dynamic 3D Cutout Image */}
-            <div style={{ position: 'relative', zIndex: 1, paddingRight: 20 }}>
-              <img
-                src={activeSport === 'PADEL' ? '/padel_rackets_cutout.png' : '/soccer_ball_cutout.png'}
-                alt={activeSport}
-                style={{
-                  width: 'clamp(180px, 22vw, 260px)',
-                  height: 'auto',
-                  objectFit: 'contain',
-                  filter: 'drop-shadow(0 20px 30px rgba(0, 0, 0, 0.8))',
-                  transform: 'rotate(-4deg)',
-                }}
-              />
             </div>
           </div>
         </div>
