@@ -11,6 +11,7 @@ import { PerfilTab } from '../components/reservar/PerfilTab';
 import { ClubImageCarousel } from '../components/reservar/ClubImageCarousel';
 import { SportBadge } from '../components/SportBadge';
 import { useAuth } from '../context/AuthContext';
+import { useUserLocation, calculateHaversineKm } from '../context/LocationContext';
 
 /* ────────────────────────────────────────────────────────────
    Intersection Observer Hook for Scroll Reveals
@@ -843,6 +844,7 @@ function formatCurrency(val: number) {
    ──────────────────────────────────────────────────────────── */
 
 export default function ReservarPage() {
+  const { userLocation, isLocating, permissionStatus, requestLocation } = useUserLocation();
   const [isLoaded, setIsLoaded] = useState(false);
   const [activeSport, setActiveSport] = useState<'PADEL' | 'FUTBOL'>('PADEL');
   const {
@@ -1165,9 +1167,9 @@ export default function ReservarPage() {
 
   const selectedZoneItem = ZONE_OPTIONS.find((z) => z.value === selectedZone) || ZONE_OPTIONS[0];
 
-  // Filtered Clubs
+  // Filtered & Proximity-Sorted Clubs
   const filteredClubs = useMemo(() => {
-    return clubsList.filter((c) => {
+    const filtered = clubsList.filter((c) => {
       // 1. Filtro del deporte activo del buscador
       if (!c.sports.includes(activeSport)) return false;
 
@@ -1205,7 +1207,23 @@ export default function ReservarPage() {
 
       return true;
     });
-  }, [clubsList, activeSport, activeSportTypeFilter, selectedZone, searchQuery, activeAmenityFilter]);
+
+    // Calcular distancias reales en base a la ubicación GPS del usuario (o referencia MDP si no otorgó permiso)
+    const withUpdatedDistances = filtered.map((c) => {
+      if (userLocation && typeof c.latitude === 'number' && typeof c.longitude === 'number') {
+        const realDist = calculateHaversineKm(userLocation.lat, userLocation.lng, c.latitude, c.longitude);
+        return { ...c, distanceKm: realDist };
+      }
+      return c;
+    });
+
+    // Ordenar estrictamente por cercanía en km (de menor a mayor)
+    return withUpdatedDistances.sort((a, b) => {
+      const distA = typeof a.distanceKm === 'number' ? a.distanceKm : 999;
+      const distB = typeof b.distanceKm === 'number' ? b.distanceKm : 999;
+      return distA - distB;
+    });
+  }, [clubsList, userLocation, activeSport, activeSportTypeFilter, selectedZone, searchQuery, activeAmenityFilter]);
 
   // Instant Available Slots for Selected Date and Sport
   const instantSlots = useMemo(() => {
@@ -2539,8 +2557,48 @@ export default function ReservarPage() {
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 28, flexWrap: 'wrap', gap: 16 }}>
             <div>
-              <div style={{ fontSize: 10, color: 'var(--color-crimson-signal)', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: 6, fontWeight: 700 }}>
-                DIRECTORIO DE CANCHAS · MAR DEL PLATA
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
+                <div style={{ fontSize: 10, color: 'var(--color-crimson-signal)', textTransform: 'uppercase', letterSpacing: '1.5px', fontWeight: 700 }}>
+                  DIRECTORIO DE CANCHAS · MAR DEL PLATA
+                </div>
+                {userLocation ? (
+                  <span style={{ fontSize: 9.5, color: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '2px 8px', borderRadius: 'var(--radius-full)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <Icons.MapPin size={10} color="#10b981" />
+                    <span>Ordenado por cercanía a tu ubicación</span>
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={requestLocation}
+                    style={{
+                      fontSize: 9.5,
+                      color: 'var(--color-ash)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                      padding: '2px 8px',
+                      borderRadius: 'var(--radius-full)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.4px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      transition: 'all 0.2s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-crimson-signal)';
+                      (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-frost)';
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                      (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-ash)';
+                    }}
+                  >
+                    <Icons.MapPin size={10} color="var(--color-crimson-signal)" />
+                    <span>{isLocating ? 'Obteniendo GPS...' : 'Activar GPS para cercanía exacta'}</span>
+                  </button>
+                )}
               </div>
               <h2 style={{ fontSize: 'clamp(26px, 4vw, 42px)', fontWeight: 700, color: 'var(--color-frost)', letterSpacing: '-1px', margin: 0, textTransform: 'uppercase' }}>
                 Complejos Deportivos
@@ -2697,7 +2755,14 @@ export default function ReservarPage() {
                               <span>{club.address} · {club.city}</span>
                             </span>
                             <span style={{ color: 'var(--color-graphite)' }}>·</span>
-                            <span style={{ color: 'var(--color-frost)', fontWeight: 600 }}>a {club.distanceKm} km</span>
+                            <span style={{ color: 'var(--color-frost)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                              <span>a {club.distanceKm} km</span>
+                              {userLocation && (
+                                <span style={{ fontSize: 9, color: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '1px 5px', borderRadius: 'var(--radius-full)', textTransform: 'uppercase', letterSpacing: '0.4px', fontWeight: 700 }}>
+                                  GPS
+                                </span>
+                              )}
+                            </span>
                             {club.phone && (
                               <>
                                 <span style={{ color: 'var(--color-graphite)' }}>·</span>

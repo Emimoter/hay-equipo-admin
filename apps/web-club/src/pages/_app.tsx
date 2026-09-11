@@ -1,10 +1,12 @@
 import type { AppProps } from 'next/app';
 import { AuthProvider } from '../context/AuthContext';
+import { LocationProvider } from '../context/LocationContext';
 import { AuthModal } from '../components/auth/AuthModal';
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
     <AuthProvider>
+      <LocationProvider>
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&display=swap');
 
@@ -183,6 +185,7 @@ export default function App({ Component, pageProps }: AppProps) {
       `}</style>
       <Component {...pageProps} />
       <AuthModal />
+      </LocationProvider>
     </AuthProvider>
   );
 }

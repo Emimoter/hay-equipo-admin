@@ -3,6 +3,7 @@ import { useSlidingIndicator } from '../../hooks/useSlidingIndicator';
 import { ClubImageCarousel } from './ClubImageCarousel';
 import { SportBadge } from '../SportBadge';
 import { ClubsMapView } from './ClubsMapView';
+import { useUserLocation, calculateHaversineKm } from '../../context/LocationContext';
 
 export interface ExplorarClub {
   id: string;
@@ -10,6 +11,7 @@ export interface ExplorarClub {
   address: string;
   city: string;
   zone?: string;
+  distanceKm?: number;
   rating: number;
   reviewCount?: number;
   sports: ('PADEL' | 'FUTBOL')[];
@@ -114,8 +116,10 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
     indicatorStyle: explorarSportIndicatorStyle,
   } = useSlidingIndicator(sportFilter);
 
+  const { userLocation } = useUserLocation();
+
   const filteredClubs = useMemo(() => {
-    return clubs.filter((club) => {
+    const filtered = clubs.filter((club) => {
       const hasPadel = club.sports?.includes('PADEL');
       const hasFutbol = club.sports?.includes('FUTBOL');
 
@@ -144,7 +148,23 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
 
       return true;
     });
-  }, [clubs, searchTerm, sportFilter, selectedAmenity]);
+
+    const withDist = filtered.map((c) => {
+      if (userLocation && typeof c.latitude === 'number' && typeof c.longitude === 'number') {
+        return {
+          ...c,
+          distanceKm: calculateHaversineKm(userLocation.lat, userLocation.lng, c.latitude, c.longitude),
+        };
+      }
+      return c;
+    });
+
+    return withDist.sort((a, b) => {
+      const distA = typeof a.distanceKm === 'number' ? a.distanceKm : 999;
+      const distB = typeof b.distanceKm === 'number' ? b.distanceKm : 999;
+      return distA - distB;
+    });
+  }, [clubs, userLocation, searchTerm, sportFilter, selectedAmenity]);
 
   return (
     <div className="explorar-root">
@@ -351,6 +371,7 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
           clubs={filteredClubs}
           onSelectClub={onSelectClub}
           activeSport={sportFilter}
+          userLocation={userLocation}
         />
       ) : filteredClubs.length === 0 ? (
         <div
@@ -481,9 +502,24 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
                 <h3 style={{ fontSize: 19, fontWeight: 700, color: 'var(--color-frost)', margin: '0 0 6px' }}>
                   {club.name}
                 </h3>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--color-ash)', fontSize: 13, marginBottom: 16 }}>
-                  <Icons.MapPin size={13} color="var(--color-crimson-signal)" />
-                  <span>{club.address} · {club.city}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--color-ash)', fontSize: 13, marginBottom: 16, flexWrap: 'wrap' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <Icons.MapPin size={13} color="var(--color-crimson-signal)" />
+                    <span>{club.address} · {club.city}</span>
+                  </span>
+                  {typeof club.distanceKm === 'number' && (
+                    <>
+                      <span style={{ color: 'var(--color-graphite)' }}>·</span>
+                      <span style={{ color: 'var(--color-frost)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        <span>a {club.distanceKm} km</span>
+                        {userLocation && (
+                          <span style={{ fontSize: 9, color: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '1px 5px', borderRadius: 'var(--radius-full)', textTransform: 'uppercase', letterSpacing: '0.4px', fontWeight: 700 }}>
+                            GPS
+                          </span>
+                        )}
+                      </span>
+                    </>
+                  )}
                 </div>
 
                 {/* Amenity Badges */}

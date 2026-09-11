@@ -32,6 +32,7 @@ interface ClubsMapViewProps {
   clubs: MapClub[];
   onSelectClub: (club: MapClub) => void;
   activeSport?: string;
+  userLocation?: { lat: number; lng: number } | null;
 }
 
 /* ────────────────────────────────────────────────────────────
@@ -166,6 +167,7 @@ export const ClubsMapView: React.FC<ClubsMapViewProps> = ({
   clubs,
   onSelectClub,
   activeSport = 'ALL',
+  userLocation: propUserLocation,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapInstanceRef = useRef<any>(null);
@@ -173,7 +175,7 @@ export const ClubsMapView: React.FC<ClubsMapViewProps> = ({
   const userMarkerRef = useRef<any>(null);
 
   const [selectedClub, setSelectedClub] = useState<MapClub | null>(null);
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(propUserLocation || null);
   const [isLocating, setIsLocating] = useState<boolean>(false);
   const [mapLoaded, setMapLoaded] = useState<boolean>(false);
   const [zoomLevel, setZoomLevel] = useState<number>(13);
@@ -336,6 +338,37 @@ export const ClubsMapView: React.FC<ClubsMapViewProps> = ({
       { enableHighAccuracy: true, timeout: 8000 }
     );
   };
+
+  // Sync propUserLocation reactively
+  useEffect(() => {
+    if (propUserLocation) {
+      setUserLocation(propUserLocation);
+      const L = (window as any).L;
+      const map = mapInstanceRef.current;
+      if (!L || !map) return;
+
+      const userIcon = L.divIcon({
+        className: 'user-marker-icon',
+        html: `
+          <div class="user-pulse-container">
+            <div class="user-pulse-ring"></div>
+            <div class="user-pulse-dot"></div>
+          </div>
+        `,
+        iconSize: [26, 26],
+        iconAnchor: [13, 13],
+      });
+
+      if (userMarkerRef.current) {
+        userMarkerRef.current.setLatLng([propUserLocation.lat, propUserLocation.lng]);
+      } else {
+        userMarkerRef.current = L.marker([propUserLocation.lat, propUserLocation.lng], {
+          icon: userIcon,
+          zIndexOffset: 1500,
+        }).addTo(map);
+      }
+    }
+  }, [propUserLocation, mapLoaded]);
 
   // 4. Update Club Markers Reactively (Dynamic Zoom: Teardrop on Zoom-Out / Full Pill on Zoom-In)
   useEffect(() => {
