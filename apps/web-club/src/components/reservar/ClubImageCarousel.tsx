@@ -83,6 +83,7 @@ export const ClubImageCarousel: React.FC<ClubImageCarouselProps> = ({
       style={{
         position: 'relative',
         height,
+        minHeight: typeof height === 'number' ? height : 200,
         width: '100%',
         overflow: 'hidden',
         backgroundColor: '#070707',
@@ -153,8 +154,10 @@ export const ClubImageCarousel: React.FC<ClubImageCarouselProps> = ({
                     style={{
                       width: '100%',
                       height: '100%',
+                      maxHeight: 180,
+                      maxWidth: 220,
                       objectFit: 'contain',
-                      padding: '24px 32px',
+                      padding: '12px 16px',
                       filter: 'drop-shadow(0 4px 16px rgba(0, 0, 0, 0.6))',
                       position: 'relative',
                       zIndex: 2,

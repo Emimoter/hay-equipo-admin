@@ -2616,389 +2616,326 @@ export default function ReservarPage() {
 
           {/* Listado de Tarjetas de Clubes */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-            {filteredClubs.map((club) => (
-              <div
-                key={club.id}
-                style={{
-                  backgroundColor: '#070707',
-                  border: '1px solid var(--color-graphite)',
-                  display: 'grid',
-                  gridTemplateColumns: 'minmax(280px, 360px) 1fr',
-                  overflow: 'hidden',
-                  transition: 'border-color 0.25s ease',
-                }}
-                className="club-card-container"
-              >
-                {/* Carrusel de Imágenes del Club (Logo Oficial N°1 + Fotos Reales al scrollear) */}
-                <ClubImageCarousel
-                  images={club.images}
-                  clubName={club.name}
-                  height={240}
-                  onCardClick={() => setClubModalData(club)}
-                  topLeftBadge={
-                    <SportBadge sports={club.sports} size="sm" />
-                  }
-                  topRightBadge={
-                    <div
-                      style={{
-                        padding: '4px 10px',
-                        backgroundColor: 'rgba(0, 0, 0, 0.75)',
-                        backdropFilter: 'blur(8px)',
-                        border: '1px solid rgba(255, 255, 255, 0.2)',
-                        borderRadius: 'var(--radius-full)',
-                        fontSize: 11,
-                        fontWeight: 700,
-                        color: 'var(--color-frost)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 4,
-                      }}
-                    >
-                      <Icons.Star size={11} />
-                      <span>{club.rating}</span>
-                      <span style={{ color: 'var(--color-ash)', fontSize: 10 }}>({club.reviewCount})</span>
-                    </div>
-                  }
-                  bottomLeftBadge={
-                    <div
-                      style={{
-                        fontSize: 11,
-                        color: 'var(--color-ash)',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.8px',
-                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                        backdropFilter: 'blur(6px)',
-                        padding: '3px 8px',
-                        borderRadius: 'var(--radius-full)',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                      }}
-                    >
-                      {club.courts.length} {club.courts.length === 1 ? 'cancha' : 'canchas'}
-                    </div>
-                  }
-                />
-
-                {/* Contenido del Club */}
-                <div style={{ padding: '28px 32px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 20 }}>
-                  <div>
-                    {/* Encabezado Club */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, marginBottom: 8 }}>
-                      <div>
-                        <h3 style={{ fontSize: 'clamp(20px, 2.5vw, 26px)', fontWeight: 700, color: 'var(--color-frost)', letterSpacing: '-0.6px', margin: '0 0 6px', textTransform: 'uppercase' }}>
-                          {club.name}
-                        </h3>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--color-ash)', fontSize: 13, flexWrap: 'wrap' }}>
-                          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                            <Icons.MapPin size={13} color="var(--color-crimson-signal)" />
-                            <span>{club.address} · {club.city}</span>
-                          </span>
-                          <span style={{ color: 'var(--color-graphite)' }}>·</span>
-                          <span style={{ color: 'var(--color-frost)', fontWeight: 600 }}>a {club.distanceKm} km</span>
-                          {club.phone && (
-                            <>
-                              <span style={{ color: 'var(--color-graphite)' }}>·</span>
-                              <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--color-ash)', fontSize: 12 }}>
-                                <Icons.Phone size={11} color="var(--color-ash)" />
-                                <span>{club.phone}</span>
-                              </span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={() => setClubModalData(club)}
+            {filteredClubs.map((club) => {
+              const availableSlots = getClubSlotsForDate(club, selectedDate, activeSport).filter((s) => s.available);
+              return (
+                <div
+                  key={club.id}
+                  style={{
+                    backgroundColor: '#070707',
+                    border: '1px solid var(--color-graphite)',
+                    display: 'grid',
+                    gridTemplateColumns: 'minmax(260px, 320px) 1fr',
+                    alignItems: 'stretch',
+                    overflow: 'hidden',
+                    transition: 'border-color 0.25s ease',
+                  }}
+                  className="club-card-container"
+                >
+                  {/* Carrusel de Imágenes del Club (Logo Oficial N°1 + Fotos Reales al scrollear) */}
+                  <ClubImageCarousel
+                    images={club.images}
+                    clubName={club.name}
+                    height="100%"
+                    style={{ minHeight: 220, height: '100%' }}
+                    onCardClick={() => setClubModalData(club)}
+                    topLeftBadge={
+                      <SportBadge sports={club.sports} size="sm" />
+                    }
+                    topRightBadge={
+                      <div
                         style={{
-                          backgroundColor: 'transparent',
-                          color: 'var(--color-frost)',
+                          padding: '4px 10px',
+                          backgroundColor: 'rgba(0, 0, 0, 0.75)',
+                          backdropFilter: 'blur(8px)',
                           border: '1px solid rgba(255, 255, 255, 0.2)',
-                          padding: '7px 14px',
+                          borderRadius: 'var(--radius-full)',
                           fontSize: 11,
                           fontWeight: 700,
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.6px',
-                          cursor: 'pointer',
+                          color: 'var(--color-frost)',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: 6,
-                          borderRadius: 'var(--radius-full)',
+                          gap: 4,
                         }}
                       >
-                        <span>Ver Fotos & Canchas</span>
-                        <Icons.ArrowUpRight size={12} />
-                      </button>
-                    </div>
-
-                    {/* Amenities Badges (Pills) */}
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
-                      {club.amenities.covered && (
-                        <div style={{ padding: '4px 10px', backgroundColor: '#141414', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 'var(--radius-full)', fontSize: 11, color: 'var(--color-ash)' }}>
-                          Techada / Indoor
-                        </div>
-                      )}
-                      {club.amenities.parking && (
-                        <div style={{ padding: '4px 10px', backgroundColor: '#141414', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 'var(--radius-full)', fontSize: 11, color: 'var(--color-ash)' }}>
-                          Parking Custodiado
-                        </div>
-                      )}
-                      {club.amenities.buffet && (
-                        <div style={{ padding: '4px 10px', backgroundColor: '#141414', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 'var(--radius-full)', fontSize: 11, color: 'var(--color-ash)' }}>
-                          Buffet & Bar
-                        </div>
-                      )}
-                      {club.amenities.lighting && (
-                        <div style={{ padding: '4px 10px', backgroundColor: '#141414', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 'var(--radius-full)', fontSize: 11, color: 'var(--color-ash)' }}>
-                          Iluminación LED Pro
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Turnos disponibles directo en la tarjeta / Info Club y Contacto Directo */}
-                    {(() => {
-                      const availableSlots = getClubSlotsForDate(club, selectedDate, activeSport).filter((s) => s.available);
-                      if (availableSlots.length > 0) {
-                        return (
-                          <div>
-                            <div style={{ fontSize: 10, color: 'var(--color-crimson-signal)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 10, fontWeight: 700 }}>
-                              {isSameDay(selectedDate, new Date())
-                                ? 'HORARIOS DISPONIBLES HOY (HACÉ CLIC PARA RESERVAR):'
-                                : `HORARIOS DISPONIBLES · ${getFullDateLabel(selectedDate).toUpperCase()} (HACÉ CLIC PARA RESERVAR):`}
-                            </div>
-
-                            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                              {availableSlots.map((slot) => (
-                                <button
-                                  key={slot.id}
-                                  onClick={() => handleOpenBooking(slot, club)}
-                                  style={{
-                                    backgroundColor: '#111111',
-                                    border: '1px solid var(--color-graphite)',
-                                    borderRadius: 'var(--radius-full)',
-                                    color: 'var(--color-frost)',
-                                    padding: '8px 18px',
-                                    textAlign: 'left',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s ease',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: 2,
-                                  }}
-                                  onMouseEnter={(e) => {
-                                    (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-crimson-signal)';
-                                    (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(252, 28, 70, 0.12)';
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-graphite)';
-                                    (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#111111';
-                                  }}
-                                >
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700 }}>
-                                    <Icons.Clock size={12} color="var(--color-crimson-signal)" />
-                                    <span>{slot.startTime} hs</span>
-                                  </div>
-                                  <div style={{ fontSize: 10, color: 'var(--color-ash)', fontWeight: 500 }}>
-                                    {formatCurrency(slot.perPlayerPrice)} / pers
-                                  </div>
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        );
-                      }
-
-                      return (
-                        <div
-                          style={{
-                            backgroundColor: '#0c0c0c',
-                            border: '1px solid rgba(255, 255, 255, 0.08)',
-                            padding: '14px 16px',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: 10,
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                              <div
-                                style={{
-                                  width: 22,
-                                  height: 22,
-                                  borderRadius: 'var(--radius-full)',
-                                  backgroundColor: 'rgba(252, 28, 70, 0.12)',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  color: 'var(--color-crimson-signal)',
-                                }}
-                              >
-                                <Icons.Clock size={12} />
-                              </div>
-                              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-frost)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
-                                Disponibilidad & Turnos Directos
-                              </span>
-                            </div>
-                            <span style={{ fontSize: 10, color: 'var(--color-ash)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-                              {club.city}
-                            </span>
-                          </div>
-
-                          <p style={{ margin: 0, fontSize: 12, color: 'var(--color-ash)', lineHeight: 1.5 }}>
-                            Este club coordina sus horarios de forma directa. Consultá turnos libres de {activeSport === 'PADEL' ? 'pádel' : 'fútbol'} para hoy o la semana por WhatsApp oficial o teléfono.
-                          </p>
-
-                          {club.courts && club.courts.length > 0 && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', paddingTop: 2 }}>
-                              <span style={{ fontSize: 10.5, color: 'var(--color-graphite)', fontWeight: 600, textTransform: 'uppercase' }}>
-                                Canchas:
-                              </span>
-                              {club.courts.map((ct) => (
-                                <span
-                                  key={ct.id}
-                                  style={{
-                                    fontSize: 10.5,
-                                    color: 'var(--color-frost)',
-                                    backgroundColor: '#161616',
-                                    border: '1px solid rgba(255, 255, 255, 0.07)',
-                                    padding: '2px 9px',
-                                    borderRadius: 'var(--radius-full)',
-                                  }}
-                                >
-                                  {ct.name} · {ct.surface}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })()}
-                  </div>
-
-                  {/* Footer de Tarjeta */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(76, 76, 76, 0.3)', paddingTop: 16, flexWrap: 'wrap', gap: 12 }}>
-                    <div>
-                      {club.phone ? (
-                        <div>
-                          <div style={{ fontSize: 10, color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600 }}>
-                            Teléfono Directo
-                          </div>
-                          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-frost)' }}>
-                            {club.phone}
-                          </div>
-                        </div>
-                      ) : (
-                        <div>
-                          <div style={{ fontSize: 10, color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600 }}>
-                            Ubicación
-                          </div>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-frost)' }}>
-                            {club.address}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                      <button
-                        onClick={() => setClubModalData(club)}
+                        <Icons.Star size={11} />
+                        <span>{club.rating}</span>
+                        <span style={{ color: 'var(--color-ash)', fontSize: 10 }}>({club.reviewCount})</span>
+                      </div>
+                    }
+                    bottomLeftBadge={
+                      <div
                         style={{
-                          backgroundColor: '#161616',
-                          color: 'var(--color-frost)',
-                          border: '1px solid rgba(255, 255, 255, 0.18)',
-                          borderRadius: 'var(--radius-full)',
-                          padding: '10px 16px',
                           fontSize: 11,
-                          fontWeight: 700,
+                          color: 'var(--color-ash)',
                           textTransform: 'uppercase',
-                          letterSpacing: '0.5px',
-                          cursor: 'pointer',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 6,
-                          transition: 'all 0.2s ease',
-                        }}
-                        onMouseEnter={(e) => {
-                          (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255, 255, 255, 0.4)';
-                          (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#222';
-                        }}
-                        onMouseLeave={(e) => {
-                          (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255, 255, 255, 0.18)';
-                          (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#161616';
+                          letterSpacing: '0.8px',
+                          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                          backdropFilter: 'blur(6px)',
+                          padding: '3px 8px',
+                          borderRadius: 'var(--radius-full)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
                         }}
                       >
-                        <span>Ficha & Canchas</span>
-                        <Icons.ArrowUpRight size={12} />
-                      </button>
+                        {club.courts.length} {club.courts.length === 1 ? 'cancha' : 'canchas'}
+                      </div>
+                    }
+                  />
 
-                      {club.whatsappPhone && (
-                        <a
-                          href={`https://wa.me/${club.whatsappPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
-                            `Hola! Los vi en Hay Equipo y quería consultar disponibilidad de turnos para jugar ${
-                              activeSport === 'PADEL' ? 'pádel' : 'fútbol'
-                            } en ${club.name}.`
-                          )}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          style={{
-                            backgroundColor: '#25D366',
-                            color: '#000000',
-                            border: 'none',
-                            borderRadius: 'var(--radius-full)',
-                            padding: '10px 18px',
-                            fontSize: 11,
-                            fontWeight: 800,
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.5px',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 6,
-                            textDecoration: 'none',
-                            boxShadow: '0 2px 10px rgba(37, 211, 102, 0.25)',
-                            transition: 'all 0.2s ease',
-                          }}
-                          onMouseEnter={(e) => {
-                            (e.currentTarget as HTMLElement).style.opacity = '0.9';
-                          }}
-                          onMouseLeave={(e) => {
-                            (e.currentTarget as HTMLElement).style.opacity = '1';
-                          }}
-                        >
-                          <Icons.WhatsApp size={14} color="#000000" />
-                          <span>Consultar WhatsApp</span>
-                        </a>
-                      )}
+                  {/* Contenido del Club */}
+                  <div style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '100%', gap: 16 }}>
+                    <div>
+                      {/* Encabezado Club */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, marginBottom: 8 }}>
+                        <div>
+                          <h3 style={{ fontSize: 'clamp(20px, 2.5vw, 25px)', fontWeight: 700, color: 'var(--color-frost)', letterSpacing: '-0.6px', margin: '0 0 6px', textTransform: 'uppercase' }}>
+                            {club.name}
+                          </h3>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--color-ash)', fontSize: 13, flexWrap: 'wrap' }}>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <Icons.MapPin size={13} color="var(--color-crimson-signal)" />
+                              <span>{club.address} · {club.city}</span>
+                            </span>
+                            <span style={{ color: 'var(--color-graphite)' }}>·</span>
+                            <span style={{ color: 'var(--color-frost)', fontWeight: 600 }}>a {club.distanceKm} km</span>
+                            {club.phone && (
+                              <>
+                                <span style={{ color: 'var(--color-graphite)' }}>·</span>
+                                <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--color-ash)', fontSize: 12 }}>
+                                  <Icons.Phone size={11} color="var(--color-ash)" />
+                                  <span>{club.phone}</span>
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
 
-                      {getClubSlotsForDate(club, selectedDate, activeSport).filter((s) => s.available).length > 0 && (
                         <button
-                          onClick={() => {
-                            const clubSlots = getClubSlotsForDate(club, selectedDate, activeSport).filter((s) => s.available);
-                            const firstSlot = clubSlots[0];
-                            if (firstSlot) handleOpenBooking(firstSlot, club);
-                          }}
+                          onClick={() => setClubModalData(club)}
                           style={{
-                            backgroundColor: 'var(--color-crimson-signal)',
+                            backgroundColor: 'transparent',
                             color: 'var(--color-frost)',
-                            border: 'none',
-                            padding: '10px 24px',
-                            fontSize: 12,
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            padding: '7px 14px',
+                            fontSize: 11,
                             fontWeight: 700,
                             textTransform: 'uppercase',
                             letterSpacing: '0.6px',
                             cursor: 'pointer',
-                            borderRadius: 'var(--radius-full)',
                             display: 'flex',
                             alignItems: 'center',
                             gap: 6,
+                            borderRadius: 'var(--radius-full)',
+                            transition: 'border-color 0.2s ease',
+                          }}
+                          onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255, 255, 255, 0.5)')}
+                          onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255, 255, 255, 0.2)')}
+                        >
+                          <span>Ver Fotos & Canchas</span>
+                          <Icons.ArrowUpRight size={12} />
+                        </button>
+                      </div>
+
+                      {/* Amenities Badges (Pills) */}
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: availableSlots.length > 0 ? 14 : 0 }}>
+                        {club.amenities.covered && (
+                          <div style={{ padding: '4px 10px', backgroundColor: '#141414', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 'var(--radius-full)', fontSize: 11, color: 'var(--color-ash)' }}>
+                            Techada / Indoor
+                          </div>
+                        )}
+                        {club.amenities.parking && (
+                          <div style={{ padding: '4px 10px', backgroundColor: '#141414', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 'var(--radius-full)', fontSize: 11, color: 'var(--color-ash)' }}>
+                            Parking Custodiado
+                          </div>
+                        )}
+                        {club.amenities.buffet && (
+                          <div style={{ padding: '4px 10px', backgroundColor: '#141414', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 'var(--radius-full)', fontSize: 11, color: 'var(--color-ash)' }}>
+                            Buffet & Bar
+                          </div>
+                        )}
+                        {club.amenities.lighting && (
+                          <div style={{ padding: '4px 10px', backgroundColor: '#141414', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 'var(--radius-full)', fontSize: 11, color: 'var(--color-ash)' }}>
+                            Iluminación LED Pro
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Turnos disponibles directo en la tarjeta si existen slots online */}
+                      {availableSlots.length > 0 && (
+                        <div style={{ marginTop: 10 }}>
+                          <div style={{ fontSize: 10, color: 'var(--color-crimson-signal)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 8, fontWeight: 700 }}>
+                            {isSameDay(selectedDate, new Date())
+                              ? 'HORARIOS DISPONIBLES HOY (HACÉ CLIC PARA RESERVAR):'
+                              : `HORARIOS DISPONIBLES · ${getFullDateLabel(selectedDate).toUpperCase()} (HACÉ CLIC PARA RESERVAR):`}
+                          </div>
+
+                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                            {availableSlots.map((slot) => (
+                              <button
+                                key={slot.id}
+                                onClick={() => handleOpenBooking(slot, club)}
+                                style={{
+                                  backgroundColor: '#111111',
+                                  border: '1px solid var(--color-graphite)',
+                                  borderRadius: 'var(--radius-full)',
+                                  color: 'var(--color-frost)',
+                                  padding: '6px 14px',
+                                  textAlign: 'left',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.2s ease',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  gap: 2,
+                                }}
+                                onMouseEnter={(e) => {
+                                  (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-crimson-signal)';
+                                  (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(252, 28, 70, 0.12)';
+                                }}
+                                onMouseLeave={(e) => {
+                                  (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-graphite)';
+                                  (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#111111';
+                                }}
+                              >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700 }}>
+                                  <Icons.Clock size={11} color="var(--color-crimson-signal)" />
+                                  <span>{slot.startTime} hs</span>
+                                </div>
+                                <div style={{ fontSize: 9.5, color: 'var(--color-ash)', fontWeight: 500 }}>
+                                  {formatCurrency(slot.perPlayerPrice)} / pers
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Footer de Tarjeta */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(76, 76, 76, 0.25)', paddingTop: 14, marginTop: 'auto', flexWrap: 'wrap', gap: 12 }}>
+                      <div>
+                        {club.phone ? (
+                          <div>
+                            <div style={{ fontSize: 10, color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600 }}>
+                              Teléfono Directo
+                            </div>
+                            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-frost)' }}>
+                              {club.phone}
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            <div style={{ fontSize: 10, color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600 }}>
+                              Ubicación
+                            </div>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-frost)' }}>
+                              {club.address}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <button
+                          onClick={() => setClubModalData(club)}
+                          style={{
+                            backgroundColor: '#161616',
+                            color: 'var(--color-frost)',
+                            border: '1px solid rgba(255, 255, 255, 0.18)',
+                            borderRadius: 'var(--radius-full)',
+                            padding: '10px 16px',
+                            fontSize: 11,
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 6,
+                            transition: 'all 0.2s ease',
+                          }}
+                          onMouseEnter={(e) => {
+                            (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255, 255, 255, 0.4)';
+                            (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#202020';
+                          }}
+                          onMouseLeave={(e) => {
+                            (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255, 255, 255, 0.18)';
+                            (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#161616';
                           }}
                         >
-                          <span>Elegir Horario</span>
-                          <Icons.ArrowUpRight size={13} color="#ffffff" />
+                          <span>Ficha & Canchas</span>
+                          <Icons.ArrowUpRight size={12} />
                         </button>
-                      )}
+
+                        {club.whatsappPhone && (
+                          <a
+                            href={`https://wa.me/${club.whatsappPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
+                              `Hola! Los vi en Hay Equipo y quería consultar disponibilidad de turnos para jugar ${
+                                activeSport === 'PADEL' ? 'pádel' : 'fútbol'
+                              } en ${club.name}.`
+                            )}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{
+                              backgroundColor: '#25D366',
+                              color: '#000000',
+                              border: 'none',
+                              borderRadius: 'var(--radius-full)',
+                              padding: '10px 18px',
+                              fontSize: 11,
+                              fontWeight: 800,
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.5px',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 6,
+                              textDecoration: 'none',
+                              boxShadow: '0 2px 10px rgba(37, 211, 102, 0.25)',
+                              transition: 'all 0.2s ease',
+                            }}
+                            onMouseEnter={(e) => {
+                              (e.currentTarget as HTMLElement).style.opacity = '0.9';
+                            }}
+                            onMouseLeave={(e) => {
+                              (e.currentTarget as HTMLElement).style.opacity = '1';
+                            }}
+                          >
+                            <Icons.WhatsApp size={14} color="#000000" />
+                            <span>Consultar WhatsApp</span>
+                          </a>
+                        )}
+
+                        {availableSlots.length > 0 && (
+                          <button
+                            onClick={() => {
+                              const firstSlot = availableSlots[0];
+                              if (firstSlot) handleOpenBooking(firstSlot, club);
+                            }}
+                            style={{
+                              backgroundColor: 'var(--color-crimson-signal)',
+                              color: 'var(--color-frost)',
+                              border: 'none',
+                              padding: '10px 24px',
+                              fontSize: 12,
+                              fontWeight: 700,
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.6px',
+                              cursor: 'pointer',
+                              borderRadius: 'var(--radius-full)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 6,
+                            }}
+                          >
+                            <span>Elegir Horario</span>
+                            <Icons.ArrowUpRight size={13} color="#ffffff" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
