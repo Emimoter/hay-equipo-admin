@@ -201,7 +201,7 @@ function getFormattedDate(offsetDays: number = 0): { value: string; label: strin
 
 export default function ClubPage() {
   const router = useRouter();
-  const { user, loginWithGoogle, loginWithEmail, logout, loading: authLoading } = useAuth();
+  const { user, userProfile, loginWithGoogle, loginWithEmail, logout, loading: authLoading } = useAuth();
 
   // Club session state
   const [activeClub, setActiveClub] = useState<any | null>(null);
@@ -749,26 +749,71 @@ export default function ClubPage() {
             </span>
           </div>
 
-          <button
-            type="button"
-            onClick={() => logout()}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              color: 'var(--color-ash)',
-              fontSize: 12,
-              fontWeight: 600,
-              backgroundColor: 'transparent',
-              border: '1px solid var(--color-graphite)',
-              padding: '6px 14px',
-              borderRadius: 'var(--radius-full)',
-              cursor: 'pointer',
-            }}
-          >
-            <Icons.LogOut size={14} />
-            <span>Cerrar Sesión</span>
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                color: 'var(--color-frost)',
+                border: '1px solid rgba(255, 255, 255, 0.18)',
+                borderRadius: 'var(--radius-full)',
+                padding: '4px 14px 4px 6px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+              }}
+              title={`Sesión iniciada: ${user.email}`}
+            >
+              {user.photoURL ? (
+                <img
+                  src={user.photoURL}
+                  alt={user.displayName || 'Google'}
+                  referrerPolicy="no-referrer"
+                  style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover' }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: 26,
+                    height: 26,
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--color-crimson-signal)',
+                    color: '#fff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 11,
+                    fontWeight: 800,
+                  }}
+                >
+                  {(userProfile?.name || user.displayName || user.email || 'U').substring(0, 1).toUpperCase()}
+                </div>
+              )}
+              <span style={{ fontSize: 12, fontWeight: 700 }}>
+                {(userProfile?.name || user.displayName || user.email?.split('@')[0] || 'Usuario').split(' ')[0]}
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => logout()}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                color: 'var(--color-ash)',
+                fontSize: 12,
+                fontWeight: 600,
+                backgroundColor: 'transparent',
+                border: '1px solid var(--color-graphite)',
+                padding: '6px 14px',
+                borderRadius: 'var(--radius-full)',
+                cursor: 'pointer',
+              }}
+            >
+              <Icons.LogOut size={14} />
+              <span>Cerrar Sesión</span>
+            </button>
+          </div>
         </header>
 
         <div style={{ maxWidth: 520, margin: '60px auto', padding: '0 20px' }}>
@@ -782,9 +827,18 @@ export default function ClubPage() {
           >
             {/* User identification badge */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24, padding: '10px 14px', backgroundColor: 'var(--color-surface-elevate)', borderRadius: '0px', border: '1px solid var(--color-graphite)' }}>
-              <div style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: 'var(--color-crimson-signal)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>
-                {(user.displayName || user.email || 'U')[0].toUpperCase()}
-              </div>
+              {user.photoURL ? (
+                <img
+                  src={user.photoURL}
+                  alt={user.displayName || 'Google'}
+                  referrerPolicy="no-referrer"
+                  style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }}
+                />
+              ) : (
+                <div style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: 'var(--color-crimson-signal)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>
+                  {(user.displayName || user.email || 'U')[0].toUpperCase()}
+                </div>
+              )}
               <div style={{ overflow: 'hidden' }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-frost)' }}>{user.displayName || 'Usuario de Google'}</div>
                 <div style={{ fontSize: 12, color: 'var(--color-ash)', textOverflow: 'ellipsis', overflow: 'hidden' }}>{user.email}</div>
@@ -945,6 +999,52 @@ export default function ClubPage() {
             <span style={{ color: 'var(--color-ash)', fontWeight: 500 }}>Club:</span>
             <span style={{ color: 'var(--color-frost)' }}>{activeClub?.name || 'Mi Club'}</span>
           </div>
+
+          {/* Google User Profile Pill */}
+          {user && (
+            <div
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                color: 'var(--color-frost)',
+                border: '1px solid rgba(255, 255, 255, 0.18)',
+                borderRadius: 'var(--radius-full)',
+                padding: '4px 14px 4px 6px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+              }}
+              title={`Sesión iniciada: ${user.email}`}
+            >
+              {user.photoURL ? (
+                <img
+                  src={user.photoURL}
+                  alt={user.displayName || 'Google'}
+                  referrerPolicy="no-referrer"
+                  style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover' }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: 26,
+                    height: 26,
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--color-crimson-signal)',
+                    color: '#fff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 11,
+                    fontWeight: 800,
+                  }}
+                >
+                  {(userProfile?.name || user.displayName || user.email || 'A').substring(0, 1).toUpperCase()}
+                </div>
+              )}
+              <span style={{ fontSize: 12, fontWeight: 700 }}>
+                {(userProfile?.name || user.displayName || user.email?.split('@')[0] || 'Admin').split(' ')[0]}
+              </span>
+            </div>
+          )}
 
           {/* Add Staff / Recepcionista Gmail Button */}
           <button
