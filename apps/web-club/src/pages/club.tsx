@@ -11,7 +11,7 @@ import {
   updateBookingStatusFirestore,
   getClubPublishedSlotsFirestore,
   saveClubPublishedSlotsFirestore,
-  createBookingFirestore,
+  linkClubAdminEmailFirestore,
   BookingRecord,
 } from '../services/firebase';
 import { SportBadge } from '../components/SportBadge';
@@ -42,7 +42,7 @@ const DEFAULT_HOURS = [
 ];
 
 /* ────────────────────────────────────────────────────────────
-   Vector Icons (Strict Zero-Emoji Policy)
+   Vector Icons (Strict Zero-Emoji Compliance)
    ──────────────────────────────────────────────────────────── */
 
 const Icons = {
@@ -95,12 +95,6 @@ const Icons = {
       <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2zm0 18.13c-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.16 8.16 0 0 1-1.25-4.37c0-4.54 3.7-8.24 8.24-8.24 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.83c0 4.54-3.7 8.22-8.23 8.22zm4.52-6.17c-.25-.12-1.47-.72-1.7-.81-.23-.08-.39-.12-.56.12-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.12-1.05-.39-2-1.23-.74-.66-1.24-1.47-1.39-1.72-.14-.25-.02-.38.11-.51.11-.11.25-.29.37-.43.12-.15.17-.25.25-.42.08-.17.04-.31-.02-.43s-.56-1.36-.77-1.86c-.2-.49-.41-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.22.25-.86.84-.86 2.05s.88 2.38 1 2.55c.12.17 1.73 2.65 4.2 3.71.59.25 1.05.4 1.41.51.59.19 1.13.16 1.56.1.47-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.14-1.18-.06-.11-.23-.17-.47-.3z" />
     </svg>
   ),
-  ShieldCheck: ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-      <path d="M9 12l2 2 4-4" />
-    </svg>
-  ),
   Plus: ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <line x1="12" y1="5" x2="12" y2="19" />
@@ -126,6 +120,13 @@ const Icons = {
       <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
       <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
       <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+    </svg>
+  ),
+  UserCheck: ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="8.5" cy="7" r="4" />
+      <polyline points="17 11 19 13 23 9" />
     </svg>
   ),
 };
@@ -207,6 +208,16 @@ export default function ClubPage() {
   const [clubsList, setClubsList] = useState<any[]>([]);
   const [isLoadingClubs, setIsLoadingClubs] = useState(true);
 
+  // Manual linking claim input
+  const [claimInput, setClaimInput] = useState('');
+  const [claimMessage, setClaimMessage] = useState<{ text: string; type: 'error' | 'success' } | null>(null);
+  const [isLinkingClaim, setIsLinkingClaim] = useState(false);
+
+  // Add staff email modal
+  const [isAddStaffModalOpen, setIsAddStaffModalOpen] = useState(false);
+  const [newStaffEmail, setNewStaffEmail] = useState('');
+  const [staffModalSuccess, setStaffModalSuccess] = useState(false);
+
   // Reception controls
   const [isReceptionOpen, setIsReceptionOpen] = useState(true);
   const [isSoundOn, setIsSoundOn] = useState(true);
@@ -215,7 +226,7 @@ export default function ClubPage() {
   const [activeTab, setActiveTab] = useState<ClubTab>('REQUESTS');
   const { containerRef, setItemRef, indicatorStyle } = useSlidingIndicator<ClubTab>(activeTab);
 
-  // Real Data (NO MOCKS)
+  // Real Data (100% Firebase, ZERO MOCKS)
   const [bookings, setBookings] = useState<BookingRecord[]>([]);
   const [courts, setCourts] = useState<CourtItem[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(false);
@@ -237,10 +248,10 @@ export default function ClubPage() {
   const [editingCourt, setEditingCourt] = useState<CourtItem | null>(null);
 
   // Payout alias
-  const [cbuAlias, setCbuAlias] = useState('LAVERDE.FUTBOL.MP');
+  const [cbuAlias, setCbuAlias] = useState('');
   const [aliasSaved, setAliasSaved] = useState(false);
 
-  // Login form state (if not authenticated)
+  // Login form state
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
@@ -249,23 +260,58 @@ export default function ClubPage() {
   // Audio alert tracking
   const knownPendingIds = useRef<Set<string>>(new Set());
 
-  // 1. Fetch available clubs from Firestore
-  useEffect(() => {
-    async function loadClubs() {
-      setIsLoadingClubs(true);
-      const data = await getClubsFirestore();
-      if (Array.isArray(data) && data.length > 0) {
-        setClubsList(data);
+  // 1. Fetch available clubs from Firestore and detect match with user's Google Account
+  const loadClubsAndMatch = useCallback(async () => {
+    setIsLoadingClubs(true);
+    const data = await getClubsFirestore();
+    const loadedList = Array.isArray(data) ? data : [];
+    setClubsList(loadedList);
 
-        // Check stored club session or default to first club
-        const storedClubId = typeof window !== 'undefined' ? localStorage.getItem('hayequipo_club_id') : null;
-        const matched = data.find((c: any) => c.id === storedClubId) || data[0];
-        setActiveClub(matched);
+    // If user is authenticated, resolve their club
+    if (user?.email) {
+      const userEmail = user.email.trim().toLowerCase();
+      const userUid = user.uid;
+
+      // Check URL for auto-claim / linking param
+      const claimParam = (router.query.vincular || router.query.claim) as string;
+      if (claimParam) {
+        const targetClub = loadedList.find(
+          (c: any) => c.id === claimParam || c.slug === claimParam
+        );
+        if (targetClub) {
+          await linkClubAdminEmailFirestore(targetClub.id, userEmail, userUid);
+          setActiveClub(targetClub);
+          setIsLoadingClubs(false);
+          return;
+        }
       }
-      setIsLoadingClubs(false);
+
+      // Normal lookup: match adminEmails array or adminEmail or ownerUid
+      const matched = loadedList.find((c: any) => {
+        const emails: string[] = Array.isArray(c.adminEmails)
+          ? c.adminEmails.map((e: string) => String(e).trim().toLowerCase())
+          : c.adminEmail ? [String(c.adminEmail).trim().toLowerCase()] : [];
+
+        const matchesEmail = emails.includes(userEmail);
+        const matchesUid = c.ownerUid && c.ownerUid === userUid;
+        return matchesEmail || matchesUid;
+      });
+
+      if (matched) {
+        setActiveClub(matched);
+      } else {
+        setActiveClub(null);
+      }
+    } else {
+      setActiveClub(null);
     }
-    loadClubs();
-  }, []);
+
+    setIsLoadingClubs(false);
+  }, [user, router.query]);
+
+  useEffect(() => {
+    loadClubsAndMatch();
+  }, [loadClubsAndMatch]);
 
   // 2. Load Real Courts for Active Club ONLY (No mocks)
   const loadClubCourts = useCallback(async () => {
@@ -292,7 +338,7 @@ export default function ClubPage() {
     const unsubscribe = listenClubBookingsFirestore(activeClub.id, (clubBookings) => {
       setBookings(clubBookings);
 
-      // Trigger audio chime only on new PENDING requests
+      // Trigger audio chime only on brand new PENDING requests
       const pendings = clubBookings.filter((b) => b.status === 'PENDING');
       const brandNew = pendings.filter((b) => !knownPendingIds.current.has(b.id));
 
@@ -316,7 +362,7 @@ export default function ClubPage() {
   useEffect(() => {
     if (typeof document === 'undefined') return;
     if (pendingCount > 0) {
-      document.title = `(${pendingCount}) ¡NUEVA SOLICITUD! — Hay Equipo Club`;
+      document.title = `(${pendingCount}) ¡SOLICITUD! — Hay Equipo Club`;
     } else {
       document.title = activeClub?.name ? `${activeClub.name} — Terminal Club` : 'Terminal Club — Hay Equipo?';
     }
@@ -379,6 +425,60 @@ export default function ClubPage() {
     }
   };
 
+  // Self-claim handler when user types club slug or ID
+  const handleClaimClub = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!claimInput.trim() || !user?.email) return;
+
+    setIsLinkingClaim(true);
+    setClaimMessage(null);
+
+    const clean = claimInput.trim().toLowerCase();
+    const target = clubsList.find(
+      (c) => c.id.toLowerCase() === clean || (c.slug && c.slug.toLowerCase() === clean) || c.name.toLowerCase() === clean
+    );
+
+    if (!target) {
+      setClaimMessage({
+        text: `No encontramos ningún club con el código o nombre "${claimInput}". Verificalo o pedíselo al soporte de Hay Equipo.`,
+        type: 'error',
+      });
+      setIsLinkingClaim(false);
+      return;
+    }
+
+    const success = await linkClubAdminEmailFirestore(target.id, user.email, user.uid);
+    if (success) {
+      setClaimMessage({
+        text: `¡Vinculación exitosa con ${target.name}! Ingresando al panel...`,
+        type: 'success',
+      });
+      await loadClubsAndMatch();
+    } else {
+      setClaimMessage({
+        text: 'Hubo un inconveniente al guardar la vinculación. Reintentá en unos segundos.',
+        type: 'error',
+      });
+    }
+    setIsLinkingClaim(false);
+  };
+
+  // Add staff email to active club
+  const handleAddStaffEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newStaffEmail.trim() || !activeClub?.id) return;
+    const success = await linkClubAdminEmailFirestore(activeClub.id, newStaffEmail.trim());
+    if (success) {
+      setStaffModalSuccess(true);
+      setTimeout(() => {
+        setStaffModalSuccess(false);
+        setIsAddStaffModalOpen(false);
+        setNewStaffEmail('');
+      }, 2000);
+      await loadClubsAndMatch();
+    }
+  };
+
   // Login handler
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -412,11 +512,9 @@ export default function ClubPage() {
   }, [bookings]);
 
   /* ────────────────────────────────────────────────────────────
-     VIEW 1: CLUB LOGIN REQUIRED (If not authenticated)
+     VIEW 1: NO USER LOGGED IN -> Clean Google & Email Login
      ──────────────────────────────────────────────────────────── */
-  const isAuthenticated = !!user || (typeof window !== 'undefined' && !!localStorage.getItem('hayequipo_club_session'));
-
-  if (!authLoading && !isAuthenticated) {
+  if (!authLoading && !user) {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: 'var(--color-void)', color: 'var(--color-frost)', fontFamily: "'Space Grotesk', Inter, sans-serif" }}>
         <Head>
@@ -431,15 +529,16 @@ export default function ClubPage() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            borderBottom: '1px solid var(--color-graphite)',
-            backgroundColor: 'var(--color-obsidian)',
+            borderBottom: '1px solid rgba(76, 76, 76, 0.4)',
+            backgroundColor: 'rgba(0, 0, 0, 0.94)',
+            backdropFilter: 'blur(16px)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 20 }}>
             <span style={{ fontSize: 26, fontWeight: 700, color: 'var(--color-frost)', letterSpacing: '-0.9px' }}>
               HAY EQUIPO?
             </span>
-            <span style={{ fontSize: 10, color: 'var(--color-ash)', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
+            <span style={{ fontSize: 10, color: 'var(--color-ash)', letterSpacing: '1.5px', textTransform: 'uppercase', opacity: 0.7 }}>
               / Terminal Exclusiva Clubes
             </span>
           </div>
@@ -472,13 +571,13 @@ export default function ClubPage() {
           >
             <div style={{ textAlign: 'center', marginBottom: 28 }}>
               <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--color-crimson-signal)', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
-                ACCESO DEPORTIVO
+                TERMINAL DE DESPACHO
               </span>
               <h2 style={{ fontSize: 24, fontWeight: 800, margin: '8px 0 6px', color: 'var(--color-frost)' }}>
-                Ingresá a tu Club
+                Ingresá con tu Cuenta
               </h2>
               <p style={{ fontSize: 13, color: 'var(--color-ash)', margin: 0 }}>
-                Gestioná solicitudes en vivo y publicá turnos vacantes en segundos.
+                Entrá con tu cuenta de Google para acceder a las solicitudes y turnos de tu club.
               </p>
             </div>
 
@@ -499,7 +598,7 @@ export default function ClubPage() {
               </div>
             )}
 
-            {/* Google 1-Click Login */}
+            {/* Google 1-Click Login (Primary Action) */}
             <button
               type="button"
               onClick={async () => {
@@ -507,7 +606,7 @@ export default function ClubPage() {
                 try {
                   await loginWithGoogle();
                 } catch (err: any) {
-                  setLoginError(err?.message || 'Error con Google');
+                  setLoginError(err?.message || 'Error al conectar con Google.');
                 }
               }}
               style={{
@@ -515,16 +614,17 @@ export default function ClubPage() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: 10,
+                gap: 12,
                 backgroundColor: 'var(--color-surface-elevate)',
                 color: 'var(--color-frost)',
                 border: '1px solid var(--color-graphite)',
                 borderRadius: 'var(--radius-full)',
-                padding: '12px',
-                fontSize: 13,
+                padding: '14px',
+                fontSize: 14,
                 fontWeight: 700,
                 cursor: 'pointer',
                 marginBottom: 20,
+                transition: 'all 0.2s ease',
               }}
             >
               <Icons.Google size={18} />
@@ -605,9 +705,9 @@ export default function ClubPage() {
             </form>
 
             <div style={{ textAlign: 'center', marginTop: 24, fontSize: 12, color: 'var(--color-ash)' }}>
-              ¿Sos un club nuevo?{' '}
+              ¿Sos un complejo nuevo?{' '}
               <Link href="/registro-club" style={{ color: 'var(--color-frost)', fontWeight: 700, textDecoration: 'underline' }}>
-                Registrá tu complejo acá
+                Registrá tu club acá
               </Link>
             </div>
           </div>
@@ -617,7 +717,178 @@ export default function ClubPage() {
   }
 
   /* ────────────────────────────────────────────────────────────
-     VIEW 2: MAIN CLUB OPERATIONS TERMINAL (AUTHENTICATED)
+     VIEW 2: LOGGED IN WITH GOOGLE BUT NO CLUB LINKED YET
+     ──────────────────────────────────────────────────────────── */
+  if (user && !isLoadingClubs && !activeClub) {
+    const waHelpUrl = `https://wa.me/5492235948332?text=Hola!%20Inicié%20sesión%20con%20Google%20en%20Hay%20Equipo%20(${encodeURIComponent(user.email || '')})%20y%20quiero%20vincular%20mi%20club.`;
+
+    return (
+      <div style={{ minHeight: '100vh', backgroundColor: 'var(--color-void)', color: 'var(--color-frost)', fontFamily: "'Space Grotesk', Inter, sans-serif" }}>
+        <Head>
+          <title>Cuenta sin Club — Hay Equipo?</title>
+        </Head>
+
+        <header
+          style={{
+            height: 72,
+            padding: '0 36px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            borderBottom: '1px solid rgba(76, 76, 76, 0.4)',
+            backgroundColor: 'rgba(0, 0, 0, 0.94)',
+            backdropFilter: 'blur(16px)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 20 }}>
+            <span style={{ fontSize: 26, fontWeight: 700, color: 'var(--color-frost)', letterSpacing: '-0.9px' }}>
+              HAY EQUIPO?
+            </span>
+            <span style={{ fontSize: 10, color: 'var(--color-ash)', letterSpacing: '1.5px', textTransform: 'uppercase', opacity: 0.7 }}>
+              / Terminal de Clubes
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => logout()}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              color: 'var(--color-ash)',
+              fontSize: 12,
+              fontWeight: 600,
+              backgroundColor: 'transparent',
+              border: '1px solid var(--color-graphite)',
+              padding: '6px 14px',
+              borderRadius: 'var(--radius-full)',
+              cursor: 'pointer',
+            }}
+          >
+            <Icons.LogOut size={14} />
+            <span>Cerrar Sesión</span>
+          </button>
+        </header>
+
+        <div style={{ maxWidth: 520, margin: '60px auto', padding: '0 20px' }}>
+          <div
+            style={{
+              backgroundColor: 'var(--color-obsidian)',
+              border: '1px solid var(--color-graphite)',
+              borderRadius: '0px',
+              padding: '40px 32px',
+            }}
+          >
+            {/* User identification badge */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24, padding: '10px 14px', backgroundColor: 'var(--color-surface-elevate)', borderRadius: '0px', border: '1px solid var(--color-graphite)' }}>
+              <div style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: 'var(--color-crimson-signal)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>
+                {(user.displayName || user.email || 'U')[0].toUpperCase()}
+              </div>
+              <div style={{ overflow: 'hidden' }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-frost)' }}>{user.displayName || 'Usuario de Google'}</div>
+                <div style={{ fontSize: 12, color: 'var(--color-ash)', textOverflow: 'ellipsis', overflow: 'hidden' }}>{user.email}</div>
+              </div>
+            </div>
+
+            <h3 style={{ fontSize: 20, fontWeight: 800, margin: '0 0 8px', color: 'var(--color-frost)' }}>
+              Esta cuenta aún no tiene un club asignado
+            </h3>
+            <p style={{ fontSize: 13, color: 'var(--color-ash)', lineHeight: 1.6, margin: '0 0 24px' }}>
+              Para que tu club aparezca acá automáticamente cada vez que entres con Google, pedile al administrador de Hay Equipo que agregue tu correo <strong>({user.email})</strong> a la ficha de tu club.
+            </p>
+
+            {/* Direct WhatsApp request button */}
+            <a
+              href={waHelpUrl}
+              target="_blank"
+              rel="noreferrer"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                backgroundColor: '#25D366',
+                color: '#000000',
+                padding: '12px 20px',
+                borderRadius: 'var(--radius-full)',
+                fontSize: 13,
+                fontWeight: 800,
+                textDecoration: 'none',
+                marginBottom: 24,
+              }}
+            >
+              <Icons.WhatsApp size={16} color="#000000" />
+              <span>Solicitar Asignación por WhatsApp</span>
+            </a>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0' }}>
+              <div style={{ flex: 1, height: 1, backgroundColor: 'var(--color-graphite)' }} />
+              <span style={{ fontSize: 11, color: 'var(--color-ash)', textTransform: 'uppercase' }}>o vinculá con tu código</span>
+              <div style={{ flex: 1, height: 1, backgroundColor: 'var(--color-graphite)' }} />
+            </div>
+
+            {/* Quick claim form */}
+            <form onSubmit={handleClaimClub} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 12, color: 'var(--color-ash)', marginBottom: 6, fontWeight: 600 }}>
+                  CÓDIGO O SLUG DE TU CLUB (EJ: club-laverde-jara)
+                </label>
+                <input
+                  type="text"
+                  value={claimInput}
+                  onChange={(e) => setClaimInput(e.target.value)}
+                  placeholder="club-..."
+                  style={{
+                    width: '100%',
+                    backgroundColor: 'var(--color-surface-elevate)',
+                    color: 'var(--color-frost)',
+                    border: '1px solid var(--color-graphite)',
+                    borderRadius: '0px',
+                    padding: '10px 14px',
+                    fontSize: 13,
+                    outline: 'none',
+                  }}
+                />
+              </div>
+
+              {claimMessage && (
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: claimMessage.type === 'error' ? '#ef4444' : 'var(--color-emerald)',
+                    fontWeight: 600,
+                  }}
+                >
+                  {claimMessage.text}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={isLinkingClaim}
+                style={{
+                  backgroundColor: 'var(--color-surface-elevate)',
+                  color: 'var(--color-frost)',
+                  border: '1px solid var(--color-graphite)',
+                  borderRadius: 'var(--radius-full)',
+                  padding: '10px 18px',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: isLinkingClaim ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {isLinkingClaim ? 'Verificando...' : 'VINCULAR MI CUENTA A ESTE CLUB'}
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ────────────────────────────────────────────────────────────
+     VIEW 3: MAIN CLUB OPERATIONS TERMINAL (AUTHENTICATED & LINKED)
      ──────────────────────────────────────────────────────────── */
 
   return (
@@ -674,6 +945,29 @@ export default function ClubPage() {
             <span style={{ color: 'var(--color-ash)', fontWeight: 500 }}>Club:</span>
             <span style={{ color: 'var(--color-frost)' }}>{activeClub?.name || 'Mi Club'}</span>
           </div>
+
+          {/* Add Staff / Recepcionista Gmail Button */}
+          <button
+            type="button"
+            onClick={() => setIsAddStaffModalOpen(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              backgroundColor: 'transparent',
+              color: 'var(--color-ash)',
+              border: '1px dashed var(--color-graphite)',
+              borderRadius: 'var(--radius-full)',
+              padding: '6px 12px',
+              fontSize: 11,
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+            title="Agregar otro Gmail autorizado para este club (ej: recepcionista o canchero)"
+          >
+            <Icons.UserCheck size={13} />
+            <span>+ Encargado</span>
+          </button>
 
           {/* Sound Alert Toggle */}
           <button
@@ -740,7 +1034,7 @@ export default function ClubPage() {
                 localStorage.removeItem('hayequipo_club_id');
               }
               await logout();
-              router.push('/');
+              router.push('/club');
             }}
             style={{
               backgroundColor: 'transparent',
@@ -1170,7 +1464,7 @@ export default function ClubPage() {
           </div>
         )}
 
-        {/* ─── TAB 2: PUBLICADOR DE TURNOS VACANTES ─── */}
+        {/* ─── TAB 2: PUBLICAR TURNOS VACANTES ─── */}
         {activeTab === 'PUBLISH_SLOTS' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
             {/* Header info */}
@@ -1495,13 +1789,14 @@ export default function ClubPage() {
                 DATOS DE TRANSFERENCIA
               </h4>
               <p style={{ fontSize: 13, color: 'var(--color-ash)', margin: '0 0 16px' }}>
-                Ingresá el CBU o Alias donde recibirás las liquidaciones de reservas.
+                Ingresá el CBU o Alias donde recibirás las liquidaciones de reservas de {activeClub?.name || 'tu club'}.
               </p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <input
                   type="text"
                   value={cbuAlias}
+                  placeholder="ALIAS.MP o CBU"
                   onChange={(e) => setCbuAlias(e.target.value.toUpperCase())}
                   style={{
                     backgroundColor: 'var(--color-surface-elevate)',
@@ -1548,6 +1843,104 @@ export default function ClubPage() {
         )}
 
       </main>
+
+      {/* ─── MODAL: AGREGAR GMAIL DE ENCARGADO / RECEPCIONISTA ─── */}
+      {isAddStaffModalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(6px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 20,
+            zIndex: 100,
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: 'var(--color-obsidian)',
+              border: '1px solid var(--color-graphite)',
+              borderRadius: '0px',
+              padding: 28,
+              maxWidth: 440,
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 16,
+            }}
+          >
+            <div>
+              <h3 style={{ fontSize: 18, fontWeight: 800, margin: '0 0 6px', color: 'var(--color-frost)' }}>
+                Agregar Encargado o Recepcionista
+              </h3>
+              <p style={{ fontSize: 13, color: 'var(--color-ash)', margin: 0 }}>
+                Ingresá el Gmail de la persona que atiende en el club para que también pueda entrar a este panel tocando &quot;Continuar con Google&quot;.
+              </p>
+            </div>
+
+            <form onSubmit={handleAddStaffEmail} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <input
+                type="email"
+                required
+                placeholder="recepcion.tuclub@gmail.com"
+                value={newStaffEmail}
+                onChange={(e) => setNewStaffEmail(e.target.value)}
+                style={{
+                  backgroundColor: 'var(--color-surface-elevate)',
+                  color: 'var(--color-frost)',
+                  border: '1px solid var(--color-graphite)',
+                  borderRadius: '0px',
+                  padding: '10px 14px',
+                  fontSize: 14,
+                  outline: 'none',
+                }}
+              />
+
+              {staffModalSuccess && (
+                <div style={{ color: 'var(--color-emerald)', fontSize: 12, fontWeight: 600 }}>
+                  ¡Encargado vinculado correctamente!
+                </div>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 6 }}>
+                <button
+                  type="button"
+                  onClick={() => setIsAddStaffModalOpen(false)}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: 'var(--radius-full)',
+                    backgroundColor: 'transparent',
+                    color: 'var(--color-ash)',
+                    border: '1px solid var(--color-graphite)',
+                    fontSize: 13,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  style={{
+                    padding: '8px 18px',
+                    borderRadius: 'var(--radius-full)',
+                    backgroundColor: 'var(--color-crimson-signal)',
+                    color: '#ffffff',
+                    border: 'none',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Guardar Encargado
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* ─── MODAL: RECHAZAR SOLICITUD ─── */}
       {rejectBooking && (

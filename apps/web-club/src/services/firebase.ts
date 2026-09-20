@@ -86,6 +86,46 @@ export async function saveClubsFirestore(updatedClubs: any[]) {
 }
 
 /**
+ * Links an admin Gmail address (and optional UID) to a club in Firestore
+ */
+export async function linkClubAdminEmailFirestore(clubId: string, email: string, uid?: string): Promise<boolean> {
+  try {
+    const clubs = await getClubsFirestore();
+    const cleanEmail = email.trim().toLowerCase();
+    let found = false;
+
+    const updatedClubs = clubs.map((c: any) => {
+      if (c.id === clubId) {
+        found = true;
+        const existingEmails: string[] = Array.isArray(c.adminEmails)
+          ? c.adminEmails.map((e: string) => String(e).toLowerCase().trim())
+          : c.adminEmail ? [String(c.adminEmail).toLowerCase().trim()] : [];
+
+        if (!existingEmails.includes(cleanEmail)) {
+          existingEmails.push(cleanEmail);
+        }
+
+        return {
+          ...c,
+          adminEmails: existingEmails,
+          adminEmail: cleanEmail,
+          ownerUid: uid || c.ownerUid || '',
+          updatedAt: new Date().toISOString(),
+        };
+      }
+      return c;
+    });
+
+    if (!found) return false;
+    return await saveClubsFirestore(updatedClubs);
+  } catch (e) {
+    console.error('Error linking club admin email:', e);
+    return false;
+  }
+}
+
+
+/**
  * Uploads an image file to Firebase Storage under clubs/ or courts/
  */
 export async function uploadImageFirebase(file: File, folder: 'clubs' | 'courts' = 'clubs'): Promise<string | null> {
