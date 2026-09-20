@@ -1,4735 +1,1998 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import { getClubsFirestore, getCourtsFirestore, saveCourtsFirestore, saveClubsFirestore } from '../services/firebase';
+import {
+  getClubsFirestore,
+  getCourtsFirestore,
+  saveCourtsFirestore,
+  listenClubBookingsFirestore,
+  updateBookingStatusFirestore,
+  getClubPublishedSlotsFirestore,
+  saveClubPublishedSlotsFirestore,
+  createBookingFirestore,
+  BookingRecord,
+} from '../services/firebase';
+import { SportBadge } from '../components/SportBadge';
+import { useSlidingIndicator } from '../hooks/useSlidingIndicator';
 
 /* ────────────────────────────────────────────────────────────
-   Types & Interfaces
+   Types & Navigation
    ──────────────────────────────────────────────────────────── */
 
-type NavTab = 'DASHBOARD' | 'COURTS' | 'REVENUE' | 'CALENDAR' | 'PLAYERS' | 'FIXED_SLOTS' | 'SETTINGS';
-type SlotStatus = 'RESERVED' | 'AVAILABLE' | 'FIXED' | 'MAINTENANCE' | 'BLOCKED';
+type ClubPanelTab = 'REQUESTS' | 'PUBLISH_SLOTS' | 'COURTS' | 'PAYOUTS';
 
-interface FixedSlot {
+interface CourtData {
   id: string;
-  courtId: string;
-  courtName: string;
-  sport: string;
-  dayOfWeek: string;
-  time: string;
-  playerName: string;
-  playerPhone: string;
-  price: number;
-  active: boolean;
-}
-
-interface CourtSlot {
-  id: string;
-  courtId: string;
-  courtName: string;
-  sport: string;
-  time: string;
-  status: SlotStatus;
-  player: string;
-  price: number;
-  phone?: string;
-  isPaid100: boolean;
-}
-
-interface CourtInfo {
-  id: string;
+  clubId: string;
   name: string;
-  sport: string;
+  sportType: 'PADEL' | 'FUTBOL_5' | 'FUTBOL_7' | 'FUTBOL_11';
   surface: string;
+  pricePerHour: number;
+  durationMinutes?: number;
+  isCovered: boolean;
+  hasLighting: boolean;
   active: boolean;
-  pausedForWeather?: boolean;
-  price: number;
-  indoor: boolean;
-  lighting: boolean;
-  hasCameras?: boolean;
-  hasHeating?: boolean;
-  openTime: string;  // ej: "08:00"
-  closeTime: string; // ej: "23:30"
-  slotDuration?: 60 | 90 | 120; // 60, 90, 120 min
 }
 
-interface PlayerRecord {
-  id: string;
-  name: string;
-  phone: string;
-  category: string;
-  sport: string;
-  matchesPlayed: number;
-  reliability?: number; // 1-5
-  playerTag: 'JUGADOR FRECUENTE' | 'ABONADO FIJO' | 'JUGADOR VIP' | string;
-}
-
-interface ClubNotification {
-  id: string;
-  title: string;
-  message: string;
-  time: string;
-  read: boolean;
-  type: 'RESERVATION' | 'PAYMENT' | 'CANCEL' | 'SYSTEM';
-}
-
-const INITIAL_NOTIFICATIONS: ClubNotification[] = [
-  {
-    id: 'n-1',
-    title: 'Nueva Reserva Confirmada',
-    message: 'Rodrigo De Paul reservó Cancha 1 Panorámica WPT a las 19:30 hs.',
-    time: 'Hace 12 min',
-    read: false,
-    type: 'RESERVATION',
-  },
-  {
-    id: 'n-2',
-    title: 'Pago Recibido por MercadoPago',
-    message: '$48.000 abonado 100% por Juan Román Riquelme.',
-    time: 'Hace 45 min',
-    read: false,
-    type: 'PAYMENT',
-  },
-  {
-    id: 'n-3',
-    title: 'Turno Fijo Renovado',
-    message: 'Escuela Padel confirmó su reserva semanal en Cancha 3.',
-    time: 'Hace 2 horas',
-    read: true,
-    type: 'RESERVATION',
-  },
-  {
-    id: 'n-4',
-    title: 'Alerta del Sistema',
-    message: 'Resumen de caja diaria disponible para exportar.',
-    time: 'Hace 5 horas',
-    read: true,
-    type: 'SYSTEM',
-  },
-];
-
-// Master Operating Times List
-const ALL_OPERATING_TIMES = ['08:00', '09:30', '11:00', '12:30', '14:00', '15:30', '16:30', '18:00', '19:30', '21:00', '22:30'];
-
-/* ────────────────────────────────────────────────────────────
-   Initial Data (Simplified Court Pricing & Full Features)
-   ──────────────────────────────────────────────────────────── */
-
-const INITIAL_SLOTS: CourtSlot[] = [
-  { id: 's-1', courtId: 'c-1', courtName: 'Cancha 1 — Panorámica WPT', sport: 'Pádel', time: '18:00', status: 'RESERVED', player: 'Juan R.', price: 48000, phone: '+54 9 11 4433-2211', isPaid100: true },
-  { id: 's-2', courtId: 'c-2', courtName: 'Cancha 2 — Cristal Pro', sport: 'Pádel', time: '18:00', status: 'AVAILABLE', player: '—', price: 45000, isPaid100: false },
-  { id: 's-3', courtId: 'c-3', courtName: 'Cancha 3 — Master Climatizada', sport: 'Pádel', time: '19:30', status: 'RESERVED', player: 'Escuela Padel', price: 42000, phone: '+54 9 11 9988-7766', isPaid100: true },
-  { id: 's-4', courtId: 'c-4', courtName: 'Cancha 4 — Fútbol 5 Forbex', sport: 'Fútbol 5', time: '20:00', status: 'AVAILABLE', player: '—', price: 36000, isPaid100: false },
-  { id: 's-5', courtId: 'c-1', courtName: 'Cancha 1 — Panorámica WPT', sport: 'Pádel', time: '19:30', status: 'RESERVED', player: 'Rodrigo De Paul', price: 48000, phone: '+54 9 11 5566-7788', isPaid100: true },
-  { id: 's-6', courtId: 'c-2', courtName: 'Cancha 2 — Cristal Pro', sport: 'Pádel', time: '21:00', status: 'RESERVED', player: 'Emiliano M.', price: 45000, phone: '+54 9 11 2233-4455', isPaid100: true },
-  { id: 's-7', courtId: 'c-3', courtName: 'Cancha 3 — Master Climatizada', sport: 'Pádel', time: '21:00', status: 'AVAILABLE', player: '—', price: 42000, isPaid100: false },
-  { id: 's-8', courtId: 'c-4', courtName: 'Cancha 4 — Fútbol 5 Forbex', sport: 'Fútbol 5', time: '21:30', status: 'RESERVED', player: 'Torneo Nocturno', price: 36000, phone: '+54 9 11 1122-3344', isPaid100: true },
-];
-
-const INITIAL_COURTS: CourtInfo[] = [
-  { id: 'c-1', name: 'Cancha 1 — Panorámica WPT', sport: 'Pádel', surface: 'Vidrio Panorámico 12mm · Césped Texturado', active: true, pausedForWeather: false, price: 48000, indoor: true, lighting: true, hasCameras: true, hasHeating: true, openTime: '08:00', closeTime: '23:30', slotDuration: 90 },
-  { id: 'c-2', name: 'Cancha 2 — Cristal Pro', sport: 'Pádel', surface: 'Vidrio Templado 10mm · Césped Monofilamento', active: true, pausedForWeather: false, price: 45000, indoor: true, lighting: true, hasCameras: true, hasHeating: false, openTime: '08:00', closeTime: '23:30', slotDuration: 90 },
-  { id: 'c-3', name: 'Cancha 3 — Master Climatizada', sport: 'Pádel', surface: 'Muros Perimetrales · Cubierta Climatizada', active: true, pausedForWeather: false, price: 42000, indoor: true, lighting: true, hasCameras: false, hasHeating: true, openTime: '09:00', closeTime: '23:00', slotDuration: 60 },
-  { id: 'c-4', name: 'Cancha 4 — Fútbol 5 Forbex', sport: 'Fútbol 5', surface: 'Césped Sintético Forbex 50mm con Caucho', active: true, pausedForWeather: false, price: 36000, indoor: false, lighting: true, hasCameras: false, hasHeating: false, openTime: '10:00', closeTime: '24:00', slotDuration: 60 },
-];
-
-const INITIAL_PLAYERS: PlayerRecord[] = [
-  { id: 'p-1', name: 'Juan Román Riquelme', phone: '+54 9 11 4433-2211', category: '4ta División', sport: 'Pádel', matchesPlayed: 28, reliability: 5, playerTag: 'JUGADOR FRECUENTE' },
-  { id: 'p-2', name: 'Rodrigo De Paul', phone: '+54 9 11 5566-7788', category: '3ra Libre', sport: 'Pádel', matchesPlayed: 19, reliability: 5, playerTag: 'JUGADOR VIP' },
-  { id: 'p-3', name: 'Emiliano Martínez', phone: '+54 9 11 2233-4455', category: 'Arquero / 5ta', sport: 'Fútbol 5', matchesPlayed: 34, reliability: 5, playerTag: 'JUGADOR VIP' },
-  { id: 'p-4', name: 'Lautaro Martínez', phone: '+54 9 11 3322-1144', category: 'Delantero / Pro', sport: 'Fútbol 5', matchesPlayed: 15, reliability: 4, playerTag: 'JUGADOR FRECUENTE' },
-  { id: 'p-5', name: 'Escuela Padel Menores', phone: '+54 9 11 9988-7766', category: 'Formativo / Fijo', sport: 'Pádel', matchesPlayed: 52, reliability: 5, playerTag: 'ABONADO FIJO' },
-  { id: 'p-6', name: 'Marcos Acuña', phone: '+54 9 11 7788-9900', category: '5ta División', sport: 'Pádel', matchesPlayed: 11, reliability: 4, playerTag: 'JUGADOR FRECUENTE' },
+const DEFAULT_TIME_SLOTS = [
+  '08:00', '09:30', '11:00', '12:30', '14:00', '15:30',
+  '17:00', '18:30', '20:00', '21:30', '23:00'
 ];
 
 /* ────────────────────────────────────────────────────────────
-   Custom Vector Icons (No Unicode Emojis)
+   Vector Icons (Strict Zero-Emoji Policy)
    ──────────────────────────────────────────────────────────── */
+
 const Icons = {
-  Close: ({ size = 13, color = 'currentColor' }: { size?: number; color?: string }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle' }}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  Bell: ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    </svg>
   ),
-  Printer: () => (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle' }}><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+  Volume: ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+      <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
+    </svg>
   ),
-  Edit: () => (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle' }}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+  VolumeX: ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+      <line x1="23" y1="9" x2="17" y2="15" />
+      <line x1="17" y1="9" x2="23" y2="15" />
+    </svg>
   ),
-  Clock: () => (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle' }}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+  Check: ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
   ),
-  Indoor: () => (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle' }}><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+  Close: ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
   ),
-  Outdoor: () => (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle' }}><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+  Clock: ({ size = 15, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </svg>
   ),
-  Lighting: () => (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle' }}><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1.55.59 2.92 1.6 3.9.7.7 1.13 1.56 1.3 2.5"/></svg>
+  Calendar: ({ size = 15, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="0" ry="0" />
+      <line x1="16" y1="2" x2="16" y2="6" />
+      <line x1="8" y1="2" x2="8" y2="6" />
+      <line x1="3" y1="10" x2="21" y2="10" />
+    </svg>
   ),
-  NoLighting: () => (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle' }}><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  WhatsApp: ({ size = 15, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+      <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2zm0 18.13c-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.16 8.16 0 0 1-1.25-4.37c0-4.54 3.7-8.24 8.24-8.24 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.83c0 4.54-3.7 8.22-8.23 8.22zm4.52-6.17c-.25-.12-1.47-.72-1.7-.81-.23-.08-.39-.12-.56.12-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.12-1.05-.39-2-1.23-.74-.66-1.24-1.47-1.39-1.72-.14-.25-.02-.38.11-.51.11-.11.25-.29.37-.43.12-.15.17-.25.25-.42.08-.17.04-.31-.02-.43s-.56-1.36-.77-1.86c-.2-.49-.41-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.22.25-.86.84-.86 2.05s.88 2.38 1 2.55c.12.17 1.73 2.65 4.2 3.71.59.25 1.05.4 1.41.51.59.19 1.13.16 1.56.1.47-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.14-1.18-.06-.11-.23-.17-.47-.3z" />
+    </svg>
   ),
-  Camera: () => (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle' }}><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+  ShieldCheck: ({ size = 15, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      <path d="M9 12l2 2 4-4" />
+    </svg>
   ),
-  CameraOff: () => (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle' }}><line x1="1" y1="1" x2="23" y2="23"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/><polygon points="23 7 16 12 23 17 23 7"/></svg>
+  Plus: ({ size = 15, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
   ),
-  Climate: () => (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle' }}><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/><line x1="4.93" y1="19.07" x2="19.07" y2="4.93"/></svg>
+  Zap: ({ size = 15, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+    </svg>
   ),
-  Wind: () => (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle' }}><path d="M9.59 4.59A2 2 0 1 1 11 8H2"/><path d="M12.59 19.41A2 2 0 1 0 14 16H2"/><path d="M15.73 8.27A2.5 2.5 0 1 1 17.5 12H2"/></svg>
+  DollarSign: ({ size = 15, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="1" x2="12" y2="23" />
+      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+    </svg>
   ),
-  Rain: () => (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle' }}><line x1="16" y1="13" x2="16" y2="21"/><line x1="8" y1="13" x2="8" y2="21"/><line x1="12" y1="15" x2="12" y2="23"/><path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/></svg>
-  ),
-  CloudOK: () => (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle' }}><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
-  ),
-  SettingsSliders: () => (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle' }}><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
-  ),
-  Trash: () => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle' }}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-  ),
-  Save: () => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle' }}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-  ),
-  Moon: () => (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle' }}><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  ArrowRight: ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="5" y1="12" x2="19" y2="12" />
+      <polyline points="12 5 19 12 12 19" />
+    </svg>
   ),
 };
 
 /* ────────────────────────────────────────────────────────────
-   Main Component
+   Synthesized Audio Chime (Web Audio API)
    ──────────────────────────────────────────────────────────── */
 
-export default function ClubPanel() {
+function playNewRequestChime() {
+  try {
+    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+
+    // 1st note (740 Hz - F#5)
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(740, ctx.currentTime);
+    gain1.gain.setValueAtTime(0, ctx.currentTime);
+    gain1.gain.linearRampToValueAtTime(0.25, ctx.currentTime + 0.05);
+    gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(ctx.currentTime);
+    osc1.stop(ctx.currentTime + 0.35);
+
+    // 2nd note (987.77 Hz - B5)
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(988, ctx.currentTime + 0.15);
+    gain2.gain.setValueAtTime(0, ctx.currentTime + 0.15);
+    gain2.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.2);
+    gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.start(ctx.currentTime + 0.15);
+    osc2.stop(ctx.currentTime + 0.6);
+  } catch (err) {
+    console.warn('Audio alert not supported or user gesture blocked:', err);
+  }
+}
+
+/* ────────────────────────────────────────────────────────────
+   Format Helpers
+   ──────────────────────────────────────────────────────────── */
+
+function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat('es-AR', {
+    style: 'currency',
+    currency: 'ARS',
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
+function getTodayString(): string {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function getFormattedDate(offsetDays: number = 0): { value: string; label: string; sublabel: string } {
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const val = `${year}-${month}-${day}`;
+
+  const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+  const dayName = dayNames[d.getDay()];
+
+  let label = `${dayName} ${day}/${month}`;
+  if (offsetDays === 0) label = 'Hoy';
+  if (offsetDays === 1) label = 'Mañana';
+
+  return {
+    value: val,
+    label,
+    sublabel: `${day}/${month}`,
+  };
+}
+
+/* ────────────────────────────────────────────────────────────
+   Main Component: Club Operations Terminal
+   ──────────────────────────────────────────────────────────── */
+
+export default function ClubPanelPage() {
   const router = useRouter();
-  const [authed, setAuthed] = useState(false);
-  const [clubName, setClubName] = useState('Laverde Jara - Canchas de Césped Sintético');
-  const [activeTab, setActiveTab] = useState<NavTab>('DASHBOARD');
-  const [dateFilter, setDateFilter] = useState('Hoy');
-  const [selectedSportFilter, setSelectedSportFilter] = useState<string>('TODOS');
-  const [showToast, setShowToast] = useState(true);
 
-  // Firestore Sync State
-  const [allClubs, setAllClubs] = useState<any[]>([]);
-  const [allCourts, setAllCourts] = useState<any[]>([]);
+  // Active Club State
+  const [clubs, setClubs] = useState<any[]>([]);
   const [selectedClubId, setSelectedClubId] = useState<string>('club-laverde-jara');
+  const [clubName, setClubName] = useState<string>('Club Laverde Jara');
+  const [isReceptionOnline, setIsReceptionOnline] = useState<boolean>(true);
+  const [isSoundEnabled, setIsSoundEnabled] = useState<boolean>(true);
 
-  // Core Data state
-  const [slots, setSlots] = useState<CourtSlot[]>(INITIAL_SLOTS);
-  const [courts, setCourts] = useState<CourtInfo[]>(INITIAL_COURTS);
-  const [players, setPlayers] = useState<PlayerRecord[]>(INITIAL_PLAYERS);
-  const [searchPlayer, setSearchPlayer] = useState('');
+  // Tab State with Sliding Indicator
+  const [activeTab, setActiveTab] = useState<ClubPanelTab>('REQUESTS');
+  const { containerRef, setItemRef, indicatorStyle } = useSlidingIndicator<ClubPanelTab>(activeTab);
 
-  // Fetch Firestore clubs and courts on mount
+  // Bookings (Real-time Firestore)
+  const [bookings, setBookings] = useState<BookingRecord[]>([]);
+  const [requestFilter, setRequestFilter] = useState<'ALL' | 'PENDING' | 'CONFIRMED' | 'REJECTED'>('PENDING');
+
+  // Rejection Modal
+  const [rejectModalBooking, setRejectModalBooking] = useState<BookingRecord | null>(null);
+  const [rejectReason, setRejectReason] = useState<string>('Cancha ocupada presencialmente en el club');
+  const [isProcessingAction, setIsProcessingAction] = useState<boolean>(false);
+
+  // Published Slots State
+  const [selectedDateOffset, setSelectedDateOffset] = useState<number>(0);
+  const [publishedSlots, setPublishedSlots] = useState<Record<string, boolean>>({});
+  const [isLoadingSlots, setIsLoadingSlots] = useState<boolean>(false);
+
+  // Courts State
+  const [courts, setCourts] = useState<CourtData[]>([]);
+  const [isEditCourtModalOpen, setIsEditCourtModalOpen] = useState<boolean>(false);
+  const [editingCourt, setEditingCourt] = useState<CourtData | null>(null);
+
+  // Financial & Payout State
+  const [cbuAlias, setCbuAlias] = useState<string>('LAVERDE.FUTBOL.MP');
+  const [savedAliasMsg, setSavedAliasMsg] = useState<boolean>(false);
+
+  // Audio alert tracker: remember IDs to only chime on brand new incoming requests
+  const prevPendingIdsRef = useRef<Set<string>>(new Set());
+
+  // 1. Initial Load: Clubs & Courts
   useEffect(() => {
-    async function loadFirestoreData() {
+    async function loadInitial() {
       const clubsData = await getClubsFirestore();
-      const courtsData = await getCourtsFirestore();
       if (clubsData && clubsData.length > 0) {
-        setAllClubs(clubsData);
-        const initialClub = clubsData.find((c: any) => c.id === 'club-laverde-jara') || clubsData[0];
-        setSelectedClubId(initialClub.id);
-        setClubName(initialClub.name);
+        setClubs(clubsData);
+        const storedClubId = typeof window !== 'undefined' ? localStorage.getItem('hayequipo_active_club_id') : null;
+        const initial = clubsData.find((c: any) => c.id === storedClubId) || clubsData[0];
+        setSelectedClubId(initial.id);
+        setClubName(initial.name);
       }
+
+      const courtsData = await getCourtsFirestore();
       if (courtsData && courtsData.length > 0) {
-        setAllCourts(courtsData);
+        setCourts(courtsData);
+      } else {
+        // Fallback default courts for initial experience
+        setCourts([
+          {
+            id: 'c-1',
+            clubId: 'club-laverde-jara',
+            name: 'Cancha 1 — Panorámica WPT',
+            sportType: 'PADEL',
+            surface: 'Vidrio Panorámico 12mm · Césped Texturado',
+            pricePerHour: 32000,
+            durationMinutes: 90,
+            isCovered: true,
+            hasLighting: true,
+            active: true,
+          },
+          {
+            id: 'c-2',
+            clubId: 'club-laverde-jara',
+            name: 'Cancha 2 — Cristal Pro',
+            sportType: 'PADEL',
+            surface: 'Vidrio Templado 10mm · Césped Monofilamento',
+            pricePerHour: 28000,
+            durationMinutes: 90,
+            isCovered: true,
+            hasLighting: true,
+            active: true,
+          },
+          {
+            id: 'c-3',
+            clubId: 'club-laverde-jara',
+            name: 'Cancha 3 — Fútbol 7 Pro',
+            sportType: 'FUTBOL_7',
+            surface: 'Césped Sintético Forbex 50mm con Caucho',
+            pricePerHour: 48000,
+            durationMinutes: 60,
+            isCovered: false,
+            hasLighting: true,
+            active: true,
+          },
+        ]);
       }
     }
-    loadFirestoreData();
+    loadInitial();
   }, []);
 
-  // Sync displayed courts when selected club changes or courts update
+  // 2. Real-Time Listener: Incoming Bookings for the Selected Club
   useEffect(() => {
-    if (allClubs.length > 0 && selectedClubId) {
-      const matchedClub = allClubs.find((c: any) => c.id === selectedClubId);
-      if (matchedClub) setClubName(matchedClub.name);
-    }
-    if (allCourts.length > 0 && selectedClubId) {
-      const clubCourts = allCourts.filter((c: any) => c.clubId === selectedClubId).map((c: any) => ({
-        id: c.id,
-        name: c.name,
-        sport: c.sportType === 'PADEL' ? 'Pádel' : c.sportType === 'FUTBOL_7' ? 'Fútbol 7' : 'Fútbol 5',
-        surface: c.surface || 'Césped Sintético',
-        active: c.active !== false,
-        pausedForWeather: c.pausedForWeather || false,
-        price: c.pricePerHour || 28000,
-        indoor: c.isCovered !== false,
-        lighting: c.hasLighting !== false,
-        hasCameras: c.hasCameras !== false,
-        hasHeating: c.hasHeating || false,
-        openTime: '08:00',
-        closeTime: '00:00',
-        slotDuration: c.durationMinutes || 90
-      }));
-      if (clubCourts.length > 0) {
-        setCourts(clubCourts);
+    if (!selectedClubId) return;
+
+    const unsubscribe = listenClubBookingsFirestore(selectedClubId, (allClubBookings) => {
+      setBookings(allClubBookings);
+
+      // Check if there are newly added PENDING bookings
+      const currentPending = allClubBookings.filter((b) => b.status === 'PENDING');
+      const newPending = currentPending.filter((b) => !prevPendingIdsRef.current.has(b.id));
+
+      if (newPending.length > 0 && isSoundEnabled) {
+        playNewRequestChime();
       }
-    }
-  }, [selectedClubId, allClubs, allCourts]);
 
-  // Turnos Fijos State
-  const [fixedSlots, setFixedSlots] = useState<FixedSlot[]>([
-    {
-      id: 'f1',
-      courtId: 'c1',
-      courtName: 'Cancha 1 — Panorámica WPT',
-      sport: 'Pádel',
-      dayOfWeek: 'Martes',
-      time: '20:00',
-      playerName: 'Escuela Pádel Adalberto',
-      playerPhone: '+54 9 11 9988-7766',
-      price: 48000,
-      active: true,
-    },
-    {
-      id: 'f2',
-      courtId: 'c3',
-      courtName: 'Cancha 3 — Master Climatizada',
-      sport: 'Pádel',
-      dayOfWeek: 'Jueves',
-      time: '21:00',
-      playerName: 'Torneo Nocturno Pádel',
-      playerPhone: '+54 9 11 1122-3344',
-      price: 42000,
-      active: true,
-    },
-    {
-      id: 'f3',
-      courtId: 'c4',
-      courtName: 'Cancha 4 — Fútbol 5 Forbex',
-      sport: 'Fútbol 5',
-      dayOfWeek: 'Viernes',
-      time: '21:30',
-      playerName: 'Grupo Los Viernes',
-      playerPhone: '+54 9 11 5566-7788',
-      price: 36000,
-      active: true,
-    },
-  ]);
-  const [showFixedSlotModal, setShowFixedSlotModal] = useState(false);
-  const [fixedCourtId, setFixedCourtId] = useState('c1');
-  const [fixedDayOfWeek, setFixedDayOfWeek] = useState('Martes');
-  const [fixedTime, setFixedTime] = useState('20:00');
-  const [fixedPlayerName, setFixedPlayerName] = useState('');
-  const [fixedPlayerPhone, setFixedPlayerPhone] = useState('');
-  const [fixedPrice, setFixedPrice] = useState(48000);
+      // Update ref set
+      prevPendingIdsRef.current = new Set(currentPending.map((b) => b.id));
+    });
 
-  const handleAddFixedSlot = (e: React.FormEvent) => {
-    e.preventDefault();
-    const court = courts.find(c => c.id === fixedCourtId) || courts[0];
-    const playerNameClean = fixedPlayerName.trim() || 'Abonado Fijo';
-    const playerPhoneClean = fixedPlayerPhone.trim() || '+54 9 11 0000-0000';
-
-    // Auto-register new player in database if created in 'NEW' mode
-    if (fixedClientSelectionMode === 'NEW' && playerNameClean !== 'Abonado Fijo') {
-      const existing = players.find(p => p.name.toLowerCase() === playerNameClean.toLowerCase());
-      if (!existing) {
-        const newP: PlayerRecord = {
-          id: `p-${Date.now()}`,
-          name: playerNameClean,
-          phone: playerPhoneClean,
-          category: 'Abonado',
-          sport: court.sport,
-          matchesPlayed: 1,
-          playerTag: 'ABONADO FIJO',
-        };
-        setPlayers(prev => [newP, ...prev]);
-      }
-    }
-
-    const newFixed: FixedSlot = {
-      id: `f-${Date.now()}`,
-      courtId: court.id,
-      courtName: court.name,
-      sport: court.sport,
-      dayOfWeek: fixedDayOfWeek,
-      time: fixedTime,
-      playerName: playerNameClean,
-      playerPhone: playerPhoneClean,
-      price: fixedPrice || court.price || 45000,
-      active: true,
+    return () => {
+      unsubscribe();
     };
-    setFixedSlots(prev => [newFixed, ...prev]);
-    setShowFixedSlotModal(false);
-    setFixedPlayerName('');
-    setFixedPlayerPhone('');
-    setFixedClientSearchQuery('');
-    setFixedClientSelectionMode('EXISTING');
-  };
+  }, [selectedClubId, isSoundEnabled]);
 
-  const handleToggleFixedActive = (id: string) => {
-    setFixedSlots(prev => prev.map(f => f.id === id ? { ...f, active: !f.active } : f));
-  };
+  // 3. Tab Title Alert Counter
+  const pendingRequests = useMemo(() => {
+    return bookings.filter((b) => b.status === 'PENDING');
+  }, [bookings]);
 
-  const handleDeleteFixedSlot = (id: string) => {
-    setFixedSlots(prev => prev.filter(f => f.id !== id));
-  };
-
-  // Add Client State (Tab 5)
-  const [showAddPlayerModal, setShowAddPlayerModal] = useState(false);
-  const [newPlayerName, setNewPlayerName] = useState('');
-  const [newPlayerPhone, setNewPlayerPhone] = useState('');
-  const [newPlayerCategory, setNewPlayerCategory] = useState('4ta Categoría');
-  const [newPlayerSport, setNewPlayerSport] = useState('Pádel');
-  const [newPlayerTag, setNewPlayerTag] = useState('ABONADO FIJO');
-
-  const handleAddPlayer = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newPlayerName.trim()) return;
-    const newP: PlayerRecord = {
-      id: `p-${Date.now()}`,
-      name: newPlayerName.trim(),
-      phone: newPlayerPhone.trim() || '+54 9 11 0000-0000',
-      category: newPlayerCategory,
-      sport: newPlayerSport,
-      matchesPlayed: 1,
-      playerTag: newPlayerTag,
-    };
-    setPlayers(prev => [newP, ...prev]);
-    setShowAddPlayerModal(false);
-    setNewPlayerName('');
-    setNewPlayerPhone('');
-  };
-
-  // Live Client Search State (Modal 1)
-  const [clientSelectionMode, setClientSelectionMode] = useState<'EXISTING' | 'NEW'>('EXISTING');
-  const [clientSearchQuery, setClientSearchQuery] = useState('');
-  const [isClientSearchOpen, setIsClientSearchOpen] = useState(false);
-
-  const matchingSearchPlayers = useMemo(() => {
-    if (!clientSearchQuery.trim()) return players;
-    const q = clientSearchQuery.toLowerCase();
-    return players.filter(p =>
-      p.name.toLowerCase().includes(q) ||
-      p.phone.toLowerCase().includes(q)
-    );
-  }, [players, clientSearchQuery]);
-
-  // Live Client Search State (Fixed Slot Modal)
-  const [fixedClientSelectionMode, setFixedClientSelectionMode] = useState<'EXISTING' | 'NEW'>('EXISTING');
-  const [fixedClientSearchQuery, setFixedClientSearchQuery] = useState('');
-  const [isFixedClientSearchOpen, setIsFixedClientSearchOpen] = useState(false);
-
-  const matchingFixedSearchPlayers = useMemo(() => {
-    if (!fixedClientSearchQuery.trim()) return players;
-    const q = fixedClientSearchQuery.toLowerCase();
-    return players.filter(p =>
-      p.name.toLowerCase().includes(q) ||
-      p.phone.toLowerCase().includes(q)
-    );
-  }, [players, fixedClientSearchQuery]);
-
-  // Settings State
-  const [mercadoPagoConnected, setMercadoPagoConnected] = useState(true);
-  const [cancellationWindowHours, setCancellationWindowHours] = useState(6);
-  const [clubAddress, setClubAddress] = useState('Av. Del Libertador 4400, Palermo, CABA');
-
-  // Notifications State & Handlers
-  const [notifications, setNotifications] = useState<ClubNotification[]>(INITIAL_NOTIFICATIONS);
-  const [showNotificationDropdown, setShowNotificationDropdown] = useState(false);
-
-  const unreadNotificationCount = useMemo(() => {
-    return notifications.filter(n => !n.read).length;
-  }, [notifications]);
-
-  const handleMarkNotificationAsRead = (id: string) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-  };
-
-  const handleMarkAllNotificationsAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-  };
-
-  const handleDeleteNotification = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setNotifications(prev => prev.filter(n => n.id !== id));
-  };
-
-  // Modal 1: "+ Nueva reserva / Bloquear"
-  const [showModal, setShowModal] = useState(false);
-  const [isDirectCellSelection, setIsDirectCellSelection] = useState(false);
-  const [modalReservationType, setModalReservationType] = useState<'RESERVED' | 'BLOCKED'>('RESERVED');
-  const [modalBlockReason, setModalBlockReason] = useState('Mantenimiento / Uso del Club');
-  const [modalCourt, setModalCourt] = useState('c-1');
-  const [modalTime, setModalTime] = useState('21:00');
-  const [modalSelectedPlayerId, setModalSelectedPlayerId] = useState<string>('CUSTOM');
-  const [modalPlayer, setModalPlayer] = useState('');
-  const [modalPhone, setModalPhone] = useState('');
-
-  // Modal 2: "+ Configurar / Editar Cancha"
-  const [showCourtModal, setShowCourtModal] = useState(false);
-  const [editingCourtId, setEditingCourtId] = useState<string | null>(null);
-  const [courtNameInput, setCourtNameInput] = useState('');
-  const [courtSportInput, setCourtSportInput] = useState('Pádel');
-  const [courtSurfaceInput, setCourtSurfaceInput] = useState('Vidrio Templado 10mm');
-  const [courtOpenTimeInput, setCourtOpenTimeInput] = useState('08:00');
-  const [courtCloseTimeInput, setCourtCloseTimeInput] = useState('23:30');
-  const [courtPriceInput, setCourtPriceInput] = useState(45000);
-  const [courtIndoorInput, setCourtIndoorInput] = useState(true);
-  const [courtLightingInput, setCourtLightingInput] = useState(true);
-  const [courtCamerasInput, setCourtCamerasInput] = useState(true);
-  const [courtHeatingInput, setCourtHeatingInput] = useState(false);
-  const [courtSlotDurationInput, setCourtSlotDurationInput] = useState<60 | 90 | 120>(90);
-
-  // Modal 3: "Editar / Eliminar Reserva Existente"
-  const [showEditReservationModal, setShowEditReservationModal] = useState(false);
-  const [editingSlot, setEditingSlot] = useState<CourtSlot | null>(null);
-  const [editPlayerName, setEditPlayerName] = useState('');
-  const [editPlayerPhone, setEditPlayerPhone] = useState('');
-  const [editCourtId, setEditCourtId] = useState('');
-  const [editTime, setEditTime] = useState('');
-
-  /* ── Auth Verification & Auto Demo Fallback ── */
   useEffect(() => {
-    const raw = localStorage.getItem('hayequipo_club_session');
-    if (!raw) {
-      const demoSession = {
-        email: 'demo@clubpadelcenter.com',
-        clubName: 'Club Padel Center',
-        ts: Date.now(),
-      };
-      localStorage.setItem('hayequipo_club_session', JSON.stringify(demoSession));
-      setClubName('Club Padel Center');
-      setAuthed(true);
-      return;
+    if (typeof document === 'undefined') return;
+    if (pendingRequests.length > 0) {
+      document.title = `(${pendingRequests.length}) ¡NUEVA SOLICITUD! — Hay Equipo Panel`;
+    } else {
+      document.title = `Panel Club · ${clubName} — Hay Equipo`;
     }
+  }, [pendingRequests.length, clubName]);
+
+  // 4. Load Published Slots for Date
+  const currentDateObj = useMemo(() => {
+    return getFormattedDate(selectedDateOffset);
+  }, [selectedDateOffset]);
+
+  useEffect(() => {
+    async function loadSlots() {
+      if (!selectedClubId) return;
+      setIsLoadingSlots(true);
+      const slots = await getClubPublishedSlotsFirestore(selectedClubId, currentDateObj.value);
+      setPublishedSlots(slots);
+      setIsLoadingSlots(false);
+    }
+    loadSlots();
+  }, [selectedClubId, currentDateObj.value]);
+
+  // Handle Switching Active Club
+  const handleClubChange = (clubId: string) => {
+    setSelectedClubId(clubId);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('hayequipo_active_club_id', clubId);
+    }
+    const found = clubs.find((c) => c.id === clubId);
+    if (found) setClubName(found.name);
+  };
+
+  // 5. Booking Actions: Aceptar / Rechazar
+  const handleAcceptBooking = async (bookingId: string) => {
+    setIsProcessingAction(true);
     try {
-      const session = JSON.parse(raw);
-      if (session.clubName) {
-        setClubName(session.clubName);
+      const res = await fetch('/api/bookings/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId, status: 'CONFIRMED' }),
+      });
+
+      if (!res.ok) {
+        // Direct fallback update via Firestore
+        await updateBookingStatusFirestore(bookingId, 'CONFIRMED');
       }
-      setAuthed(true);
-    } catch {
-      setClubName('Club Padel Center');
-      setAuthed(true);
-    }
-  }, [router]);
 
-  const handleLogout = useCallback(() => {
-    localStorage.removeItem('hayequipo_club_session');
-    router.push('/login');
-  }, [router]);
-
-  // Helper: Get strictly available times for a court (prevent double-booking)
-  const getAvailableTimesForCourt = useCallback((courtId: string, currentSlotId?: string) => {
-    const reservedTimes = slots
-      .filter(s => s.courtId === courtId && s.id !== currentSlotId && (s.status === 'RESERVED' || s.status === 'FIXED'))
-      .map(s => s.time);
-
-    const available = ALL_OPERATING_TIMES.filter(t => !reservedTimes.includes(t));
-    
-    // Always preserve current slot time if editing
-    const currentSlot = slots.find(s => s.id === currentSlotId);
-    if (currentSlot && currentSlot.courtId === courtId && !available.includes(currentSlot.time)) {
-      available.push(currentSlot.time);
-      available.sort();
-    }
-
-    return available.length > 0 ? available : ['Sin horarios disponibles'];
-  }, [slots]);
-
-  // Court change handlers in Modals
-  const handleModalCourtChange = (newCourtId: string) => {
-    setModalCourt(newCourtId);
-    const avail = getAvailableTimesForCourt(newCourtId);
-    if (avail.length > 0 && !avail.includes(modalTime)) {
-      setModalTime(avail[0]);
-    }
-  };
-
-  const handleEditCourtChange = (newCourtId: string) => {
-    setEditCourtId(newCourtId);
-    const avail = getAvailableTimesForCourt(newCourtId, editingSlot?.id);
-    if (avail.length > 0 && !avail.includes(editTime)) {
-      setEditTime(avail[0]);
-    }
-  };
-
-  // Check duplicate court name (case-insensitive)
-  const isDuplicateCourtName = useMemo(() => {
-    const trimmed = courtNameInput.trim().toLowerCase();
-    if (!trimmed) return false;
-    return courts.some(c => c.name.trim().toLowerCase() === trimmed && c.id !== editingCourtId);
-  }, [courtNameInput, courts, editingCourtId]);
-
-  // Open Court Modal for Add or Edit
-  const handleOpenCourtModal = (court?: CourtInfo) => {
-    if (court) {
-      setEditingCourtId(court.id);
-      setCourtNameInput(court.name);
-      setCourtSportInput(court.sport);
-      setCourtSurfaceInput(court.surface);
-      setCourtOpenTimeInput(court.openTime || '08:00');
-      setCourtCloseTimeInput(court.closeTime || '23:30');
-      setCourtPriceInput(court.price);
-      setCourtIndoorInput(court.indoor);
-      setCourtLightingInput(court.lighting);
-      setCourtCamerasInput(court.hasCameras ?? true);
-      setCourtHeatingInput(court.hasHeating ?? false);
-      setCourtSlotDurationInput(court.slotDuration || 90);
-    } else {
-      setEditingCourtId(null);
-      setCourtNameInput(`Cancha ${courts.length + 1}`);
-      setCourtSportInput('Pádel');
-      setCourtSurfaceInput('Sintético & Cristal Pro');
-      setCourtOpenTimeInput('08:00');
-      setCourtCloseTimeInput('23:30');
-      setCourtPriceInput(45000);
-      setCourtIndoorInput(true);
-      setCourtLightingInput(true);
-      setCourtCamerasInput(true);
-      setCourtHeatingInput(false);
-      setCourtSlotDurationInput(90);
-    }
-    setShowCourtModal(true);
-  };
-
-  const syncAllCourtsToFirestore = (updatedLocalCourts: CourtInfo[]) => {
-    let newAllCourts = [...allCourts];
-    for (const lc of updatedLocalCourts) {
-      const idx = newAllCourts.findIndex((ac: any) => ac.id === lc.id);
-      const sportType = lc.sport.toLowerCase().includes('pádel') || lc.sport.toLowerCase().includes('padel') ? 'PADEL' : lc.sport.toLowerCase().includes('7') ? 'FUTBOL_7' : 'FUTBOL_5';
-      const courtData = {
-        id: lc.id,
-        clubId: selectedClubId,
-        sportType,
-        name: lc.name,
-        surface: lc.surface,
-        isCovered: lc.indoor,
-        hasLighting: lc.lighting,
-        durationMinutes: lc.slotDuration || 90,
-        pricePerHour: lc.price,
-        active: lc.active,
-        pausedForWeather: lc.pausedForWeather || false,
-        priceFixedSlotDiscount: 0.12,
-        images: []
-      };
-      if (idx >= 0) {
-        newAllCourts[idx] = { ...newAllCourts[idx], ...courtData };
-      } else {
-        newAllCourts.push(courtData);
-      }
-    }
-    setAllCourts(newAllCourts);
-    saveCourtsFirestore(newAllCourts);
-  };
-
-  // Save Court (Add or Edit)
-  const handleSaveCourt = (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmedName = courtNameInput.trim();
-    if (!trimmedName) return;
-
-    if (isDuplicateCourtName) {
-      alert(`Ya existe una cancha registrada con el nombre "${trimmedName}". Por favor, ingresá un nombre diferente.`);
-      return;
-    }
-
-    let updatedList: CourtInfo[] = [];
-
-    if (editingCourtId) {
-      updatedList = courts.map(c => c.id === editingCourtId ? {
-        ...c,
-        name: trimmedName,
-        sport: courtSportInput,
-        surface: courtSurfaceInput,
-        openTime: courtOpenTimeInput,
-        closeTime: courtCloseTimeInput,
-        price: courtPriceInput,
-        indoor: courtIndoorInput,
-        lighting: courtLightingInput,
-        hasCameras: courtCamerasInput,
-        hasHeating: courtHeatingInput,
-        slotDuration: courtSlotDurationInput,
-      } : c);
-    } else {
-      const newCourt: CourtInfo = {
-        id: `court-${selectedClubId}-${Date.now()}`,
-        name: courtNameInput.trim(),
-        sport: courtSportInput,
-        surface: courtSurfaceInput,
-        active: true,
-        pausedForWeather: false,
-        openTime: courtOpenTimeInput,
-        closeTime: courtCloseTimeInput,
-        price: courtPriceInput,
-        indoor: courtIndoorInput,
-        lighting: courtLightingInput,
-        hasCameras: courtCamerasInput,
-        hasHeating: courtHeatingInput,
-        slotDuration: courtSlotDurationInput,
-      };
-      updatedList = [...courts, newCourt];
-    }
-
-    setCourts(updatedList);
-    syncAllCourtsToFirestore(updatedList);
-    setShowCourtModal(false);
-  };
-
-  // Open Edit / Delete Reservation Modal for existing slots
-  const handleOpenEditReservation = (slot: CourtSlot) => {
-    setEditingSlot(slot);
-    setEditPlayerName(slot.player);
-    setEditPlayerPhone(slot.phone || '');
-    setEditCourtId(slot.courtId);
-    setEditTime(slot.time);
-    setShowEditReservationModal(true);
-  };
-
-  // Save Edit Reservation
-  const handleSaveEditReservation = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingSlot) return;
-    const court = courts.find(c => c.id === editCourtId) || courts[0];
-    setSlots(prev => prev.map(s => s.id === editingSlot.id ? {
-      ...s,
-      player: editPlayerName.trim() || 'Reserva Directa',
-      phone: editPlayerPhone.trim() || undefined,
-      courtId: court.id,
-      courtName: court.name,
-      time: editTime,
-    } : s));
-    setShowEditReservationModal(false);
-    setEditingSlot(null);
-  };
-
-  // Delete / Release Reservation (Liberar turno)
-  const handleDeleteReservation = () => {
-    if (!editingSlot) return;
-    setSlots(prev => prev.map(s => s.id === editingSlot.id ? {
-      ...s,
-      status: 'AVAILABLE',
-      player: '—',
-      phone: undefined,
-      isPaid100: false,
-    } : s));
-    setShowEditReservationModal(false);
-    setEditingSlot(null);
-  };
-
-  // Toggle Slot Payment Status (Paid / Unpaid)
-  const handleTogglePaymentStatus = (slotId: string) => {
-    setSlots(prev => prev.map(s => s.id === slotId ? { ...s, isPaid100: !s.isPaid100 } : s));
-  };
-
-  // Toggle Court Active / Weather Pause
-  const handleToggleCourtActive = (id: string) => {
-    const updated = courts.map(c => c.id === id ? { ...c, active: !c.active } : c);
-    setCourts(updated);
-    syncAllCourtsToFirestore(updated);
-  };
-
-  const handleToggleWeatherPause = (id: string) => {
-    const updated = courts.map(c => c.id === id ? { ...c, pausedForWeather: !c.pausedForWeather } : c);
-    setCourts(updated);
-    syncAllCourtsToFirestore(updated);
-  };
-
-  // Select player in Modal
-  const handleSelectPlayerInModal = (id: string) => {
-    setModalSelectedPlayerId(id);
-    if (id === 'CUSTOM') {
-      setModalPlayer('');
-      setModalPhone('');
-    } else {
-      const p = players.find(x => x.id === id);
-      if (p) {
-        setModalPlayer(p.name);
-        setModalPhone(p.phone);
-      }
-    }
-  };
-
-  // Add new reservation or block slot
-  const handleAddReservation = (e: React.FormEvent) => {
-    e.preventDefault();
-    const court = courts.find(c => c.id === modalCourt) || courts[0];
-
-    if (modalReservationType === 'BLOCKED') {
-      const reasonClean = modalBlockReason.trim() || 'Bloqueado (Mantenimiento)';
-      const blockedSlot: CourtSlot = {
-        id: `slot-${Date.now()}`,
-        courtId: court.id,
-        courtName: court.name,
-        sport: court.sport,
-        time: modalTime,
-        status: 'MAINTENANCE',
-        player: reasonClean,
-        price: 0,
-        isPaid100: false,
-      };
-      setSlots(prev => [blockedSlot, ...prev.filter(s => !(s.courtId === court.id && s.time === modalTime))]);
-
-      // Push notification
-      const blockNotif: ClubNotification = {
-        id: `n-${Date.now()}`,
-        title: 'Horario Bloqueado',
-        message: `${reasonClean} en ${court.name.split('—')[0].trim()} a las ${modalTime} hs.`,
-        time: 'Hace un momento',
-        read: false,
-        type: 'SYSTEM',
-      };
-      setNotifications(prev => [blockNotif, ...prev]);
-
-      setShowModal(false);
-      setModalBlockReason('Mantenimiento / Uso del Club');
-      setModalReservationType('RESERVED');
-      return;
-    }
-
-    const playerNameClean = modalPlayer.trim() || 'Reserva Directa';
-    const playerPhoneClean = modalPhone.trim() || undefined;
-
-    // Automatically register new player in database if created in 'NEW' mode
-    if (clientSelectionMode === 'NEW' && playerNameClean !== 'Reserva Directa') {
-      const existing = players.find(p => p.name.toLowerCase() === playerNameClean.toLowerCase());
-      if (!existing) {
-        const newPlayerRecord: PlayerRecord = {
-          id: `p-${Date.now()}`,
-          name: playerNameClean,
-          phone: playerPhoneClean || '+54 9 11 0000-0000',
-          category: 'General',
-          sport: court.sport,
-          matchesPlayed: 1,
-          playerTag: 'JUGADOR FRECUENTE',
-        };
-        setPlayers(prev => [newPlayerRecord, ...prev]);
-      }
-    }
-
-    const newSlot: CourtSlot = {
-      id: `slot-${Date.now()}`,
-      courtId: court.id,
-      courtName: court.name,
-      sport: court.sport,
-      time: modalTime,
-      status: 'RESERVED',
-      player: playerNameClean,
-      phone: playerPhoneClean,
-      price: court.price,
-      isPaid100: true,
-    };
-    setSlots(prev => [newSlot, ...prev.filter(s => !(s.courtId === court.id && s.time === modalTime))]);
-
-    // Push notification
-    const resNotif: ClubNotification = {
-      id: `n-${Date.now()}`,
-      title: 'Nueva Reserva Manual',
-      message: `${playerNameClean} reservó ${court.name.split('—')[0].trim()} a las ${modalTime} hs.`,
-      time: 'Hace un momento',
-      read: false,
-      type: 'RESERVATION',
-    };
-    setNotifications(prev => [resNotif, ...prev]);
-
-    setShowModal(false);
-    setModalPlayer('');
-    setModalPhone('');
-    setClientSearchQuery('');
-    setClientSelectionMode('EXISTING');
-    setModalReservationType('RESERVED');
-  };
-
-  // Print Daily Roster
-  const handlePrintDailyRoster = () => {
-    window.print();
-  };
-
-  // Dynamic Sport Filter List (Only show sports that exist in the club's configured courts)
-  const availableSportFilters = useMemo(() => {
-    const existingSports = Array.from(new Set(courts.map(c => c.sport.toUpperCase())));
-    return ['TODOS', ...existingSports];
-  }, [courts]);
-
-  // Filtered Courts & Slots by Sport Filter
-  const filteredCourts = useMemo(() => {
-    if (selectedSportFilter === 'TODOS') return courts;
-    return courts.filter(c => c.sport.toUpperCase().includes(selectedSportFilter));
-  }, [courts, selectedSportFilter]);
-
-  const filteredSlots = useMemo(() => {
-    let result = slots;
-    if (selectedSportFilter !== 'TODOS') {
-      result = result.filter(s => s.sport.toUpperCase().includes(selectedSportFilter));
-    }
-    return result;
-  }, [slots, selectedSportFilter]);
-
-  // Filtered Players
-  const filteredPlayers = useMemo(() => {
-    let result = players;
-    if (selectedSportFilter !== 'TODOS') {
-      result = result.filter(p => p.sport.toUpperCase().includes(selectedSportFilter));
-    }
-    if (searchPlayer.trim()) {
-      const q = searchPlayer.toLowerCase();
-      result = result.filter(p =>
-        p.name.toLowerCase().includes(q) ||
-        p.phone.includes(q) ||
-        p.category.toLowerCase().includes(q)
+      // Optimistic update
+      setBookings((prev) =>
+        prev.map((b) => (b.id === bookingId ? { ...b, status: 'CONFIRMED', confirmedAt: new Date().toISOString() } : b))
       );
+    } catch (err) {
+      console.error('Error accepting booking:', err);
+      await updateBookingStatusFirestore(bookingId, 'CONFIRMED');
+    } finally {
+      setIsProcessingAction(false);
     }
-    return result;
-  }, [players, searchPlayer, selectedSportFilter]);
+  };
 
-  // Dynamic Real-Time Revenue & Collection Metrics
-  const financialMetrics = useMemo(() => {
-    const reservedSlots = slots.filter(s => s.status === 'RESERVED' || s.status === 'FIXED');
+  const handleConfirmReject = async () => {
+    if (!rejectModalBooking) return;
+    setIsProcessingAction(true);
+    try {
+      const bookingId = rejectModalBooking.id;
+      const res = await fetch('/api/bookings/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId, status: 'REJECTED', reason: rejectReason }),
+      });
 
-    // Sum prices of reserved slots for current selected sport filter if any
-    const activeReservedSlots = selectedSportFilter === 'TODOS'
-      ? reservedSlots
-      : reservedSlots.filter(s => s.sport.toUpperCase() === selectedSportFilter);
+      if (!res.ok) {
+        await updateBookingStatusFirestore(bookingId, 'REJECTED', rejectReason);
+      }
 
-    const totalRevenue = activeReservedSlots.reduce((acc, slot) => acc + (slot.price || 45000), 0);
-    const paidRevenue = activeReservedSlots.filter(s => s.isPaid100).reduce((acc, slot) => acc + (slot.price || 45000), 0);
-    const pendingRevenue = totalRevenue - paidRevenue;
+      // Optimistic update
+      setBookings((prev) =>
+        prev.map((b) =>
+          b.id === bookingId
+            ? { ...b, status: 'REJECTED', rejectedAt: new Date().toISOString(), rejectReason }
+            : b
+        )
+      );
+      setRejectModalBooking(null);
+    } catch (err) {
+      console.error('Error rejecting booking:', err);
+    } finally {
+      setIsProcessingAction(false);
+    }
+  };
 
-    // Calculate collection percentage (default to 100% if 0 reservations)
-    const percentage = totalRevenue > 0 ? Math.round((paidRevenue / totalRevenue) * 100) : 100;
-
-    return {
-      totalRevenue,
-      paidRevenue,
-      pendingRevenue,
-      percentage,
-      formattedTotal: `$${totalRevenue.toLocaleString('es-AR')}`,
-      formattedPaid: `$${paidRevenue.toLocaleString('es-AR')}`,
-      formattedPending: `$${pendingRevenue.toLocaleString('es-AR')}`,
-      reservedCount: activeReservedSlots.length,
-      activeReservedSlots,
+  // 6. Slots Toggle Handlers
+  const handleToggleSlot = async (courtId: string, time: string) => {
+    const slotKey = `${courtId}_${time}`;
+    const nextState = !publishedSlots[slotKey];
+    const updated = {
+      ...publishedSlots,
+      [slotKey]: nextState,
     };
-  }, [slots, selectedSportFilter]);
+    setPublishedSlots(updated);
+    await saveClubPublishedSlotsFirestore(selectedClubId, currentDateObj.value, updated);
+  };
 
-  // Daily revenue generator for August 2026 calendar view
-  const getDailyRevenue = useCallback((day: number) => {
-    if (day === 21) {
-      const paidToday = slots.filter(s => (s.status === 'RESERVED' || s.status === 'FIXED') && s.isPaid100).reduce((acc, s) => acc + (s.price || 0), 0);
-      const countToday = slots.filter(s => s.status === 'RESERVED' || s.status === 'FIXED').length;
-      return { revenue: paidToday > 0 ? paidToday : 219000, turnos: countToday > 0 ? countToday : 5 };
-    }
-    if (day > 21) {
-      const futureRevenue = [180000, 210000, 160000, 240000, 220000, 195000, 150000, 260000, 210000, 185000];
-      const index = (day - 22) % futureRevenue.length;
-      return { revenue: futureRevenue[index], turnos: Math.floor(futureRevenue[index] / 42000) };
-    }
-    const pastBase = [175000, 190000, 215000, 230000, 180000, 240000, 265000, 190000, 205000, 220000, 250000, 210000, 195000, 235000, 270000, 185000, 210000, 245000, 225000, 200000];
-    const rev = pastBase[day - 1] || 190000;
-    return { revenue: rev, turnos: Math.floor(rev / 42000) };
-  }, [slots]);
-
-  // Metrics calculation
-  const totalReservedToday = useMemo(() => {
-    return filteredSlots.filter(s => s.status === 'RESERVED' || s.status === 'FIXED').length;
-  }, [filteredSlots]);
-
-  const activeCourtsCount = useMemo(() => {
-    return filteredCourts.filter(c => c.active && !c.pausedForWeather).length;
-  }, [filteredCourts]);
-
-  // Dynamic operating times list for the matrix grid
-  const matrixOperatingTimes = useMemo(() => {
-    const times = new Set(ALL_OPERATING_TIMES);
-    filteredSlots.forEach(s => {
-      if (s.time) times.add(s.time);
+  const handleBatchPublishAfternoon = async () => {
+    const afternoonTimes = ['17:00', '18:30', '20:00', '21:30', '23:00'];
+    const updated = { ...publishedSlots };
+    courts.forEach((court) => {
+      afternoonTimes.forEach((time) => {
+        updated[`${court.id}_${time}`] = true;
+      });
     });
-    return Array.from(times).sort((a, b) => a.localeCompare(b));
-  }, [filteredSlots]);
+    setPublishedSlots(updated);
+    await saveClubPublishedSlotsFirestore(selectedClubId, currentDateObj.value, updated);
+  };
 
-  // Dynamic Real-Time Occupancy Curve & Peak Hour Metrics
-  const occupancyMetrics = useMemo(() => {
-    const checkTimes = ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00', '22:00', '24:00'];
-    const totalCourts = Math.max(1, filteredCourts.length);
-
-    const points = checkTimes.map((time, idx) => {
-      const bookedInSlot = filteredSlots.filter(s => s.time === time && (s.status === 'RESERVED' || s.status === 'FIXED')).length;
-      const percentage = Math.min(100, Math.round((bookedInSlot / totalCourts) * 100));
-      const demoPercentage = percentage > 0 ? percentage : idx === 5 || idx === 6 ? 85 : idx === 4 || idx === 7 ? 60 : idx === 3 ? 40 : 20;
-      return { time, booked: bookedInSlot, percentage: demoPercentage };
+  const handleBatchPublishAll = async () => {
+    const updated = { ...publishedSlots };
+    courts.forEach((court) => {
+      DEFAULT_TIME_SLOTS.forEach((time) => {
+        updated[`${court.id}_${time}`] = true;
+      });
     });
+    setPublishedSlots(updated);
+    await saveClubPublishedSlotsFirestore(selectedClubId, currentDateObj.value, updated);
+  };
 
-    let peak = points[0];
-    points.forEach(p => {
-      if (p.percentage > peak.percentage) peak = p;
+  const handleBatchUnpublishAll = async () => {
+    const updated = { ...publishedSlots };
+    courts.forEach((court) => {
+      DEFAULT_TIME_SLOTS.forEach((time) => {
+        updated[`${court.id}_${time}`] = false;
+      });
     });
+    setPublishedSlots(updated);
+    await saveClubPublishedSlotsFirestore(selectedClubId, currentDateObj.value, updated);
+  };
 
-    const svgHeight = 75;
-    const svgPoints = points.map((p, i) => {
-      const x = 12 + i * (276 / (checkTimes.length - 1));
-      const y = svgHeight - (p.percentage / 100) * (svgHeight - 18);
-      return { x, y, ...p };
-    });
+  // 7. Simular Solicitud Entrante (Testing Helper)
+  const handleSimulateIncomingRequest = async () => {
+    const randomCode = Math.floor(10000 + Math.random() * 90000);
+    const bookingId = `HE-${randomCode}`;
+    const demoCourt = courts[0] || { id: 'c-1', name: 'Cancha 1 — Panorámica WPT', pricePerHour: 32000 };
+    const sportsOptions: ('PADEL' | 'FUTBOL')[] = ['PADEL', 'FUTBOL'];
+    const selectedSport = demoCourt.sportType?.includes('FUT') ? 'FUTBOL' : 'PADEL';
 
-    const pathD = svgPoints.reduce((acc, p, i) => {
-      if (i === 0) return `M ${p.x} ${p.y}`;
-      const prev = svgPoints[i - 1];
-      const cx = (prev.x + p.x) / 2;
-      return `${acc} C ${cx} ${prev.y}, ${cx} ${p.y}, ${p.x} ${p.y}`;
-    }, '');
+    const testPlayers = [
+      { name: 'Rodrigo De Paul', phone: '+54 9 11 5566-7788' },
+      { name: 'Emiliano Martínez', phone: '+54 9 223 445-5667' },
+      { name: 'Lautaro Martínez', phone: '+54 9 11 3322-1144' },
+      { name: 'Alexis Mac Allister', phone: '+54 9 11 9988-7766' },
+    ];
+    const randomPlayer = testPlayers[Math.floor(Math.random() * testPlayers.length)];
 
-    const areaD = `${pathD} L ${svgPoints[svgPoints.length - 1].x} ${svgHeight + 15} L ${svgPoints[0].x} ${svgHeight + 15} Z`;
-    const peakPoint = svgPoints.find(p => p.time === peak.time) || svgPoints[5];
-
-    return {
-      points: svgPoints,
-      pathD,
-      areaD,
-      peakPoint,
-      peakTime: peak.time,
-      peakPercentage: peak.percentage,
+    const simBooking: BookingRecord = {
+      id: bookingId,
+      clubId: selectedClubId,
+      clubName,
+      courtId: demoCourt.id,
+      courtName: demoCourt.name,
+      sport: selectedSport,
+      date: getTodayString(),
+      startTime: '20:00',
+      endTime: '21:30',
+      totalPrice: demoCourt.pricePerHour || 32000,
+      serviceFee: 1500,
+      totalPaid: demoCourt.pricePerHour || 32000,
+      paymentType: 'FULL',
+      splitPlayers: 4,
+      paidPlayersCount: 4,
+      status: 'PENDING',
+      buyer: {
+        name: randomPlayer.name,
+        email: 'jugador@hayequipo.com.ar',
+        phone: randomPlayer.phone,
+      },
+      participants: [
+        {
+          id: 'part-1',
+          name: randomPlayer.name,
+          phone: randomPlayer.phone,
+          amount: demoCourt.pricePerHour || 32000,
+          status: 'PAID',
+          isHost: true,
+        },
+      ],
+      splitToken: bookingId.toLowerCase(),
+      splitLink: `https://hayequipo.com.ar/split/${bookingId.toLowerCase()}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
-  }, [filteredSlots, filteredCourts]);
 
-  if (!authed) {
-    return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#000000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#fc1c46', margin: '0 auto 16px', animation: 'pulse 1.4s infinite' }} />
-          <div style={{ fontSize: 11, color: '#888', textTransform: 'uppercase', letterSpacing: '2px' }}>CARGANDO PANEL DEL CLUB...</div>
-        </div>
-      </div>
-    );
-  }
+    await createBookingFirestore(simBooking);
+    if (isSoundEnabled) {
+      playNewRequestChime();
+    }
+  };
+
+  // Filtered Bookings for the Requests Tab
+  const filteredBookings = useMemo(() => {
+    if (requestFilter === 'PENDING') return bookings.filter((b) => b.status === 'PENDING');
+    if (requestFilter === 'CONFIRMED') return bookings.filter((b) => b.status === 'CONFIRMED');
+    if (requestFilter === 'REJECTED') return bookings.filter((b) => b.status === 'REJECTED');
+    return bookings;
+  }, [bookings, requestFilter]);
+
+  // Today's Confirmed Bookings for the Reception Agenda
+  const todaysConfirmedBookings = useMemo(() => {
+    const todayStr = getTodayString();
+    return bookings.filter((b) => b.status === 'CONFIRMED' && b.date === todayStr);
+  }, [bookings]);
+
+  // Financial Stats
+  const confirmedCount = useMemo(() => bookings.filter((b) => b.status === 'CONFIRMED').length, [bookings]);
+  const totalRevenue = useMemo(() => {
+    return bookings
+      .filter((b) => b.status === 'CONFIRMED')
+      .reduce((sum, b) => sum + (Number(b.totalPrice) || 0), 0);
+  }, [bookings]);
 
   return (
-    <div className="panel-viewport" style={{
-      width: '100vw',
-      height: '100vh',
-      maxHeight: '100vh',
-      backgroundColor: '#000000',
-      color: '#ffffff',
-      fontFamily: "'Inter', sans-serif",
-      display: 'flex',
-      alignItems: 'stretch',
-      justifyContent: 'stretch',
-      padding: 0,
-      boxSizing: 'border-box',
-      overflow: 'hidden',
-    }}>
+    <div style={{ backgroundColor: 'var(--color-void)', color: 'var(--color-frost)', minHeight: '100vh', fontFamily: 'Inter, sans-serif' }}>
       <Head>
-        <title>{clubName} — Panel de Gestión</title>
-        <meta name="description" content="Panel de control en tiempo real para gestión de reservas de canchas" />
+        <title>{pendingRequests.length > 0 ? `(${pendingRequests.length}) ¡SOLICITUD ENTRANTE! — Hay Equipo` : `Terminal Club · ${clubName}`}</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
       </Head>
 
-      <style jsx global>{`
-        /* ── Mobile Panel Responsive Styles (max-width 768px) ── */
-        .panel-mobile-bottom-nav {
-          display: none;
-        }
+      {/* ────────────────────────────────────────────────────────────
+          HEADER: Void Black Terminal Command Bar
+          ──────────────────────────────────────────────────────────── */}
+      <header
+        style={{
+          borderBottom: '1px solid var(--color-graphite)',
+          backgroundColor: 'var(--color-obsidian)',
+          position: 'sticky',
+          top: 0,
+          zIndex: 40,
+        }}
+      >
+        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '16px 20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+            {/* Left: Branding & Club Switcher */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.5px', color: 'var(--color-frost)' }}>
+                  HAY EQUIPO
+                </span>
+                <span
+                  style={{
+                    backgroundColor: 'var(--color-crimson-signal)',
+                    color: '#ffffff',
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    padding: '3px 8px',
+                    borderRadius: 'var(--radius-full)',
+                    letterSpacing: '1px',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  TERMINAL CLUB
+                </span>
+              </div>
 
-        @media (max-width: 768px) {
-          .panel-viewport {
-            padding: 0 !important;
-            height: 100dvh !important;
-            max-height: 100dvh !important;
-            overflow: hidden !important;
-            align-items: stretch !important;
-            justify-content: stretch !important;
-          }
-
-          .panel-app-shell {
-            width: 100% !important;
-            max-width: 100% !important;
-            height: 100dvh !important;
-            max-height: none !important;
-            border-radius: 0 !important;
-            border: none !important;
-            box-shadow: none !important;
-            flex-direction: column !important;
-          }
-
-          .panel-desktop-sidebar {
-            display: none !important;
-          }
-
-          .panel-mobile-bottom-nav {
-            display: flex !important;
-            position: fixed !important;
-            bottom: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
-            height: 60px !important;
-            background-color: #0a0a0a !important;
-            border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
-            z-index: 950 !important;
-            overflow-x: auto !important;
-            -webkit-overflow-scrolling: touch !important;
-            padding: 0 4px !important;
-            align-items: center !important;
-            justify-content: space-around !important;
-            box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.5) !important;
-          }
-
-          .panel-main-content {
-            padding: 12px 12px 76px 12px !important;
-            overflow-y: auto !important;
-            -webkit-overflow-scrolling: touch !important;
-          }
-
-          .panel-header-bar {
-            flex-direction: column !important;
-            align-items: stretch !important;
-            gap: 8px !important;
-          }
-
-          .panel-sports-filter {
-            overflow-x: auto !important;
-            max-width: 100% !important;
-            white-space: nowrap !important;
-            -webkit-overflow-scrolling: touch !important;
-            padding-bottom: 2px !important;
-          }
-
-          .panel-matrix-container {
-            overflow-x: auto !important;
-            -webkit-overflow-scrolling: touch !important;
-            width: 100% !important;
-            border-radius: 0 !important;
-          }
-
-          .panel-matrix-grid-inner {
-            min-width: 480px !important;
-          }
-
-          .panel-modal-backdrop {
-            padding: 0 !important;
-            align-items: flex-end !important;
-          }
-
-          .panel-modal-box {
-            max-width: 100% !important;
-            width: 100% !important;
-            border-radius: 0 !important;
-            max-height: 88vh !important;
-            overflow-y: auto !important;
-            padding: 20px 16px !important;
-            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.9) !important;
-          }
-
-          .panel-dashboard-split {
-            grid-template-columns: 1fr !important;
-            gap: 16px !important;
-          }
-
-          .panel-kpi-row {
-            grid-template-columns: 1fr !important;
-            gap: 10px !important;
-          }
-
-          .panel-monthly-calendar-container {
-            overflow-x: auto !important;
-            -webkit-overflow-scrolling: touch !important;
-            padding: 12px !important;
-            border-radius: 0 !important;
-          }
-
-          .panel-monthly-calendar-inner {
-            min-width: 580px !important;
-          }
-
-          .panel-calendar-day-card {
-            min-height: 66px !important;
-            padding: 8px 8px !important;
-          }
-
-          .panel-calendar-day-amount {
-            font-size: 12px !important;
-            white-space: nowrap !important;
-            overflow: hidden !important;
-            text-overflow: ellipsis !important;
-          }
-
-          .panel-notification-dropdown {
-            position: fixed !important;
-            top: 64px !important;
-            left: 12px !important;
-            right: 12px !important;
-            width: auto !important;
-            max-width: calc(100vw - 24px) !important;
-            max-height: 80vh !important;
-            z-index: 10000 !important;
-            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.95) !important;
-          }
-        }
-      `}</style>
-
-      {/* ═══════════════════════════════════════════════════════
-          MAIN APP SHELL (Exact 3D Mockup Container — Fit 100vh)
-          ═══════════════════════════════════════════════════════ */}
-      <div className="panel-app-shell" style={{
-        width: '100%',
-        maxWidth: '100%',
-        height: '100vh',
-        maxHeight: '100vh',
-        backgroundColor: '#000000',
-        borderRadius: 0,
-        border: 'none',
-        display: 'flex',
-        overflow: 'hidden',
-        position: 'relative',
-        boxSizing: 'border-box',
-      }}>
-
-        {/* ────────────────────────────────────────────────────────────
-            LEFT SIDEBAR
-            ──────────────────────────────────────────────────────────── */}
-        <aside className="panel-desktop-sidebar" style={{
-          width: 64, backgroundColor: '#0a0a0a', borderRight: '1px solid rgba(255, 255, 255, 0.08)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          padding: '16px 0',
-          justifyContent: 'space-between',
-          flexShrink: 0,
-        }}>
-          {/* Top: Club / Brand Logo */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18 }}>
-            <div
-              onClick={() => router.push('/')}
-              title="Volver a la web pública"
-              style={{
-                width: 38,
-                height: 38,
-                borderRadius: '50%',
-                backgroundColor: 'rgba(252, 28, 70, 0.12)',
-                border: '1px solid rgba(252, 28, 70, 0.35)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                transition: 'transform 0.2s ease',
-              }}
-              onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.08)')}
-              onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fc1c46" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 2a14.5 14.5 0 0 0 0 20M2 12h20" />
-                <path d="M12 2c5 4 5 16 0 20" />
-              </svg>
-            </div>
-
-            {/* Navigation Icon Stack */}
-            <nav style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {/* Tab 1: Dashboard */}
-              <button
-                onClick={() => setActiveTab('DASHBOARD')}
-                title="Dashboard — Vista General"
-                style={{
-                  width: 40, height: 40, borderRadius: '50%',
-                  border: 'none',
-                  backgroundColor: activeTab === 'DASHBOARD' ? '#fc1c46' : 'transparent', color: activeTab === 'DASHBOARD' ? '#ffffff' : '#9ca3af', boxShadow: activeTab === 'DASHBOARD' ? '0 0 16px rgba(252, 28, 70, 0.45)' : 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                  <rect x="3" y="3" width="7" height="7" rx="2" />
-                  <rect x="14" y="3" width="7" height="7" rx="2" />
-                  <rect x="3" y="14" width="7" height="7" rx="2" />
-                  <rect x="14" y="14" width="7" height="7" rx="2" />
-                </svg>
-              </button>
-
-              {/* Tab 2: Courts Layout & Config */}
-              <button
-                onClick={() => setActiveTab('COURTS')}
-                title="Configuración de Canchas & Horarios"
-                style={{
-                  width: 40, height: 40, borderRadius: '50%',
-                  border: 'none',
-                  backgroundColor: activeTab === 'COURTS' ? '#fc1c46' : 'transparent', color: activeTab === 'COURTS' ? '#ffffff' : '#9ca3af', boxShadow: activeTab === 'COURTS' ? '0 0 16px rgba(252, 28, 70, 0.45)' : 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="3" width="18" height="18" rx="2" />
-                  <line x1="3" y1="12" x2="21" y2="12" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
-              </button>
-
-              {/* Tab 3: Recaudación y Cobros del Día */}
-              <button
-                onClick={() => setActiveTab('REVENUE')}
-                title="Recaudación & Cobros del Día"
-                style={{
-                  width: 40, height: 40, borderRadius: '50%',
-                  border: 'none',
-                  backgroundColor: activeTab === 'REVENUE' ? '#fc1c46' : 'transparent', color: activeTab === 'REVENUE' ? '#ffffff' : '#9ca3af', boxShadow: activeTab === 'REVENUE' ? '0 0 16px rgba(252, 28, 70, 0.45)' : 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" />
-                  <path d="M12 6v2m0 8v2" />
-                </svg>
-              </button>
-
-              {/* Tab 4: Calendar / Slots */}
-              <button
-                onClick={() => setActiveTab('CALENDAR')}
-                title="Matriz de Horarios & Turnos"
-                style={{
-                  width: 40, height: 40, borderRadius: '50%',
-                  border: 'none',
-                  backgroundColor: activeTab === 'CALENDAR' ? '#fc1c46' : 'transparent', color: activeTab === 'CALENDAR' ? '#ffffff' : '#9ca3af', boxShadow: activeTab === 'CALENDAR' ? '0 0 16px rgba(252, 28, 70, 0.45)' : 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                  <line x1="16" y1="2" x2="16" y2="6" />
-                  <line x1="8" y1="2" x2="8" y2="6" />
-                  <line x1="3" y1="10" x2="21" y2="10" />
-                </svg>
-              </button>
-
-              {/* Tab 4: Players / Community */}
-              <button
-                onClick={() => setActiveTab('PLAYERS')}
-                title="Base de Jugadores"
-                style={{
-                  width: 40, height: 40, borderRadius: '50%',
-                  border: 'none',
-                  backgroundColor: activeTab === 'PLAYERS' ? '#fc1c46' : 'transparent', color: activeTab === 'PLAYERS' ? '#ffffff' : '#9ca3af', boxShadow: activeTab === 'PLAYERS' ? '0 0 16px rgba(252, 28, 70, 0.45)' : 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                  <circle cx="9" cy="7" r="4" />
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                </svg>
-              </button>
-
-              {/* Tab 6: Turnos Fijos & Abonados */}
-              <button
-                onClick={() => setActiveTab('FIXED_SLOTS')}
-                title="Turnos Fijos & Abonados"
-                style={{
-                  width: 40, height: 40, borderRadius: '50%',
-                  border: 'none',
-                  backgroundColor: activeTab === 'FIXED_SLOTS' ? '#fc1c46' : 'transparent', color: activeTab === 'FIXED_SLOTS' ? '#ffffff' : '#9ca3af', boxShadow: activeTab === 'FIXED_SLOTS' ? '0 0 16px rgba(252, 28, 70, 0.45)' : 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 2v6h-6" />
-                  <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
-                  <path d="M3 22v-6h6" />
-                  <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
-                </svg>
-              </button>
-
-              {/* Tab 6: Settings */}
-              <button
-                onClick={() => setActiveTab('SETTINGS')}
-                title="Configuración del Club"
-                style={{
-                  width: 40, height: 40, borderRadius: '50%',
-                  border: 'none',
-                  backgroundColor: activeTab === 'SETTINGS' ? '#fc1c46' : 'transparent', color: activeTab === 'SETTINGS' ? '#ffffff' : '#9ca3af', boxShadow: activeTab === 'SETTINGS' ? '0 0 16px rgba(252, 28, 70, 0.45)' : 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="3" />
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                </svg>
-              </button>
-            </nav>
-          </div>
-
-          {/* Bottom: Logout Door */}
-          <button
-            onClick={handleLogout}
-            title="Cerrar sesión"
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: '50%',
-              border: 'none',
-              backgroundColor: 'transparent',
-              color: '#94a3b8',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-            }}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-              <polyline points="16 17 21 12 16 7" />
-              <line x1="21" y1="12" x2="9" y2="12" />
-            </svg>
-          </button>
-        </aside>
-
-        {/* ────────────────────────────────────────────────────────────
-            MAIN CONTENT AREA
-            ──────────────────────────────────────────────────────────── */}
-        <main className="panel-main-content" style={{
-          flex: 1,
-          padding: 'clamp(14px, 2vh, 20px) clamp(16px, 2vw, 26px)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 'clamp(10px, 1.4vh, 14px)',
-          overflowY: 'auto',
-          boxSizing: 'border-box',
-        }}>
-
-          {/* ── TOP HEADER BAR ── */}
-          <header className="panel-header-bar" style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: 10,
-            paddingBottom: 12,
-            borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
-            marginBottom: 4,
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 7,
-                backgroundColor: '#0a0a0a',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                borderRadius: 9999,
-                padding: '6px 14px',
-              }}>
-                <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: '#10b981', boxShadow: '0 0 8px #10b981' }} />
-                {allClubs.length > 0 ? (
+              {/* Club Selector Dropdown */}
+              {clubs.length > 1 && (
+                <div style={{ position: 'relative' }}>
                   <select
                     value={selectedClubId}
-                    onChange={(e) => setSelectedClubId(e.target.value)}
+                    onChange={(e) => handleClubChange(e.target.value)}
                     style={{
-                      backgroundColor: 'transparent',
-                      color: '#ffffff',
-                      border: 'none',
-                      fontSize: 11,
-                      fontWeight: 700,
-                      letterSpacing: '1px',
-                      cursor: 'pointer',
+                      backgroundColor: 'var(--color-surface-elevate)',
+                      color: 'var(--color-frost)',
+                      border: '1px solid var(--color-graphite)',
+                      borderRadius: 'var(--radius-full)',
+                      padding: '6px 14px',
+                      fontSize: '13px',
+                      fontWeight: 600,
                       outline: 'none',
-                      maxWidth: 240,
+                      cursor: 'pointer',
                     }}
                   >
-                    {allClubs.map((c: any) => (
-                      <option key={c.id} value={c.id} style={{ backgroundColor: '#0a0a0a', color: '#ffffff' }}>
+                    {clubs.map((c) => (
+                      <option key={c.id} value={c.id} style={{ backgroundColor: '#141414', color: '#ffffff' }}>
                         {c.name}
                       </option>
                     ))}
                   </select>
-                ) : (
-                  <span style={{ fontSize: 11, fontWeight: 700, color: '#ffffff', letterSpacing: '1px', textTransform: 'uppercase' }}>
-                    {clubName}
-                  </span>
-                )}
-              </div>
+                </div>
+              )}
             </div>
 
-            {/* Middle: Dynamic Sport Filter Tabs (Only sports registered in current courts) */}
-            <div className="panel-sports-filter" style={{
-              display: 'flex',
-              backgroundColor: '#0a0a0a',
-              padding: 3,
-              borderRadius: 9999,
-              border: '1px solid rgba(255,255,255,0.06)',
-            }}>
-              {availableSportFilters.map(sport => (
-                <button
-                  key={sport}
-                  onClick={() => setSelectedSportFilter(sport)}
-                  style={{
-                    backgroundColor: selectedSportFilter === sport ? '#fc1c46' : 'transparent',
-                    color: selectedSportFilter === sport ? '#ffffff' : '#9ca3af',
-                    border: 'none',
-                    borderRadius: 9999,
-                    padding: '5px 12px',
-                    fontSize: 11,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  {sport}
-                </button>
-              ))}
-            </div>
-
-            {/* Right Controls: Notifications + Date Pill + Print */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {/* Right: Sound Alert Switch & Reception Status & Demo Trigger */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              {/* Sound Alert Toggle */}
               <button
-                onClick={handlePrintDailyRoster}
-                title="Imprimir planilla del día"
+                type="button"
+                onClick={() => {
+                  const next = !isSoundEnabled;
+                  setIsSoundEnabled(next);
+                  if (next) playNewRequestChime();
+                }}
                 style={{
-                  backgroundColor: '#0a0a0a',
-                  color: '#ffffff',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  borderRadius: 9999,
-                  padding: '6px 14px',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 5,
+                  gap: '6px',
+                  backgroundColor: isSoundEnabled ? 'rgba(16, 185, 129, 0.15)' : 'var(--color-surface-elevate)',
+                  color: isSoundEnabled ? 'var(--color-emerald)' : 'var(--color-ash)',
+                  border: isSoundEnabled ? '1px solid var(--color-emerald)' : '1px solid var(--color-graphite)',
+                  borderRadius: 'var(--radius-full)',
+                  padding: '7px 14px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
                 }}
+                title={isSoundEnabled ? 'Alertas sonoras activas' : 'Alertas silenciadas'}
               >
-                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Icons.Printer /> Planilla</span>
+                {isSoundEnabled ? <Icons.Volume size={14} /> : <Icons.VolumeX size={14} />}
+                <span>{isSoundEnabled ? 'AUDIO ACTIVO' : 'SILENCIADO'}</span>
               </button>
 
-              {/* Notification Bell & Interactive Dropdown Overlay */}
-              <div style={{ position: 'relative' }}>
-                <div
+              {/* Status Indicator (Recepción Abierta) */}
+              <button
+                type="button"
+                onClick={() => setIsReceptionOnline(!isReceptionOnline)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  backgroundColor: isReceptionOnline ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+                  color: isReceptionOnline ? 'var(--color-emerald)' : '#ef4444',
+                  border: isReceptionOnline ? '1px solid var(--color-emerald)' : '1px solid #ef4444',
+                  borderRadius: 'var(--radius-full)',
+                  padding: '7px 14px',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                <span
                   style={{
-                    position: 'relative',
-                    width: 34,
-                    height: 34,
+                    width: '8px',
+                    height: '8px',
                     borderRadius: '50%',
-                    backgroundColor: showNotificationDropdown ? '#141414' : '#0a0a0a',
-                    border: showNotificationDropdown ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.06)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    color: showNotificationDropdown ? '#ffffff' : '#94a3b8',
-                    transition: 'all 0.15s ease',
+                    backgroundColor: isReceptionOnline ? 'var(--color-emerald)' : '#ef4444',
+                    boxShadow: isReceptionOnline ? '0 0 8px var(--color-emerald)' : 'none',
                   }}
-                  onClick={() => setShowNotificationDropdown(prev => !prev)}
-                  title="Ver notificaciones del club"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                  </svg>
-                  {unreadNotificationCount > 0 && (
-                    <span style={{
-                      position: 'absolute',
-                      top: -2,
-                      right: -2,
-                      backgroundColor: '#fc1c46',
-                      color: '#ffffff',
-                      fontSize: 9.5,
-                      fontWeight: 800,
-                      width: 17,
-                      height: 17,
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      border: '2px solid #0a0a0a',
-                      boxShadow: '0 2px 6px rgba(252,28,70,0.4)',
-                    }}>
-                      {unreadNotificationCount}
-                    </span>
-                  )}
-                </div>
+                />
+                <span>{isReceptionOnline ? 'RECEPCIÓN ONLINE' : 'RECEPCIÓN EN PAUSA'}</span>
+              </button>
 
-                {/* Dropdown Flyout Panel */}
-                {showNotificationDropdown && (
-                  <>
+              {/* Quick Simulation Button for Demo Testing */}
+              <button
+                type="button"
+                onClick={handleSimulateIncomingRequest}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  backgroundColor: 'var(--color-surface-elevate)',
+                  color: 'var(--color-frost)',
+                  border: '1px dashed var(--color-crimson-signal)',
+                  borderRadius: 'var(--radius-full)',
+                  padding: '7px 14px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+                title="Genera una solicitud de prueba en vivo para verificar el sonido y el flujo"
+              >
+                <Icons.Zap size={13} color="var(--color-crimson-signal)" />
+                <span>+ Simular Solicitud</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Sliding Pill Navigation Bar */}
+          <div style={{ marginTop: '16px', position: 'relative' }}>
+            <div
+              ref={containerRef as any}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                backgroundColor: 'var(--color-surface-elevate)',
+                padding: '4px',
+                borderRadius: 'var(--radius-full)',
+                border: '1px solid var(--color-graphite)',
+                position: 'relative',
+                overflow: 'hidden',
+              }}
+            >
+              <div style={indicatorStyle} />
+
+              {/* Tab 1: Solicitudes */}
+              <button
+                ref={setItemRef('REQUESTS')}
+                onClick={() => setActiveTab('REQUESTS')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '8px 20px',
+                  borderRadius: 'var(--radius-full)',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  color: activeTab === 'REQUESTS' ? '#ffffff' : 'var(--color-ash)',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  zIndex: 2,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                }}
+              >
+                <Icons.Bell size={14} />
+                <span>Solicitudes</span>
+                {pendingRequests.length > 0 && (
+                  <span
+                    style={{
+                      backgroundColor: activeTab === 'REQUESTS' ? '#ffffff' : 'var(--color-crimson-signal)',
+                      color: activeTab === 'REQUESTS' ? 'var(--color-crimson-signal)' : '#ffffff',
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      padding: '1px 7px',
+                      borderRadius: 'var(--radius-full)',
+                      marginLeft: '4px',
+                    }}
+                  >
+                    {pendingRequests.length}
+                  </span>
+                )}
+              </button>
+
+              {/* Tab 2: Publicar Turnos */}
+              <button
+                ref={setItemRef('PUBLISH_SLOTS')}
+                onClick={() => setActiveTab('PUBLISH_SLOTS')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '8px 20px',
+                  borderRadius: 'var(--radius-full)',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  color: activeTab === 'PUBLISH_SLOTS' ? '#ffffff' : 'var(--color-ash)',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  zIndex: 2,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                }}
+              >
+                <Icons.Calendar size={14} />
+                <span>Publicar Turnos</span>
+              </button>
+
+              {/* Tab 3: Mis Canchas */}
+              <button
+                ref={setItemRef('COURTS')}
+                onClick={() => setActiveTab('COURTS')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '8px 20px',
+                  borderRadius: 'var(--radius-full)',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  color: activeTab === 'COURTS' ? '#ffffff' : 'var(--color-ash)',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  zIndex: 2,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                }}
+              >
+                <span>Mis Canchas ({courts.length})</span>
+              </button>
+
+              {/* Tab 4: Liquidaciones */}
+              <button
+                ref={setItemRef('PAYOUTS')}
+                onClick={() => setActiveTab('PAYOUTS')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '8px 20px',
+                  borderRadius: 'var(--radius-full)',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  color: activeTab === 'PAYOUTS' ? '#ffffff' : 'var(--color-ash)',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  zIndex: 2,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                }}
+              >
+                <Icons.DollarSign size={14} />
+                <span>Liquidaciones</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* ────────────────────────────────────────────────────────────
+          MAIN CONTENT AREA
+          ──────────────────────────────────────────────────────────── */}
+      <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px 20px 80px' }}>
+
+        {/* ════════════════════════════════════════════════════════════
+            TAB 1: BANDEJA DE SOLICITUDES (INBOX DE RESERVAS EN VIVO)
+            ════════════════════════════════════════════════════════════ */}
+        {activeTab === 'REQUESTS' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {/* Filter Pills & Summary */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {(['PENDING', 'ALL', 'CONFIRMED', 'REJECTED'] as const).map((filterKey) => {
+                  const labels = {
+                    PENDING: `SOLICITUDES PENDIENTES (${pendingRequests.length})`,
+                    ALL: `TODAS (${bookings.length})`,
+                    CONFIRMED: `CONFIRMADAS (${bookings.filter((b) => b.status === 'CONFIRMED').length})`,
+                    REJECTED: `RECHAZADAS (${bookings.filter((b) => b.status === 'REJECTED').length})`,
+                  };
+                  const isActive = requestFilter === filterKey;
+                  return (
+                    <button
+                      key={filterKey}
+                      type="button"
+                      onClick={() => setRequestFilter(filterKey)}
+                      style={{
+                        padding: '6px 16px',
+                        borderRadius: 'var(--radius-full)',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        backgroundColor: isActive ? 'var(--color-frost)' : 'var(--color-surface-elevate)',
+                        color: isActive ? '#000000' : 'var(--color-ash)',
+                        border: isActive ? '1px solid var(--color-frost)' : '1px solid var(--color-graphite)',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      {labels[filterKey]}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {pendingRequests.length > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span
+                    style={{
+                      width: '10px',
+                      height: '10px',
+                      borderRadius: '50%',
+                      backgroundColor: 'var(--color-crimson-signal)',
+                      display: 'inline-block',
+                      animation: 'pulse 1.5s infinite',
+                    }}
+                  />
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-crimson-signal)' }}>
+                    {pendingRequests.length} {pendingRequests.length === 1 ? 'pedido esperando tu respuesta' : 'pedidos esperando tu respuesta'}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* List of Incoming Requests */}
+            {filteredBookings.length === 0 ? (
+              <div
+                style={{
+                  backgroundColor: 'var(--color-obsidian)',
+                  border: '1px solid var(--color-graphite)',
+                  borderRadius: '0px',
+                  padding: '64px 24px',
+                  textAlign: 'center',
+                }}
+              >
+                <div style={{ display: 'inline-flex', padding: '16px', backgroundColor: 'var(--color-surface-elevate)', borderRadius: 'var(--radius-full)', marginBottom: '16px' }}>
+                  <Icons.Bell size={28} color="var(--color-ash)" />
+                </div>
+                <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '8px' }}>
+                  {requestFilter === 'PENDING' ? 'No tenés solicitudes pendientes ahora mismo' : 'No hay reservas registradas en esta vista'}
+                </h3>
+                <p style={{ color: 'var(--color-ash)', fontSize: '14px', maxWidth: '480px', margin: '0 auto 24px' }}>
+                  Cuando un jugador elija una cancha libre desde la web o app de Hay Equipo, su solicitud aparecerá acá con una alerta sonora para que la aceptes o rechaces en 1 click.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleSimulateIncomingRequest}
+                  style={{
+                    backgroundColor: 'var(--color-crimson-signal)',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: 'var(--radius-full)',
+                    padding: '10px 24px',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Generar Solicitud de Prueba
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {filteredBookings.map((booking) => {
+                  const isPending = booking.status === 'PENDING';
+                  const isConfirmed = booking.status === 'CONFIRMED';
+                  const isRejected = booking.status === 'REJECTED';
+                  const cleanPhone = (booking.buyer?.phone || '').replace(/[^0-9]/g, '');
+                  const whatsappUrl = `https://wa.me/${cleanPhone}?text=Hola%20${encodeURIComponent(booking.buyer?.name || '')},%20te%20escribimos%20desde%20${encodeURIComponent(clubName)}%20sobre%20tu%20reserva%20en%20Hay%20Equipo.`;
+
+                  return (
                     <div
-                      style={{ position: 'fixed', inset: 0, zIndex: 9999 }}
-                      onClick={() => setShowNotificationDropdown(false)}
-                    />
-                    
-                    <div className="panel-notification-dropdown" style={{
-                      position: 'absolute',
-                      right: 0,
-                      top: 'calc(100% + 8px)',
-                      width: 340,
-                      backgroundColor: '#0a0a0a',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      borderRadius: 0,
-                      boxShadow: '0 20px 50px rgba(0, 0, 0, 0.85)',
-                      zIndex: 10000,
-                      overflow: 'hidden',
-                      display: 'flex',
-                      flexDirection: 'column',
-                    }}>
-                      {/* Header */}
-                      <div style={{
-                        padding: '14px 16px',
-                        borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        backgroundColor: '#141414',
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ fontSize: 13, fontWeight: 800, color: '#ffffff' }}>Notificaciones</span>
-                          {unreadNotificationCount > 0 && (
-                            <span style={{ fontSize: 10, fontWeight: 700, backgroundColor: 'rgba(252, 28, 70, 0.15)', color: '#fc1c46', padding: '2px 7px', borderRadius: 9999 }}>
-                              {unreadNotificationCount} nuevas
+                      key={booking.id}
+                      style={{
+                        backgroundColor: 'var(--color-obsidian)',
+                        border: isPending ? '1px solid var(--color-crimson-signal)' : '1px solid var(--color-graphite)',
+                        borderLeft: isPending ? '4px solid var(--color-crimson-signal)' : isConfirmed ? '4px solid var(--color-emerald)' : '4px solid #64748b',
+                        borderRadius: '0px',
+                        padding: '20px 24px',
+                        boxShadow: isPending ? '0 0 20px rgba(252, 28, 70, 0.15)' : 'none',
+                        transition: 'border 0.2s ease',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+                        {/* Left: Slot & Player Information */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: '1 1 340px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                            <span
+                              style={{
+                                fontSize: '11px',
+                                fontWeight: 800,
+                                padding: '3px 10px',
+                                borderRadius: 'var(--radius-full)',
+                                backgroundColor: isPending ? 'rgba(252, 28, 70, 0.2)' : isConfirmed ? 'rgba(16, 185, 129, 0.2)' : 'rgba(100, 116, 139, 0.2)',
+                                color: isPending ? 'var(--color-crimson-signal)' : isConfirmed ? 'var(--color-emerald)' : 'var(--color-ash)',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.5px',
+                              }}
+                            >
+                              {isPending ? 'SOLICITUD ENTRANTE' : isConfirmed ? 'TURNO CONFIRMADO' : 'RECHAZADO'}
                             </span>
-                          )}
-                        </div>
-                        {unreadNotificationCount > 0 && (
-                          <button
-                            type="button"
-                            onClick={handleMarkAllNotificationsAsRead}
+
+                            <span style={{ fontSize: '12px', color: 'var(--color-ash)', fontWeight: 600 }}>
+                              Código: #{booking.id}
+                            </span>
+
+                            <SportBadge sports={[booking.sport]} size="sm" />
+                          </div>
+
+                          <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-frost)' }}>
+                            {booking.courtName}
+                          </div>
+
+                          {/* Match Schedule */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', color: 'var(--color-ash)', fontSize: '14px', flexWrap: 'wrap' }}>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--color-frost)', fontWeight: 600 }}>
+                              <Icons.Calendar size={14} color="var(--color-crimson-signal)" />
+                              {booking.date}
+                            </span>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--color-frost)', fontWeight: 700 }}>
+                              <Icons.Clock size={14} color="var(--color-crimson-signal)" />
+                              {booking.startTime} hs {booking.endTime ? `a ${booking.endTime} hs` : ''}
+                            </span>
+                            <span style={{ color: 'var(--color-emerald)', fontWeight: 700 }}>
+                              {formatCurrency(booking.totalPrice)} {booking.paymentType === 'SPLIT' ? '· PAGO DIVIDIDO' : '· PAGO COMPLETO'}
+                            </span>
+                          </div>
+
+                          {/* Player Identity Row */}
+                          <div
                             style={{
-                              backgroundColor: 'transparent',
-                              border: 'none',
-                              color: '#9ca3af',
-                              fontSize: 11,
-                              fontWeight: 600,
-                              cursor: 'pointer',
-                              padding: 0,
-                              textDecoration: 'underline',
+                              marginTop: '8px',
+                              padding: '10px 14px',
+                              backgroundColor: 'var(--color-surface-elevate)',
+                              borderRadius: '0px',
+                              border: '1px solid var(--color-graphite)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              flexWrap: 'wrap',
+                              gap: '12px',
                             }}
                           >
-                            Marcar todas leídas
-                          </button>
-                        )}
-                      </div>
-
-                      {/* List (Scrollable) */}
-                      <div style={{
-                        maxHeight: 320,
-                        overflowY: 'auto',
-                        display: 'flex',
-                        flexDirection: 'column',
-                      }}>
-                        {notifications.length === 0 ? (
-                          <div style={{ padding: 24, textAlign: 'center', color: '#94a3b8', fontSize: 12 }}>
-                            No tenés notificaciones registradas.
-                          </div>
-                        ) : (
-                          notifications.map(n => (
-                            <div
-                              key={n.id}
-                              onClick={() => handleMarkNotificationAsRead(n.id)}
-                              style={{
-                                padding: '12px 16px',
-                                borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
-                                backgroundColor: n.read ? 'transparent' : 'rgba(252, 28, 70, 0.04)',
-                                cursor: 'pointer',
-                                transition: 'all 0.12s ease',
-                                display: 'flex',
-                                gap: 12,
-                                alignItems: 'flex-start',
-                              }}
-                              onMouseEnter={e => e.currentTarget.style.backgroundColor = n.read ? 'rgba(255,255,255,0.03)' : 'rgba(252, 28, 70, 0.08)'}
-                              onMouseLeave={e => e.currentTarget.style.backgroundColor = n.read ? 'transparent' : 'rgba(252, 28, 70, 0.04)'}
-                            >
-                              <div style={{
-                                width: 28,
-                                height: 28,
-                                borderRadius: '50%',
-                                backgroundColor: n.type === 'PAYMENT' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(252, 28, 70, 0.12)',
-                                color: n.type === 'PAYMENT' ? '#10b981' : '#fc1c46',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: 12,
-                                fontWeight: 700,
-                                flexShrink: 0,
-                                marginTop: 2,
-                              }}>
-                                {n.type === 'PAYMENT' ? '$' : 'OK'}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <div
+                                style={{
+                                  width: '34px',
+                                  height: '34px',
+                                  borderRadius: 'var(--radius-full)',
+                                  backgroundColor: '#1f1f1f',
+                                  color: 'var(--color-frost)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  fontWeight: 800,
+                                  fontSize: '14px',
+                                }}
+                              >
+                                {(booking.buyer?.name || 'J')[0].toUpperCase()}
                               </div>
+                              <div>
+                                <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--color-frost)' }}>
+                                  {booking.buyer?.name || 'Jugador'}
+                                </div>
+                                <div style={{ fontSize: '12px', color: 'var(--color-ash)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <Icons.ShieldCheck size={12} color="var(--color-emerald)" />
+                                  <span>Jugador Verificado · {booking.buyer?.phone || 'Sin WhatsApp'}</span>
+                                </div>
+                              </div>
+                            </div>
 
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
-                                  <div style={{ fontSize: 12.5, fontWeight: n.read ? 600 : 800, color: n.read ? '#94a3b8' : '#ffffff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                    {n.title}
-                                  </div>
-                                  <span style={{ fontSize: 10, color: '#94a3b8', flexShrink: 0 }}>{n.time}</span>
-                                </div>
-                                <div style={{ fontSize: 11.5, color: '#9ca3af', marginTop: 2, lineHeight: 1.3 }}>
-                                  {n.message}
-                                </div>
+                            {/* WhatsApp Button */}
+                            {cleanPhone && (
+                              <a
+                                href={whatsappUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '6px',
+                                  backgroundColor: '#25D366',
+                                  color: '#000000',
+                                  padding: '6px 14px',
+                                  borderRadius: 'var(--radius-full)',
+                                  fontSize: '12px',
+                                  fontWeight: 700,
+                                  textDecoration: 'none',
+                                }}
+                              >
+                                <Icons.WhatsApp size={13} color="#000000" />
+                                <span>Abrir WhatsApp</span>
+                              </a>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Right: Actions (Aceptar / Rechazar) */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minWidth: '220px' }}>
+                          {isPending ? (
+                            <>
+                              <div style={{ fontSize: '12px', color: 'var(--color-ash)', textAlign: 'right', marginBottom: '2px' }}>
+                                Pago pre-autorizado en custodia
                               </div>
 
                               <button
                                 type="button"
-                                onClick={(e) => handleDeleteNotification(n.id, e)}
-                                title="Eliminar notificación"
+                                disabled={isProcessingAction}
+                                onClick={() => handleAcceptBooking(booking.id)}
                                 style={{
-                                  backgroundColor: 'transparent',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: '8px',
+                                  backgroundColor: 'var(--color-emerald)',
+                                  color: '#000000',
                                   border: 'none',
-                                  color: '#94a3b8',
-                                  fontSize: 12,
-                                  cursor: 'pointer',
-                                  padding: '2px 4px', borderRadius: '50%',
+                                  borderRadius: 'var(--radius-full)',
+                                  padding: '12px 20px',
+                                  fontSize: '14px',
+                                  fontWeight: 800,
+                                  cursor: isProcessingAction ? 'not-allowed' : 'pointer',
+                                  boxShadow: '0 0 16px rgba(16, 185, 129, 0.3)',
+                                  transition: 'all 0.2s ease',
                                 }}
-                                onMouseEnter={e => e.currentTarget.style.color = '#fc1c46'}
-                                onMouseLeave={e => e.currentTarget.style.color = '#94a3b8'}
-                              ><Icons.Close size={13} /></button>
-                            </div>
-                          ))
-                        )}
-                      </div>
+                              >
+                                <Icons.Check size={16} color="#000000" />
+                                <span>ACEPTAR TURNO</span>
+                              </button>
 
-                      {/* Footer */}
-                      <div style={{
-                        padding: '10px 16px',
-                        borderTop: '1px solid rgba(255, 255, 255, 0.06)',
-                        backgroundColor: '#141414',
-                        textAlign: 'center',
-                        fontSize: 11,
-                        color: '#94a3b8',
-                      }}>
-                        {unreadNotificationCount === 0 ? 'Todas las notificaciones están leídas' : `${unreadNotificationCount} sin leer`}
+                              <button
+                                type="button"
+                                disabled={isProcessingAction}
+                                onClick={() => {
+                                  setRejectModalBooking(booking);
+                                  setRejectReason('Cancha ocupada presencialmente en el club');
+                                }}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: '8px',
+                                  backgroundColor: 'transparent',
+                                  color: 'var(--color-ash)',
+                                  border: '1px solid var(--color-graphite)',
+                                  borderRadius: 'var(--radius-full)',
+                                  padding: '10px 20px',
+                                  fontSize: '13px',
+                                  fontWeight: 600,
+                                  cursor: isProcessingAction ? 'not-allowed' : 'pointer',
+                                  transition: 'all 0.2s ease',
+                                }}
+                              >
+                                <Icons.Close size={14} />
+                                <span>RECHAZAR</span>
+                              </button>
+                            </>
+                          ) : isConfirmed ? (
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '10px 16px',
+                                borderRadius: 'var(--radius-full)',
+                                backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                                color: 'var(--color-emerald)',
+                                border: '1px solid var(--color-emerald)',
+                                fontWeight: 700,
+                                fontSize: '13px',
+                                justifyContent: 'center',
+                              }}
+                            >
+                              <Icons.Check size={15} />
+                              <span>TURNO CONFIRMADO</span>
+                            </div>
+                          ) : (
+                            <div
+                              style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                gap: '4px',
+                                padding: '10px 16px',
+                                borderRadius: 'var(--radius-full)',
+                                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                                color: 'var(--color-ash)',
+                                border: '1px solid var(--color-graphite)',
+                                fontSize: '12px',
+                                textAlign: 'center',
+                              }}
+                            >
+                              <span style={{ fontWeight: 700, color: '#ef4444' }}>SOLICITUD RECHAZADA</span>
+                              <span style={{ fontSize: '11px', color: 'var(--color-ash)' }}>
+                                {booking.rejectReason || 'Fondos liberados'}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </>
-                )}
+                  );
+                })}
               </div>
+            )}
 
-              {/* Date Filter Pill */}
-              <div style={{ position: 'relative' }}>
-                <select
-                  value={dateFilter}
-                  onChange={e => setDateFilter(e.target.value)}
+            {/* Agenda de Turnos Confirmados de Hoy */}
+            {todaysConfirmedBookings.length > 0 && (
+              <div style={{ marginTop: '32px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                  <h3 style={{ fontSize: '18px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Agenda Confirmada de Hoy ({todaysConfirmedBookings.length})
+                  </h3>
+                  <span style={{ fontSize: '13px', color: 'var(--color-ash)' }}>
+                    {getTodayString()}
+                  </span>
+                </div>
+
+                <div
                   style={{
-                    backgroundColor: '#0a0a0a',
-                    color: '#ffffff',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: 9999,
-                    padding: '6px 26px 6px 14px',
-                    fontSize: 12,
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                    appearance: 'none',
-                    WebkitAppearance: 'none',
+                    backgroundColor: 'var(--color-obsidian)',
+                    border: '1px solid var(--color-graphite)',
+                    borderRadius: '0px',
+                    overflow: 'hidden',
                   }}
                 >
-                  <option value="Hoy">Hoy</option>
-                  <option value="Mañana">Mañana</option>
-                  <option value="Esta semana">Esta semana</option>
-                </select>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid var(--color-graphite)', backgroundColor: 'var(--color-surface-elevate)', color: 'var(--color-ash)', fontSize: '12px' }}>
+                        <th style={{ padding: '12px 16px', fontWeight: 700 }}>HORARIO</th>
+                        <th style={{ padding: '12px 16px', fontWeight: 700 }}>CANCHA</th>
+                        <th style={{ padding: '12px 16px', fontWeight: 700 }}>JUGADOR TITULAR</th>
+                        <th style={{ padding: '12px 16px', fontWeight: 700 }}>CONTACTO</th>
+                        <th style={{ padding: '12px 16px', fontWeight: 700 }}>MONTO COBRADO</th>
+                        <th style={{ padding: '12px 16px', fontWeight: 700 }}>ESTADO</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {todaysConfirmedBookings.map((b) => (
+                        <tr key={b.id} style={{ borderBottom: '1px solid var(--color-graphite)' }}>
+                          <td style={{ padding: '14px 16px', fontWeight: 800, color: 'var(--color-frost)' }}>
+                            {b.startTime} hs
+                          </td>
+                          <td style={{ padding: '14px 16px', color: 'var(--color-frost)' }}>
+                            {b.courtName}
+                          </td>
+                          <td style={{ padding: '14px 16px', fontWeight: 600, color: 'var(--color-frost)' }}>
+                            {b.buyer?.name || '—'}
+                          </td>
+                          <td style={{ padding: '14px 16px', color: 'var(--color-ash)' }}>
+                            {b.buyer?.phone || '—'}
+                          </td>
+                          <td style={{ padding: '14px 16px', fontWeight: 700, color: 'var(--color-emerald)' }}>
+                            {formatCurrency(b.totalPrice)}
+                          </td>
+                          <td style={{ padding: '14px 16px' }}>
+                            <span
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                color: 'var(--color-emerald)',
+                                fontSize: '12px',
+                                fontWeight: 700,
+                              }}
+                            >
+                              <Icons.Check size={12} />
+                              Confirmado
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-          </header>
+            )}
+          </div>
+        )}
 
-          {/* ═══════════════════════════════════════════════════════
-              VIEW 1: DASHBOARD
-              ═══════════════════════════════════════════════════════ */}
-          {activeTab === 'DASHBOARD' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {/* ════════════════════════════════════════════════════════════
+            TAB 2: PUBLICADOR DE TURNOS (MATRIZ ON/OFF RÁPIDA)
+            ════════════════════════════════════════════════════════════ */}
+        {activeTab === 'PUBLISH_SLOTS' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {/* Context Explanation */}
+            <div
+              style={{
+                backgroundColor: 'var(--color-obsidian)',
+                border: '1px solid var(--color-graphite)',
+                borderRadius: '0px',
+                padding: '18px 24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '16px',
+              }}
+            >
               <div>
-                <h1 style={{ fontSize: 22, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, color: '#ffffff', margin: 0, letterSpacing: '-0.4px' }}>
-                  Panel de Gestión y Grilla de Canchas
-                </h1>
-                <p style={{ fontSize: 13, color: '#9ca3af', margin: '4px 0 0' }}>
-                  Estado de turnos del día y reservas en tiempo real.
+                <h3 style={{ fontSize: '16px', fontWeight: 800, marginBottom: '4px', color: 'var(--color-frost)' }}>
+                  VENTA DE TURNOS VACANTES EN HAY EQUIPO
+                </h3>
+                <p style={{ color: 'var(--color-ash)', fontSize: '13px', margin: 0, maxWidth: '650px' }}>
+                  No reemplazamos tu sistema habitual. Marcá acá únicamente los horarios que tenés libres o que se te cayeron a último momento. Los jugadores en la app solo podrán solicitar los turnos que dejes en verde.
                 </p>
               </div>
 
-              {/* TOP 3 METRIC KPI CARDS */}
-              <section className="panel-kpi-row" style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                gap: 12,
-              }}>
-                {/* KPI 1: Reservas hoy */}
-                <div style={{
-                  backgroundColor: '#0a0a0a',
-                  borderRadius: 0,
-                  border: '1px solid rgba(255, 255, 255, 0.05)',
-                  padding: '12px 16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 14,
-                }}>
-                  <div style={{
-                    width: 40, height: 40, borderRadius: '50%',
-                    backgroundColor: 'rgba(252, 28, 70, 0.12)',
-                    border: '1px solid rgba(252, 28, 70, 0.2)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#fc1c46',
-                    flexShrink: 0,
-                  }}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                      <line x1="16" y1="2" x2="16" y2="6" />
-                      <line x1="8" y1="2" x2="8" y2="6" />
-                      <line x1="3" y1="10" x2="21" y2="10" />
-                    </svg>
-                  </div>
-                  <div>
-                    <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 'clamp(20px, 2.5vh, 24px)', fontWeight: 700, color: '#ffffff', lineHeight: 1 }}>
-                      {totalReservedToday}
-                    </div>
-                    <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 3 }}>
-                      reservas confirmadas hoy
-                    </div>
-                  </div>
-                </div>
-
-                {/* KPI 2: Facturación en Tiempo Real (Dirige a la sección Recaudación) */}
-                <div
-                  onClick={() => setActiveTab('REVENUE')}
-                  style={{
-                    backgroundColor: '#0a0a0a',
-                    borderRadius: 0,
-                    border: '1px solid rgba(255, 255, 255, 0.05)',
-                    padding: '12px 16px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 14,
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                  }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.4)';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.05)';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                  }}
-                >
-                  <div style={{
-                    width: 40, height: 40, borderRadius: '50%',
-                    backgroundColor: 'rgba(16, 185, 129, 0.12)',
-                    border: '1px solid rgba(16, 185, 129, 0.2)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#10b981',
-                    flexShrink: 0,
-                  }}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="10" />
-                      <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" />
-                      <path d="M12 6v2m0 8v2" />
-                    </svg>
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 'clamp(18px, 2.2vh, 22px)', fontWeight: 700, color: '#ffffff', lineHeight: 1 }}>
-                      {financialMetrics.formattedTotal}
-                    </div>
-                    <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 3, display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <span>recaudación estimada ({dateFilter.toLowerCase()})</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* KPI 3: Canchas activas */}
-                <div style={{
-                  backgroundColor: '#0a0a0a',
-                  borderRadius: 0,
-                  border: '1px solid rgba(255, 255, 255, 0.05)',
-                  padding: '12px 16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 14,
-                }}>
-                  <div style={{
-                    width: 40, height: 40, borderRadius: '50%',
-                    backgroundColor: 'rgba(252, 28, 70, 0.12)',
-                    border: '1px solid rgba(252, 28, 70, 0.2)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#fc1c46',
-                    flexShrink: 0,
-                  }}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="4" y="2" width="16" height="20" rx="2" />
-                      <line x1="4" y1="12" x2="20" y2="12" />
-                      <line x1="8" y1="2" x2="8" y2="22" />
-                      <line x1="16" y1="2" x2="16" y2="22" />
-                    </svg>
-                  </div>
-                  <div>
-                    <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 'clamp(20px, 2.5vh, 24px)', fontWeight: 700, color: '#ffffff', lineHeight: 1 }}>
-                      {activeCourtsCount} / {filteredCourts.length}
-                    </div>
-                    <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 3 }}>
-                      canchas operativas
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              {/* MAIN SPLIT GRID (HORARIOS + ACTIVIDAD) */}
-              <div className="panel-dashboard-split" style={{
-                display: 'grid',
-                gridTemplateColumns: '1.7fr 1fr',
-                gap: 14,
-                flex: 1,
-              }}>
-                {/* LEFT: HORARIOS DEL DÍA */}
-                <div style={{
-                  backgroundColor: '#0a0a0a',
-                  borderRadius: 0,
-                  border: '1px solid rgba(255, 255, 255, 0.05)',
-                  padding: '14px 18px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                }}>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                      <span style={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: '50%',
-                        backgroundColor: '#fc1c46',
-                        boxShadow: '0 0 8px #fc1c46',
-                        display: 'inline-block',
-                      }} />
-                      <h2 style={{ fontSize: 15, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, color: '#ffffff', margin: 0 }}>
-                        Horarios del Día
-                      </h2>
-                    </div>
-
-                    {/* Matrix Table Header: HORA | Cancha 1 | Cancha 2 | Cancha 3 | ... */}
-                    <div style={{
-                      display: 'grid',
-                      gridTemplateColumns: `0.7fr repeat(${Math.max(1, filteredCourts.length)}, minmax(0, 1fr))`,
-                      gap: 8,
-                      paddingBottom: 10,
-                      borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
-                      fontSize: 10,
-                      fontWeight: 700,
-                      color: '#9ca3af',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.8px',
-                      alignItems: 'center',
-                    }}>
-                      <div>HORA</div>
-                      {filteredCourts.map(court => (
-                        <div key={court.id} style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={court.name}>
-                          {court.name.split('—')[0].trim()}
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Matrix Table Rows: Operating Hours */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10 }}>
-                      {matrixOperatingTimes.map((time) => (
-                        <div
-                          key={time}
-                          style={{
-                            display: 'grid',
-                            gridTemplateColumns: `0.7fr repeat(${Math.max(1, filteredCourts.length)}, minmax(0, 1fr))`,
-                            gap: 8,
-                            alignItems: 'center',
-                          }}
-                        >
-                          {/* Time Column */}
-                          <div style={{ color: '#ffffff', fontSize: 12, fontWeight: 700 }}>
-                            {time} hs
-                          </div>
-
-                          {/* Court Columns */}
-                          {filteredCourts.map((court) => {
-                            const slot = filteredSlots.find(s => s.courtId === court.id && s.time === time);
-                            const isReserved = slot && (slot.status === 'RESERVED' || slot.status === 'FIXED');
-                            const isBlocked = slot && (slot.status === 'MAINTENANCE' || slot.status === 'BLOCKED');
-
-                            const openH = court.openTime ? parseInt(court.openTime.split(':')[0], 10) : 0;
-                            const closeH = court.closeTime ? (court.closeTime === '24:00' || court.closeTime === '00:00' ? 24 : parseInt(court.closeTime.split(':')[0], 10)) : 24;
-                            const timeH = parseInt(time.split(':')[0], 10);
-                            const isOpen = timeH >= openH && timeH < closeH;
-
-                            if (isReserved && slot) {
-                              return (
-                                <div
-                                  key={court.id}
-                                  onClick={() => handleOpenEditReservation(slot)}
-                                  title={`Reserva: ${slot.player}. Click para editar o eliminar.`}
-                                  style={{
-                                    backgroundColor: 'rgba(252, 28, 70, 0.15)',
-                                    border: '1px solid rgba(252, 28, 70, 0.35)',
-                                    borderRadius: 0,
-                                    padding: '6px 8px',
-                                    cursor: 'pointer',
-                                    transition: 'transform 0.1s ease',
-                                    overflow: 'hidden',
-                                    minWidth: 0,
-                                  }}
-                                  onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.02)')}
-                                  onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
-                                >
-                                  <div style={{ fontSize: 11.5, fontWeight: 700, color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>
-                                    {slot.player}
-                                  </div>
-                                  <div style={{ fontSize: 9.5, color: '#fc1c46', fontWeight: 600, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                    Reservado
-                                  </div>
-                                </div>
-                              );
-                            }
-
-                            if (isBlocked && slot) {
-                              return (
-                                <div
-                                  key={court.id}
-                                  onClick={() => handleOpenEditReservation(slot)}
-                                  title={`Horario Bloqueado (${slot.player}). Click para desbloquear.`}
-                                  style={{
-                                    backgroundColor: 'rgba(245, 158, 11, 0.15)',
-                                    border: '1px solid rgba(245, 158, 11, 0.35)',
-                                    borderRadius: 0,
-                                    padding: '6px 8px',
-                                    cursor: 'pointer',
-                                    transition: 'transform 0.1s ease',
-                                    overflow: 'hidden',
-                                    minWidth: 0,
-                                  }}
-                                  onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.02)')}
-                                  onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
-                                >
-                                  <div style={{ fontSize: 11.5, fontWeight: 700, color: '#f59e0b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>
-                                    {slot.player}
-                                  </div>
-                                  <div style={{ fontSize: 9.5, color: '#f59e0b', fontWeight: 600, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                    Bloqueado
-                                  </div>
-                                </div>
-                              );
-                            }
-
-                            if (!isOpen && !slot) {
-                              return (
-                                <div
-                                  key={court.id}
-                                  style={{
-                                    backgroundColor: 'rgba(255, 255, 255, 0.015)',
-                                    border: '1px dashed rgba(255, 255, 255, 0.04)',
-                                    borderRadius: 0,
-                                    padding: '6px 8px',
-                                    color: '#94a3b8',
-                                    fontSize: 10,
-                                    fontWeight: 600,
-                                    textAlign: 'center',
-                                    userSelect: 'none',
-                                    opacity: 0.5,
-                                  }}
-                                  title={`Fuera del horario de atención (${court.openTime} - ${court.closeTime} hs)`}
-                                >
-                                  Cerrado
-                                </div>
-                              );
-                            }
-
-                            return (
-                              <div
-                                key={court.id}
-                                onClick={() => {
-                                  handleModalCourtChange(court.id);
-                                  setModalTime(time);
-                                  setModalPlayer('');
-                                  setModalPhone('');
-                                  setModalSelectedPlayerId('CUSTOM');
-                                  setModalReservationType('RESERVED');
-                                  setIsDirectCellSelection(true);
-                                  setShowModal(true);
-                                }}
-                                title="Click para reservar o bloquear horario"
-                                style={{
-                                  backgroundColor: '#141414',
-                                  border: '1px solid rgba(255, 255, 255, 0.04)',
-                                  borderRadius: 0,
-                                  padding: '6px 8px',
-                                  cursor: 'pointer',
-                                  transition: 'all 0.15s ease',
-                                  overflow: 'hidden',
-                                  minWidth: 0,
-                                }}
-                                onMouseEnter={e => {
-                                  e.currentTarget.style.borderColor = 'rgba(252, 28, 70, 0.3)';
-                                  e.currentTarget.style.backgroundColor = '#141414';
-                                }}
-                                onMouseLeave={e => {
-                                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.04)';
-                                  e.currentTarget.style.backgroundColor = '#141414';
-                                }}
-                              >
-                                <div style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                  Disponible
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* RIGHT: CURVA DE OCUPACIÓN Y CTA */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, justifyContent: 'space-between' }}>
-                  {/* CARD: CURVA DE OCUPACIÓN DINÁMICA */}
-                  <div style={{
-                    backgroundColor: '#0a0a0a',
-                    borderRadius: 0,
-                    border: '1px solid rgba(255, 255, 255, 0.05)',
-                    padding: '16px 18px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                    gap: 12,
-                    flex: 1,
-                  }}>
-                    <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                        <h3 style={{ fontSize: 14, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, color: '#ffffff', margin: 0 }}>
-                          Curva de Ocupación Hoy
-                        </h3>
-                        <span style={{ fontSize: 10.5, fontWeight: 700, color: '#fc1c46', backgroundColor: 'rgba(252,28,70,0.12)', padding: '3px 8px', borderRadius: 9999 }}>
-                          Pico {occupancyMetrics.peakTime} hs ({occupancyMetrics.peakPercentage}%)
-                        </span>
-                      </div>
-                      <div style={{ fontSize: 11, color: '#9ca3af' }}>
-                        Demanda horaria calculada en tiempo real según turnos reservados
-                      </div>
-                    </div>
-
-                    {/* DYNAMIC SVG CHART */}
-                    <div style={{ position: 'relative', width: '100%', height: 110 }}>
-                      <svg viewBox="0 0 300 90" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
-                        <defs>
-                          <linearGradient id="crimsonGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#fc1c46" stopOpacity="0.4" />
-                            <stop offset="80%" stopColor="#fc1c46" stopOpacity="0.05" />
-                            <stop offset="100%" stopColor="#fc1c46" stopOpacity="0.0" />
-                          </linearGradient>
-                        </defs>
-
-                        {/* Fill area below curve */}
-                        <path d={occupancyMetrics.areaD} fill="url(#crimsonGradient)" />
-                        
-                        {/* Curve Line */}
-                        <path d={occupancyMetrics.pathD} fill="none" stroke="#fc1c46" strokeWidth="2.5" strokeLinecap="round" />
-
-                        {/* Dotted Peak Line */}
-                        <line
-                          x1={occupancyMetrics.peakPoint.x}
-                          y1={occupancyMetrics.peakPoint.y}
-                          x2={occupancyMetrics.peakPoint.x}
-                          y2="90"
-                          stroke="rgba(252, 28, 70, 0.4)"
-                          strokeWidth="1"
-                          strokeDasharray="3 3"
-                        />
-                        {/* Peak Point Glowing Indicator */}
-                        <circle
-                          cx={occupancyMetrics.peakPoint.x}
-                          cy={occupancyMetrics.peakPoint.y}
-                          r="4.5"
-                          fill="#ffffff"
-                          stroke="#fc1c46"
-                          strokeWidth="2.5"
-                        />
-                      </svg>
-                    </div>
-
-                    {/* Time Axis Labels */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#94a3b8', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 6 }}>
-                      <span>08h</span>
-                      <span>12h</span>
-                      <span>16h</span>
-                      <span>20h</span>
-                      <span>24h</span>
-                    </div>
-
-                    {/* Stats Breakdown Row */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 2 }}>
-                      <div style={{ backgroundColor: '#141414', border: '1px solid rgba(255,255,255,0.04)', padding: '8px 10px', borderRadius: 0 }}>
-                        <div style={{ fontSize: 9.5, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Horario Clave</div>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: '#ffffff', marginTop: 2 }}>Noche (19 a 23 hs)</div>
-                      </div>
-                      <div style={{ backgroundColor: '#141414', border: '1px solid rgba(255,255,255,0.04)', padding: '8px 10px', borderRadius: 0 }}>
-                        <div style={{ fontSize: 9.5, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Ocupación Prom.</div>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: '#10b981', marginTop: 2 }}>{Math.round((totalReservedToday / Math.max(1, filteredCourts.length * 8)) * 100)}% de canchas</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* BUTTON NUEVA RESERVA MANUAL */}
-                  <button
-                    onClick={() => {
-                      setIsDirectCellSelection(false);
-                      setShowModal(true);
-                    }}
-                    style={{
-                      width: '100%',
-                      padding: '12px 16px',
-                      backgroundColor: '#fc1c46',
-                      color: '#ffffff',
-                      border: 'none',
-                      borderRadius: 9999,
-                      fontSize: 14,
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 6,
-                      boxShadow: '0 6px 20px -3px rgba(252, 28, 70, 0.4)',
-                    }}
-                  >
-                    <span style={{ fontSize: 16, lineHeight: 1 }}>+</span>
-                    <span>Nueva reserva manual</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ═══════════════════════════════════════════════════════
-              VIEW 2: COURTS & TARIFAS (Con Atributos Completos)
-              ═══════════════════════════════════════════════════════ */}
-          {activeTab === 'COURTS' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <h2 style={{ fontSize: 22, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, color: '#ffffff', margin: 0, letterSpacing: '-0.4px' }}>
-                    Configuración de Canchas y Atributos
-                  </h2>
-                  <p style={{ fontSize: 13, color: '#9ca3af', margin: '4px 0 0' }}>
-                    Personalizá nombres, si es techada, iluminación, cámaras, climatización y tarifas por turno.
-                  </p>
-                </div>
+              {/* Batch Actions */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                 <button
-                  onClick={() => handleOpenCourtModal()}
+                  type="button"
+                  onClick={handleBatchPublishAfternoon}
                   style={{
-                    backgroundColor: '#fc1c46',
-                    color: '#ffffff',
-                    border: 'none',
-                    borderRadius: 9999,
-                    padding: '10px 18px',
-                    fontSize: 13,
+                    backgroundColor: 'var(--color-surface-elevate)',
+                    color: 'var(--color-frost)',
+                    border: '1px solid var(--color-crimson-signal)',
+                    borderRadius: 'var(--radius-full)',
+                    padding: '8px 16px',
+                    fontSize: '12px',
                     fontWeight: 700,
                     cursor: 'pointer',
                   }}
                 >
-                  + Agregar Nueva Cancha
+                  + Publicar Tarde/Noche (17 a 23 hs)
                 </button>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(310px, 1fr))', gap: 18 }}>
-                {filteredCourts.map(court => (
-                  <div
-                    key={court.id}
-                    style={{
-                      backgroundColor: '#0a0a0a',
-                      borderRadius: 0,
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      padding: '18px 20px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 14,
-                      justifyContent: 'space-between',
-                      boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
-                    }}
-                  >
-                    {/* Top Row: Sport Badge & Status + Edit Button */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ backgroundColor: 'rgba(252,28,70,0.15)', color: '#fc1c46', fontSize: 10.5, fontWeight: 800, padding: '3px 8px', borderRadius: 9999, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
-                          {court.sport}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleToggleCourtActive(court.id)}
-                          style={{
-                            backgroundColor: 'transparent',
-                            border: 'none',
-                            color: court.active ? '#10b981' : '#94a3b8',
-                            fontSize: 11.5,
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            padding: 0,
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 5,
-                          }}
-                        >
-                          <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: court.active ? '#10b981' : '#94a3b8', boxShadow: court.active ? '0 0 6px #10b981' : 'none' }} />
-                          {court.active ? 'Activa' : 'Pausada'}
-                        </button>
-                      </div>
-
-                      <button
-                        onClick={() => handleOpenCourtModal(court)}
-                        style={{
-                          backgroundColor: 'rgba(255,255,255,0.04)',
-                          color: '#ffffff',
-                          border: '1px solid rgba(255,255,255,0.1)',
-                          borderRadius: 9999,
-                          padding: '5px 11px',
-                          fontSize: 11.5,
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 5,
-                          transition: 'all 0.15s ease',
-                        }}
-                      >
-                        <Icons.Edit /> Editar
-                      </button>
-                    </div>
-
-                    {/* Court Title */}
-                    <div>
-                      <h3 style={{ fontSize: 16.5, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, color: '#ffffff', margin: 0, lineHeight: 1.3 }}>
-                        {court.name}
-                      </h3>
-                    </div>
-
-                    {/* Horarios Habilitados Banner */}
-                    <div style={{ backgroundColor: '#141414', border: '1px solid rgba(255,255,255,0.05)', padding: '10px 12px', borderRadius: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <div style={{ fontSize: 11, color: '#9ca3af', display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <Icons.Clock /> Horario:
-                      </div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: '#ffffff' }}>
-                        {court.openTime} hs a {court.closeTime} hs
-                      </div>
-                    </div>
-
-                    {/* Court Feature Badges */}
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, backgroundColor: 'rgba(255,255,255,0.05)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.08)', padding: '4px 9px', borderRadius: 9999, fontSize: 11, fontWeight: 600 }}>
-                        <Icons.Clock /> {court.slotDuration || 90} min / turno
-                      </span>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, backgroundColor: court.indoor ? 'rgba(252,28,70,0.12)' : 'rgba(255,255,255,0.04)', color: court.indoor ? '#fc1c46' : '#9ca3af', border: court.indoor ? '1px solid rgba(252,28,70,0.25)' : '1px solid rgba(255,255,255,0.06)', padding: '4px 9px', borderRadius: 9999, fontSize: 11, fontWeight: 600 }}>
-                        {court.indoor ? <><Icons.Indoor /> Techada</> : <><Icons.Outdoor /> Descubierta</>}
-                      </span>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, backgroundColor: court.lighting ? 'rgba(252,28,70,0.12)' : 'rgba(255,255,255,0.04)', color: court.lighting ? '#fc1c46' : '#9ca3af', border: court.lighting ? '1px solid rgba(252,28,70,0.25)' : '1px solid rgba(255,255,255,0.06)', padding: '4px 9px', borderRadius: 9999, fontSize: 11, fontWeight: 600 }}>
-                        {court.lighting ? <><Icons.Lighting /> Con Iluminación</> : <><Icons.NoLighting /> Sin Iluminación</>}
-                      </span>
-                      {court.hasCameras && (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, backgroundColor: 'rgba(252,28,70,0.12)', color: '#fc1c46', border: '1px solid rgba(252,28,70,0.25)', padding: '4px 9px', borderRadius: 9999, fontSize: 11, fontWeight: 600 }}>
-                          <Icons.Camera /> Con Cámaras
-                        </span>
-                      )}
-                      {court.hasHeating && (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, backgroundColor: 'rgba(252,28,70,0.12)', color: '#fc1c46', border: '1px solid rgba(252,28,70,0.25)', padding: '4px 9px', borderRadius: 9999, fontSize: 11, fontWeight: 600 }}>
-                          <Icons.Climate /> Climatizada
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Card Footer: Price per slot */}
-                    <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 2 }}>
-                      <span style={{ fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.6px', fontWeight: 600 }}>
-                        Precio por Turno
-                      </span>
-                      <span style={{ fontSize: 19, fontWeight: 800, color: '#fc1c46', letterSpacing: '-0.5px' }}>
-                        ${court.price.toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ═══════════════════════════════════════════════════════
-              VIEW 3: RECAUDACIÓN Y COBROS DEL DÍA
-              ═══════════════════════════════════════════════════════ */}
-          {activeTab === 'REVENUE' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-              {/* Header */}
-              <div>
-                <h2 style={{ fontSize: 22, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, color: '#ffffff', margin: 0, letterSpacing: '-0.4px' }}>
-                  Recaudación ({dateFilter})
-                </h2>
-                <p style={{ fontSize: 13, color: '#9ca3af', margin: '4px 0 0' }}>
-                  Control de cobros y reservas del club.
-                </p>
-              </div>
-
-              {/* SINGLE CLEAN KPI CARD: TOTAL COBRADO */}
-              <div style={{
-                backgroundColor: '#0a0a0a',
-                border: '1px solid rgba(16, 185, 129, 0.25)',
-                borderRadius: 0,
-                padding: '20px 24px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                background: 'linear-gradient(135deg, #0a0a0a 0%, rgba(16, 185, 129, 0.05) 100%)',
-              }}>
-                <div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#10b981', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                    TOTAL COBRADO ({dateFilter.toUpperCase()})
-                  </div>
-                  <div style={{ fontSize: 'clamp(28px, 3.5vh, 34px)', fontWeight: 800, color: '#ffffff', marginTop: 4, letterSpacing: '-0.5px' }}>
-                    {financialMetrics.formattedPaid}
-                  </div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#ffffff' }}>
-                    {financialMetrics.reservedCount} turnos confirmados
-                  </div>
-                  <div style={{ fontSize: 11, color: '#10b981', marginTop: 2, fontWeight: 600 }}>
-                    Recaudación activa
-                  </div>
-                </div>
-              </div>
-
-              {/* Detailed Reservations List for Revenue */}
-              <div style={{ backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 0, padding: 20 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-                  <h3 style={{ fontSize: 15, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, color: '#fff', margin: 0 }}>
-                    Reservas que Entraron ({dateFilter}) — {financialMetrics.reservedCount} Turnos
-                  </h3>
-                  <div style={{ fontSize: 12, color: '#888' }}>
-                    Click en el badge para cambiar estado de cobro rápido
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {financialMetrics.activeReservedSlots.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '40px 20px', color: '#94a3b8', fontSize: 13 }}>
-                      No hay reservas registradas para {dateFilter.toLowerCase()}.
-                    </div>
-                  ) : (
-                    financialMetrics.activeReservedSlots.map(slot => (
-                      <div
-                        key={slot.id}
-                        style={{
-                          backgroundColor: '#141414',
-                          border: '1px solid rgba(255, 255, 255, 0.05)',
-                          borderRadius: 0,
-                          padding: '12px 16px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          flexWrap: 'wrap',
-                          gap: 12,
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                          <div style={{
-                            backgroundColor: 'rgba(252, 28, 70, 0.15)',
-                            color: '#fc1c46',
-                            fontWeight: 700,
-                            fontSize: 12,
-                            padding: '6px 12px',
-                            borderRadius: 9999,
-                          }}>
-                            {slot.time} hs
-                          </div>
-                          <div>
-                            <div style={{ fontSize: 14, fontWeight: 700, color: '#ffffff' }}>
-                              {slot.courtName} <span style={{ fontSize: 11, color: '#9ca3af', fontWeight: 400 }}>({slot.sport})</span>
-                            </div>
-                            <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>
-                              Cliente: <strong style={{ color: '#fff' }}>{slot.player}</strong> {slot.phone && `· ${slot.phone}`}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                          <div style={{ fontSize: 16, fontWeight: 700, color: '#ffffff' }}>
-                            ${slot.price?.toLocaleString()}
-                          </div>
-
-                          <button
-                            onClick={() => handleTogglePaymentStatus(slot.id)}
-                            style={{
-                              backgroundColor: slot.isPaid100 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(252, 28, 70, 0.15)',
-                              color: slot.isPaid100 ? '#10b981' : '#fc1c46',
-                              border: slot.isPaid100 ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(252, 28, 70, 0.3)',
-                              borderRadius: 9999,
-                              padding: '6px 12px',
-                              fontSize: 11,
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                              transition: 'all 0.15s ease',
-                            }}
-                            title="Click para cambiar estado de pago"
-                          >
-                            {slot.isPaid100 ? 'Pagado' : 'Pendiente'}
-                          </button>
-
-                          <button
-                            onClick={() => handleOpenEditReservation(slot)}
-                            style={{
-                              backgroundColor: '#141414',
-                              color: '#9ca3af',
-                              border: '1px solid rgba(255, 255, 255, 0.08)',
-                              borderRadius: 9999,
-                              padding: '6px 12px',
-                              fontSize: 11,
-                              fontWeight: 600,
-                              cursor: 'pointer',
-                            }}
-                          >
-                            Editar
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ═══════════════════════════════════════════════════════
-              VIEW 4: CALENDARIO & RECAUDACIÓN DIARIA
-              ═══════════════════════════════════════════════════════ */}
-          {activeTab === 'CALENDAR' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-              {/* Header Banner */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-                <div>
-                  <h2 style={{ fontSize: 22, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, color: '#ffffff', margin: 0, letterSpacing: '-0.4px' }}>
-                    Calendario de Recaudación (Agosto 2026)
-                  </h2>
-                  <p style={{ fontSize: 13, color: '#9ca3af', margin: '4px 0 0' }}>
-                    Recaudación diaria del club mes a mes.
-                  </p>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{
-                    backgroundColor: '#0a0a0a',
-                    border: '1px solid rgba(16, 185, 129, 0.25)',
-                    borderRadius: 0,
-                    padding: '8px 16px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                  }}>
-                    <span style={{ fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', fontWeight: 600 }}>Total Mes:</span>
-                    <span style={{ fontSize: 16, fontWeight: 800, color: '#10b981' }}>$6.240.000</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Monthly Calendar Container */}
-              <div className="panel-monthly-calendar-container" style={{
-                backgroundColor: '#0a0a0a',
-                border: '1px solid rgba(255, 255, 255, 0.06)',
-                borderRadius: 0,
-                padding: 20,
-              }}>
-                <div className="panel-monthly-calendar-inner">
-                  {/* Days of Week Header */}
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(7, 1fr)',
-                    gap: 8,
-                    marginBottom: 12,
-                    textAlign: 'center',
-                  }}>
-                    {['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'].map(day => (
-                      <div key={day} style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', letterSpacing: '0.8px' }}>
-                        {day}
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Days Grid (August 2026 starts on Saturday = 5 empty offset days) */}
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(7, 1fr)',
-                    gap: 8,
-                  }}>
-                    {/* Empty cells for padding before Aug 1st (Saturday offset) */}
-                    {[...Array(5)].map((_, i) => (
-                      <div key={`offset-${i}`} style={{ minHeight: 78, backgroundColor: 'transparent' }} />
-                    ))}
-
-                    {/* 31 Days of August */}
-                    {[...Array(31)].map((_, index) => {
-                      const day = index + 1;
-                      const isToday = day === 21;
-                      const dayData = getDailyRevenue(day);
-
-                      return (
-                        <div
-                          key={day}
-                          className="panel-calendar-day-card"
-                          style={{
-                            minHeight: 78,
-                            backgroundColor: isToday ? '#141414' : '#141414',
-                            border: isToday ? '1px solid #fc1c46' : '1px solid rgba(255, 255, 255, 0.05)',
-                            borderRadius: 0,
-                            padding: '10px 12px',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            justifyContent: 'space-between',
-                            transition: 'all 0.15s ease',
-                          }}
-                        >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{
-                              fontSize: 12,
-                              fontWeight: 800,
-                              color: isToday ? '#ffffff' : '#9ca3af',
-                              backgroundColor: isToday ? '#fc1c46' : 'transparent',
-                              width: isToday ? 22 : 'auto',
-                              height: isToday ? 22 : 'auto',
-                              borderRadius: isToday ? 9999 : 0,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                            }}>
-                              {day}
-                            </span>
-                            {isToday && (
-                              <span style={{ fontSize: 9, fontWeight: 700, color: '#fc1c46', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                HOY
-                              </span>
-                            )}
-                          </div>
-
-                          <div style={{ marginTop: 6, overflow: 'hidden' }}>
-                            <div className="panel-calendar-day-amount" style={{
-                              fontSize: 14,
-                              fontWeight: 800,
-                              color: isToday ? '#10b981' : dayData.revenue > 0 ? '#ffffff' : '#94a3b8',
-                              letterSpacing: '-0.3px',
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                            }}>
-                              ${dayData.revenue.toLocaleString()}
-                            </div>
-                            <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>
-                              {dayData.turnos} turnos
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ═══════════════════════════════════════════════════════
-              VIEW 4: PLAYERS & CLIENTS
-              ═══════════════════════════════════════════════════════ */}
-          {activeTab === 'PLAYERS' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-                <div>
-                  <h2 style={{ fontSize: 22, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, color: '#ffffff', margin: 0, letterSpacing: '-0.4px' }}>Base de Jugadores & Clientes</h2>
-                  <p style={{ fontSize: 13, color: '#9ca3af', margin: '4px 0 0' }}>Gestión de clientes y abonados del club.</p>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <input
-                    type="text"
-                    value={searchPlayer}
-                    onChange={e => setSearchPlayer(e.target.value)}
-                    placeholder="Buscar por nombre o teléfono..."
-                    style={{
-                      backgroundColor: '#0a0a0a',
-                      color: '#fff',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      borderRadius: 0,
-                      padding: '8px 16px',
-                      fontSize: 13,
-                      width: 220,
-                    }}
-                  />
-                  <button
-                    onClick={() => setShowAddPlayerModal(true)}
-                    style={{
-                      backgroundColor: '#fc1c46',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: 9999,
-                      padding: '9px 16px',
-                      fontSize: 13,
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    + Agregar Cliente Recurrente
-                  </button>
-                </div>
-              </div>
-
-              <div style={{
-                backgroundColor: '#0a0a0a',
-                borderRadius: 0,
-                border: '1px solid rgba(255,255,255,0.05)',
-                padding: '16px 20px',
-                display: 'flex',
-                flexDirection: 'column',
-              }}>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1.6fr 1.2fr 1.2fr 1fr',
-                  padding: '10px 0',
-                  borderBottom: '1px solid rgba(255,255,255,0.05)',
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: '#94a3b8',
-                  textTransform: 'uppercase',
-                }}>
-                  <div>JUGADOR</div>
-                  <div>TELÉFONO</div>
-                  <div>CATEGORÍA / DEPORTE</div>
-                  <div style={{ textAlign: 'right' }}>PARTIDOS JUGADOS</div>
-                </div>
-
-                {filteredPlayers.map(p => (
-                  <div
-                    key={p.id}
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: '1.6fr 1.2fr 1.2fr 1fr',
-                      padding: '14px 0',
-                      borderBottom: '1px solid rgba(255,255,255,0.03)',
-                      alignItems: 'center',
-                      fontSize: 13.5,
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontWeight: 600, color: '#fff' }}>{p.name}</div>
-                      <span style={{ fontSize: 9.5, color: '#fc1c46', backgroundColor: 'rgba(252,28,70,0.12)', padding: '1px 6px', borderRadius: 9999, fontWeight: 700, marginTop: 2, display: 'inline-block' }}>
-                        {p.playerTag}
-                      </span>
-                    </div>
-                    <div style={{ color: '#9ca3af' }}>{p.phone}</div>
-                    <div style={{ color: '#94a3b8', fontSize: 12 }}>{p.category} · {p.sport}</div>
-                    <div style={{ textAlign: 'right', color: '#fff', fontWeight: 600 }}>{p.matchesPlayed} jugados</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ═══════════════════════════════════════════════════════
-              VIEW 6: TURNOS FIJOS & ABONADOS
-              ═══════════════════════════════════════════════════════ */}
-          {activeTab === 'FIXED_SLOTS' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-              {/* Header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-                <div>
-                  <h2 style={{ fontSize: 22, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, color: '#ffffff', margin: 0, letterSpacing: '-0.4px' }}>
-                    Turnos Fijos & Abonados Semanales
-                  </h2>
-                  <p style={{ fontSize: 13, color: '#9ca3af', margin: '4px 0 0' }}>
-                    Gestión y programación de turnos fijos recurrentes para los clientes del club.
-                  </p>
-                </div>
                 <button
-                  onClick={() => setShowFixedSlotModal(true)}
+                  type="button"
+                  onClick={handleBatchPublishAll}
                   style={{
-                    backgroundColor: '#fc1c46',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 9999,
-                    padding: '10px 18px',
-                    fontSize: 13,
+                    backgroundColor: 'var(--color-surface-elevate)',
+                    color: 'var(--color-frost)',
+                    border: '1px solid var(--color-graphite)',
+                    borderRadius: 'var(--radius-full)',
+                    padding: '8px 14px',
+                    fontSize: '12px',
                     fontWeight: 600,
                     cursor: 'pointer',
                   }}
                 >
-                  + Agendar Turno Fijo
+                  Publicar Todos
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBatchUnpublishAll}
+                  style={{
+                    backgroundColor: 'var(--color-surface-elevate)',
+                    color: 'var(--color-ash)',
+                    border: '1px solid var(--color-graphite)',
+                    borderRadius: 'var(--radius-full)',
+                    padding: '8px 14px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Pausar Todos
                 </button>
               </div>
+            </div>
 
-              {/* KPI Summary Cards */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
-                <div style={{ backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 0, padding: '16px 20px' }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
-                    TOTAL TURNOS FIJOS
-                  </div>
-                  <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 26, fontWeight: 700, color: '#ffffff', marginTop: 6 }}>
-                    {fixedSlots.length} fijos activos
-                  </div>
-                  <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>
-                    Horarios reservados semanalmente
-                  </div>
-                </div>
+            {/* Date Pill Selector */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+              {[0, 1, 2, 3, 4, 5, 6].map((offset) => {
+                const dateMeta = getFormattedDate(offset);
+                const isSelected = selectedDateOffset === offset;
+                return (
+                  <button
+                    key={offset}
+                    type="button"
+                    onClick={() => setSelectedDateOffset(offset)}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      padding: '8px 18px',
+                      borderRadius: 'var(--radius-full)',
+                      backgroundColor: isSelected ? 'var(--color-crimson-signal)' : 'var(--color-surface-elevate)',
+                      color: isSelected ? '#ffffff' : 'var(--color-ash)',
+                      border: isSelected ? '1px solid var(--color-crimson-signal)' : '1px solid var(--color-graphite)',
+                      cursor: 'pointer',
+                      minWidth: '90px',
+                      boxShadow: isSelected ? '0 0 16px rgba(252, 28, 70, 0.35)' : 'none',
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    <span style={{ fontSize: '13px', fontWeight: 800 }}>{dateMeta.label}</span>
+                    <span style={{ fontSize: '11px', opacity: 0.8 }}>{dateMeta.sublabel}</span>
+                  </button>
+                );
+              })}
+            </div>
 
-                <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', borderRadius: 0, padding: '16px 20px' }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
-                    INGRESO SEMANAL RECURRENTE
-                  </div>
-                  <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 26, fontWeight: 700, color: '#10b981', marginTop: 6 }}>
-                    ${fixedSlots.filter(f => f.active).reduce((acc, f) => acc + f.price, 0).toLocaleString()}
-                  </div>
-                  <div style={{ fontSize: 11, color: '#10b981', marginTop: 4, opacity: 0.8 }}>
-                    Abonado semanalmente por clientes fijos
-                  </div>
-                </div>
-              </div>
-
-              {/* Fixed Slots Grid */}
-              <div style={{ backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 0, padding: 20 }}>
-                <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', marginBottom: 14 }}>
-                  Listado de Turnos Fijos Programados ({fixedSlots.length})
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12 }}>
-                  {fixedSlots.map(slot => (
-                    <div
-                      key={slot.id}
-                      style={{
-                        backgroundColor: '#141414',
-                        border: slot.active ? '1px solid rgba(252, 28, 70, 0.3)' : '1px solid rgba(255,255,255,0.05)',
-                        borderRadius: 0,
-                        padding: 16,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'space-between',
-                        gap: 12,
-                      }}
-                    >
-                      <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                          <span style={{
-                            backgroundColor: 'rgba(252, 28, 70, 0.15)',
-                            color: '#fc1c46',
-                            fontWeight: 800,
-                            fontSize: 11,
-                            padding: '4px 10px',
-                            borderRadius: 9999,
-                            textTransform: 'uppercase',
-                          }}>
-                            Todos los {slot.dayOfWeek}s · {slot.time} hs
-                          </span>
-                          <button
-                            onClick={() => handleToggleFixedActive(slot.id)}
-                            style={{
-                              backgroundColor: slot.active ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255,255,255,0.05)',
-                              color: slot.active ? '#10b981' : '#94a3b8',
-                              border: slot.active ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(255,255,255,0.1)',
-                              borderRadius: 9999,
-                              padding: '3px 8px',
-                              fontSize: 10,
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                            }}
-                          >
-                            {slot.active ? 'Activo' : 'Pausado'}
-                          </button>
-                        </div>
-
-                        <div style={{ fontSize: 15, fontWeight: 700, color: '#ffffff' }}>
-                          {slot.playerName}
-                        </div>
-                        <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>
-                          {slot.courtName} <span style={{ fontSize: 10, color: '#fc1c46' }}>({slot.sport})</span>
-                        </div>
-                        <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>
-                          Contacto: {slot.playerPhone}
-                        </div>
+            {/* Courts Matrix */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {courts.map((court) => {
+                return (
+                  <div
+                    key={court.id}
+                    style={{
+                      backgroundColor: 'var(--color-obsidian)',
+                      border: '1px solid var(--color-graphite)',
+                      borderRadius: '0px',
+                      padding: '20px 24px',
+                    }}
+                  >
+                    {/* Court Header */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <h4 style={{ fontSize: '17px', fontWeight: 800, margin: 0, color: 'var(--color-frost)' }}>
+                          {court.name}
+                        </h4>
+                        <SportBadge sports={[court.sportType]} size="sm" />
                       </div>
-
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 10 }}>
-                        <span style={{ fontSize: 15, fontWeight: 800, color: '#ffffff' }}>
-                          ${slot.price?.toLocaleString()} <span style={{ fontSize: 10, color: '#9ca3af', fontWeight: 400 }}>/ turno</span>
-                        </span>
-                        <button
-                          onClick={() => handleDeleteFixedSlot(slot.id)}
-                          style={{
-                            backgroundColor: 'transparent',
-                            color: '#fc1c46',
-                            border: '1px solid rgba(252, 28, 70, 0.3)',
-                            borderRadius: 9999,
-                            padding: '4px 8px',
-                            fontSize: 10,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                          }}
-                        >
-                          Eliminar
-                        </button>
+                      <div style={{ fontSize: '13px', color: 'var(--color-ash)', fontWeight: 600 }}>
+                        Tarifa: <strong style={{ color: 'var(--color-frost)' }}>{formatCurrency(court.pricePerHour)}</strong> / turno
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
+
+                    {/* Time Slots Pills Grid */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px' }}>
+                      {DEFAULT_TIME_SLOTS.map((time) => {
+                        const slotKey = `${court.id}_${time}`;
+                        const isPublished = !!publishedSlots[slotKey];
+
+                        return (
+                          <button
+                            key={time}
+                            type="button"
+                            onClick={() => handleToggleSlot(court.id, time)}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              padding: '10px 14px',
+                              borderRadius: 'var(--radius-full)',
+                              backgroundColor: isPublished ? 'rgba(16, 185, 129, 0.15)' : 'var(--color-surface-elevate)',
+                              color: isPublished ? 'var(--color-emerald)' : 'var(--color-ash)',
+                              border: isPublished ? '1px solid var(--color-emerald)' : '1px solid var(--color-graphite)',
+                              cursor: 'pointer',
+                              fontSize: '13px',
+                              fontWeight: 700,
+                              transition: 'all 0.15s ease',
+                            }}
+                          >
+                            <span>{time} hs</span>
+                            {isPublished ? (
+                              <Icons.Check size={14} color="var(--color-emerald)" />
+                            ) : (
+                              <span style={{ fontSize: '10px', opacity: 0.5 }}>LIBRE EN CLUB</span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          )}
-
-          {/* ═══════════════════════════════════════════════════════
-              VIEW 6: SETTINGS & CONFIGURACIÓN
-              ═══════════════════════════════════════════════════════ */}
-          {activeTab === 'SETTINGS' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-              <div>
-                <h2 style={{ fontSize: 22, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, color: '#ffffff', margin: 0, letterSpacing: '-0.4px' }}>Configuración del Club</h2>
-                <p style={{ fontSize: 13, color: '#9ca3af', margin: '4px 0 0' }}>Datos principales del club.</p>
-              </div>
-
-              <div style={{ backgroundColor: '#0a0a0a', padding: '24px', borderRadius: 0, border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: 20 }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6 }}>Nombre del Club</label>
-                  <input
-                    type="text"
-                    value={clubName}
-                    onChange={e => setClubName(e.target.value)}
-                    style={{ width: '100%', backgroundColor: '#141414', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 0, padding: '12px', color: '#fff', fontSize: 14 }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6 }}>Dirección / Ubicación</label>
-                  <input
-                    type="text"
-                    value={clubAddress}
-                    onChange={e => setClubAddress(e.target.value)}
-                    style={{ width: '100%', backgroundColor: '#141414', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 0, padding: '12px', color: '#fff', fontSize: 14 }}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-        </main>
-
-        {/* ────────────────────────────────────────────────────────────
-            FLOATING REAL-TIME TOAST NOTIFICATION
-            ──────────────────────────────────────────────────────────── */}
-        {showToast && (
-          <div style={{
-            position: 'absolute',
-            bottom: 12,
-            right: 18,
-            backgroundColor: '#141414',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            borderRadius: 0,
-            padding: '8px 14px 8px 10px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            boxShadow: '0 15px 35px -8px rgba(0, 0, 0, 0.9), 0 0 20px rgba(252, 28, 70, 0.15)', borderLeft: '3px solid #fc1c46',
-            zIndex: 100,
-            animation: 'fadeInUp 0.3s ease-out',
-          }}>
-            <div style={{
-              width: 32,
-              height: 32,
-              borderRadius: 0,
-              backgroundColor: '#10b981',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#000000',
-              flexShrink: 0,
-            }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-              </svg>
-            </div>
-
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#ffffff' }}>Nueva reserva confirmada</span>
-                <span style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: '#10b981', display: 'inline-block' }} />
-                <span style={{ fontSize: 10, color: '#94a3b8' }}>· ahora</span>
-              </div>
-              <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 1 }}>
-                Cancha 2 · 21:00 hs ($45.000)
-              </div>
-            </div>
-
-            <button
-              onClick={() => setShowToast(false)}
-              style={{
-                backgroundColor: 'transparent',
-                border: 'none',
-                color: '#94a3b8',
-                fontSize: 14,
-                cursor: 'pointer',
-                padding: '4px',
-                marginLeft: 10,
-                lineHeight: 1,
-              }}
-            ><Icons.Close size={13} /></button>
           </div>
         )}
 
-        {/* ────────────────────────────────────────────────────────────
-            MOBILE BOTTOM NAVIGATION BAR (Visible only on max-width 768px)
-            ──────────────────────────────────────────────────────────── */}
-        <nav className="panel-mobile-bottom-nav">
-          {[
-            { id: 'DASHBOARD', label: 'Inicio', icon: (active: boolean) => (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
-                <rect x="3" y="3" width="7" height="7" rx="2" />
-                <rect x="14" y="3" width="7" height="7" rx="2" />
-                <rect x="3" y="14" width="7" height="7" rx="2" />
-                <rect x="14" y="14" width="7" height="7" rx="2" />
-              </svg>
-            )},
-            { id: 'CALENDAR', label: 'Matriz', icon: (active: boolean) => (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                <line x1="16" y1="2" x2="16" y2="6" />
-                <line x1="8" y1="2" x2="8" y2="6" />
-                <line x1="3" y1="10" x2="21" y2="10" />
-              </svg>
-            )},
-            { id: 'COURTS', label: 'Canchas', icon: (active: boolean) => (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2" />
-                <line x1="3" y1="12" x2="21" y2="12" />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
-            )},
-            { id: 'REVENUE', label: 'Cobros', icon: (active: boolean) => (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" />
-                <path d="M12 6v2m0 8v2" />
-              </svg>
-            )},
-            { id: 'PLAYERS', label: 'Clientes', icon: (active: boolean) => (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-              </svg>
-            )},
-            { id: 'FIXED_SLOTS', label: 'Fijos', icon: (active: boolean) => (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M17 2l4 4-4 4" />
-                <path d="M3 11v-1a4 4 0 0 1 4-4h14" />
-                <path d="M7 22l-4-4 4-4" />
-                <path d="M21 13v1a4 4 0 0 1-4 4H3" />
-              </svg>
-            )},
-            { id: 'SETTINGS', label: 'Config', icon: (active: boolean) => (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="3" />
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-              </svg>
-            )},
-          ].map(tab => {
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as NavTab)}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 2,
-                  background: 'none',
-                  border: 'none',
-                  color: isActive ? '#fc1c46' : '#94a3b8',
-                  padding: '4px 6px',
-                  cursor: 'pointer',
-                  minWidth: 46,
-                  flexShrink: 0,
-                  transition: 'color 0.15s ease',
-                }}
-              >
-                {tab.icon(isActive)}
-                <span style={{ fontSize: 9.5, fontWeight: isActive ? 800 : 500 }}>
-                  {tab.label}
-                </span>
-              </button>
-            );
-          })}
-        </nav>
-
-      </div>
-
-      {/* ────────────────────────────────────────────────────────────
-          MODAL 1: "+ NUEVA RESERVA MANUAL"
-          ──────────────────────────────────────────────────────────── */}
-      {showModal && (
-        <div className="panel-modal-backdrop" style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          backdropFilter: 'blur(8px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: 20,
-        }}>
-          <div className="panel-modal-box" style={{
-            width: '100%',
-            maxWidth: 480,
-            backgroundColor: '#0a0a0a',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            borderRadius: 0,
-            padding: '26px 28px',
-            boxShadow: '0 25px 60px rgba(0, 0, 0, 0.9)',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+        {/* ════════════════════════════════════════════════════════════
+            TAB 3: MIS CANCHAS & TARIFAS
+            ════════════════════════════════════════════════════════════ */}
+        {activeTab === 'COURTS' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
               <div>
-                <h3 style={{ fontSize: 19, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, color: '#ffffff', margin: 0 }}>
-                  Nueva Reserva Manual
+                <h3 style={{ fontSize: '18px', fontWeight: 800, margin: '0 0 4px', color: 'var(--color-frost)' }}>
+                  CANCHAS REGISTRADAS
                 </h3>
-                <div style={{ fontSize: 11, color: '#10b981', marginTop: 2 }}>Pago anticipado requerido</div>
+                <p style={{ fontSize: '13px', color: 'var(--color-ash)', margin: 0 }}>
+                  Ajustá los precios y características de tus canchas para que los jugadores vean los datos correctos.
+                </p>
               </div>
+
               <button
-                onClick={() => setShowModal(false)}
-                style={{ backgroundColor: 'transparent', border: 'none', color: '#94a3b8', fontSize: 18, cursor: 'pointer' }}
-              ><Icons.Close size={13} /></button>
-            </div>
-
-            <form onSubmit={handleAddReservation} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {/* Type Selector: Reservar Turno vs Bloquear Horario */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                backgroundColor: '#141414',
-                borderRadius: 0,
-                padding: 4,
-                border: '1px solid rgba(255,255,255,0.06)',
-                marginBottom: 2,
-              }}>
-                <button
-                  type="button"
-                  onClick={() => setModalReservationType('RESERVED')}
-                  style={{
-                    padding: '8px 12px',
-                    borderRadius: 9999,
-                    border: 'none',
-                    backgroundColor: modalReservationType === 'RESERVED' ? 'rgba(252, 28, 70, 0.15)' : 'transparent',
-                    color: modalReservationType === 'RESERVED' ? '#fc1c46' : '#9ca3af',
-                    fontWeight: 700,
-                    fontSize: 12,
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  Reservar Turno
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setModalReservationType('BLOCKED')}
-                  style={{
-                    padding: '8px 12px',
-                    borderRadius: 9999,
-                    border: 'none',
-                    backgroundColor: modalReservationType === 'BLOCKED' ? 'rgba(245, 158, 11, 0.15)' : 'transparent',
-                    color: modalReservationType === 'BLOCKED' ? '#f59e0b' : '#9ca3af',
-                    fontWeight: 700,
-                    fontSize: 12,
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  Bloquear Horario
-                </button>
-              </div>
-
-              {isDirectCellSelection ? (
-                <div style={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: 0,
-                  padding: '10px 14px',
+                type="button"
+                onClick={() => {
+                  setEditingCourt({
+                    id: `c-${Date.now()}`,
+                    clubId: selectedClubId,
+                    name: `Cancha ${courts.length + 1}`,
+                    sportType: 'PADEL',
+                    surface: 'Vidrio Panorámico 12mm · Césped Sintético',
+                    pricePerHour: 32000,
+                    durationMinutes: 90,
+                    isCovered: true,
+                    hasLighting: true,
+                    active: true,
+                  });
+                  setIsEditCourtModalOpen(true);
+                }}
+                style={{
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#ffffff' }}>
-                    {courts.find(c => c.id === modalCourt)?.name}
-                  </div>
-                  <span style={{ fontSize: 12, fontWeight: 800, color: '#fc1c46', backgroundColor: 'rgba(252, 28, 70, 0.15)', border: '1px solid rgba(252,28,70,0.3)', padding: '3px 10px', borderRadius: 9999 }}>
-                    {modalTime} hs
-                  </span>
-                </div>
-              ) : (
-                <>
-                  <div>
-                    <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
-                      Cancha
-                    </label>
-                    <select
-                      value={modalCourt}
-                      onChange={e => handleModalCourtChange(e.target.value)}
-                      style={{
-                        width: '100%',
-                        backgroundColor: '#141414',
-                        border: '1px solid rgba(255,255,255,0.08)',
-                        borderRadius: 0,
-                        padding: '10px 12px',
-                        color: '#ffffff',
-                        fontSize: 13.5,
-                      }}
-                    >
-                      {courts.map(c => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
-                      Horario Habilitado (Libre)
-                    </label>
-                    <select
-                      value={modalTime}
-                      onChange={e => setModalTime(e.target.value)}
-                      style={{
-                        width: '100%',
-                        backgroundColor: '#141414',
-                        border: '1px solid rgba(255,255,255,0.08)',
-                        borderRadius: 0,
-                        padding: '10px 12px',
-                        color: '#ffffff',
-                        fontSize: 13.5,
-                      }}
-                    >
-                      {getAvailableTimesForCourt(modalCourt).map(time => (
-                        <option key={time} value={time}>
-                          {time} hs (Disponible)
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </>
-              )}
-
-              {modalReservationType === 'BLOCKED' ? (
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
-                    Motivo o Razón del Bloqueo
-                  </label>
-                  <input
-                    type="text"
-                    value={modalBlockReason}
-                    onChange={e => setModalBlockReason(e.target.value)}
-                    placeholder="ej. Mantenimiento de Césped, Escuela de Menores, Clima"
-                    required
-                    style={{
-                      width: '100%',
-                      backgroundColor: '#141414',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      borderRadius: 0,
-                      padding: '10px 12px',
-                      color: '#ffffff',
-                      fontSize: 13.5,
-                      boxSizing: 'border-box',
-                    }}
-                  />
-                  <div style={{ fontSize: 11, color: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', padding: '8px 12px', borderRadius: 0, marginTop: 10 }}>
-                    Este horario quedará bloqueado en la grilla del club.
-                  </div>
-                </div>
-              ) : (
-                /* Segmented Mode Selector: Buscar Existente vs Crear Nuevo */
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 8, letterSpacing: '1px' }}>
-                    Asignación de Cliente
-                  </label>
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    backgroundColor: '#141414',
-                    borderRadius: 0,
-                    padding: 4,
-                    border: '1px solid rgba(255,255,255,0.06)',
-                    marginBottom: 12,
-                  }}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setClientSelectionMode('EXISTING');
-                        setModalPlayer('');
-                        setModalPhone('');
-                      }}
-                      style={{
-                        padding: '8px 12px',
-                        borderRadius: 9999,
-                        border: 'none',
-                        backgroundColor: clientSelectionMode === 'EXISTING' ? 'rgba(252, 28, 70, 0.15)' : 'transparent',
-                        color: clientSelectionMode === 'EXISTING' ? '#fc1c46' : '#9ca3af',
-                        fontWeight: 700,
-                        fontSize: 12,
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease',
-                      }}
-                    >
-                      Buscar Existente
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setClientSelectionMode('NEW');
-                        setModalPlayer('');
-                        setModalPhone('');
-                      }}
-                      style={{
-                        padding: '8px 12px',
-                        borderRadius: 9999,
-                        border: 'none',
-                        backgroundColor: clientSelectionMode === 'NEW' ? 'rgba(252, 28, 70, 0.15)' : 'transparent',
-                        color: clientSelectionMode === 'NEW' ? '#fc1c46' : '#9ca3af',
-                        fontWeight: 700,
-                        fontSize: 12,
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease',
-                      }}
-                    >
-                      + Crear Nuevo Cliente
-                    </button>
-                  </div>
-
-                  {clientSelectionMode === 'EXISTING' ? (
-                    <div style={{ position: 'relative' }}>
-                      <div style={{ position: 'relative' }}>
-                        <input
-                          type="text"
-                          value={clientSearchQuery}
-                          onChange={e => {
-                            setClientSearchQuery(e.target.value);
-                            setIsClientSearchOpen(true);
-                          }}
-                          onFocus={() => setIsClientSearchOpen(true)}
-                          placeholder="Tipeá nombre, apellido o teléfono..."
-                          style={{
-                            width: '100%',
-                            backgroundColor: '#141414',
-                            border: isClientSearchOpen ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
-                            borderRadius: 0,
-                            padding: '10px 12px',
-                            color: '#ffffff',
-                            fontSize: 13.5,
-                            boxSizing: 'border-box',
-                          }}
-                        />
-                        {clientSearchQuery && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setClientSearchQuery('');
-                              setModalPlayer('');
-                              setModalPhone('');
-                              setIsClientSearchOpen(false);
-                            }}
-                            style={{
-                              position: 'absolute',
-                              right: 10,
-                              top: '50%',
-                              transform: 'translateY(-50%)',
-                              backgroundColor: 'transparent',
-                              border: 'none',
-                              color: '#94a3b8',
-                              fontSize: 14,
-                              cursor: 'pointer',
-                            }}
-                          ><Icons.Close size={13} /></button>
-                        )}
-                      </div>
-
-                      {/* Autocomplete Popup List */}
-                      {isClientSearchOpen && (
-                        <div style={{
-                          position: 'absolute',
-                          top: '100%',
-                          left: 0,
-                          right: 0,
-                          backgroundColor: '#141414',
-                          border: '1px solid rgba(252, 28, 70, 0.3)',
-                          borderRadius: 0,
-                          marginTop: 4,
-                          maxHeight: 180,
-                          overflowY: 'auto',
-                          zIndex: 1010,
-                          boxShadow: '0 15px 35px rgba(0,0,0,0.8)',
-                          padding: '6px',
-                        }}>
-                          {matchingSearchPlayers.length === 0 ? (
-                            <div style={{ padding: '10px 12px', textAlign: 'center' }}>
-                              <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 8 }}>
-                                No se encontró ningún cliente registrado con ese nombre o teléfono.
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setClientSelectionMode('NEW');
-                                  setModalPlayer(clientSearchQuery);
-                                  setIsClientSearchOpen(false);
-                                }}
-                                style={{
-                                  backgroundColor: 'rgba(252, 28, 70, 0.15)',
-                                  color: '#fc1c46',
-                                  border: '1px solid rgba(252, 28, 70, 0.3)',
-                                  borderRadius: 9999,
-                                  padding: '6px 12px',
-                                  fontSize: 12,
-                                  fontWeight: 700,
-                                  cursor: 'pointer',
-                                }}
-                              >
-                                + Crear nuevo cliente "{clientSearchQuery}"
-                              </button>
-                            </div>
-                          ) : (
-                            matchingSearchPlayers.map(p => (
-                              <div
-                                key={p.id}
-                                onClick={() => {
-                                  setModalPlayer(p.name);
-                                  setModalPhone(p.phone);
-                                  setClientSearchQuery(`${p.name} (${p.phone})`);
-                                  setIsClientSearchOpen(false);
-                                }}
-                                style={{
-                                  padding: '8px 12px',
-                                  borderRadius: 0,
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  justifyContent: 'space-between',
-                                  alignItems: 'center',
-                                  transition: 'all 0.12s ease',
-                                }}
-                                onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(252, 28, 70, 0.15)'}
-                                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                              >
-                                <div>
-                                  <div style={{ fontSize: 13, fontWeight: 700, color: '#ffffff' }}>{p.name}</div>
-                                  <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 1 }}>{p.phone}</div>
-                                </div>
-                                <span style={{
-                                  fontSize: 9.5,
-                                  fontWeight: 700,
-                                  color: '#fc1c46',
-                                  backgroundColor: 'rgba(252, 28, 70, 0.15)',
-                                  padding: '2px 6px',
-                                  borderRadius: 9999,
-                                }}>
-                                  {p.playerTag}
-                                </span>
-                              </div>
-                            ))
-                          )}
-                        </div>
-                      )}
-
-                      {modalPlayer && (
-                        <div style={{
-                          marginTop: 8,
-                          backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                          border: '1px solid rgba(16, 185, 129, 0.3)',
-                          borderRadius: 0,
-                          padding: '8px 12px',
-                          fontSize: 12,
-                          color: '#10b981',
-                          fontWeight: 600,
-                        }}>
-                          Cliente seleccionado: <strong>{modalPlayer}</strong> {modalPhone && `(${modalPhone})`}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                      <div>
-                        <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6 }}>
-                          Nombre y Apellido del Nuevo Cliente
-                        </label>
-                        <input
-                          type="text"
-                          value={modalPlayer}
-                          onChange={e => setModalPlayer(e.target.value)}
-                          placeholder="ej. Lautaro Martínez"
-                          required
-                          style={{
-                            width: '100%',
-                            backgroundColor: '#141414',
-                            border: '1px solid rgba(255,255,255,0.08)',
-                            borderRadius: 0,
-                            padding: '10px 12px',
-                            color: '#ffffff',
-                            fontSize: 13.5,
-                            boxSizing: 'border-box',
-                          }}
-                        />
-                      </div>
-                      <div>
-                        <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6 }}>
-                          Teléfono de Contacto
-                        </label>
-                        <input
-                          type="text"
-                          value={modalPhone}
-                          onChange={e => setModalPhone(e.target.value)}
-                          placeholder="ej. +54 9 11 3322-1144"
-                          required
-                          style={{
-                            width: '100%',
-                            backgroundColor: '#141414',
-                            border: '1px solid rgba(255,255,255,0.08)',
-                            borderRadius: 0,
-                            padding: '10px 12px',
-                            color: '#ffffff',
-                            fontSize: 13.5,
-                            boxSizing: 'border-box',
-                          }}
-                        />
-                      </div>
-                      <div style={{ fontSize: 11, color: '#fc1c46', backgroundColor: 'rgba(252,28,70,0.08)', border: '1px solid rgba(252,28,70,0.2)', padding: '6px 10px', borderRadius: 0 }}>
-                        Se creará y guardará automáticamente como cliente en la base del club.
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                style={{
-                  marginTop: 8,
-                  padding: '13px',
-                  backgroundColor: modalReservationType === 'BLOCKED' ? '#f59e0b' : '#fc1c46',
-                  color: modalReservationType === 'BLOCKED' ? '#000000' : '#ffffff',
+                  gap: '8px',
+                  backgroundColor: 'var(--color-crimson-signal)',
+                  color: '#ffffff',
                   border: 'none',
-                  borderRadius: 9999,
-                  fontSize: 14,
+                  borderRadius: 'var(--radius-full)',
+                  padding: '10px 20px',
+                  fontSize: '13px',
                   fontWeight: 700,
                   cursor: 'pointer',
                 }}
               >
-                {modalReservationType === 'BLOCKED' ? 'Bloquear Horario de Cancha' : 'Confirmar Reserva'}
+                <Icons.Plus size={15} />
+                <span>+ AGREGAR CANCHA</span>
               </button>
-            </form>
+            </div>
+
+            {/* Grid of Courts */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
+              {courts.map((court) => (
+                <div
+                  key={court.id}
+                  style={{
+                    backgroundColor: 'var(--color-obsidian)',
+                    border: '1px solid var(--color-graphite)',
+                    borderRadius: '0px',
+                    padding: '20px 24px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    gap: '16px',
+                  }}
+                >
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <SportBadge sports={[court.sportType]} size="sm" />
+                      <span
+                        style={{
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          color: court.active ? 'var(--color-emerald)' : '#ef4444',
+                        }}
+                      >
+                        {court.active ? 'ACTIVA' : 'PAUSADA'}
+                      </span>
+                    </div>
+
+                    <h4 style={{ fontSize: '18px', fontWeight: 800, margin: '0 0 6px', color: 'var(--color-frost)' }}>
+                      {court.name}
+                    </h4>
+
+                    <p style={{ fontSize: '13px', color: 'var(--color-ash)', margin: '0 0 12px' }}>
+                      {court.surface}
+                    </p>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      {court.isCovered && (
+                        <span style={{ fontSize: '11px', padding: '3px 8px', backgroundColor: 'var(--color-surface-elevate)', borderRadius: 'var(--radius-full)', color: 'var(--color-ash)' }}>
+                          Techada
+                        </span>
+                      )}
+                      {court.hasLighting && (
+                        <span style={{ fontSize: '11px', padding: '3px 8px', backgroundColor: 'var(--color-surface-elevate)', borderRadius: 'var(--radius-full)', color: 'var(--color-ash)' }}>
+                          Luz LED
+                        </span>
+                      )}
+                      <span style={{ fontSize: '11px', padding: '3px 8px', backgroundColor: 'var(--color-surface-elevate)', borderRadius: 'var(--radius-full)', color: 'var(--color-ash)' }}>
+                        Turno de {court.durationMinutes || 90} min
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style={{ borderTop: '1px solid var(--color-graphite)', paddingTop: '14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div>
+                      <span style={{ fontSize: '11px', color: 'var(--color-ash)', textTransform: 'uppercase' }}>Precio por turno</span>
+                      <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--color-emerald)' }}>
+                        {formatCurrency(court.pricePerHour)}
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingCourt(court);
+                        setIsEditCourtModalOpen(true);
+                      }}
+                      style={{
+                        backgroundColor: 'var(--color-surface-elevate)',
+                        color: 'var(--color-frost)',
+                        border: '1px solid var(--color-graphite)',
+                        borderRadius: 'var(--radius-full)',
+                        padding: '6px 14px',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Editar Precio
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ════════════════════════════════════════════════════════════
+            TAB 4: LIQUIDACIONES & BILLETERA
+            ════════════════════════════════════════════════════════════ */}
+        {activeTab === 'PAYOUTS' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {/* Metrics Row */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+              <div style={{ backgroundColor: 'var(--color-obsidian)', border: '1px solid var(--color-graphite)', borderRadius: '0px', padding: '20px 24px' }}>
+                <span style={{ fontSize: '12px', color: 'var(--color-ash)', fontWeight: 700, textTransform: 'uppercase' }}>
+                  Total Recaudado por Hay Equipo
+                </span>
+                <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--color-frost)', marginTop: '4px' }}>
+                  {formatCurrency(totalRevenue)}
+                </div>
+                <span style={{ fontSize: '12px', color: 'var(--color-emerald)', marginTop: '4px', display: 'block' }}>
+                  100% fondos garantizados y cobrados
+                </span>
+              </div>
+
+              <div style={{ backgroundColor: 'var(--color-obsidian)', border: '1px solid var(--color-graphite)', borderRadius: '0px', padding: '20px 24px' }}>
+                <span style={{ fontSize: '12px', color: 'var(--color-ash)', fontWeight: 700, textTransform: 'uppercase' }}>
+                  Turnos Concretados
+                </span>
+                <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--color-frost)', marginTop: '4px' }}>
+                  {confirmedCount}
+                </div>
+                <span style={{ fontSize: '12px', color: 'var(--color-ash)', marginTop: '4px', display: 'block' }}>
+                  Turnos que hubieran quedado vacíos
+                </span>
+              </div>
+
+              <div style={{ backgroundColor: 'var(--color-obsidian)', border: '1px solid var(--color-graphite)', borderRadius: '0px', padding: '20px 24px' }}>
+                <span style={{ fontSize: '12px', color: 'var(--color-ash)', fontWeight: 700, textTransform: 'uppercase' }}>
+                  Saldo a Transferir
+                </span>
+                <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--color-emerald)', marginTop: '4px' }}>
+                  {formatCurrency(totalRevenue)}
+                </div>
+                <span style={{ fontSize: '12px', color: 'var(--color-ash)', marginTop: '4px', display: 'block' }}>
+                  Próxima liquidación: Cada Martes
+                </span>
+              </div>
+            </div>
+
+            {/* Payout Details & CBU Config */}
+            <div
+              style={{
+                backgroundColor: 'var(--color-obsidian)',
+                border: '1px solid var(--color-graphite)',
+                borderRadius: '0px',
+                padding: '24px',
+                maxWidth: '600px',
+              }}
+            >
+              <h4 style={{ fontSize: '16px', fontWeight: 800, margin: '0 0 8px', color: 'var(--color-frost)' }}>
+                DATOS BANCARIOS PARA TRANSFERENCIAS AUTOMÁTICAS
+              </h4>
+              <p style={{ fontSize: '13px', color: 'var(--color-ash)', margin: '0 0 20px' }}>
+                Ingresá el CBU o Alias de Mercado Pago donde querés recibir las liquidaciones semanales de los turnos cobrados.
+              </p>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: 'var(--color-ash)', marginBottom: '6px', fontWeight: 600 }}>
+                    ALIAS O CBU DEL CLUB
+                  </label>
+                  <input
+                    type="text"
+                    value={cbuAlias}
+                    onChange={(e) => setCbuAlias(e.target.value.toUpperCase())}
+                    style={{
+                      width: '100%',
+                      backgroundColor: 'var(--color-surface-elevate)',
+                      color: 'var(--color-frost)',
+                      border: '1px solid var(--color-graphite)',
+                      borderRadius: '0px',
+                      padding: '10px 14px',
+                      fontSize: '14px',
+                      fontWeight: 700,
+                      outline: 'none',
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSavedAliasMsg(true);
+                      setTimeout(() => setSavedAliasMsg(false), 3000);
+                    }}
+                    style={{
+                      backgroundColor: 'var(--color-frost)',
+                      color: '#000000',
+                      border: 'none',
+                      borderRadius: 'var(--radius-full)',
+                      padding: '9px 20px',
+                      fontSize: '13px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    GUARDAR DATOS
+                  </button>
+
+                  {savedAliasMsg && (
+                    <span style={{ fontSize: '13px', color: 'var(--color-emerald)', fontWeight: 600 }}>
+                      Datos de cobro actualizados correctamente
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+      </main>
+
+      {/* ────────────────────────────────────────────────────────────
+          MODAL: RECHAZAR SOLICITUD
+          ──────────────────────────────────────────────────────────── */}
+      {rejectModalBooking && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(6px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+            zIndex: 100,
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: 'var(--color-obsidian)',
+              border: '1px solid var(--color-graphite)',
+              borderRadius: '0px',
+              padding: '28px',
+              maxWidth: '460px',
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '18px',
+            }}
+          >
+            <div>
+              <h3 style={{ fontSize: '18px', fontWeight: 800, margin: '0 0 6px', color: 'var(--color-frost)' }}>
+                Rechazar Solicitud #{rejectModalBooking.id}
+              </h3>
+              <p style={{ fontSize: '13px', color: 'var(--color-ash)', margin: 0 }}>
+                La retención de dinero se le liberará al jugador inmediatamente sin costo. Elegí el motivo para informarle:
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {[
+                'Cancha ocupada presencialmente en el club',
+                'Horario no disponible / Cambio de turno',
+                'Condiciones climáticas / Lluvia',
+                'Mantenimiento imprevisto en la cancha',
+                'Recepción cerrada fuera de horario',
+              ].map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setRejectReason(m)}
+                  style={{
+                    textAlign: 'left',
+                    padding: '10px 14px',
+                    borderRadius: 'var(--radius-full)',
+                    backgroundColor: rejectReason === m ? 'rgba(252, 28, 70, 0.15)' : 'var(--color-surface-elevate)',
+                    color: rejectReason === m ? 'var(--color-crimson-signal)' : 'var(--color-frost)',
+                    border: rejectReason === m ? '1px solid var(--color-crimson-signal)' : '1px solid var(--color-graphite)',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+              <button
+                type="button"
+                onClick={() => setRejectModalBooking(null)}
+                style={{
+                  padding: '9px 18px',
+                  borderRadius: 'var(--radius-full)',
+                  backgroundColor: 'transparent',
+                  color: 'var(--color-ash)',
+                  border: '1px solid var(--color-graphite)',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Volver
+              </button>
+              <button
+                type="button"
+                disabled={isProcessingAction}
+                onClick={handleConfirmReject}
+                style={{
+                  padding: '9px 20px',
+                  borderRadius: 'var(--radius-full)',
+                  backgroundColor: '#ef4444',
+                  color: '#ffffff',
+                  border: 'none',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  cursor: isProcessingAction ? 'not-allowed' : 'pointer',
+                }}
+              >
+                Confirmar Rechazo
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       {/* ────────────────────────────────────────────────────────────
-          MODAL 2: "+ CONFIGURAR / EDITAR CANCHA Y HORARIOS"
+          MODAL: EDITAR / AGREGAR CANCHA
           ──────────────────────────────────────────────────────────── */}
-      {showCourtModal && (
-        <div className="panel-modal-backdrop" style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          backdropFilter: 'blur(8px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: 20,
-        }}>
-          <div className="panel-modal-box" style={{
-            width: '100%',
-            maxWidth: 520,
-            maxHeight: '90vh',
-            overflowY: 'auto',
-            backgroundColor: '#0a0a0a',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            borderRadius: 0,
-            padding: '26px 28px',
-            boxShadow: '0 25px 60px rgba(0, 0, 0, 0.9)',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-              <div>
-                <h3 style={{ fontSize: 19, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, color: '#ffffff', margin: 0 }}>
-                  {editingCourtId ? 'Editar Cancha y Horarios' : 'Configurar Nueva Cancha'}
-                </h3>
-                <div style={{ fontSize: 11, color: '#fc1c46', marginTop: 2 }}>Establecé el nombre personalizado, características y horario</div>
-              </div>
-              <button
-                onClick={() => setShowCourtModal(false)}
-                style={{ backgroundColor: 'transparent', border: 'none', color: '#94a3b8', fontSize: 18, cursor: 'pointer' }}
-              ><Icons.Close size={13} /></button>
+      {isEditCourtModalOpen && editingCourt && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(6px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+            zIndex: 100,
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: 'var(--color-obsidian)',
+              border: '1px solid var(--color-graphite)',
+              borderRadius: '0px',
+              padding: '28px',
+              maxWidth: '480px',
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+            }}
+          >
+            <h3 style={{ fontSize: '18px', fontWeight: 800, margin: 0, color: 'var(--color-frost)' }}>
+              Configurar Cancha
+            </h3>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', color: 'var(--color-ash)', marginBottom: '4px', fontWeight: 600 }}>
+                Nombre de la Cancha
+              </label>
+              <input
+                type="text"
+                value={editingCourt.name}
+                onChange={(e) => setEditingCourt({ ...editingCourt, name: e.target.value })}
+                style={{
+                  width: '100%',
+                  backgroundColor: 'var(--color-surface-elevate)',
+                  color: 'var(--color-frost)',
+                  border: '1px solid var(--color-graphite)',
+                  borderRadius: '0px',
+                  padding: '9px 12px',
+                  fontSize: '14px',
+                  outline: 'none',
+                }}
+              />
             </div>
 
-            <form onSubmit={handleSaveCourt} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
-                  Nombre Personalizado de la Cancha
-                </label>
-                <input
-                  type="text"
-                  value={courtNameInput}
-                  onChange={e => setCourtNameInput(e.target.value)}
-                  placeholder="ej. Cancha 1 — Panorámica WPT"
-                  required
-                  style={{
-                    width: '100%',
-                    backgroundColor: '#141414',
-                    border: isDuplicateCourtName ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: 0,
-                    padding: '10px 12px',
-                    color: '#ffffff',
-                    fontSize: 13.5,
-                    boxSizing: 'border-box',
-                  }}
-                />
-                {isDuplicateCourtName && (
-                  <div style={{ color: '#fc1c46', fontSize: 11.5, marginTop: 5, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fc1c46" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                      <line x1="12" y1="9" x2="12" y2="13" />
-                      <line x1="12" y1="17" x2="12.01" y2="17" />
-                    </svg>
-                    <span>Ya existe una cancha con este nombre. Elegí otro nombre diferente.</span>
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
+                <label style={{ display: 'block', fontSize: '12px', color: 'var(--color-ash)', marginBottom: '4px', fontWeight: 600 }}>
                   Deporte
                 </label>
                 <select
-                  value={courtSportInput}
-                  onChange={e => setCourtSportInput(e.target.value)}
+                  value={editingCourt.sportType}
+                  onChange={(e) => setEditingCourt({ ...editingCourt, sportType: e.target.value as any })}
                   style={{
                     width: '100%',
-                    backgroundColor: '#141414',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: 0,
-                    padding: '10px 12px',
-                    color: '#ffffff',
-                    fontSize: 13.5,
+                    backgroundColor: 'var(--color-surface-elevate)',
+                    color: 'var(--color-frost)',
+                    border: '1px solid var(--color-graphite)',
+                    borderRadius: '0px',
+                    padding: '9px 12px',
+                    fontSize: '13px',
+                    outline: 'none',
                   }}
                 >
-                  <option value="Pádel">Pádel</option>
-                  <option value="Fútbol 5">Fútbol 5</option>
-                  <option value="Fútbol 7">Fútbol 7</option>
-                  <option value="Tenis">Tenis</option>
-                  <option value="Básquet">Básquet</option>
+                  <option value="PADEL">Pádel</option>
+                  <option value="FUTBOL_5">Fútbol 5</option>
+                  <option value="FUTBOL_7">Fútbol 7</option>
+                  <option value="FUTBOL_11">Fútbol 11</option>
                 </select>
               </div>
 
-              {/* Court Features & Attributes Selection */}
-              <div style={{ backgroundColor: '#141414', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 0, padding: '14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#fc1c46', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <Icons.SettingsSliders /> Características y Servicios de la Cancha
-                </div>
-
-                {/* Row 1: Techada vs Descubierta */}
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button
-                    type="button"
-                    onClick={() => setCourtIndoorInput(true)}
-                    style={{
-                      flex: 1,
-                      padding: '9px',
-                      borderRadius: 9999, border: courtIndoorInput ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
-                      backgroundColor: courtIndoorInput ? 'rgba(252,28,70,0.15)' : 'rgba(255,255,255,0.02)',
-                      color: courtIndoorInput ? '#fc1c46' : '#9ca3af',
-                      fontWeight: 600,
-                      fontSize: 12,
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 6,
-                    }}
-                  >
-                    <Icons.Indoor /> Techada
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCourtIndoorInput(false)}
-                    style={{
-                      flex: 1,
-                      padding: '9px',
-                      borderRadius: 9999, border: !courtIndoorInput ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
-                      backgroundColor: !courtIndoorInput ? 'rgba(252,28,70,0.15)' : 'rgba(255,255,255,0.02)',
-                      color: !courtIndoorInput ? '#fc1c46' : '#9ca3af',
-                      fontWeight: 600,
-                      fontSize: 12,
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 6,
-                    }}
-                  >
-                    <Icons.Outdoor /> Descubierta
-                  </button>
-                </div>
-
-                {/* Row 2: Con Iluminación vs Sin Iluminación */}
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button
-                    type="button"
-                    onClick={() => setCourtLightingInput(true)}
-                    style={{
-                      flex: 1,
-                      padding: '9px',
-                      borderRadius: 9999, border: courtLightingInput ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
-                      backgroundColor: courtLightingInput ? 'rgba(252,28,70,0.15)' : 'rgba(255,255,255,0.02)',
-                      color: courtLightingInput ? '#fc1c46' : '#9ca3af',
-                      fontWeight: 600,
-                      fontSize: 12,
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 6,
-                    }}
-                  >
-                    <Icons.Lighting /> Con Iluminación
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCourtLightingInput(false)}
-                    style={{
-                      flex: 1,
-                      padding: '9px',
-                      borderRadius: 9999, border: !courtLightingInput ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
-                      backgroundColor: !courtLightingInput ? 'rgba(252,28,70,0.15)' : 'rgba(255,255,255,0.02)',
-                      color: !courtLightingInput ? '#fc1c46' : '#9ca3af',
-                      fontWeight: 600,
-                      fontSize: 12,
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 6,
-                    }}
-                  >
-                    <Icons.NoLighting /> Sin Iluminación
-                  </button>
-                </div>
-
-                {/* Row 3: Con Cámaras vs Sin Cámaras */}
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button
-                    type="button"
-                    onClick={() => setCourtCamerasInput(true)}
-                    style={{
-                      flex: 1,
-                      padding: '9px',
-                      borderRadius: 9999, border: courtCamerasInput ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
-                      backgroundColor: courtCamerasInput ? 'rgba(252,28,70,0.15)' : 'rgba(255,255,255,0.02)',
-                      color: courtCamerasInput ? '#fc1c46' : '#9ca3af',
-                      fontWeight: 600,
-                      fontSize: 12,
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 6,
-                    }}
-                  >
-                    <Icons.Camera /> Con Cámaras
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCourtCamerasInput(false)}
-                    style={{
-                      flex: 1,
-                      padding: '9px',
-                      borderRadius: 9999, border: !courtCamerasInput ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
-                      backgroundColor: !courtCamerasInput ? 'rgba(252,28,70,0.15)' : 'rgba(255,255,255,0.02)',
-                      color: !courtCamerasInput ? '#fc1c46' : '#9ca3af',
-                      fontWeight: 600,
-                      fontSize: 12,
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 6,
-                    }}
-                  >
-                    <Icons.CameraOff /> Sin Cámaras
-                  </button>
-                </div>
-
-                {/* Row 4: Climatizada vs Ventilación Natural */}
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button
-                    type="button"
-                    onClick={() => setCourtHeatingInput(true)}
-                    style={{
-                      flex: 1,
-                      padding: '9px',
-                      borderRadius: 9999, border: courtHeatingInput ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
-                      backgroundColor: courtHeatingInput ? 'rgba(252,28,70,0.15)' : 'rgba(255,255,255,0.02)',
-                      color: courtHeatingInput ? '#fc1c46' : '#9ca3af',
-                      fontWeight: 600,
-                      fontSize: 12,
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 6,
-                    }}
-                  >
-                    <Icons.Climate /> Climatizada
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCourtHeatingInput(false)}
-                    style={{
-                      flex: 1,
-                      padding: '9px',
-                      borderRadius: 9999, border: !courtHeatingInput ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
-                      backgroundColor: !courtHeatingInput ? 'rgba(252,28,70,0.15)' : 'rgba(255,255,255,0.02)',
-                      color: !courtHeatingInput ? '#fc1c46' : '#9ca3af',
-                      fontWeight: 600,
-                      fontSize: 12,
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 6,
-                    }}
-                  >
-                    <Icons.Wind /> Ventilación Natural
-                  </button>
-                </div>
-              </div>
-
-              {/* Duración del Turno (60, 90, 120 min) */}
-              <div style={{ backgroundColor: '#141414', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 0, padding: '14px 16px' }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#fc1c46', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <Icons.Clock /> Duración de Cada Turno
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
-                  {[60, 90, 120].map(duration => (
-                    <button
-                      key={duration}
-                      type="button"
-                      onClick={() => setCourtSlotDurationInput(duration as 60 | 90 | 120)}
-                      style={{
-                        padding: '10px 8px',
-                        borderRadius: 9999,
-                        border: courtSlotDurationInput === duration ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
-                        backgroundColor: courtSlotDurationInput === duration ? 'rgba(252,28,70,0.18)' : '#141414',
-                        color: courtSlotDurationInput === duration ? '#ffffff' : '#9ca3af',
-                        fontWeight: 700,
-                        fontSize: 13,
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: 2,
-                      }}
-                    >
-                      <span>{duration} min</span>
-                      <span style={{ fontSize: 10, opacity: 0.7, fontWeight: 500 }}>
-                        {duration === 60 ? '1 hora' : duration === 90 ? '1h 30m' : '2 horas'}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Operating Schedule Configuration */}
-              <div style={{ backgroundColor: '#141414', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 0, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#fc1c46', textTransform: 'uppercase', letterSpacing: '0.8px', display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <Icons.Clock /> Horario de Funcionamiento
-                  </div>
-
-                  {/* Clear Checkbox for 24Hs */}
-                  <label
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      backgroundColor: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? 'rgba(252,28,70,0.18)' : '#141414',
-                      border: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.1)',
-                      borderRadius: 0,
-                      padding: '5px 12px',
-                      cursor: 'pointer',
-                      userSelect: 'none',
-                      transition: 'all 0.15s ease',
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00'}
-                      onChange={e => {
-                        if (e.target.checked) {
-                          setCourtOpenTimeInput('00:00');
-                          setCourtCloseTimeInput('24:00');
-                        } else {
-                          setCourtOpenTimeInput('08:00');
-                          setCourtCloseTimeInput('23:30');
-                        }
-                      }}
-                      style={{
-                        accentColor: '#fc1c46',
-                        width: 16,
-                        height: 16,
-                        cursor: 'pointer',
-                      }}
-                    />
-                    <span style={{ fontSize: 11.5, fontWeight: 700, color: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '#ffffff' : '#94a3b8', display: 'flex', alignItems: 'center', gap: 5 }}>
-                      <Icons.Moon /> Abierto 24 Horas
-                    </span>
-                  </label>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  {/* Hora Apertura */}
-                  <div>
-                    <label style={{ display: 'block', fontSize: 10, color: '#9ca3af', marginBottom: 4, textTransform: 'uppercase' }}>Hora Apertura</label>
-                    <select
-                      disabled={courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00'}
-                      value={courtOpenTimeInput}
-                      onChange={e => setCourtOpenTimeInput(e.target.value)}
-                      style={{
-                        width: '100%',
-                        backgroundColor: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '#141414' : '#141414',
-                        border: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(252, 28, 70, 0.4)',
-                        borderRadius: 0,
-                        padding: '10px 12px',
-                        color: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '#94a3b8' : '#ffffff',
-                        fontSize: 15,
-                        fontWeight: 700,
-                        cursor: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? 'not-allowed' : 'pointer',
-                        opacity: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? 0.5 : 1,
-                        outline: 'none',
-                        boxSizing: 'border-box',
-                      }}
-                    >
-                      {['00:00', '00:30', '01:00', '01:30', '02:00', '06:00', '06:30', '07:00', '07:30', '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30'].map(t => (
-                        <option key={t} value={t} style={{ backgroundColor: '#141414', color: '#ffffff' }}>
-                          {t} hs
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Hora Cierre */}
-                  <div>
-                    <label style={{ display: 'block', fontSize: 10, color: '#9ca3af', marginBottom: 4, textTransform: 'uppercase' }}>Hora Cierre</label>
-                    <select
-                      disabled={courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00'}
-                      value={courtCloseTimeInput}
-                      onChange={e => setCourtCloseTimeInput(e.target.value)}
-                      style={{
-                        width: '100%',
-                        backgroundColor: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '#141414' : '#141414',
-                        border: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(252, 28, 70, 0.4)',
-                        borderRadius: 0,
-                        padding: '10px 12px',
-                        color: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? '#94a3b8' : '#ffffff',
-                        fontSize: 15,
-                        fontWeight: 700,
-                        cursor: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? 'not-allowed' : 'pointer',
-                        opacity: (courtOpenTimeInput === '00:00' && courtCloseTimeInput === '24:00') ? 0.5 : 1,
-                        outline: 'none',
-                        boxSizing: 'border-box',
-                      }}
-                    >
-                      {['18:00', '19:00', '19:30', '20:00', '20:30', '21:00', '21:30', '22:00', '22:30', '23:00', '23:30', '24:00', '01:00', '02:00'].map(t => (
-                        <option key={t} value={t} style={{ backgroundColor: '#141414', color: '#ffffff' }}>
-                          {t} hs
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {/* Single Price Input */}
               <div>
-                <label style={{ display: 'block', fontSize: 11, color: '#fc1c46', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
-                  Precio de la Cancha por Turno ($)
+                <label style={{ display: 'block', fontSize: '12px', color: 'var(--color-ash)', marginBottom: '4px', fontWeight: 600 }}>
+                  Precio por Turno ($)
                 </label>
                 <input
                   type="number"
-                  value={courtPriceInput}
-                  onChange={e => setCourtPriceInput(Number(e.target.value))}
-                  required
+                  value={editingCourt.pricePerHour}
+                  onChange={(e) => setEditingCourt({ ...editingCourt, pricePerHour: Number(e.target.value) || 0 })}
                   style={{
                     width: '100%',
-                    backgroundColor: '#141414',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: 0,
-                    padding: '10px 12px',
-                    color: '#ffffff',
-                    fontSize: 13.5,
-                    boxSizing: 'border-box',
+                    backgroundColor: 'var(--color-surface-elevate)',
+                    color: 'var(--color-frost)',
+                    border: '1px solid var(--color-graphite)',
+                    borderRadius: '0px',
+                    padding: '9px 12px',
+                    fontSize: '14px',
+                    outline: 'none',
                   }}
                 />
               </div>
+            </div>
 
-              <button
-                type="submit"
-                disabled={isDuplicateCourtName}
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', color: 'var(--color-ash)', marginBottom: '4px', fontWeight: 600 }}>
+                Superficie / Descripción
+              </label>
+              <input
+                type="text"
+                value={editingCourt.surface}
+                onChange={(e) => setEditingCourt({ ...editingCourt, surface: e.target.value })}
                 style={{
-                  marginTop: 8,
-                  padding: '13px',
-                  backgroundColor: isDuplicateCourtName ? '#141414' : '#fc1c46',
-                  color: isDuplicateCourtName ? '#9ca3af' : '#ffffff',
-                  border: 'none',
-                  borderRadius: 9999,
-                  fontSize: 14,
-                  fontWeight: 700,
-                  cursor: isDuplicateCourtName ? 'not-allowed' : 'pointer',
-                  opacity: isDuplicateCourtName ? 0.6 : 1,
-                  transition: 'all 0.15s ease',
+                  width: '100%',
+                  backgroundColor: 'var(--color-surface-elevate)',
+                  color: 'var(--color-frost)',
+                  border: '1px solid var(--color-graphite)',
+                  borderRadius: '0px',
+                  padding: '9px 12px',
+                  fontSize: '13px',
+                  outline: 'none',
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
+              <button
+                type="button"
+                onClick={() => setIsEditCourtModalOpen(false)}
+                style={{
+                  padding: '9px 18px',
+                  borderRadius: 'var(--radius-full)',
+                  backgroundColor: 'transparent',
+                  color: 'var(--color-ash)',
+                  border: '1px solid var(--color-graphite)',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
                 }}
               >
-                Guardar Configuración de Cancha
+                Cancelar
               </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ────────────────────────────────────────────────────────────
-          MODAL 3: "EDITAR O ELIMINAR RESERVA EXISTENTE"
-          ──────────────────────────────────────────────────────────── */}
-      {showEditReservationModal && editingSlot && (
-        <div className="panel-modal-backdrop" style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          backdropFilter: 'blur(8px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: 20,
-        }}>
-          <div className="panel-modal-box" style={{
-            width: '100%',
-            maxWidth: 480,
-            backgroundColor: '#0a0a0a',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            borderRadius: 0,
-            padding: '26px 28px',
-            boxShadow: '0 25px 60px rgba(0, 0, 0, 0.9)',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-              <div>
-                <h3 style={{ fontSize: 19, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, color: '#ffffff', margin: 0 }}>
-                  {editingSlot.status === 'MAINTENANCE' || editingSlot.status === 'BLOCKED' ? 'Gestionar Horario Bloqueado' : 'Gestionar Reserva'}
-                </h3>
-                <div style={{ fontSize: 11, color: editingSlot.status === 'MAINTENANCE' || editingSlot.status === 'BLOCKED' ? '#f59e0b' : '#fc1c46', marginTop: 2 }}>
-                  {editingSlot.courtName} · {editingSlot.time} hs
-                </div>
-              </div>
               <button
-                onClick={() => setShowEditReservationModal(false)}
-                style={{ backgroundColor: 'transparent', border: 'none', color: '#94a3b8', fontSize: 18, cursor: 'pointer' }}
-              ><Icons.Close size={13} /></button>
-            </div>
-
-            <form onSubmit={handleSaveEditReservation} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div>
-                <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
-                  {editingSlot.status === 'MAINTENANCE' || editingSlot.status === 'BLOCKED' ? 'Motivo del Bloqueo' : 'Nombre del Jugador'}
-                </label>
-                <input
-                  type="text"
-                  value={editPlayerName}
-                  onChange={e => setEditPlayerName(e.target.value)}
-                  required
-                  style={{
-                    width: '100%',
-                    backgroundColor: '#141414',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: 0,
-                    padding: '10px 12px',
-                    color: '#ffffff',
-                    fontSize: 13.5,
-                    boxSizing: 'border-box',
-                  }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
-                  Teléfono / WhatsApp
-                </label>
-                <input
-                  type="text"
-                  value={editPlayerPhone}
-                  onChange={e => setEditPlayerPhone(e.target.value)}
-                  placeholder="+54 9 11 0000-0000"
-                  style={{
-                    width: '100%',
-                    backgroundColor: '#141414',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: 0,
-                    padding: '10px 12px',
-                    color: '#ffffff',
-                    fontSize: 13.5,
-                    boxSizing: 'border-box',
-                  }}
-                />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
-                    Cancha
-                  </label>
-                  <select
-                    value={editCourtId}
-                    onChange={e => handleEditCourtChange(e.target.value)}
-                    style={{
-                      width: '100%',
-                      backgroundColor: '#141414',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      borderRadius: 0,
-                      padding: '10px 12px',
-                      color: '#ffffff',
-                      fontSize: 13.5,
-                    }}
-                  >
-                    {courts.map(c => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '1px' }}>
-                    Horario Habilitado (Libre)
-                  </label>
-                  <select
-                    value={editTime}
-                    onChange={e => setEditTime(e.target.value)}
-                    style={{
-                      width: '100%',
-                      backgroundColor: '#141414',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      borderRadius: 0,
-                      padding: '10px 12px',
-                      color: '#ffffff',
-                      fontSize: 13.5,
-                    }}
-                  >
-                    {getAvailableTimesForCourt(editCourtId, editingSlot.id).map(time => (
-                      <option key={time} value={time}>
-                        {time} hs {time === editingSlot.time ? '(Actual)' : '(Disponible)'}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
-                <button
-                  type="submit"
-                  style={{
-                    flex: 1,
-                    padding: '12px',
-                    backgroundColor: '#fc1c46',
-                    color: '#ffffff',
-                    border: 'none',
-                    borderRadius: 9999,
-                    fontSize: 13.5,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 6,
-                  }}
-                >
-                  <Icons.Save /> Guardar Cambios
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDeleteReservation}
-                  style={{
-                    flex: 1,
-                    padding: '12px',
-                    backgroundColor: 'rgba(252, 28, 70, 0.12)',
-                    color: '#fc1c46',
-                    border: '1px solid rgba(252, 28, 70, 0.3)',
-                    borderRadius: 9999,
-                    fontSize: 13.5,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 6,
-                  }}
-                >
-                  <Icons.Trash /> {editingSlot.status === 'MAINTENANCE' || editingSlot.status === 'BLOCKED' ? 'Desbloquear Horario' : 'Eliminar Reserva'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ────────────────────────────────────────────────────────────
-          MODAL: "+ AGENDAR NUEVO TURNO FIJO"
-          ──────────────────────────────────────────────────────────── */}
-      {showFixedSlotModal && (
-        <div className="panel-modal-backdrop" style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          backdropFilter: 'blur(8px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: 20,
-        }}>
-          <div className="panel-modal-box" style={{
-            width: '100%',
-            maxWidth: 480,
-            backgroundColor: '#0a0a0a',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            borderRadius: 0,
-            padding: '26px 28px',
-            boxShadow: '0 25px 60px rgba(0, 0, 0, 0.9)',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-              <div>
-                <h3 style={{ fontSize: 19, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, color: '#ffffff', margin: 0 }}>
-                  Agendar Turno Fijo
-                </h3>
-                <div style={{ fontSize: 11, color: '#10b981', marginTop: 2 }}>Programación semanal recurrente</div>
-              </div>
-              <button
-                onClick={() => setShowFixedSlotModal(false)}
-                style={{ backgroundColor: 'transparent', border: 'none', color: '#94a3b8', fontSize: 18, cursor: 'pointer' }}
-              ><Icons.Close size={13} /></button>
-            </div>
-
-            <form onSubmit={handleAddFixedSlot} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div>
-                <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6 }}>Cancha</label>
-                <select
-                  value={fixedCourtId}
-                  onChange={e => setFixedCourtId(e.target.value)}
-                  style={{ width: '100%', backgroundColor: '#141414', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 0, padding: '10px 12px', color: '#fff', fontSize: 13.5 }}
-                >
-                  {courts.map(c => (
-                    <option key={c.id} value={c.id}>{c.name} ({c.sport})</option>
-                  ))}
-                </select>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6 }}>Día Semanal</label>
-                  <select
-                    value={fixedDayOfWeek}
-                    onChange={e => setFixedDayOfWeek(e.target.value)}
-                    style={{ width: '100%', backgroundColor: '#141414', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 0, padding: '10px 12px', color: '#fff', fontSize: 13.5 }}
-                  >
-                    {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].map(d => (
-                      <option key={d} value={d}>{d}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6 }}>Horario Fijo</label>
-                  <input
-                    type="text"
-                    value={fixedTime}
-                    onChange={e => setFixedTime(e.target.value)}
-                    placeholder="ej. 20:00"
-                    required
-                    style={{ width: '100%', backgroundColor: '#141414', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 0, padding: '10px 12px', color: '#fff', fontSize: 13.5, boxSizing: 'border-box' }}
-                  />
-                </div>
-              </div>
-
-              {/* Segmented Mode Selector for Fixed Slots: Buscar Existente vs Crear Nuevo */}
-              <div>
-                <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 8, letterSpacing: '1px' }}>
-                  Asignación de Cliente / Grupo
-                </label>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  backgroundColor: '#141414',
-                  borderRadius: 0,
-                  padding: 4,
-                  border: '1px solid rgba(255,255,255,0.06)',
-                  marginBottom: 12,
-                }}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFixedClientSelectionMode('EXISTING');
-                      setFixedPlayerName('');
-                      setFixedPlayerPhone('');
-                    }}
-                    style={{
-                      padding: '8px 12px',
-                      borderRadius: 9999,
-                      border: 'none',
-                      backgroundColor: fixedClientSelectionMode === 'EXISTING' ? 'rgba(252, 28, 70, 0.15)' : 'transparent',
-                      color: fixedClientSelectionMode === 'EXISTING' ? '#fc1c46' : '#9ca3af',
-                      fontWeight: 700,
-                      fontSize: 12,
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                    }}
-                  >
-                    Buscar Existente
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFixedClientSelectionMode('NEW');
-                      setFixedPlayerName('');
-                      setFixedPlayerPhone('');
-                    }}
-                    style={{
-                      padding: '8px 12px',
-                      borderRadius: 9999,
-                      border: 'none',
-                      backgroundColor: fixedClientSelectionMode === 'NEW' ? 'rgba(252, 28, 70, 0.15)' : 'transparent',
-                      color: fixedClientSelectionMode === 'NEW' ? '#fc1c46' : '#9ca3af',
-                      fontWeight: 700,
-                      fontSize: 12,
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                    }}
-                  >
-                    + Crear Nuevo Cliente
-                  </button>
-                </div>
-
-                {fixedClientSelectionMode === 'EXISTING' ? (
-                  <div style={{ position: 'relative' }}>
-                    <div style={{ position: 'relative' }}>
-                      <input
-                        type="text"
-                        value={fixedClientSearchQuery}
-                        onChange={e => {
-                          setFixedClientSearchQuery(e.target.value);
-                          setIsFixedClientSearchOpen(true);
-                        }}
-                        onFocus={() => setIsFixedClientSearchOpen(true)}
-                        placeholder="Tipeá nombre, apellido o teléfono..."
-                        style={{
-                          width: '100%',
-                          backgroundColor: '#141414',
-                          border: isFixedClientSearchOpen ? '1px solid #fc1c46' : '1px solid rgba(255,255,255,0.08)',
-                          borderRadius: 0,
-                          padding: '10px 12px',
-                          color: '#ffffff',
-                          fontSize: 13.5,
-                          boxSizing: 'border-box',
-                        }}
-                      />
-                      {fixedClientSearchQuery && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setFixedClientSearchQuery('');
-                            setFixedPlayerName('');
-                            setFixedPlayerPhone('');
-                            setIsFixedClientSearchOpen(false);
-                          }}
-                          style={{
-                            position: 'absolute',
-                            right: 10,
-                            top: '50%',
-                            transform: 'translateY(-50%)',
-                            backgroundColor: 'transparent',
-                            border: 'none',
-                            color: '#94a3b8',
-                            fontSize: 14,
-                            cursor: 'pointer',
-                          }}
-                        ><Icons.Close size={13} /></button>
-                      )}
-                    </div>
-
-                    {/* Autocomplete Popup List */}
-                    {isFixedClientSearchOpen && (
-                      <div style={{
-                        position: 'absolute',
-                        top: '100%',
-                        left: 0,
-                        right: 0,
-                        backgroundColor: '#141414',
-                        border: '1px solid rgba(252, 28, 70, 0.3)',
-                        borderRadius: 0,
-                        marginTop: 4,
-                        maxHeight: 180,
-                        overflowY: 'auto',
-                        zIndex: 1010,
-                        boxShadow: '0 15px 35px rgba(0,0,0,0.8)',
-                        padding: '6px',
-                      }}>
-                        {matchingFixedSearchPlayers.length === 0 ? (
-                          <div style={{ padding: '10px 12px', textAlign: 'center' }}>
-                            <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 8 }}>
-                              No se encontró ningún cliente registrado.
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setFixedClientSelectionMode('NEW');
-                                setFixedPlayerName(fixedClientSearchQuery);
-                                setIsFixedClientSearchOpen(false);
-                              }}
-                              style={{
-                                backgroundColor: 'rgba(252, 28, 70, 0.15)',
-                                color: '#fc1c46',
-                                border: '1px solid rgba(252, 28, 70, 0.3)',
-                                borderRadius: 9999,
-                                padding: '6px 12px',
-                                fontSize: 12,
-                                fontWeight: 700,
-                                cursor: 'pointer',
-                              }}
-                            >
-                              + Crear nuevo cliente "{fixedClientSearchQuery}"
-                            </button>
-                          </div>
-                        ) : (
-                          matchingFixedSearchPlayers.map(p => (
-                            <div
-                              key={p.id}
-                              onClick={() => {
-                                setFixedPlayerName(p.name);
-                                setFixedPlayerPhone(p.phone);
-                                setFixedClientSearchQuery(`${p.name} (${p.phone})`);
-                                setIsFixedClientSearchOpen(false);
-                              }}
-                              style={{
-                                padding: '8px 12px',
-                                borderRadius: 0,
-                                cursor: 'pointer',
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                transition: 'all 0.12s ease',
-                              }}
-                              onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(252, 28, 70, 0.15)'}
-                              onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                            >
-                              <div>
-                                <div style={{ fontSize: 13, fontWeight: 700, color: '#ffffff' }}>{p.name}</div>
-                                <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 1 }}>{p.phone}</div>
-                              </div>
-                              <span style={{
-                                fontSize: 9.5,
-                                fontWeight: 700,
-                                color: '#fc1c46',
-                                backgroundColor: 'rgba(252, 28, 70, 0.15)',
-                                padding: '2px 6px',
-                                borderRadius: 9999,
-                              }}>
-                                {p.playerTag}
-                              </span>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    )}
-
-                    {fixedPlayerName && (
-                      <div style={{
-                        marginTop: 8,
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        border: '1px solid rgba(16, 185, 129, 0.3)',
-                        borderRadius: 0,
-                        padding: '8px 12px',
-                        fontSize: 12,
-                        color: '#10b981',
-                        fontWeight: 600,
-                      }}>
-                        Cliente seleccionado: <strong>{fixedPlayerName}</strong> {fixedPlayerPhone && `(${fixedPlayerPhone})`}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    <div>
-                      <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6 }}>
-                        Nombre del Cliente / Grupo
-                      </label>
-                      <input
-                        type="text"
-                        value={fixedPlayerName}
-                        onChange={e => setFixedPlayerName(e.target.value)}
-                        placeholder="ej. Escuela Pádel Adalberto"
-                        required
-                        style={{
-                          width: '100%',
-                          backgroundColor: '#141414',
-                          border: '1px solid rgba(255,255,255,0.08)',
-                          borderRadius: 0,
-                          padding: '10px 12px',
-                          color: '#ffffff',
-                          fontSize: 13.5,
-                          boxSizing: 'border-box',
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6 }}>
-                        Teléfono de Contacto
-                      </label>
-                      <input
-                        type="text"
-                        value={fixedPlayerPhone}
-                        onChange={e => setFixedPlayerPhone(e.target.value)}
-                        placeholder="ej. +54 9 11 9988-7766"
-                        required
-                        style={{
-                          width: '100%',
-                          backgroundColor: '#141414',
-                          border: '1px solid rgba(255,255,255,0.08)',
-                          borderRadius: 0,
-                          padding: '10px 12px',
-                          color: '#ffffff',
-                          fontSize: 13.5,
-                          boxSizing: 'border-box',
-                        }}
-                      />
-                    </div>
-                    <div style={{ fontSize: 11, color: '#fc1c46', backgroundColor: 'rgba(252,28,70,0.08)', border: '1px solid rgba(252,28,70,0.2)', padding: '6px 10px', borderRadius: 0 }}>
-                      Se guardará en la base del club automáticamente.
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6 }}>Precio por Turno ($)</label>
-                <input
-                  type="number"
-                  value={fixedPrice}
-                  onChange={e => setFixedPrice(Number(e.target.value))}
-                  required
-                  style={{ width: '100%', backgroundColor: '#141414', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 0, padding: '10px 12px', color: '#fff', fontSize: 13.5, boxSizing: 'border-box' }}
-                />
-              </div>
-
-              <button
-                type="submit"
+                type="button"
+                onClick={async () => {
+                  const exists = courts.some((c) => c.id === editingCourt.id);
+                  let updatedList: CourtData[];
+                  if (exists) {
+                    updatedList = courts.map((c) => (c.id === editingCourt.id ? editingCourt : c));
+                  } else {
+                    updatedList = [...courts, editingCourt];
+                  }
+                  setCourts(updatedList);
+                  await saveCourtsFirestore(updatedList);
+                  setIsEditCourtModalOpen(false);
+                }}
                 style={{
-                  marginTop: 8,
-                  padding: '13px',
-                  backgroundColor: '#fc1c46',
+                  padding: '9px 20px',
+                  borderRadius: 'var(--radius-full)',
+                  backgroundColor: 'var(--color-crimson-signal)',
                   color: '#ffffff',
                   border: 'none',
-                  borderRadius: 9999,
-                  fontSize: 14,
+                  fontSize: '13px',
                   fontWeight: 700,
                   cursor: 'pointer',
                 }}
               >
-                Guardar Turno Fijo
+                Guardar Cancha
               </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ────────────────────────────────────────────────────────────
-          MODAL: "+ AGREGAR CLIENTE RECURRENTE"
-          ──────────────────────────────────────────────────────────── */}
-      {showAddPlayerModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          backdropFilter: 'blur(8px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: 20,
-        }}>
-          <div style={{
-            width: '100%',
-            maxWidth: 480,
-            backgroundColor: '#0a0a0a',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            borderRadius: 0,
-            padding: '26px 28px',
-            boxShadow: '0 25px 60px rgba(0, 0, 0, 0.9)',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-              <div>
-                <h3 style={{ fontSize: 19, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, color: '#ffffff', margin: 0 }}>
-                  Agregar Nuevo Cliente
-                </h3>
-                <div style={{ fontSize: 11, color: '#fc1c46', marginTop: 2 }}>Registrar cliente recurrente en la base del club</div>
-              </div>
-              <button
-                onClick={() => setShowAddPlayerModal(false)}
-                style={{ backgroundColor: 'transparent', border: 'none', color: '#94a3b8', fontSize: 18, cursor: 'pointer' }}
-              ><Icons.Close size={13} /></button>
             </div>
-
-            <form onSubmit={handleAddPlayer} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div>
-                <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6 }}>
-                  Nombre y Apellido
-                </label>
-                <input
-                  type="text"
-                  value={newPlayerName}
-                  onChange={e => setNewPlayerName(e.target.value)}
-                  placeholder="ej. Gastón Edul"
-                  required
-                  style={{ width: '100%', backgroundColor: '#141414', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 0, padding: '10px 12px', color: '#fff', fontSize: 13.5, boxSizing: 'border-box' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6 }}>
-                  Teléfono de Contacto
-                </label>
-                <input
-                  type="text"
-                  value={newPlayerPhone}
-                  onChange={e => setNewPlayerPhone(e.target.value)}
-                  placeholder="ej. +54 9 11 8877-6655"
-                  required
-                  style={{ width: '100%', backgroundColor: '#141414', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 0, padding: '10px 12px', color: '#fff', fontSize: 13.5, boxSizing: 'border-box' }}
-                />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6 }}>
-                    Deporte Principal
-                  </label>
-                  <select
-                    value={newPlayerSport}
-                    onChange={e => setNewPlayerSport(e.target.value)}
-                    style={{ width: '100%', backgroundColor: '#141414', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 0, padding: '10px 12px', color: '#fff', fontSize: 13.5 }}
-                  >
-                    <option value="Pádel">Pádel</option>
-                    <option value="Fútbol 5">Fútbol 5</option>
-                    <option value="Fútbol 7">Fútbol 7</option>
-                    <option value="Básquet">Básquet</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6 }}>
-                    Categoría / Nivel
-                  </label>
-                  <input
-                    type="text"
-                    value={newPlayerCategory}
-                    onChange={e => setNewPlayerCategory(e.target.value)}
-                    placeholder="ej. 4ta Categoría"
-                    style={{ width: '100%', backgroundColor: '#141414', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 0, padding: '10px 12px', color: '#fff', fontSize: 13.5, boxSizing: 'border-box' }}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6 }}>
-                  Etiqueta / Tipo de Cliente
-                </label>
-                <select
-                  value={newPlayerTag}
-                  onChange={e => setNewPlayerTag(e.target.value)}
-                  style={{ width: '100%', backgroundColor: '#141414', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 0, padding: '10px 12px', color: '#fff', fontSize: 13.5 }}
-                >
-                  <option value="ABONADO FIJO">ABONADO FIJO</option>
-                  <option value="JUGADOR FRECUENTE">JUGADOR FRECUENTE</option>
-                  <option value="JUGADOR VIP">JUGADOR VIP</option>
-                </select>
-              </div>
-
-              <button
-                type="submit"
-                style={{
-                  marginTop: 8,
-                  padding: '13px',
-                  backgroundColor: '#fc1c46',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: 9999,
-                  fontSize: 14,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                }}
-              >
-                Guardar Cliente
-              </button>
-            </form>
           </div>
         </div>
       )}
-
-      {/* ── Keyframe Animations ── */}
-      <style jsx global>{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(16px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}</style>
     </div>
   );
 }

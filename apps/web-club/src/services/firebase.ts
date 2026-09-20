@@ -135,7 +135,10 @@ export interface BookingRecord {
   splitPlayers: number;
   paidPlayersCount: number;
   isFixedSlot?: boolean;
-  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED';
+  status: 'PENDING' | 'CONFIRMED' | 'REJECTED' | 'CANCELLED';
+  rejectReason?: string;
+  confirmedAt?: string;
+  rejectedAt?: string;
   buyer: {
     name: string;
     email: string;
@@ -350,6 +353,130 @@ export function listenBookingFirestore(
       console.error('Error in listenBookingFirestore snapshot:', err);
     }
   );
+}
+
+/**
+ * Listens to bookings for a club in real time
+ */
+export function listenClubBookingsFirestore(
+  clubId: string,
+  callback: (bookings: BookingRecord[]) => void
+) {
+  const registryRef = doc(dbFirestore, 'settings', 'hay_equipo_bookings');
+  return onSnapshot(
+    registryRef,
+    (snap) => {
+      if (snap.exists() && Array.isArray(snap.data()?.bookings)) {
+        const all: BookingRecord[] = snap.data()?.bookings;
+        const filtered = clubId ? all.filter((b) => b.clubId === clubId) : all;
+        callback(filtered);
+      } else {
+        callback([]);
+      }
+    },
+    (err) => {
+      console.error('Error in listenClubBookingsFirestore snapshot:', err);
+    }
+  );
+}
+
+/**
+ * Updates booking status (CONFIRMED or REJECTED)
+ */
+export async function updateBookingStatusFirestore(
+  bookingId: string,
+  status: 'CONFIRMED' | 'REJECTED',
+  reason?: string
+): Promise<boolean> {
+  try {
+    const cleanId = bookingId.trim().toLowerCase();
+    const docKey = `booking_${cleanId}`;
+    const bookingRef = doc(dbFirestore, 'settings', docKey);
+    const snap = await getDoc(bookingRef);
+
+    let booking: BookingRecord | null = null;
+    if (snap.exists()) {
+      booking = snap.data() as BookingRecord;
+    } else {
+      booking = await getBookingByIdFirestore(bookingId);
+    }
+
+    if (!booking) {
+      return false;
+    }
+
+    const now = new Date().toISOString();
+    const updatedBooking: BookingRecord = {
+      ...booking,
+      status,
+      updatedAt: now,
+      ...(status === 'CONFIRMED' ? { confirmedAt: now } : {}),
+      ...(status === 'REJECTED' ? { rejectedAt: now, rejectReason: reason || 'Rechazado por el club' } : {}),
+    };
+
+    const cleanUpdated = JSON.parse(JSON.stringify(updatedBooking));
+    await setDoc(bookingRef, cleanUpdated);
+
+    // Also update the centralized bookings registry
+    const registryRef = doc(dbFirestore, 'settings', 'hay_equipo_bookings');
+    const regSnap = await getDoc(registryRef);
+    if (regSnap.exists() && Array.isArray(regSnap.data()?.bookings)) {
+      const list: BookingRecord[] = regSnap.data()?.bookings;
+      const updatedList = list.map((b) => (b.id.toLowerCase() === cleanId ? cleanUpdated : b));
+      await setDoc(registryRef, { bookings: updatedList, updatedAt: now }, { merge: true });
+    }
+
+    return true;
+  } catch (e) {
+    console.error('Error updating booking status:', e);
+    return false;
+  }
+}
+
+/**
+ * Gets published slots for a club on a specific date (e.g., '2026-09-20')
+ */
+export async function getClubPublishedSlotsFirestore(
+  clubId: string,
+  dateStr: string
+): Promise<Record<string, boolean>> {
+  try {
+    const docKey = `published_slots_${clubId}_${dateStr}`;
+    const snap = await getDoc(doc(dbFirestore, 'settings', docKey));
+    if (snap.exists()) {
+      return snap.data()?.slots || {};
+    }
+  } catch (e) {
+    console.error('Error fetching published slots:', e);
+  }
+  return {};
+}
+
+/**
+ * Saves published slots for a club on a specific date
+ */
+export async function saveClubPublishedSlotsFirestore(
+  clubId: string,
+  dateStr: string,
+  slots: Record<string, boolean>
+): Promise<boolean> {
+  try {
+    const docKey = `published_slots_${clubId}_${dateStr}`;
+    await setDoc(
+      doc(dbFirestore, 'settings', docKey),
+      {
+        clubId,
+        date: dateStr,
+        slots,
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+    return true;
+  } catch (e) {
+    console.error('Error saving published slots:', e);
+    return false;
+  }
 }
 
 /**
