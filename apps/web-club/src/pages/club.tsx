@@ -11,8 +11,12 @@ import {
   updateBookingStatusFirestore,
   getClubPublishedSlotsFirestore,
   saveClubPublishedSlotsFirestore,
+  getClubActiveSlotsFirestore,
+  saveClubActiveSlotFirestore,
+  deleteClubActiveSlotFirestore,
   linkClubAdminEmailFirestore,
   BookingRecord,
+  PublishedSlotRecord,
 } from '../services/firebase';
 import { SportBadge } from '../components/SportBadge';
 import { useSlidingIndicator } from '../hooks/useSlidingIndicator';
@@ -129,6 +133,22 @@ const Icons = {
       <polyline points="17 11 19 13 23 9" />
     </svg>
   ),
+  Trash: ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="3 6 5 6 21 6" />
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+    </svg>
+  ),
+  ChevronLeft: ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="15 18 9 12 15 6" />
+    </svg>
+  ),
+  ChevronRight: ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="9 18 15 12 9 6" />
+    </svg>
+  ),
 };
 
 /* ────────────────────────────────────────────────────────────
@@ -195,6 +215,225 @@ function getFormattedDate(offsetDays: number = 0): { value: string; label: strin
   return { value: val, label, sublabel: `${day}/${month}` };
 }
 
+function getTodayString(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function getTomorrowString(): string {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function getAfterTomorrowString(): string {
+  const d = new Date();
+  d.setDate(d.getDate() + 2);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function calculateEndTime(startTime: string, durationMinutes: number): string {
+  const [h, m] = startTime.split(':').map(Number);
+  const total = h * 60 + m + durationMinutes;
+  const endH = Math.floor(total / 60) % 24;
+  const endM = total % 60;
+  return `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
+}
+
+function formatSlotDateBadge(dateStr: string): { main: string; sub: string; isToday: boolean; isTomorrow: boolean } {
+  if (!dateStr) return { main: 'FECHA', sub: '', isToday: false, isTomorrow: false };
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const target = new Date(y, m - 1, d);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  target.setHours(0, 0, 0, 0);
+  const diffDays = Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+  const dayNames = ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
+  const monthNames = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
+
+  const dayName = dayNames[target.getDay()];
+  const monthName = monthNames[target.getMonth()];
+
+  if (diffDays === 0) {
+    return { main: `HOY · ${d} ${monthName}`, sub: dayName, isToday: true, isTomorrow: false };
+  }
+  if (diffDays === 1) {
+    return { main: `MAÑANA · ${d} ${monthName}`, sub: dayName, isToday: false, isTomorrow: true };
+  }
+  return { main: `${dayName} ${d} ${monthName}`, sub: `${d}/${m}`, isToday: false, isTomorrow: false };
+}
+
+const AVAILABLE_START_HOURS = [
+  '07:00', '07:30', '08:00', '08:30', '09:00', '09:30',
+  '10:00', '10:30', '11:00', '11:30', '12:00', '12:30',
+  '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
+  '16:00', '16:30', '17:00', '17:30', '18:00', '18:30',
+  '19:00', '19:30', '20:00', '20:30', '21:00', '21:30',
+  '22:00', '22:30', '23:00', '23:30'
+];
+
+interface CalendarWidgetProps {
+  selectedDate: string;
+  onSelectDate: (dateStr: string) => void;
+  calendarMonth: Date;
+  onChangeMonth: (delta: number) => void;
+}
+
+const CalendarWidget: React.FC<CalendarWidgetProps> = ({
+  selectedDate,
+  onSelectDate,
+  calendarMonth,
+  onChangeMonth,
+}) => {
+  const year = calendarMonth.getFullYear();
+  const month = calendarMonth.getMonth();
+
+  const monthNames = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  ];
+  const weekDays = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do'];
+
+  const firstDayIndex = new Date(year, month, 1).getDay();
+  const startingDay = (firstDayIndex + 6) % 7;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const todayStr = getTodayString();
+
+  return (
+    <div
+      style={{
+        backgroundColor: 'var(--color-surface-elevate)',
+        border: '1px solid var(--color-graphite)',
+        borderRadius: '0px',
+        padding: '16px',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            onChangeMonth(-1);
+          }}
+          style={{
+            backgroundColor: 'transparent',
+            border: '1px solid var(--color-graphite)',
+            borderRadius: 'var(--radius-full)',
+            width: 28,
+            height: 28,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--color-ash)',
+            cursor: 'pointer',
+          }}
+          title="Mes anterior"
+        >
+          <Icons.ChevronLeft size={14} />
+        </button>
+
+        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-frost)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          {monthNames[month]} {year}
+        </span>
+
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            onChangeMonth(1);
+          }}
+          style={{
+            backgroundColor: 'transparent',
+            border: '1px solid var(--color-graphite)',
+            borderRadius: 'var(--radius-full)',
+            width: 28,
+            height: 28,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--color-ash)',
+            cursor: 'pointer',
+          }}
+          title="Mes siguiente"
+        >
+          <Icons.ChevronRight size={14} />
+        </button>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 6, textAlign: 'center' }}>
+        {weekDays.map((wd) => (
+          <span key={wd} style={{ fontSize: 10, fontWeight: 700, color: 'var(--color-ash)', textTransform: 'uppercase' }}>
+            {wd}
+          </span>
+        ))}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
+        {Array.from({ length: startingDay }).map((_, i) => (
+          <div key={`blank_${i}`} style={{ height: 32 }} />
+        ))}
+
+        {Array.from({ length: daysInMonth }).map((_, i) => {
+          const dayNum = i + 1;
+          const dayStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+          const isPast = dayStr < todayStr;
+          const isSelected = dayStr === selectedDate;
+          const isToday = dayStr === todayStr;
+
+          return (
+            <button
+              key={dayStr}
+              type="button"
+              disabled={isPast}
+              onClick={() => onSelectDate(dayStr)}
+              style={{
+                height: 32,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: 'var(--radius-full)',
+                backgroundColor: isSelected
+                  ? 'var(--color-crimson-signal)'
+                  : isToday
+                  ? 'rgba(255, 255, 255, 0.08)'
+                  : 'transparent',
+                color: isSelected
+                  ? '#ffffff'
+                  : isPast
+                  ? 'var(--color-ash)'
+                  : 'var(--color-frost)',
+                border: isSelected
+                  ? '1px solid var(--color-crimson-signal)'
+                  : isToday
+                  ? '1px solid var(--color-graphite)'
+                  : '1px solid transparent',
+                fontSize: 12,
+                fontWeight: isSelected || isToday ? 700 : 500,
+                opacity: isPast ? 0.25 : 1,
+                cursor: isPast ? 'not-allowed' : 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              {dayNum}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 /* ────────────────────────────────────────────────────────────
    MAIN COMPONENT: /club (TERMINAL EXCLUSIVA DE CLUBES)
    ──────────────────────────────────────────────────────────── */
@@ -239,9 +478,28 @@ export default function ClubPage() {
   const [rejectReason, setRejectReason] = useState('Cancha ocupada presencialmente en el club');
   const [isActionPending, setIsActionPending] = useState(false);
 
-  // Published slots
-  const [dateOffset, setDateOffset] = useState(0);
-  const [publishedSlots, setPublishedSlots] = useState<Record<string, boolean>>({});
+  // Active published slots (rich records)
+  const [activeSlots, setActiveSlots] = useState<PublishedSlotRecord[]>([]);
+  const [activeSlotsFilter, setActiveSlotsFilter] = useState<'ALL' | 'TODAY' | 'TOMORROW' | 'UPCOMING'>('ALL');
+  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
+
+  // Publish new slot modal state
+  const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
+  const [publishCourtId, setPublishCourtId] = useState('');
+  const [publishDate, setPublishDate] = useState(() => getTodayString());
+  const [publishStartTime, setPublishStartTime] = useState('19:00');
+  const [publishDuration, setPublishDuration] = useState<number>(90);
+  const [publishPrice, setPublishPrice] = useState<number>(24000);
+  const [publishIsCovered, setPublishIsCovered] = useState(true);
+  const [publishHasLighting, setPublishHasLighting] = useState(true);
+  const [publishNotes, setPublishNotes] = useState('');
+  const [isPublishingSlot, setIsPublishingSlot] = useState(false);
+  const [publishError, setPublishError] = useState('');
+  const [calendarMonth, setCalendarMonth] = useState(() => new Date());
+
+  // Slot delete confirmation state
+  const [slotToDelete, setSlotToDelete] = useState<PublishedSlotRecord | null>(null);
+  const [isDeletingSlot, setIsDeletingSlot] = useState(false);
 
   // Court edit/add modal
   const [isCourtModalOpen, setIsCourtModalOpen] = useState(false);
@@ -368,27 +626,125 @@ export default function ClubPage() {
     }
   }, [pendingCount, activeClub?.name]);
 
-  // 5. Load Published Slots for Selected Date
-  const currentDate = useMemo(() => getFormattedDate(dateOffset), [dateOffset]);
+  // 5. Load Active Published Slots from Firestore
+  const loadActiveSlots = useCallback(async () => {
+    if (!activeClub?.id) return;
+    setIsLoadingSlots(true);
+    try {
+      const list = await getClubActiveSlotsFirestore(activeClub.id);
+      setActiveSlots(list || []);
+    } catch (err) {
+      console.error('Error fetching active slots:', err);
+    } finally {
+      setIsLoadingSlots(false);
+    }
+  }, [activeClub?.id]);
 
   useEffect(() => {
-    async function fetchSlots() {
-      if (!activeClub?.id) return;
-      const slots = await getClubPublishedSlotsFirestore(activeClub.id, currentDate.value);
-      setPublishedSlots(slots || {});
-    }
-    fetchSlots();
-  }, [activeClub?.id, currentDate.value]);
+    loadActiveSlots();
+  }, [loadActiveSlots]);
 
-  // Handle slot toggle
-  const handleToggleSlot = async (courtId: string, time: string) => {
+  // Publish a new slot handler
+  const handlePublishNewSlot = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!activeClub?.id) return;
-    const slotKey = `${courtId}_${time}`;
-    const nextState = !publishedSlots[slotKey];
-    const updated = { ...publishedSlots, [slotKey]: nextState };
-    setPublishedSlots(updated);
-    await saveClubPublishedSlotsFirestore(activeClub.id, currentDate.value, updated);
+
+    const targetCourt = courts.find((c) => c.id === publishCourtId) || courts[0];
+    if (!targetCourt) {
+      setPublishError('Debés registrar o seleccionar una cancha antes de publicar.');
+      return;
+    }
+    if (!publishDate) {
+      setPublishError('Seleccioná la fecha del turno.');
+      return;
+    }
+    if (!publishStartTime) {
+      setPublishError('Seleccioná la hora de inicio del turno.');
+      return;
+    }
+
+    setIsPublishingSlot(true);
+    setPublishError('');
+
+    const calculatedEnd = calculateEndTime(publishStartTime, publishDuration);
+    const newSlotId = `slot_${activeClub.id}_${targetCourt.id}_${publishDate}_${publishStartTime.replace(':', '')}_${Date.now()}`;
+
+    const newRecord: PublishedSlotRecord = {
+      id: newSlotId,
+      clubId: activeClub.id,
+      courtId: targetCourt.id,
+      courtName: targetCourt.name,
+      sportType: targetCourt.sportType,
+      date: publishDate,
+      startTime: publishStartTime,
+      endTime: calculatedEnd,
+      durationMinutes: publishDuration,
+      price: Number(publishPrice) || targetCourt.pricePerHour || 24000,
+      isCovered: publishIsCovered,
+      hasLighting: publishHasLighting,
+      surface: targetCourt.surface,
+      notes: publishNotes.trim() || undefined,
+      status: 'ACTIVE',
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
+      const ok = await saveClubActiveSlotFirestore(activeClub.id, newRecord);
+      if (ok) {
+        setActiveSlots((prev) => [newRecord, ...prev.filter((s) => s.id !== newSlotId)]);
+        setIsPublishModalOpen(false);
+        setPublishNotes('');
+      } else {
+        setPublishError('No se pudo guardar el turno en Firebase. Intente nuevamente.');
+      }
+    } catch (err: any) {
+      console.error('Error publishing slot:', err);
+      setPublishError(err?.message || 'Error al guardar el turno');
+    } finally {
+      setIsPublishingSlot(false);
+    }
   };
+
+  // Delete an active slot
+  const handleConfirmDeleteSlot = async () => {
+    if (!activeClub?.id || !slotToDelete) return;
+    setIsDeletingSlot(true);
+    try {
+      const ok = await deleteClubActiveSlotFirestore(activeClub.id, slotToDelete.id);
+      if (ok) {
+        setActiveSlots((prev) => prev.filter((s) => s.id !== slotToDelete.id));
+        setSlotToDelete(null);
+      }
+    } catch (err) {
+      console.error('Error deleting active slot:', err);
+    } finally {
+      setIsDeletingSlot(false);
+    }
+  };
+
+  const todayStr = useMemo(() => getTodayString(), []);
+  const tomorrowStr = useMemo(() => getTomorrowString(), []);
+
+  const filteredActiveSlots = useMemo(() => {
+    return activeSlots.filter((slot) => {
+      if (activeSlotsFilter === 'TODAY') return slot.date === todayStr;
+      if (activeSlotsFilter === 'TOMORROW') return slot.date === tomorrowStr;
+      if (activeSlotsFilter === 'UPCOMING') return slot.date > tomorrowStr;
+      return true;
+    });
+  }, [activeSlots, activeSlotsFilter, todayStr, tomorrowStr]);
+
+  const todaySlotsCount = useMemo(() => {
+    return activeSlots.filter((s) => s.date === todayStr).length;
+  }, [activeSlots, todayStr]);
+
+  const tomorrowSlotsCount = useMemo(() => {
+    return activeSlots.filter((s) => s.date === tomorrowStr).length;
+  }, [activeSlots, tomorrowStr]);
+
+  const upcomingSlotsCount = useMemo(() => {
+    return activeSlots.filter((s) => s.date > tomorrowStr).length;
+  }, [activeSlots, tomorrowStr]);
 
   // Actions: Accept / Reject Booking
   const handleAccept = async (bookingId: string) => {
@@ -1153,13 +1509,12 @@ export default function ClubPage() {
       </header>
 
       {/* ═══════════════════════════════════════════════════════
-          SUB-HEADER: Sliding Pill Navigation Bar
+          SUB-HEADER: Sliding Pill Navigation Bar (Seamless, No Divider Line)
           ═══════════════════════════════════════════════════════ */}
       <div
         style={{
-          borderBottom: '1px solid var(--color-graphite)',
-          backgroundColor: 'var(--color-obsidian)',
-          padding: '12px 36px',
+          backgroundColor: 'transparent',
+          padding: '16px 36px 4px',
         }}
       >
         <div style={{ maxWidth: 1280, margin: '0 auto' }}>
@@ -1240,6 +1595,20 @@ export default function ClubPage() {
             >
               <Icons.Calendar size={14} />
               <span>Publicar Turnos</span>
+              {activeSlots.length > 0 && (
+                <span
+                  style={{
+                    backgroundColor: activeTab === 'PUBLISH_SLOTS' ? '#ffffff' : 'rgba(255, 255, 255, 0.1)',
+                    color: activeTab === 'PUBLISH_SLOTS' ? 'var(--color-crimson-signal)' : 'var(--color-frost)',
+                    fontSize: 11,
+                    fontWeight: 800,
+                    padding: '1px 7px',
+                    borderRadius: 'var(--radius-full)',
+                  }}
+                >
+                  {activeSlots.length}
+                </span>
+              )}
             </button>
 
             <button
@@ -1564,143 +1933,411 @@ export default function ClubPage() {
           </div>
         )}
 
-        {/* ─── TAB 2: PUBLICAR TURNOS VACANTES ─── */}
+        {/* ─── TAB 2: GESTIÓN Y PUBLICACIÓN DE TURNOS LIBRES ─── */}
         {activeTab === 'PUBLISH_SLOTS' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-            {/* Header info */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+            {/* Header & CTA Banner */}
             <div
               style={{
                 backgroundColor: 'var(--color-obsidian)',
                 border: '1px solid var(--color-graphite)',
                 borderRadius: '0px',
-                padding: '18px 24px',
+                padding: '28px 32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: 20,
               }}
             >
-              <h3 style={{ fontSize: 16, fontWeight: 800, margin: '0 0 4px' }}>
-                PUBLICAR TURNOS VACANTES
-              </h3>
-              <p style={{ color: 'var(--color-ash)', fontSize: 13, margin: 0 }}>
-                Habilitá únicamente los horarios que tenés libres o que se cancelaron a último momento. Los jugadores solo verán en verde los turnos que marques acá.
-              </p>
-            </div>
-
-            {/* Date Pill Picker */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
-              {[0, 1, 2, 3, 4, 5, 6].map((offset) => {
-                const item = getFormattedDate(offset);
-                const isSelected = dateOffset === offset;
-                return (
-                  <button
-                    key={offset}
-                    type="button"
-                    onClick={() => setDateOffset(offset)}
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      padding: '8px 18px',
-                      borderRadius: 'var(--radius-full)',
-                      backgroundColor: isSelected ? 'var(--color-crimson-signal)' : 'var(--color-surface-elevate)',
-                      color: isSelected ? '#ffffff' : 'var(--color-ash)',
-                      border: isSelected ? '1px solid var(--color-crimson-signal)' : '1px solid var(--color-graphite)',
-                      cursor: 'pointer',
-                      minWidth: 90,
-                    }}
-                  >
-                    <span style={{ fontSize: 13, fontWeight: 800 }}>{item.label}</span>
-                    <span style={{ fontSize: 11, opacity: 0.8 }}>{item.sublabel}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Court Slots Grid */}
-            {courts.length === 0 ? (
-              <div
-                style={{
-                  backgroundColor: 'var(--color-obsidian)',
-                  border: '1px solid var(--color-graphite)',
-                  borderRadius: '0px',
-                  padding: '48px 24px',
-                  textAlign: 'center',
-                }}
-              >
-                <p style={{ color: 'var(--color-ash)', fontSize: 14, margin: '0 0 16px' }}>
-                  No tenés canchas registradas en Firebase para este club todavía.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('COURTS')}
+              <div style={{ maxWidth: 680 }}>
+                <span
                   style={{
-                    backgroundColor: 'var(--color-crimson-signal)',
-                    color: '#ffffff',
-                    border: 'none',
-                    borderRadius: 'var(--radius-full)',
-                    padding: '9px 20px',
-                    fontSize: 13,
+                    display: 'block',
+                    fontSize: 11,
                     fontWeight: 700,
-                    cursor: 'pointer',
+                    letterSpacing: '1.2px',
+                    color: 'var(--color-crimson-signal)',
+                    textTransform: 'uppercase',
+                    marginBottom: 6,
                   }}
                 >
-                  + Ir a Mis Canchas para crear una
-                </button>
+                  02 / GESTIÓN DE DISPONIBILIDAD
+                </span>
+                <h3 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 8px', color: 'var(--color-frost)', letterSpacing: '-0.5px' }}>
+                  PUBLICAR TURNOS LIBRES A LA VENTA
+                </h3>
+                <p style={{ color: 'var(--color-ash)', fontSize: 13, lineHeight: 1.6, margin: 0 }}>
+                  Subí únicamente los turnos que tenés libres o que se cancelaron a último momento. Los jugadores de la comunidad podrán encontrarlos y reservarlos directamente desde la web.
+                </p>
               </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                {courts.map((court) => (
-                  <div
-                    key={court.id}
+
+              {/* Prominent CTA: + Publicar turno nuevo */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (courts.length > 0) {
+                    const defaultCourt = courts[0];
+                    setPublishCourtId(defaultCourt.id);
+                    setPublishPrice(defaultCourt.pricePerHour || 24000);
+                    setPublishIsCovered(defaultCourt.isCovered ?? true);
+                    setPublishHasLighting(defaultCourt.hasLighting ?? true);
+                  }
+                  setPublishDate(getTodayString());
+                  setPublishStartTime('19:00');
+                  setPublishDuration(90);
+                  setPublishNotes('');
+                  setPublishError('');
+                  setCalendarMonth(new Date());
+                  setIsPublishModalOpen(true);
+                }}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  backgroundColor: 'var(--color-crimson-signal)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: 'var(--radius-full)',
+                  padding: '14px 28px',
+                  fontSize: 13,
+                  fontWeight: 800,
+                  fontFamily: "'Space Grotesk', sans-serif",
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.6px',
+                  cursor: 'pointer',
+                  boxShadow: '0 0 28px rgba(252, 28, 70, 0.4)',
+                }}
+              >
+                <Icons.Plus size={16} />
+                <span>Publicar Turno Nuevo</span>
+              </button>
+            </div>
+
+            {/* Active Published Slots Section */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <h4 style={{ fontSize: 16, fontWeight: 800, margin: 0, color: 'var(--color-frost)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Turnos Publicados y Activos
+                  </h4>
+                  <span
                     style={{
-                      backgroundColor: 'var(--color-obsidian)',
-                      border: '1px solid var(--color-graphite)',
-                      borderRadius: '0px',
-                      padding: '20px 24px',
+                      fontSize: 11,
+                      fontWeight: 800,
+                      padding: '3px 10px',
+                      borderRadius: 'var(--radius-full)',
+                      backgroundColor: activeSlots.length > 0 ? 'rgba(16, 185, 129, 0.15)' : 'var(--color-surface-elevate)',
+                      color: activeSlots.length > 0 ? 'var(--color-emerald)' : 'var(--color-ash)',
+                      border: activeSlots.length > 0 ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid var(--color-graphite)',
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <h4 style={{ fontSize: 17, fontWeight: 800, margin: 0 }}>{court.name}</h4>
-                        <SportBadge sports={[court.sportType]} size="sm" />
-                      </div>
-                      <span style={{ fontSize: 13, color: 'var(--color-ash)' }}>
-                        Tarifa: <strong style={{ color: 'var(--color-frost)' }}>{formatCurrency(court.pricePerHour)}</strong>
-                      </span>
-                    </div>
+                    {activeSlots.length} {activeSlots.length === 1 ? 'TURNO DISPONIBLE' : 'TURNOS DISPONIBLES'}
+                  </span>
+                </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 10 }}>
-                      {DEFAULT_HOURS.map((hour) => {
-                        const key = `${court.id}_${hour}`;
-                        const isPublished = !!publishedSlots[key];
+                {/* Filter Pills */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflowX: 'auto' }}>
+                  {[
+                    { key: 'ALL', label: `Todos (${activeSlots.length})` },
+                    { key: 'TODAY', label: `Hoy (${todaySlotsCount})` },
+                    { key: 'TOMORROW', label: `Mañana (${tomorrowSlotsCount})` },
+                    { key: 'UPCOMING', label: `Próximos Días (${upcomingSlotsCount})` },
+                  ].map((filterItem) => {
+                    const isSelected = activeSlotsFilter === filterItem.key;
+                    return (
+                      <button
+                        key={filterItem.key}
+                        type="button"
+                        onClick={() => setActiveSlotsFilter(filterItem.key as any)}
+                        style={{
+                          padding: '6px 14px',
+                          borderRadius: 'var(--radius-full)',
+                          fontSize: 12,
+                          fontWeight: 700,
+                          backgroundColor: isSelected ? 'var(--color-frost)' : 'var(--color-surface-elevate)',
+                          color: isSelected ? '#000000' : 'var(--color-ash)',
+                          border: isSelected ? '1px solid var(--color-frost)' : '1px solid var(--color-graphite)',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        {filterItem.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
 
-                        return (
-                          <button
-                            key={hour}
-                            type="button"
-                            onClick={() => handleToggleSlot(court.id, hour)}
+              {/* Slots List / Grid */}
+              {isLoadingSlots ? (
+                <div
+                  style={{
+                    backgroundColor: 'var(--color-obsidian)',
+                    border: '1px solid var(--color-graphite)',
+                    borderRadius: '0px',
+                    padding: '40px 24px',
+                    textAlign: 'center',
+                    color: 'var(--color-ash)',
+                    fontSize: 13,
+                  }}
+                >
+                  Cargando turnos activos desde Firebase...
+                </div>
+              ) : filteredActiveSlots.length === 0 ? (
+                <div
+                  style={{
+                    backgroundColor: 'var(--color-obsidian)',
+                    border: '1px dashed var(--color-graphite)',
+                    borderRadius: '0px',
+                    padding: '56px 24px',
+                    textAlign: 'center',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 52,
+                      height: 52,
+                      borderRadius: '50%',
+                      backgroundColor: 'var(--color-surface-elevate)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      margin: '0 auto 16px',
+                      color: 'var(--color-ash)',
+                    }}
+                  >
+                    <Icons.Calendar size={24} />
+                  </div>
+                  <h4 style={{ fontSize: 16, fontWeight: 800, margin: '0 0 6px', color: 'var(--color-frost)' }}>
+                    {activeSlotsFilter === 'ALL'
+                      ? 'No tenés turnos publicados actualmente'
+                      : 'No hay turnos publicados para el filtro seleccionado'}
+                  </h4>
+                  <p style={{ color: 'var(--color-ash)', fontSize: 13, margin: '0 auto 20px', maxWidth: 460, lineHeight: 1.5 }}>
+                    Subí los horarios vacantes de tus canchas con un click. Cuando un jugador reserve, te llegará una solicitud para aceptar o rechazar.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (courts.length > 0) {
+                        const defaultCourt = courts[0];
+                        setPublishCourtId(defaultCourt.id);
+                        setPublishPrice(defaultCourt.pricePerHour || 24000);
+                        setPublishIsCovered(defaultCourt.isCovered ?? true);
+                        setPublishHasLighting(defaultCourt.hasLighting ?? true);
+                      }
+                      setPublishDate(getTodayString());
+                      setPublishStartTime('19:00');
+                      setPublishDuration(90);
+                      setPublishNotes('');
+                      setPublishError('');
+                      setCalendarMonth(new Date());
+                      setIsPublishModalOpen(true);
+                    }}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      backgroundColor: 'var(--color-surface-elevate)',
+                      color: 'var(--color-frost)',
+                      border: '1px solid var(--color-graphite)',
+                      borderRadius: 'var(--radius-full)',
+                      padding: '10px 22px',
+                      fontSize: 13,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <Icons.Plus size={14} />
+                    <span>Publicar Turno Nuevo</span>
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 16 }}>
+                  {filteredActiveSlots.map((slot) => {
+                    const badge = formatSlotDateBadge(slot.date);
+                    const perPlayer = Math.round(slot.price / (slot.sportType === 'PADEL' ? 4 : 10));
+
+                    return (
+                      <div
+                        key={slot.id}
+                        style={{
+                          backgroundColor: 'var(--color-obsidian)',
+                          border: '1px solid var(--color-graphite)',
+                          borderRadius: '0px',
+                          padding: '20px 24px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'space-between',
+                          gap: 16,
+                          position: 'relative',
+                        }}
+                      >
+                        {/* Top: Date & Live Status */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+                          <div
                             style={{
                               display: 'flex',
                               alignItems: 'center',
-                              justifyContent: 'space-between',
-                              padding: '10px 14px',
+                              gap: 6,
+                              backgroundColor: badge.isToday ? 'rgba(252, 28, 70, 0.15)' : 'var(--color-surface-elevate)',
+                              color: badge.isToday ? 'var(--color-crimson-signal)' : 'var(--color-frost)',
+                              border: badge.isToday ? '1px solid var(--color-crimson-signal)' : '1px solid var(--color-graphite)',
                               borderRadius: 'var(--radius-full)',
-                              backgroundColor: isPublished ? 'rgba(16, 185, 129, 0.15)' : 'var(--color-surface-elevate)',
-                              color: isPublished ? 'var(--color-emerald)' : 'var(--color-ash)',
-                              border: isPublished ? '1px solid var(--color-emerald)' : '1px solid var(--color-graphite)',
-                              cursor: 'pointer',
-                              fontSize: 13,
-                              fontWeight: 700,
+                              padding: '4px 12px',
+                              fontSize: 11,
+                              fontWeight: 800,
+                              letterSpacing: '0.4px',
                             }}
                           >
-                            <span>{hour} hs</span>
-                            {isPublished ? <Icons.Check size={14} color="var(--color-emerald)" /> : <span style={{ fontSize: 10, opacity: 0.5 }}>LIBRE</span>}
+                            <Icons.Calendar size={12} />
+                            <span>{badge.main}</span>
+                          </div>
+
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 6,
+                              backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                              color: 'var(--color-emerald)',
+                              border: '1px solid rgba(16, 185, 129, 0.25)',
+                              borderRadius: 'var(--radius-full)',
+                              padding: '4px 10px',
+                              fontSize: 10,
+                              fontWeight: 800,
+                              letterSpacing: '0.5px',
+                              textTransform: 'uppercase',
+                            }}
+                          >
+                            <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: 'var(--color-emerald)' }} />
+                            <span>EN VENTA · WEB</span>
+                          </div>
+                        </div>
+
+                        {/* Mid: Time slot & Court details */}
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 8 }}>
+                            <Icons.Clock size={16} color="var(--color-crimson-signal)" />
+                            <span style={{ fontSize: 22, fontWeight: 800, color: 'var(--color-frost)', letterSpacing: '-0.5px' }}>
+                              {slot.startTime} a {slot.endTime} hs
+                            </span>
+                            <span style={{ fontSize: 12, color: 'var(--color-ash)', fontWeight: 600 }}>
+                              ({slot.durationMinutes} min)
+                            </span>
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-frost)' }}>
+                              {slot.courtName}
+                            </span>
+                            <SportBadge sports={[slot.sportType]} size="sm" />
+                          </div>
+
+                          {/* Amenity tags */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                            {slot.isCovered && (
+                              <span
+                                style={{
+                                  fontSize: 10,
+                                  fontWeight: 700,
+                                  color: 'var(--color-ash)',
+                                  backgroundColor: 'var(--color-surface-elevate)',
+                                  padding: '2px 8px',
+                                  borderRadius: 'var(--radius-full)',
+                                  border: '1px solid var(--color-graphite)',
+                                }}
+                              >
+                                Techada
+                              </span>
+                            )}
+                            {slot.hasLighting && (
+                              <span
+                                style={{
+                                  fontSize: 10,
+                                  fontWeight: 700,
+                                  color: 'var(--color-ash)',
+                                  backgroundColor: 'var(--color-surface-elevate)',
+                                  padding: '2px 8px',
+                                  borderRadius: 'var(--radius-full)',
+                                  border: '1px solid var(--color-graphite)',
+                                }}
+                              >
+                                Luz LED
+                              </span>
+                            )}
+                            {slot.surface && (
+                              <span
+                                style={{
+                                  fontSize: 10,
+                                  color: 'var(--color-ash)',
+                                  backgroundColor: 'transparent',
+                                  padding: '2px 4px',
+                                  opacity: 0.8,
+                                }}
+                              >
+                                {slot.surface}
+                              </span>
+                            )}
+                          </div>
+
+                          {slot.notes && (
+                            <p style={{ margin: '8px 0 0', fontSize: 12, color: 'var(--color-ash)', fontStyle: 'italic', opacity: 0.85 }}>
+                              &ldquo;{slot.notes}&rdquo;
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Bottom: Price & Delete Action */}
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            paddingTop: 12,
+                            borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+                          }}
+                        >
+                          <div>
+                            <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--color-frost)' }}>
+                              {formatCurrency(slot.price)}
+                            </span>
+                            <span style={{ display: 'block', fontSize: 11, color: 'var(--color-ash)' }}>
+                              {formatCurrency(perPlayer)} por jugador
+                            </span>
+                          </div>
+
+                          {/* Delete / Remove Action Button */}
+                          <button
+                            type="button"
+                            onClick={() => setSlotToDelete(slot)}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 6,
+                              backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                              color: '#ef4444',
+                              border: '1px solid rgba(239, 68, 68, 0.35)',
+                              borderRadius: 'var(--radius-full)',
+                              padding: '7px 14px',
+                              fontSize: 11,
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease',
+                            }}
+                            title="Eliminar este turno de la web si ya se reservó de forma presencial o telefónica"
+                          >
+                            <Icons.Trash size={12} color="#ef4444" />
+                            <span>Eliminar</span>
                           </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -2306,6 +2943,532 @@ export default function ClubPage() {
                 }}
               >
                 Guardar Cancha
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════
+          MODAL: PUBLICAR TURNO NUEVO (CALENDARIO Y ESPECIFICACIONES)
+          ═══════════════════════════════════════════════════════ */}
+      {isPublishModalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 100,
+            backgroundColor: 'rgba(0, 0, 0, 0.88)',
+            backdropFilter: 'blur(12px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+            overflowY: 'auto',
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: 'var(--color-obsidian)',
+              border: '1px solid var(--color-graphite)',
+              borderRadius: '0px',
+              padding: '36px',
+              maxWidth: 620,
+              width: '100%',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+            }}
+          >
+            {/* Modal Header */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
+              <div>
+                <span
+                  style={{
+                    display: 'block',
+                    fontSize: 10,
+                    fontWeight: 700,
+                    color: 'var(--color-crimson-signal)',
+                    letterSpacing: '1.2px',
+                    textTransform: 'uppercase',
+                    marginBottom: 4,
+                  }}
+                >
+                  DISPATCHER / PUBLICACIÓN DIRECTA
+                </span>
+                <h3 style={{ fontSize: 20, fontWeight: 800, margin: 0, color: 'var(--color-frost)' }}>
+                  PUBLICAR TURNO NUEVO
+                </h3>
+                <p style={{ color: 'var(--color-ash)', fontSize: 13, margin: '4px 0 0' }}>
+                  Configurá los datos para habilitar el turno libre a la venta en la plataforma.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsPublishModalOpen(false)}
+                style={{
+                  backgroundColor: 'transparent',
+                  border: '1px solid var(--color-graphite)',
+                  borderRadius: 'var(--radius-full)',
+                  width: 32,
+                  height: 32,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--color-ash)',
+                  cursor: 'pointer',
+                }}
+              >
+                <Icons.Close size={15} />
+              </button>
+            </div>
+
+            <form onSubmit={handlePublishNewSlot} style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+              {/* Field 1: Court Selector */}
+              <div>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--color-ash)', textTransform: 'uppercase', marginBottom: 8, letterSpacing: '0.5px' }}>
+                  1. Cancha
+                </label>
+                {courts.length === 0 ? (
+                  <div
+                    style={{
+                      padding: '14px 16px',
+                      backgroundColor: 'var(--color-surface-elevate)',
+                      border: '1px solid var(--color-graphite)',
+                      borderRadius: '0px',
+                      fontSize: 13,
+                      color: 'var(--color-ash)',
+                    }}
+                  >
+                    No tenés canchas creadas aún.{' '}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsPublishModalOpen(false);
+                        setActiveTab('COURTS');
+                      }}
+                      style={{
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        color: 'var(--color-crimson-signal)',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        textDecoration: 'underline',
+                      }}
+                    >
+                      Ir a Mis Canchas para crear una
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 8 }}>
+                    {courts.map((court) => {
+                      const isSelected = publishCourtId === court.id;
+                      return (
+                        <button
+                          key={court.id}
+                          type="button"
+                          onClick={() => {
+                            setPublishCourtId(court.id);
+                            setPublishPrice(court.pricePerHour || 24000);
+                            setPublishIsCovered(court.isCovered ?? true);
+                            setPublishHasLighting(court.hasLighting ?? true);
+                          }}
+                          style={{
+                            padding: '10px 14px',
+                            borderRadius: 'var(--radius-full)',
+                            backgroundColor: isSelected ? 'rgba(252, 28, 70, 0.12)' : 'var(--color-surface-elevate)',
+                            border: isSelected ? '1px solid var(--color-crimson-signal)' : '1px solid var(--color-graphite)',
+                            color: isSelected ? '#ffffff' : 'var(--color-ash)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontSize: 13, fontWeight: 700 }}>{court.name}</span>
+                            <SportBadge sports={[court.sportType]} size="sm" />
+                          </div>
+                          <span style={{ fontSize: 11, fontWeight: 600, opacity: 0.8 }}>
+                            {formatCurrency(court.pricePerHour)}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Field 2: Date Selector with Interactive Calendar */}
+              <div>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--color-ash)', textTransform: 'uppercase', marginBottom: 8, letterSpacing: '0.5px' }}>
+                  2. Fecha del Turno (Calendario)
+                </label>
+
+                {/* Quick Pick Chips */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+                  {[
+                    { label: 'Hoy', val: getTodayString() },
+                    { label: 'Mañana', val: getTomorrowString() },
+                    { label: 'Pasado Mañana', val: getAfterTomorrowString() },
+                  ].map((quick) => {
+                    const isSelected = publishDate === quick.val;
+                    return (
+                      <button
+                        key={quick.val}
+                        type="button"
+                        onClick={() => setPublishDate(quick.val)}
+                        style={{
+                          padding: '6px 14px',
+                          borderRadius: 'var(--radius-full)',
+                          fontSize: 12,
+                          fontWeight: 700,
+                          backgroundColor: isSelected ? 'var(--color-frost)' : 'var(--color-surface-elevate)',
+                          color: isSelected ? '#000000' : 'var(--color-ash)',
+                          border: isSelected ? '1px solid var(--color-frost)' : '1px solid var(--color-graphite)',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {quick.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Visual Monthly Calendar Grid */}
+                <CalendarWidget
+                  selectedDate={publishDate}
+                  onSelectDate={(dateStr) => setPublishDate(dateStr)}
+                  calendarMonth={calendarMonth}
+                  onChangeMonth={(delta) => {
+                    const next = new Date(calendarMonth);
+                    next.setMonth(next.getMonth() + delta);
+                    setCalendarMonth(next);
+                  }}
+                />
+
+                {/* Selected Date Confirmation Pill */}
+                <div
+                  style={{
+                    marginTop: 10,
+                    padding: '8px 14px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                    border: '1px solid var(--color-graphite)',
+                    borderRadius: 'var(--radius-full)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    fontSize: 12,
+                    color: 'var(--color-frost)',
+                  }}
+                >
+                  <Icons.Calendar size={14} color="var(--color-crimson-signal)" />
+                  <span>
+                    Fecha seleccionada: <strong>{formatSlotDateBadge(publishDate).main}</strong> ({publishDate})
+                  </span>
+                </div>
+              </div>
+
+              {/* Field 3: Time & Duration */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--color-ash)', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '0.5px' }}>
+                    3. Hora de Inicio
+                  </label>
+                  <select
+                    value={publishStartTime}
+                    onChange={(e) => setPublishStartTime(e.target.value)}
+                    style={{
+                      width: '100%',
+                      backgroundColor: 'var(--color-surface-elevate)',
+                      color: 'var(--color-frost)',
+                      border: '1px solid var(--color-graphite)',
+                      borderRadius: '0px',
+                      padding: '10px 14px',
+                      fontSize: 14,
+                      fontWeight: 700,
+                      outline: 'none',
+                    }}
+                  >
+                    {AVAILABLE_START_HOURS.map((hr) => (
+                      <option key={hr} value={hr} style={{ backgroundColor: '#141414', color: '#ffffff' }}>
+                        {hr} hs
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--color-ash)', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '0.5px' }}>
+                    Duración
+                  </label>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {[60, 90, 120].map((dur) => {
+                      const isSelected = publishDuration === dur;
+                      return (
+                        <button
+                          key={dur}
+                          type="button"
+                          onClick={() => setPublishDuration(dur)}
+                          style={{
+                            flex: 1,
+                            padding: '10px 8px',
+                            borderRadius: 'var(--radius-full)',
+                            backgroundColor: isSelected ? 'var(--color-crimson-signal)' : 'var(--color-surface-elevate)',
+                            color: isSelected ? '#ffffff' : 'var(--color-ash)',
+                            border: isSelected ? '1px solid var(--color-crimson-signal)' : '1px solid var(--color-graphite)',
+                            fontSize: 12,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            textAlign: 'center',
+                          }}
+                        >
+                          {dur} min
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Time Range Calculation Feedback */}
+              <div
+                style={{
+                  padding: '8px 14px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                  border: '1px solid var(--color-graphite)',
+                  borderRadius: 'var(--radius-full)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  fontSize: 12,
+                  color: 'var(--color-frost)',
+                }}
+              >
+                <Icons.Clock size={14} color="var(--color-crimson-signal)" />
+                <span>
+                  Horario resultante: <strong>{publishStartTime} a {calculateEndTime(publishStartTime, publishDuration)} hs</strong> ({publishDuration} minutos)
+                </span>
+              </div>
+
+              {/* Field 4: Price */}
+              <div>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--color-ash)', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '0.5px' }}>
+                  4. Tarifa del Turno ($ ARS)
+                </label>
+                <input
+                  type="number"
+                  value={publishPrice}
+                  onChange={(e) => setPublishPrice(Math.max(0, Number(e.target.value)))}
+                  placeholder="24000"
+                  style={{
+                    width: '100%',
+                    backgroundColor: 'var(--color-surface-elevate)',
+                    color: 'var(--color-frost)',
+                    border: '1px solid var(--color-graphite)',
+                    borderRadius: '0px',
+                    padding: '10px 14px',
+                    fontSize: 15,
+                    fontWeight: 800,
+                    outline: 'none',
+                  }}
+                />
+                <span style={{ display: 'block', fontSize: 11, color: 'var(--color-ash)', marginTop: 4 }}>
+                  Precio estimado por jugador: <strong>{formatCurrency(Math.round(publishPrice / (publishCourtId && courts.find(c => c.id === publishCourtId)?.sportType === 'PADEL' ? 4 : 10)))}</strong>
+                </span>
+              </div>
+
+              {/* Field 5: Specifications & Notes */}
+              <div>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--color-ash)', textTransform: 'uppercase', marginBottom: 8, letterSpacing: '0.5px' }}>
+                  5. Especificaciones & Amenities
+                </label>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
+                  <button
+                    type="button"
+                    onClick={() => setPublishIsCovered(!publishIsCovered)}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: 'var(--radius-full)',
+                      backgroundColor: publishIsCovered ? 'rgba(16, 185, 129, 0.15)' : 'var(--color-surface-elevate)',
+                      color: publishIsCovered ? 'var(--color-emerald)' : 'var(--color-ash)',
+                      border: publishIsCovered ? '1px solid var(--color-emerald)' : '1px solid var(--color-graphite)',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    {publishIsCovered && <Icons.Check size={13} color="var(--color-emerald)" />}
+                    <span>Cancha Techada / Cubierta</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPublishHasLighting(!publishHasLighting)}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: 'var(--radius-full)',
+                      backgroundColor: publishHasLighting ? 'rgba(16, 185, 129, 0.15)' : 'var(--color-surface-elevate)',
+                      color: publishHasLighting ? 'var(--color-emerald)' : 'var(--color-ash)',
+                      border: publishHasLighting ? '1px solid var(--color-emerald)' : '1px solid var(--color-graphite)',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    {publishHasLighting && <Icons.Check size={13} color="var(--color-emerald)" />}
+                    <span>Iluminación LED Nocturna</span>
+                  </button>
+                </div>
+
+                <input
+                  type="text"
+                  value={publishNotes}
+                  onChange={(e) => setPublishNotes(e.target.value)}
+                  placeholder="Nota opcional (ej: Turno liberado por cancelación, Horario central disponible)"
+                  style={{
+                    width: '100%',
+                    backgroundColor: 'var(--color-surface-elevate)',
+                    color: 'var(--color-frost)',
+                    border: '1px solid var(--color-graphite)',
+                    borderRadius: '0px',
+                    padding: '10px 14px',
+                    fontSize: 13,
+                    outline: 'none',
+                  }}
+                />
+              </div>
+
+              {publishError && (
+                <div style={{ color: '#ef4444', fontSize: 12, fontWeight: 600 }}>
+                  {publishError}
+                </div>
+              )}
+
+              {/* Modal Actions */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 12, paddingTop: 10 }}>
+                <button
+                  type="button"
+                  onClick={() => setIsPublishModalOpen(false)}
+                  style={{
+                    backgroundColor: 'transparent',
+                    color: 'var(--color-ash)',
+                    border: '1px solid var(--color-graphite)',
+                    borderRadius: 'var(--radius-full)',
+                    padding: '10px 20px',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancelar
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={isPublishingSlot || courts.length === 0}
+                  style={{
+                    backgroundColor: 'var(--color-crimson-signal)',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: 'var(--radius-full)',
+                    padding: '12px 28px',
+                    fontSize: 13,
+                    fontWeight: 800,
+                    cursor: isPublishingSlot || courts.length === 0 ? 'not-allowed' : 'pointer',
+                    opacity: isPublishingSlot || courts.length === 0 ? 0.6 : 1,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.6px',
+                  }}
+                >
+                  {isPublishingSlot ? 'Publicando...' : 'PUBLICAR TURNO A LA VENTA →'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════
+          MODAL: CONFIRMAR ELIMINACIÓN DE TURNO PUBLICADO
+          ═══════════════════════════════════════════════════════ */}
+      {slotToDelete && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 110,
+            backgroundColor: 'rgba(0, 0, 0, 0.88)',
+            backdropFilter: 'blur(10px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: 'var(--color-obsidian)',
+              border: '1px solid var(--color-graphite)',
+              borderRadius: '0px',
+              padding: '32px',
+              maxWidth: 480,
+              width: '100%',
+            }}
+          >
+            <div style={{ width: 44, height: 44, borderRadius: '50%', backgroundColor: 'rgba(239, 68, 68, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444', marginBottom: 16 }}>
+              <Icons.Trash size={20} />
+            </div>
+
+            <h3 style={{ fontSize: 18, fontWeight: 800, margin: '0 0 8px', color: 'var(--color-frost)' }}>
+              ¿Eliminar este turno publicado?
+            </h3>
+            <p style={{ fontSize: 13, color: 'var(--color-ash)', lineHeight: 1.6, margin: '0 0 20px' }}>
+              El turno de <strong>{slotToDelete.courtName}</strong> para el <strong>{formatSlotDateBadge(slotToDelete.date).main}</strong> ({slotToDelete.startTime} a {slotToDelete.endTime} hs) ya no estará visible ni disponible para reserva en la plataforma.
+            </p>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10 }}>
+              <button
+                type="button"
+                onClick={() => setSlotToDelete(null)}
+                style={{
+                  padding: '9px 18px',
+                  borderRadius: 'var(--radius-full)',
+                  backgroundColor: 'transparent',
+                  color: 'var(--color-ash)',
+                  border: '1px solid var(--color-graphite)',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                onClick={handleConfirmDeleteSlot}
+                disabled={isDeletingSlot}
+                style={{
+                  padding: '9px 20px',
+                  borderRadius: 'var(--radius-full)',
+                  backgroundColor: '#ef4444',
+                  color: '#ffffff',
+                  border: 'none',
+                  fontSize: 13,
+                  fontWeight: 800,
+                  cursor: isDeletingSlot ? 'not-allowed' : 'pointer',
+                  opacity: isDeletingSlot ? 0.7 : 1,
+                }}
+              >
+                {isDeletingSlot ? 'Eliminando...' : 'Sí, Eliminar Turno'}
               </button>
             </div>
           </div>

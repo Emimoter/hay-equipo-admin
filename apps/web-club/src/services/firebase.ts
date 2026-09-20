@@ -473,6 +473,142 @@ export async function updateBookingStatusFirestore(
   }
 }
 
+export interface PublishedSlotRecord {
+  id: string;
+  clubId: string;
+  courtId: string;
+  courtName: string;
+  sportType: 'PADEL' | 'FUTBOL_5' | 'FUTBOL_7' | 'FUTBOL_11';
+  date: string; // YYYY-MM-DD
+  startTime: string; // HH:mm
+  endTime: string; // HH:mm
+  durationMinutes: number;
+  price: number;
+  isCovered: boolean;
+  hasLighting: boolean;
+  surface?: string;
+  notes?: string;
+  status: 'ACTIVE' | 'BOOKED' | 'CANCELLED';
+  createdAt: string;
+}
+
+/**
+ * Retrieves all active published slots for a club
+ */
+export async function getClubActiveSlotsFirestore(clubId: string): Promise<PublishedSlotRecord[]> {
+  try {
+    const docKey = `club_slots_${clubId}`;
+    const snap = await getDoc(doc(dbFirestore, 'settings', docKey));
+    if (snap.exists() && Array.isArray(snap.data()?.slots)) {
+      return snap.data()?.slots as PublishedSlotRecord[];
+    }
+  } catch (e) {
+    console.error('Error fetching club active slots:', e);
+  }
+  return [];
+}
+
+/**
+ * Saves a new published slot or updates the list for a club
+ */
+export async function saveClubActiveSlotFirestore(
+  clubId: string,
+  newSlot: PublishedSlotRecord
+): Promise<boolean> {
+  try {
+    const docKey = `club_slots_${clubId}`;
+    const snap = await getDoc(doc(dbFirestore, 'settings', docKey));
+    let slots: PublishedSlotRecord[] = [];
+    if (snap.exists() && Array.isArray(snap.data()?.slots)) {
+      slots = snap.data()?.slots;
+    }
+    const filtered = slots.filter((s) => s.id !== newSlot.id);
+    filtered.unshift(newSlot);
+
+    await setDoc(
+      doc(dbFirestore, 'settings', docKey),
+      {
+        clubId,
+        slots: filtered,
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+
+    // Also update daily compatibility map
+    const dailyKey = `published_slots_${clubId}_${newSlot.date}`;
+    const dailySnap = await getDoc(doc(dbFirestore, 'settings', dailyKey));
+    const dailySlots = dailySnap.exists() ? dailySnap.data()?.slots || {} : {};
+    dailySlots[`${newSlot.courtId}_${newSlot.startTime}`] = true;
+    await setDoc(
+      doc(dbFirestore, 'settings', dailyKey),
+      {
+        clubId,
+        date: newSlot.date,
+        slots: dailySlots,
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+
+    return true;
+  } catch (e) {
+    console.error('Error saving active slot:', e);
+    return false;
+  }
+}
+
+/**
+ * Deletes / unpublishes a slot for a club
+ */
+export async function deleteClubActiveSlotFirestore(
+  clubId: string,
+  slotId: string
+): Promise<boolean> {
+  try {
+    const docKey = `club_slots_${clubId}`;
+    const snap = await getDoc(doc(dbFirestore, 'settings', docKey));
+    if (!snap.exists() || !Array.isArray(snap.data()?.slots)) {
+      return false;
+    }
+    const slots: PublishedSlotRecord[] = snap.data()?.slots;
+    const toDelete = slots.find((s) => s.id === slotId);
+    const updated = slots.filter((s) => s.id !== slotId);
+
+    await setDoc(
+      doc(dbFirestore, 'settings', docKey),
+      {
+        clubId,
+        slots: updated,
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+
+    if (toDelete) {
+      const dailyKey = `published_slots_${clubId}_${toDelete.date}`;
+      const dailySnap = await getDoc(doc(dbFirestore, 'settings', dailyKey));
+      if (dailySnap.exists()) {
+        const dailySlots = dailySnap.data()?.slots || {};
+        delete dailySlots[`${toDelete.courtId}_${toDelete.startTime}`];
+        await setDoc(
+          doc(dbFirestore, 'settings', dailyKey),
+          {
+            slots: dailySlots,
+            updatedAt: new Date().toISOString(),
+          },
+          { merge: true }
+        );
+      }
+    }
+
+    return true;
+  } catch (e) {
+    console.error('Error deleting active slot:', e);
+    return false;
+  }
+}
+
 /**
  * Gets published slots for a club on a specific date (e.g., '2026-09-20')
  */
