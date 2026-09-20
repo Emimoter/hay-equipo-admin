@@ -281,6 +281,16 @@ function formatSlotDateBadge(dateStr: string): { main: string; sub: string; isTo
   return { main: `${dayName} ${d} ${monthName}`, sub: `${d}/${m}`, isToday: false, isTomorrow: false };
 }
 
+function getSportLabel(sport?: string): string {
+  if (!sport) return 'Pádel';
+  if (sport === 'PADEL') return 'Pádel';
+  if (sport.startsWith('FUTBOL_5')) return 'Fútbol 5';
+  if (sport.startsWith('FUTBOL_7')) return 'Fútbol 7';
+  if (sport.startsWith('FUTBOL_11')) return 'Fútbol 11';
+  if (sport.startsWith('FUTBOL')) return 'Fútbol';
+  return sport;
+}
+
 const AVAILABLE_START_HOURS = [
   '07:00', '07:30', '08:00', '08:30', '09:00', '09:30',
   '10:00', '10:30', '11:00', '11:30', '12:00', '12:30',
@@ -2176,173 +2186,135 @@ export default function ClubPage() {
                           backgroundColor: 'var(--color-obsidian)',
                           border: '1px solid var(--color-graphite)',
                           borderRadius: '0px',
-                          padding: '20px 24px',
+                          padding: '22px 24px',
                           display: 'flex',
                           flexDirection: 'column',
                           justifyContent: 'space-between',
                           gap: 16,
                           position: 'relative',
+                          transition: 'border-color 0.2s ease',
                         }}
                       >
-                        {/* Top: Date & Live Status */}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-                          <div
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 6,
-                              backgroundColor: badge.isToday ? 'rgba(252, 28, 70, 0.15)' : 'var(--color-surface-elevate)',
-                              color: badge.isToday ? 'var(--color-crimson-signal)' : 'var(--color-frost)',
-                              border: badge.isToday ? '1px solid var(--color-crimson-signal)' : '1px solid var(--color-graphite)',
-                              borderRadius: 'var(--radius-full)',
-                              padding: '4px 12px',
-                              fontSize: 11,
-                              fontWeight: 800,
-                              letterSpacing: '0.4px',
-                            }}
-                          >
-                            <Icons.Calendar size={12} />
-                            <span>{badge.main}</span>
+                        {/* ── 1. Top Header: Fecha (Izq) y Estado Único (Der) ── */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                            <Icons.Calendar size={13} color="var(--color-ash)" />
+                            <span
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 800,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.8px',
+                                color: badge.isToday ? 'var(--color-frost)' : 'var(--color-ash)',
+                              }}
+                            >
+                              {badge.main}
+                            </span>
                           </div>
 
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                          {slot.isFixedSlot ? (
                             <div
                               style={{
-                                display: 'flex',
+                                display: 'inline-flex',
                                 alignItems: 'center',
-                                gap: 6,
-                                backgroundColor: 'rgba(16, 185, 129, 0.12)',
-                                color: 'var(--color-emerald)',
-                                border: '1px solid rgba(16, 185, 129, 0.25)',
+                                gap: 5,
+                                backgroundColor: 'rgba(252, 28, 70, 0.12)',
+                                color: 'var(--color-crimson-signal)',
+                                border: '1px solid rgba(252, 28, 70, 0.3)',
                                 borderRadius: 'var(--radius-full)',
-                                padding: '4px 10px',
+                                padding: '3px 10px',
                                 fontSize: 10,
                                 fontWeight: 800,
-                                letterSpacing: '0.5px',
+                                letterSpacing: '0.4px',
                                 textTransform: 'uppercase',
                               }}
                             >
-                              <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: 'var(--color-emerald)' }} />
-                              <span>EN VENTA · WEB</span>
+                              <Icons.Repeat size={10} color="var(--color-crimson-signal)" />
+                              <span>Turno Fijo</span>
                             </div>
-
-                            {slot.isFixedSlot && (
-                              <div
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: 5,
-                                  backgroundColor: 'rgba(252, 28, 70, 0.15)',
-                                  color: 'var(--color-crimson-signal)',
-                                  border: '1px solid rgba(252, 28, 70, 0.35)',
-                                  borderRadius: 'var(--radius-full)',
-                                  padding: '4px 10px',
-                                  fontSize: 10,
-                                  fontWeight: 800,
-                                  letterSpacing: '0.5px',
-                                  textTransform: 'uppercase',
-                                }}
-                              >
-                                <Icons.Repeat size={11} color="var(--color-crimson-signal)" />
-                                <span>TURNO FIJO DISPONIBLE</span>
-                              </div>
-                            )}
-                          </div>
+                          ) : (
+                            <div
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 6,
+                                backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                                color: 'var(--color-emerald)',
+                                border: '1px solid rgba(16, 185, 129, 0.2)',
+                                borderRadius: 'var(--radius-full)',
+                                padding: '3px 9px',
+                                fontSize: 10,
+                                fontWeight: 700,
+                                letterSpacing: '0.4px',
+                                textTransform: 'uppercase',
+                              }}
+                            >
+                              <span style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: 'var(--color-emerald)' }} />
+                              <span>Disponible</span>
+                            </div>
+                          )}
                         </div>
 
-                        {/* Mid: Time slot & Court details */}
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 8 }}>
-                            <Icons.Clock size={16} color="var(--color-crimson-signal)" />
-                            <span style={{ fontSize: 22, fontWeight: 800, color: 'var(--color-frost)', letterSpacing: '-0.5px' }}>
-                              {slot.startTime} a {slot.endTime} hs
+                        {/* ── 2. Horario Principal (Hero) & Cancha ── */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                            <span
+                              style={{
+                                fontSize: 26,
+                                fontWeight: 800,
+                                color: 'var(--color-frost)',
+                                letterSpacing: '-0.5px',
+                                lineHeight: 1.1,
+                              }}
+                            >
+                              {slot.startTime} — {slot.endTime}
                             </span>
-                            <span style={{ fontSize: 12, color: 'var(--color-ash)', fontWeight: 600 }}>
+                            <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--color-ash)' }}>
                               ({slot.durationMinutes} min)
                             </span>
                           </div>
 
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                             <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-frost)' }}>
                               {slot.courtName}
                             </span>
-                            <SportBadge sports={[slot.sportType]} size="sm" />
+                            <span
+                              style={{
+                                fontSize: 10,
+                                fontWeight: 700,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.5px',
+                                color: 'var(--color-ash)',
+                                backgroundColor: 'var(--color-surface-elevate)',
+                                border: '1px solid var(--color-graphite)',
+                                borderRadius: 'var(--radius-full)',
+                                padding: '2px 8px',
+                              }}
+                            >
+                              {getSportLabel(slot.sportType)}
+                            </span>
                           </div>
-
-                          {/* Amenity tags */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                            {slot.isCovered && (
-                              <span
-                                style={{
-                                  fontSize: 10,
-                                  fontWeight: 700,
-                                  color: 'var(--color-ash)',
-                                  backgroundColor: 'var(--color-surface-elevate)',
-                                  padding: '2px 8px',
-                                  borderRadius: 'var(--radius-full)',
-                                  border: '1px solid var(--color-graphite)',
-                                }}
-                              >
-                                Techada
-                              </span>
-                            )}
-                            {slot.hasLighting && (
-                              <span
-                                style={{
-                                  fontSize: 10,
-                                  fontWeight: 700,
-                                  color: 'var(--color-ash)',
-                                  backgroundColor: 'var(--color-surface-elevate)',
-                                  padding: '2px 8px',
-                                  borderRadius: 'var(--radius-full)',
-                                  border: '1px solid var(--color-graphite)',
-                                }}
-                              >
-                                Luz LED
-                              </span>
-                            )}
-                            {slot.surface && (
-                              <span
-                                style={{
-                                  fontSize: 10,
-                                  color: 'var(--color-ash)',
-                                  backgroundColor: 'transparent',
-                                  padding: '2px 4px',
-                                  opacity: 0.8,
-                                }}
-                              >
-                                {slot.surface}
-                              </span>
-                            )}
-                          </div>
-
-                          {slot.notes && (
-                            <p style={{ margin: '8px 0 0', fontSize: 12, color: 'var(--color-ash)', fontStyle: 'italic', opacity: 0.85 }}>
-                              &ldquo;{slot.notes}&rdquo;
-                            </p>
-                          )}
                         </div>
 
-                        {/* Bottom: Price & Delete Action */}
+                        {/* ── 3. Footer: Tarifa y Botón de Eliminar Sobrio ── */}
                         <div
                           style={{
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',
-                            paddingTop: 12,
+                            paddingTop: 14,
                             borderTop: '1px solid rgba(255, 255, 255, 0.08)',
                           }}
                         >
                           <div>
-                            <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--color-frost)' }}>
+                            <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--color-frost)', letterSpacing: '-0.3px', lineHeight: 1 }}>
                               {formatCurrency(slot.price)}
-                            </span>
-                            <span style={{ display: 'block', fontSize: 11, color: 'var(--color-ash)' }}>
+                            </div>
+                            <div style={{ fontSize: 11, color: 'var(--color-ash)', marginTop: 4 }}>
                               {formatCurrency(perPlayer)} por jugador
-                            </span>
+                            </div>
                           </div>
 
-                          {/* Delete / Remove Action Button */}
                           <button
                             type="button"
                             onClick={() => setSlotToDelete(slot)}
@@ -2350,19 +2322,29 @@ export default function ClubPage() {
                               display: 'inline-flex',
                               alignItems: 'center',
                               gap: 6,
-                              backgroundColor: 'rgba(239, 68, 68, 0.08)',
-                              color: '#ef4444',
-                              border: '1px solid rgba(239, 68, 68, 0.35)',
+                              backgroundColor: 'transparent',
+                              color: 'var(--color-ash)',
+                              border: '1px solid var(--color-graphite)',
                               borderRadius: 'var(--radius-full)',
                               padding: '7px 14px',
-                              fontSize: 11,
-                              fontWeight: 700,
+                              fontSize: 12,
+                              fontWeight: 600,
                               cursor: 'pointer',
                               transition: 'all 0.15s ease',
                             }}
-                            title="Eliminar este turno de la web si ya se reservó de forma presencial o telefónica"
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+                              e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+                              e.currentTarget.style.color = '#ef4444';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = 'transparent';
+                              e.currentTarget.style.borderColor = 'var(--color-graphite)';
+                              e.currentTarget.style.color = 'var(--color-ash)';
+                            }}
+                            title="Eliminar turno si ya se reservó por teléfono o mostrador"
                           >
-                            <Icons.Trash size={12} color="#ef4444" />
+                            <Icons.Trash size={12} />
                             <span>Eliminar</span>
                           </button>
                         </div>
