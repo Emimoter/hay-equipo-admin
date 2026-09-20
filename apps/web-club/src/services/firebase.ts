@@ -476,6 +476,7 @@ export async function updateBookingStatusFirestore(
 export interface PublishedSlotRecord {
   id: string;
   clubId: string;
+  clubName?: string;
   courtId: string;
   courtName: string;
   sportType: 'PADEL' | 'FUTBOL_5' | 'FUTBOL_7' | 'FUTBOL_11';
@@ -486,6 +487,7 @@ export interface PublishedSlotRecord {
   price: number;
   isCovered: boolean;
   hasLighting: boolean;
+  isFixedSlot?: boolean;
   surface?: string;
   notes?: string;
   status: 'ACTIVE' | 'BOOKED' | 'CANCELLED';
@@ -506,6 +508,54 @@ export async function getClubActiveSlotsFirestore(clubId: string): Promise<Publi
     console.error('Error fetching club active slots:', e);
   }
   return [];
+}
+
+/**
+ * Retrieves all published slots available as fixed weekly slots across all clubs
+ */
+export async function getAvailableFixedSlotsFirestore(): Promise<PublishedSlotRecord[]> {
+  const mapById = new Map<string, PublishedSlotRecord>();
+  try {
+    // 1. Direct registry
+    const snap = await getDoc(doc(dbFirestore, 'settings', 'hay_equipo_available_fixed_slots'));
+    if (snap.exists() && Array.isArray(snap.data()?.slots)) {
+      (snap.data()?.slots as PublishedSlotRecord[]).forEach((s) => {
+        if (s && s.status === 'ACTIVE' && s.isFixedSlot) {
+          mapById.set(s.id, s);
+        }
+      });
+    }
+
+    // 2. Also scan clubs to ensure completeness
+    const clubsSnap = await getDoc(doc(dbFirestore, 'settings', 'hay_equipo_clubs'));
+    if (clubsSnap.exists() && Array.isArray(clubsSnap.data()?.clubs)) {
+      const clubsList = clubsSnap.data()?.clubs || [];
+      await Promise.all(
+        clubsList.map(async (c: any) => {
+          if (!c?.id) return;
+          try {
+            const slotSnap = await getDoc(doc(dbFirestore, 'settings', `club_slots_${c.id}`));
+            if (slotSnap.exists() && Array.isArray(slotSnap.data()?.slots)) {
+              (slotSnap.data()?.slots as PublishedSlotRecord[]).forEach((s) => {
+                if (s && s.status === 'ACTIVE' && s.isFixedSlot) {
+                  mapById.set(s.id, {
+                    ...s,
+                    clubName: s.clubName || c.name || 'Club Hay Equipo',
+                  });
+                }
+              });
+            }
+          } catch {}
+        })
+      );
+    }
+  } catch (e) {
+    console.error('Error fetching available fixed slots:', e);
+  }
+
+  return Array.from(mapById.values()).sort((a, b) => {
+    return (a.date + a.startTime).localeCompare(b.date + b.startTime);
+  });
 }
 
 /**
@@ -550,6 +600,30 @@ export async function saveClubActiveSlotFirestore(
       },
       { merge: true }
     );
+
+    // If marked as available for Turno Fijo, index in global fixed slots registry
+    try {
+      const fixedRegistryRef = doc(dbFirestore, 'settings', 'hay_equipo_available_fixed_slots');
+      const fixedSnap = await getDoc(fixedRegistryRef);
+      let fixedSlots: PublishedSlotRecord[] = [];
+      if (fixedSnap.exists() && Array.isArray(fixedSnap.data()?.slots)) {
+        fixedSlots = fixedSnap.data()?.slots;
+      }
+      const updatedFixed = fixedSlots.filter((s) => s.id !== newSlot.id);
+      if (newSlot.isFixedSlot && newSlot.status === 'ACTIVE') {
+        updatedFixed.unshift(newSlot);
+      }
+      await setDoc(
+        fixedRegistryRef,
+        {
+          slots: updatedFixed,
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      );
+    } catch (fixedErr) {
+      console.error('Error updating global fixed slots registry:', fixedErr);
+    }
 
     return true;
   } catch (e) {
@@ -599,6 +673,26 @@ export async function deleteClubActiveSlotFirestore(
           },
           { merge: true }
         );
+      }
+
+      // Also clean up from global fixed slots registry
+      try {
+        const fixedRegistryRef = doc(dbFirestore, 'settings', 'hay_equipo_available_fixed_slots');
+        const fixedSnap = await getDoc(fixedRegistryRef);
+        if (fixedSnap.exists() && Array.isArray(fixedSnap.data()?.slots)) {
+          const fixedSlots: PublishedSlotRecord[] = fixedSnap.data()?.slots;
+          const cleanedFixed = fixedSlots.filter((s) => s.id !== slotId);
+          await setDoc(
+            fixedRegistryRef,
+            {
+              slots: cleanedFixed,
+              updatedAt: new Date().toISOString(),
+            },
+            { merge: true }
+          );
+        }
+      } catch (fErr) {
+        console.error('Error cleaning up global fixed slots registry:', fErr);
       }
     }
 

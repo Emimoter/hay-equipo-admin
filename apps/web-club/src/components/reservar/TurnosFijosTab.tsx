@@ -6,8 +6,11 @@ import {
   saveUserFixedSlotFirestore,
   getUserFixedSlotsFirestore,
   liberateOccurrenceFirestore,
+  getAvailableFixedSlotsFirestore,
+  createBookingFirestore,
   FixedSlotSubscriptionFirestore,
   RecurringOccurrenceFirestore,
+  PublishedSlotRecord,
 } from '../../services/firebase';
 
 interface TurnosFijosTabProps {
@@ -98,13 +101,50 @@ const Icons = {
 const DAYS_OF_WEEK = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 const DEFAULT_TIMES = ['18:00', '19:30', '21:00', '22:30'];
 
+function getSlotDayOfWeek(dateStr: string): number {
+  if (!dateStr) return 0;
+  const parts = dateStr.split('-').map(Number);
+  if (parts.length === 3) {
+    const d = new Date(parts[0], parts[1] - 1, parts[2]);
+    return d.getDay();
+  }
+  return new Date(dateStr).getDay();
+}
+
+function formatDisplayDate(dateStr: string): string {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-').map(Number);
+  if (parts.length === 3) {
+    return `${String(parts[2]).padStart(2, '0')}/${String(parts[1]).padStart(2, '0')}/${parts[0]}`;
+  }
+  return dateStr;
+}
+
+function computeEndTime(startTime: string, durationMinutes: number): string {
+  const [h, m] = (startTime || '19:00').split(':').map(Number);
+  const total = (h || 0) * 60 + (m || 0) + durationMinutes;
+  const endH = Math.floor(total / 60) % 24;
+  const endM = total % 60;
+  return `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
+}
+
 export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, clubs: propClubs }) => {
   const { user, openAuthModal } = useAuth();
 
-  // Navigation tabs matching mobile FixedSlotScreen: 'MY_SLOTS' | 'NEW_SLOT'
-  const [activeTab, setActiveTab] = useState<'MY_SLOTS' | 'NEW_SLOT'>('MY_SLOTS');
+  // Navigation tabs: 'AVAILABLE_SLOTS' | 'MY_SLOTS' | 'NEW_SLOT'
+  const [activeTab, setActiveTab] = useState<'AVAILABLE_SLOTS' | 'MY_SLOTS' | 'NEW_SLOT'>('AVAILABLE_SLOTS');
   const [loading, setLoading] = useState<boolean>(true);
   const [submitting, setSubmitting] = useState<boolean>(false);
+
+  // Available fixed slots published by clubs
+  const [availableFixedSlots, setAvailableFixedSlots] = useState<PublishedSlotRecord[]>([]);
+  const [loadingAvailableSlots, setLoadingAvailableSlots] = useState<boolean>(true);
+  const [availableSportFilter, setAvailableSportFilter] = useState<'ALL' | 'PADEL' | 'FUTBOL'>('ALL');
+  const [selectedSlotForBooking, setSelectedSlotForBooking] = useState<PublishedSlotRecord | null>(null);
+  const [bookingDurationMonths, setBookingDurationMonths] = useState<number>(3);
+  const [bookingTitularName, setBookingTitularName] = useState<string>('');
+  const [bookingTitularPhone, setBookingTitularPhone] = useState<string>('');
+  const [isBookingSlot, setIsBookingSlot] = useState<boolean>(false);
 
   // Subscriptions & Occurrences
   const [subscriptions, setSubscriptions] = useState<FixedSlotSubscriptionFirestore[]>([]);
@@ -165,11 +205,28 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
           const { subscriptions: subs, occurrences: occs } = await getUserFixedSlotsFirestore(user.uid);
           setSubscriptions(subs);
           setOccurrences(occs);
-          if (user.displayName) setApplicantName(user.displayName);
-          if (user.phoneNumber) setApplicantPhone(user.phoneNumber);
+          if (user.displayName) {
+            setApplicantName(user.displayName);
+            setBookingTitularName(user.displayName);
+          }
+          if (user.phoneNumber) {
+            setApplicantPhone(user.phoneNumber);
+            setBookingTitularPhone(user.phoneNumber);
+          }
         } else {
           setSubscriptions([]);
           setOccurrences([]);
+        }
+
+        // 3. Load club-published fixed slots
+        try {
+          setLoadingAvailableSlots(true);
+          const published = await getAvailableFixedSlotsFirestore();
+          setAvailableFixedSlots(published || []);
+        } catch (slotErr) {
+          console.error('Error loading available fixed slots:', slotErr);
+        } finally {
+          setLoadingAvailableSlots(false);
         }
       } catch (e) {
         console.error('Error loading fixed slot data:', e);
@@ -194,6 +251,129 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
   const discountedPrice = Math.round(basePricePerMatch * (1 - discountRate));
   const matchesPerMonth = 4;
   const monthlySavings = (basePricePerMatch - discountedPrice) * matchesPerMonth;
+
+  // Handle booking a club-published fixed slot
+  const handleConfirmBookSlot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedSlotForBooking) return;
+    if (!user) {
+      openAuthModal();
+      return;
+    }
+    if (!bookingTitularName.trim() || !bookingTitularPhone.trim()) {
+      alert('Por favor completá tu nombre y teléfono de WhatsApp.');
+      return;
+    }
+
+    setIsBookingSlot(true);
+    try {
+      const slot = selectedSlotForBooking;
+      const subId = `sub_${Date.now()}`;
+      const dayOfWeek = getSlotDayOfWeek(slot.date);
+      const durationMins = slot.durationMinutes || (slot.sportType === 'PADEL' ? 90 : 60);
+      const endTime = slot.endTime || computeEndTime(slot.startTime, durationMins);
+
+      const discountRate = bookingDurationMonths === 1 ? 0.05 : bookingDurationMonths === 3 ? 0.12 : 0.15;
+      const discountedPrice = Math.round(slot.price * (1 - discountRate));
+      const matchesPerMonth = 4;
+      const monthlySavings = (slot.price - discountedPrice) * matchesPerMonth;
+
+      const totalWeeks = bookingDurationMonths * 4;
+      const generatedOccurrences: RecurringOccurrenceFirestore[] = [];
+
+      for (let i = 0; i < totalWeeks; i++) {
+        const occDate = new Date();
+        occDate.setDate(occDate.getDate() + i * 7 + ((dayOfWeek - occDate.getDay() + 7) % 7));
+        const occDateStr = occDate.toISOString().split('T')[0];
+
+        generatedOccurrences.push({
+          id: `occ_${subId}_${i + 1}`,
+          subscriptionId: subId,
+          date: occDateStr,
+          dayOfWeek,
+          startTime: slot.startTime,
+          endTime,
+          courtName: slot.courtName,
+          clubName: slot.clubName || 'Club Hay Equipo',
+          status: 'SCHEDULED',
+          isPaid: i === 0,
+          price: discountedPrice,
+        });
+      }
+
+      const newSub: Omit<FixedSlotSubscriptionFirestore, 'occurrences'> = {
+        id: subId,
+        userId: user.uid,
+        userName: bookingTitularName.trim(),
+        userPhone: bookingTitularPhone.trim(),
+        clubId: slot.clubId,
+        clubName: slot.clubName || 'Club Hay Equipo',
+        courtId: slot.courtId,
+        courtName: slot.courtName,
+        sportType: slot.sportType.startsWith('FUTBOL') ? 'FUTBOL_5' : 'PADEL',
+        dayOfWeek,
+        startTime: slot.startTime,
+        endTime,
+        startDate: generatedOccurrences[0]?.date || slot.date,
+        durationMonths: bookingDurationMonths,
+        pricePerOccurrence: discountedPrice,
+        discountMonthlyTotal: monthlySavings,
+        status: 'ACTIVE',
+        createdAt: new Date().toISOString(),
+      };
+
+      const saved = await saveUserFixedSlotFirestore(user.uid, newSub, generatedOccurrences);
+
+      // Centralized booking record so club sees it in /club
+      try {
+        await createBookingFirestore({
+          id: `HF-${Date.now().toString().slice(-5)}`,
+          userId: user.uid,
+          clubId: slot.clubId,
+          clubName: slot.clubName || 'Club Hay Equipo',
+          courtId: slot.courtId,
+          courtName: slot.courtName,
+          sport: slot.sportType.startsWith('FUTBOL') ? 'FUTBOL' : 'PADEL',
+          date: generatedOccurrences[0]?.date || slot.date,
+          startTime: slot.startTime,
+          endTime,
+          totalPrice: discountedPrice,
+          serviceFee: 0,
+          totalPaid: 0,
+          paymentType: 'FULL',
+          splitPlayers: slot.sportType === 'PADEL' ? 4 : 10,
+          paidPlayersCount: 0,
+          isFixedSlot: true,
+          status: 'PENDING',
+          buyer: {
+            name: bookingTitularName.trim(),
+            email: user.email || '',
+            phone: bookingTitularPhone.trim(),
+          },
+          participants: [],
+          splitToken: '',
+          splitLink: '',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+      } catch (bErr) {
+        console.error('Error creating booking request record:', bErr);
+      }
+
+      if (saved) {
+        setSubscriptions((prev) => [{ ...newSub, occurrences: generatedOccurrences }, ...prev]);
+        setOccurrences((prev) => [...generatedOccurrences, ...prev]);
+        setSelectedSlotForBooking(null);
+        setActiveTab('MY_SLOTS');
+        setSuccessMessage(`¡Abono semanal reservado con éxito! Turno fijo confirmado todos los ${DAYS_OF_WEEK[dayOfWeek]} a las ${slot.startTime} hs.`);
+      }
+    } catch (err) {
+      console.error('Error booking fixed slot:', err);
+      alert('Ocurrió un error al reservar el turno fijo.');
+    } finally {
+      setIsBookingSlot(false);
+    }
+  };
 
   // Handle Liberation of an occurrence
   const handleConfirmLiberate = async () => {
@@ -317,6 +497,16 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
     }
   };
 
+  const filteredAvailableFixedSlots = availableFixedSlots.filter((s) => {
+    if (availableSportFilter === 'ALL') return true;
+    if (availableSportFilter === 'PADEL') return s.sportType === 'PADEL';
+    if (availableSportFilter === 'FUTBOL') return s.sportType.startsWith('FUTBOL');
+    return true;
+  });
+
+  const padelFixedCount = availableFixedSlots.filter((s) => s.sportType === 'PADEL').length;
+  const futbolFixedCount = availableFixedSlots.filter((s) => s.sportType.startsWith('FUTBOL')).length;
+
   return (
     <div className="turnos-fijos-container" style={{ maxWidth: 1240, margin: '0 auto', padding: '120px 24px 80px' }}>
       {/* ── Encabezado Estilo Swiss Brutalist ── */}
@@ -401,6 +591,37 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
 
         <button
           type="button"
+          ref={setTabsItemRef('AVAILABLE_SLOTS')}
+          onClick={() => setActiveTab('AVAILABLE_SLOTS')}
+          className="turnos-fijos-tab-btn"
+          style={{
+            position: 'relative',
+            zIndex: 2,
+            background: 'transparent',
+            border: 'none',
+            borderRadius: '9999px',
+            color: activeTab === 'AVAILABLE_SLOTS' ? '#ffffff' : 'var(--color-ash)',
+            fontSize: 12,
+            fontWeight: 700,
+            cursor: 'pointer',
+            padding: '8px 18px',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            transition: 'color 0.2s ease',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <Icons.Zap size={14} color={activeTab === 'AVAILABLE_SLOTS' ? '#ffffff' : 'var(--color-ash)'} />
+          <span className="turnos-fijos-tab-desktop">Turnos Fijos Disponibles ({availableFixedSlots.length})</span>
+          <span className="turnos-fijos-tab-mobile">Disponibles ({availableFixedSlots.length})</span>
+        </button>
+
+        <button
+          type="button"
           ref={setTabsItemRef('MY_SLOTS')}
           onClick={() => setActiveTab('MY_SLOTS')}
           className="turnos-fijos-tab-btn"
@@ -457,15 +678,306 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
           }}
         >
           <Icons.Calendar size={14} color={activeTab === 'NEW_SLOT' ? '#ffffff' : 'var(--color-ash)'} />
-          <span className="turnos-fijos-tab-desktop">+ Contratar Turno Fijo</span>
-          <span className="turnos-fijos-tab-mobile">+ Contratar</span>
+          <span className="turnos-fijos-tab-desktop">+ Solicitar a Medida</span>
+          <span className="turnos-fijos-tab-mobile">+ A Medida</span>
         </button>
       </div>
 
       <div className="turnos-fijos-grid">
-        {/* ── Columna Izquierda: Mis Turnos Activos O Formulario ── */}
+        {/* ── Columna Izquierda: Turnos Fijos Disponibles O Mis Turnos Activos O Formulario ── */}
         <div>
-          {activeTab === 'MY_SLOTS' ? (
+          {activeTab === 'AVAILABLE_SLOTS' ? (
+            <div>
+              {/* Filter chips & Custom request CTA */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: 20,
+                  flexWrap: 'wrap',
+                  gap: 12,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {[
+                    { key: 'ALL', label: `Todos (${availableFixedSlots.length})` },
+                    { key: 'PADEL', label: `Pádel (${padelFixedCount})` },
+                    { key: 'FUTBOL', label: `Fútbol (${futbolFixedCount})` },
+                  ].map((item) => {
+                    const isSelected = availableSportFilter === item.key;
+                    return (
+                      <button
+                        key={item.key}
+                        type="button"
+                        onClick={() => setAvailableSportFilter(item.key as any)}
+                        style={{
+                          padding: '6px 14px',
+                          borderRadius: 'var(--radius-full)',
+                          fontSize: 12,
+                          fontWeight: 700,
+                          backgroundColor: isSelected ? 'var(--color-frost)' : 'rgba(255, 255, 255, 0.05)',
+                          color: isSelected ? '#000000' : 'var(--color-ash)',
+                          border: isSelected ? '1px solid var(--color-frost)' : '1px solid rgba(76, 76, 76, 0.4)',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        {item.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('NEW_SLOT')}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--color-crimson-signal)',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: 0,
+                  }}
+                >
+                  <span>¿Buscás otro horario? Solicitar a medida →</span>
+                </button>
+              </div>
+
+              {loadingAvailableSlots ? (
+                <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--color-ash)', fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Cargando turnos fijos disponibles en clubes...
+                </div>
+              ) : filteredAvailableFixedSlots.length === 0 ? (
+                <div
+                  style={{
+                    textAlign: 'center',
+                    padding: '60px 24px',
+                    backgroundColor: '#0a0a0a',
+                    border: '1px dashed rgba(76, 76, 76, 0.4)',
+                  }}
+                >
+                  <div style={{ marginBottom: 16, color: 'var(--color-graphite)' }}>
+                    <Icons.Calendar size={42} color="var(--color-ash)" />
+                  </div>
+                  <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-frost)', textTransform: 'uppercase', marginBottom: 8 }}>
+                    {availableFixedSlots.length === 0
+                      ? 'No hay turnos fijos publicados por clubes en este momento'
+                      : 'No hay turnos fijos disponibles para el filtro seleccionado'}
+                  </h3>
+                  <p style={{ color: 'var(--color-ash)', fontSize: 13, maxWidth: 460, margin: '0 auto 24px', lineHeight: 1.5 }}>
+                    Los clubes habilitan aquí sus vacantes fijas semanales. Podés solicitar un turno en el día y horario que prefieras haciendo clic abajo.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('NEW_SLOT')}
+                    style={{
+                      backgroundColor: 'var(--color-crimson-signal)',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: 'var(--radius-buttons)',
+                      padding: '12px 26px',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.6px',
+                      cursor: 'pointer',
+                      boxShadow: '0 0 16px rgba(252, 28, 70, 0.4)',
+                    }}
+                  >
+                    + Solicitar Horario a Medida
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gap: 18 }}>
+                  {filteredAvailableFixedSlots.map((slot) => {
+                    const dayIdx = getSlotDayOfWeek(slot.date);
+                    const dayName = DAYS_OF_WEEK[dayIdx];
+                    const isPadel = !slot.sportType?.startsWith('FUTBOL');
+                    const perPlayer = Math.round(slot.price / (isPadel ? 4 : 10));
+                    const discountTrimestral = Math.round(slot.price * 0.88);
+                    const monthlySavings = (slot.price - discountTrimestral) * 4;
+
+                    return (
+                      <div
+                        key={slot.id}
+                        style={{
+                          backgroundColor: '#0a0a0a',
+                          border: '1px solid rgba(76, 76, 76, 0.5)',
+                          padding: '24px 28px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 16,
+                        }}
+                      >
+                        {/* Header: Tag + Sport + Club */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                            <span
+                              style={{
+                                backgroundColor: 'rgba(252, 28, 70, 0.15)',
+                                color: 'var(--color-crimson-signal)',
+                                border: '1px solid rgba(252, 28, 70, 0.3)',
+                                borderRadius: 'var(--radius-full)',
+                                fontSize: 10,
+                                fontWeight: 800,
+                                padding: '3px 10px',
+                                letterSpacing: '0.8px',
+                                textTransform: 'uppercase',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 4,
+                              }}
+                            >
+                              <Icons.Repeat size={10} color="var(--color-crimson-signal)" />
+                              <span>TURNO FIJO DISPONIBLE</span>
+                            </span>
+
+                            <span
+                              style={{
+                                backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                                color: '#10b981',
+                                border: '1px solid rgba(16, 185, 129, 0.25)',
+                                borderRadius: 'var(--radius-full)',
+                                fontSize: 10,
+                                fontWeight: 800,
+                                padding: '3px 8px',
+                                letterSpacing: '0.5px',
+                                textTransform: 'uppercase',
+                              }}
+                            >
+                              EN CLUB
+                            </span>
+
+                            <span style={{ fontSize: 11, color: 'var(--color-graphite)' }}>·</span>
+
+                            <span style={{ fontSize: 11, color: 'var(--color-ash)', textTransform: 'uppercase', fontWeight: 700 }}>
+                              {isPadel ? 'PÁDEL' : 'FÚTBOL'}
+                            </span>
+                          </div>
+
+                          <div style={{ fontSize: 12, color: 'var(--color-ash)' }}>
+                            Fecha base: <strong>{formatDisplayDate(slot.date)}</strong>
+                          </div>
+                        </div>
+
+                        {/* Court & Club Name */}
+                        <div>
+                          <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--color-frost)', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '-0.3px' }}>
+                            {slot.courtName}
+                          </h3>
+                          <div style={{ fontSize: 14, color: 'var(--color-ash)', fontWeight: 600 }}>
+                            {slot.clubName || 'Club Hay Equipo'}
+                          </div>
+                        </div>
+
+                        {/* Schedule row */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap', fontSize: 13, color: 'var(--color-frost)' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <Icons.Calendar size={14} color="var(--color-crimson-signal)" />
+                            <span style={{ fontWeight: 700 }}>Todos los {dayName}</span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <Icons.Clock size={14} color="var(--color-crimson-signal)" />
+                            <span style={{ fontWeight: 700 }}>{slot.startTime} a {slot.endTime} hs</span>
+                            <span style={{ fontSize: 12, color: 'var(--color-ash)' }}>({slot.durationMinutes} min)</span>
+                          </div>
+                        </div>
+
+                        {/* Amenities & notes */}
+                        {(slot.isCovered || slot.hasLighting || slot.notes) && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                            {slot.isCovered && (
+                              <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 'var(--radius-full)', backgroundColor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(76, 76, 76, 0.4)', color: 'var(--color-ash)' }}>
+                                Techada
+                              </span>
+                            )}
+                            {slot.hasLighting && (
+                              <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 'var(--radius-full)', backgroundColor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(76, 76, 76, 0.4)', color: 'var(--color-ash)' }}>
+                                Luz LED
+                              </span>
+                            )}
+                            {slot.notes && (
+                              <span style={{ fontSize: 12, color: 'var(--color-ash)', fontStyle: 'italic' }}>
+                                &ldquo;{slot.notes}&rdquo;
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Price & Booking action banner */}
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            flexWrap: 'wrap',
+                            gap: 16,
+                            paddingTop: 14,
+                            borderTop: '1px solid rgba(76, 76, 76, 0.3)',
+                          }}
+                        >
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                              <span style={{ fontSize: 22, fontWeight: 800, color: 'var(--color-frost)' }}>
+                                ${slot.price.toLocaleString('es-AR')}
+                              </span>
+                              <span style={{ fontSize: 12, color: 'var(--color-ash)' }}>
+                                / partido (${perPlayer.toLocaleString('es-AR')} c/u)
+                              </span>
+                            </div>
+                            <div style={{ fontSize: 11, color: '#ff6b8b', fontWeight: 600, marginTop: 2 }}>
+                              Tarifa congelada · Ahorro de hasta ${monthlySavings.toLocaleString('es-AR')}/mes con abono
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (!user) {
+                                openAuthModal();
+                                return;
+                              }
+                              setSelectedSlotForBooking(slot);
+                              setBookingDurationMonths(3);
+                              if (user.displayName) setBookingTitularName(user.displayName);
+                              if (user.phoneNumber) setBookingTitularPhone(user.phoneNumber);
+                            }}
+                            style={{
+                              backgroundColor: 'var(--color-crimson-signal)',
+                              color: '#ffffff',
+                              border: 'none',
+                              borderRadius: 'var(--radius-buttons)',
+                              padding: '12px 24px',
+                              fontSize: 12,
+                              fontWeight: 800,
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.6px',
+                              cursor: 'pointer',
+                              boxShadow: '0 0 16px rgba(252, 28, 70, 0.35)',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 8,
+                            }}
+                          >
+                            <Icons.Check size={14} color="#ffffff" />
+                            <span>Reservar Turno Fijo</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          ) : activeTab === 'MY_SLOTS' ? (
             <div>
               {loading ? (
                 <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--color-ash)', fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
@@ -1171,6 +1683,252 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
                 {liberatingLoading ? 'Liberando...' : 'Confirmar y Liberar Fecha'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal de Confirmación para Reservar Turno Fijo Publicado ── */}
+      {selectedSlotForBooking && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.88)',
+            backdropFilter: 'blur(8px)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 20,
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: '#0a0a0a',
+              border: '1px solid rgba(252, 28, 70, 0.4)',
+              borderRadius: '0px',
+              maxWidth: 520,
+              width: '100%',
+              padding: '28px 30px',
+              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.9)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 800,
+                  color: 'var(--color-crimson-signal)',
+                  letterSpacing: '1px',
+                  textTransform: 'uppercase',
+                }}
+              >
+                CONTRATAR TURNO FIJO SEMANAL
+              </span>
+              <button
+                type="button"
+                onClick={() => setSelectedSlotForBooking(null)}
+                style={{ background: 'none', border: 'none', color: 'var(--color-ash)', cursor: 'pointer', padding: 4 }}
+              >
+                <Icons.Close size={16} color="var(--color-ash)" />
+              </button>
+            </div>
+
+            <h3 style={{ fontSize: 20, fontWeight: 800, color: '#ffffff', textTransform: 'uppercase', margin: '0 0 4px', letterSpacing: '-0.3px' }}>
+              {selectedSlotForBooking.courtName}
+            </h3>
+            <p style={{ fontSize: 13, color: 'var(--color-ash)', margin: '0 0 16px', fontWeight: 600 }}>
+              {selectedSlotForBooking.clubName || 'Club Hay Equipo'}
+            </p>
+
+            <div
+              style={{
+                backgroundColor: 'rgba(252, 28, 70, 0.08)',
+                border: '1px solid rgba(252, 28, 70, 0.25)',
+                borderRadius: '0px',
+                padding: '14px 16px',
+                marginBottom: 20,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+              }}
+            >
+              <Icons.Repeat size={20} color="var(--color-crimson-signal)" />
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--color-frost)' }}>
+                  Todos los {DAYS_OF_WEEK[getSlotDayOfWeek(selectedSlotForBooking.date)]} a las {selectedSlotForBooking.startTime} hs
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--color-ash)', marginTop: 2 }}>
+                  Horario asegurado semana a semana · Fecha base: {formatDisplayDate(selectedSlotForBooking.date)}
+                </div>
+              </div>
+            </div>
+
+            <form onSubmit={handleConfirmBookSlot} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {/* Selector de Duración */}
+              <div>
+                <label style={{ display: 'block', fontSize: 11, color: 'var(--color-ash)', textTransform: 'uppercase', fontWeight: 700, marginBottom: 8 }}>
+                  Duración del Abono Semanal
+                </label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {[
+                    { m: 1, label: '1 Mes (-5%)', disc: 0.05 },
+                    { m: 3, label: '3 Meses (-12%)', disc: 0.12 },
+                    { m: 6, label: '6 Meses (-15%)', disc: 0.15 },
+                  ].map((d) => (
+                    <button
+                      type="button"
+                      key={d.m}
+                      onClick={() => setBookingDurationMonths(d.m)}
+                      style={{
+                        flex: 1,
+                        backgroundColor: bookingDurationMonths === d.m ? 'rgba(252, 28, 70, 0.18)' : 'rgba(255, 255, 255, 0.04)',
+                        color: bookingDurationMonths === d.m ? 'var(--color-crimson-signal)' : 'var(--color-ash)',
+                        border: `1px solid ${bookingDurationMonths === d.m ? 'var(--color-crimson-signal)' : 'rgba(76, 76, 76, 0.4)'}`,
+                        borderRadius: 'var(--radius-buttons)',
+                        padding: '9px 6px',
+                        fontSize: 11,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        textTransform: 'uppercase',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      {d.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Cotizador y Ahorro */}
+              {(() => {
+                const discRate = bookingDurationMonths === 1 ? 0.05 : bookingDurationMonths === 3 ? 0.12 : 0.15;
+                const discPrice = Math.round(selectedSlotForBooking.price * (1 - discRate));
+                const savings = (selectedSlotForBooking.price - discPrice) * 4;
+                const perPlayer = Math.round(discPrice / (selectedSlotForBooking.sportType === 'PADEL' ? 4 : 10));
+
+                return (
+                  <div
+                    style={{
+                      backgroundColor: 'rgba(252, 28, 70, 0.06)',
+                      border: '1px solid rgba(252, 28, 70, 0.25)',
+                      borderRadius: '0px',
+                      padding: '12px 16px',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 12 }}>
+                      <span style={{ color: 'var(--color-ash)' }}>Tarifa normal por partido:</span>
+                      <span style={{ textDecoration: 'line-through', color: 'var(--color-ash)' }}>${selectedSlotForBooking.price.toLocaleString('es-AR')}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 14, fontWeight: 700 }}>
+                      <span style={{ color: 'var(--color-frost)' }}>Tarifa bonificada fija:</span>
+                      <span style={{ color: 'var(--color-crimson-signal)' }}>${discPrice.toLocaleString('es-AR')} (${perPlayer.toLocaleString('es-AR')}/jugador)</span>
+                    </div>
+                    <div style={{ height: 1, backgroundColor: 'rgba(252, 28, 70, 0.2)', marginBottom: 8 }} />
+                    <div style={{ color: '#ff6b8b', fontSize: 12, fontWeight: 700, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                      <Icons.Tag size={12} color="var(--color-crimson-signal)" />
+                      <span>Ahorro mensual del grupo: ${savings.toLocaleString('es-AR')}</span>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Titular y Teléfono */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, color: 'var(--color-ash)', textTransform: 'uppercase', fontWeight: 700, marginBottom: 6 }}>
+                    Titular del Abono
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={bookingTitularName}
+                    onChange={(e) => setBookingTitularName(e.target.value)}
+                    placeholder="Tu nombre completo"
+                    style={{
+                      width: '100%',
+                      backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                      border: '1px solid rgba(76, 76, 76, 0.4)',
+                      borderRadius: '0px',
+                      color: 'var(--color-frost)',
+                      padding: '10px 12px',
+                      fontSize: 13,
+                      fontFamily: 'Space Grotesk, sans-serif',
+                      outline: 'none',
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, color: 'var(--color-ash)', textTransform: 'uppercase', fontWeight: 700, marginBottom: 6 }}>
+                    WhatsApp
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={bookingTitularPhone}
+                    onChange={(e) => setBookingTitularPhone(e.target.value)}
+                    placeholder="Ej: +54 9 223 555-0199"
+                    style={{
+                      width: '100%',
+                      backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                      border: '1px solid rgba(76, 76, 76, 0.4)',
+                      borderRadius: '0px',
+                      color: 'var(--color-frost)',
+                      padding: '10px 12px',
+                      fontSize: 13,
+                      fontFamily: 'Space Grotesk, sans-serif',
+                      outline: 'none',
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 10 }}>
+                <button
+                  type="button"
+                  onClick={() => setSelectedSlotForBooking(null)}
+                  disabled={isBookingSlot}
+                  style={{
+                    backgroundColor: 'transparent',
+                    color: 'var(--color-ash)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: 'var(--radius-buttons)',
+                    padding: '10px 18px',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isBookingSlot}
+                  style={{
+                    backgroundColor: 'var(--color-crimson-signal)',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: 'var(--radius-buttons)',
+                    padding: '12px 24px',
+                    fontSize: 12,
+                    fontWeight: 800,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.6px',
+                    cursor: isBookingSlot ? 'not-allowed' : 'pointer',
+                    boxShadow: '0 0 16px rgba(252, 28, 70, 0.4)',
+                    opacity: isBookingSlot ? 0.7 : 1,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 8,
+                  }}
+                >
+                  <Icons.Check size={14} color="#ffffff" />
+                  <span>{isBookingSlot ? 'Confirmando...' : 'Confirmar Reserva Fija'}</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

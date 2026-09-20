@@ -94,6 +94,14 @@ const Icons = {
       <line x1="3" y1="10" x2="21" y2="10" />
     </svg>
   ),
+  Repeat: ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="17 1 21 5 17 9" />
+      <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+      <polyline points="7 23 3 19 7 15" />
+      <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+    </svg>
+  ),
   WhatsApp: ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
       <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2zm0 18.13c-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.16 8.16 0 0 1-1.25-4.37c0-4.54 3.7-8.24 8.24-8.24 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.83c0 4.54-3.7 8.22-8.23 8.22zm4.52-6.17c-.25-.12-1.47-.72-1.7-.81-.23-.08-.39-.12-.56.12-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.12-1.05-.39-2-1.23-.74-.66-1.24-1.47-1.39-1.72-.14-.25-.02-.38.11-.51.11-.11.25-.29.37-.43.12-.15.17-.25.25-.42.08-.17.04-.31-.02-.43s-.56-1.36-.77-1.86c-.2-.49-.41-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.22.25-.86.84-.86 2.05s.88 2.38 1 2.55c.12.17 1.73 2.65 4.2 3.71.59.25 1.05.4 1.41.51.59.19 1.13.16 1.56.1.47-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.14-1.18-.06-.11-.23-.17-.47-.3z" />
@@ -492,6 +500,7 @@ export default function ClubPage() {
   const [publishPrice, setPublishPrice] = useState<number>(24000);
   const [publishIsCovered, setPublishIsCovered] = useState(true);
   const [publishHasLighting, setPublishHasLighting] = useState(true);
+  const [publishIsFixedSlot, setPublishIsFixedSlot] = useState(false);
   const [publishNotes, setPublishNotes] = useState('');
   const [isPublishingSlot, setIsPublishingSlot] = useState(false);
   const [publishError, setPublishError] = useState('');
@@ -672,6 +681,7 @@ export default function ClubPage() {
     const newRecord: PublishedSlotRecord = {
       id: newSlotId,
       clubId: activeClub.id,
+      clubName: activeClub.name,
       courtId: targetCourt.id,
       courtName: targetCourt.name,
       sportType: targetCourt.sportType,
@@ -682,6 +692,7 @@ export default function ClubPage() {
       price: Number(publishPrice) || targetCourt.pricePerHour || 24000,
       isCovered: publishIsCovered,
       hasLighting: publishHasLighting,
+      isFixedSlot: publishIsFixedSlot,
       surface: targetCourt.surface,
       notes: publishNotes.trim() || undefined,
       status: 'ACTIVE',
@@ -1986,6 +1997,7 @@ export default function ClubPage() {
                   setPublishDate(getTodayString());
                   setPublishStartTime('19:00');
                   setPublishDuration(90);
+                  setPublishIsFixedSlot(false);
                   setPublishNotes('');
                   setPublishError('');
                   setCalendarMonth(new Date());
@@ -2130,6 +2142,7 @@ export default function ClubPage() {
                       setPublishDate(getTodayString());
                       setPublishStartTime('19:00');
                       setPublishDuration(90);
+                      setPublishIsFixedSlot(false);
                       setPublishNotes('');
                       setPublishError('');
                       setCalendarMonth(new Date());
@@ -2195,24 +2208,48 @@ export default function ClubPage() {
                             <span>{badge.main}</span>
                           </div>
 
-                          <div
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 6,
-                              backgroundColor: 'rgba(16, 185, 129, 0.12)',
-                              color: 'var(--color-emerald)',
-                              border: '1px solid rgba(16, 185, 129, 0.25)',
-                              borderRadius: 'var(--radius-full)',
-                              padding: '4px 10px',
-                              fontSize: 10,
-                              fontWeight: 800,
-                              letterSpacing: '0.5px',
-                              textTransform: 'uppercase',
-                            }}
-                          >
-                            <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: 'var(--color-emerald)' }} />
-                            <span>EN VENTA · WEB</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 6,
+                                backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                                color: 'var(--color-emerald)',
+                                border: '1px solid rgba(16, 185, 129, 0.25)',
+                                borderRadius: 'var(--radius-full)',
+                                padding: '4px 10px',
+                                fontSize: 10,
+                                fontWeight: 800,
+                                letterSpacing: '0.5px',
+                                textTransform: 'uppercase',
+                              }}
+                            >
+                              <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: 'var(--color-emerald)' }} />
+                              <span>EN VENTA · WEB</span>
+                            </div>
+
+                            {slot.isFixedSlot && (
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 5,
+                                  backgroundColor: 'rgba(252, 28, 70, 0.15)',
+                                  color: 'var(--color-crimson-signal)',
+                                  border: '1px solid rgba(252, 28, 70, 0.35)',
+                                  borderRadius: 'var(--radius-full)',
+                                  padding: '4px 10px',
+                                  fontSize: 10,
+                                  fontWeight: 800,
+                                  letterSpacing: '0.5px',
+                                  textTransform: 'uppercase',
+                                }}
+                              >
+                                <Icons.Repeat size={11} color="var(--color-crimson-signal)" />
+                                <span>TURNO FIJO DISPONIBLE</span>
+                              </div>
+                            )}
                           </div>
                         </div>
 
@@ -3279,62 +3316,81 @@ export default function ClubPage() {
                 </span>
               </div>
 
-              {/* Field 5: Specifications & Notes */}
+              {/* Field 5: Disponibilidad como Turno Fijo */}
               <div>
                 <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--color-ash)', textTransform: 'uppercase', marginBottom: 8, letterSpacing: '0.5px' }}>
-                  5. Especificaciones & Amenities
+                  5. Modalidad de Reserva
                 </label>
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
-                  <button
-                    type="button"
-                    onClick={() => setPublishIsCovered(!publishIsCovered)}
-                    style={{
-                      padding: '8px 16px',
-                      borderRadius: 'var(--radius-full)',
-                      backgroundColor: publishIsCovered ? 'rgba(16, 185, 129, 0.15)' : 'var(--color-surface-elevate)',
-                      color: publishIsCovered ? 'var(--color-emerald)' : 'var(--color-ash)',
-                      border: publishIsCovered ? '1px solid var(--color-emerald)' : '1px solid var(--color-graphite)',
-                      fontSize: 12,
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6,
-                    }}
-                  >
-                    {publishIsCovered && <Icons.Check size={13} color="var(--color-emerald)" />}
-                    <span>Cancha Techada / Cubierta</span>
-                  </button>
 
-                  <button
-                    type="button"
-                    onClick={() => setPublishHasLighting(!publishHasLighting)}
+                {/* Interactive Checkbox Card */}
+                <div
+                  onClick={() => setPublishIsFixedSlot(!publishIsFixedSlot)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: 12,
+                    padding: '14px 16px',
+                    backgroundColor: publishIsFixedSlot ? 'rgba(252, 28, 70, 0.1)' : 'var(--color-surface-elevate)',
+                    border: publishIsFixedSlot ? '1px solid var(--color-crimson-signal)' : '1px solid var(--color-graphite)',
+                    borderRadius: '0px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    userSelect: 'none',
+                  }}
+                >
+                  <div
                     style={{
-                      padding: '8px 16px',
-                      borderRadius: 'var(--radius-full)',
-                      backgroundColor: publishHasLighting ? 'rgba(16, 185, 129, 0.15)' : 'var(--color-surface-elevate)',
-                      color: publishHasLighting ? 'var(--color-emerald)' : 'var(--color-ash)',
-                      border: publishHasLighting ? '1px solid var(--color-emerald)' : '1px solid var(--color-graphite)',
-                      fontSize: 12,
-                      fontWeight: 700,
-                      cursor: 'pointer',
+                      width: 20,
+                      height: 20,
+                      borderRadius: '2px',
+                      backgroundColor: publishIsFixedSlot ? 'var(--color-crimson-signal)' : 'rgba(255, 255, 255, 0.05)',
+                      border: publishIsFixedSlot ? '2px solid var(--color-crimson-signal)' : '2px solid var(--color-ash)',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 6,
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      marginTop: 2,
+                      transition: 'all 0.15s ease',
                     }}
                   >
-                    {publishHasLighting && <Icons.Check size={13} color="var(--color-emerald)" />}
-                    <span>Iluminación LED Nocturna</span>
-                  </button>
+                    {publishIsFixedSlot && <Icons.Check size={14} color="#ffffff" />}
+                  </div>
+
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: publishIsFixedSlot ? '#ffffff' : 'var(--color-frost)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <span>Disponible para reservar como Turno Fijo</span>
+                      {publishIsFixedSlot && (
+                        <span
+                          style={{
+                            fontSize: 10,
+                            fontWeight: 800,
+                            color: 'var(--color-crimson-signal)',
+                            backgroundColor: 'rgba(252, 28, 70, 0.18)',
+                            padding: '2px 8px',
+                            borderRadius: 'var(--radius-full)',
+                            border: '1px solid rgba(252, 28, 70, 0.3)',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.4px',
+                          }}
+                        >
+                          Visible en Turnos Fijos Web
+                        </span>
+                      )}
+                    </div>
+                    <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--color-ash)', lineHeight: 1.4 }}>
+                      Al activar este casillero, el turno aparecerá en la sección de <strong>Turnos Fijos</strong> de la web para que los jugadores puedan abonarse semanalmente a este día y horario.
+                    </p>
+                  </div>
                 </div>
 
                 <input
                   type="text"
                   value={publishNotes}
                   onChange={(e) => setPublishNotes(e.target.value)}
-                  placeholder="Nota opcional (ej: Turno liberado por cancelación, Horario central disponible)"
+                  placeholder="Nota opcional para los jugadores (ej: Turno central disponible, vestuarios con lockers)"
                   style={{
                     width: '100%',
+                    marginTop: 10,
                     backgroundColor: 'var(--color-surface-elevate)',
                     color: 'var(--color-frost)',
                     border: '1px solid var(--color-graphite)',
