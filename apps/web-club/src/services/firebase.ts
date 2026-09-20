@@ -566,38 +566,43 @@ export async function saveClubActiveSlotFirestore(
   newSlot: PublishedSlotRecord
 ): Promise<boolean> {
   try {
+    const cleanSlot: PublishedSlotRecord = JSON.parse(JSON.stringify(newSlot));
     const docKey = `club_slots_${clubId}`;
     const snap = await getDoc(doc(dbFirestore, 'settings', docKey));
     let slots: PublishedSlotRecord[] = [];
     if (snap.exists() && Array.isArray(snap.data()?.slots)) {
       slots = snap.data()?.slots;
     }
-    const filtered = slots.filter((s) => s.id !== newSlot.id);
-    filtered.unshift(newSlot);
+    const filtered = slots.filter((s) => s && s.id !== cleanSlot.id);
+    filtered.unshift(cleanSlot);
 
     await setDoc(
       doc(dbFirestore, 'settings', docKey),
-      {
-        clubId,
-        slots: filtered,
-        updatedAt: new Date().toISOString(),
-      },
+      JSON.parse(
+        JSON.stringify({
+          clubId,
+          slots: filtered,
+          updatedAt: new Date().toISOString(),
+        })
+      ),
       { merge: true }
     );
 
     // Also update daily compatibility map
-    const dailyKey = `published_slots_${clubId}_${newSlot.date}`;
+    const dailyKey = `published_slots_${clubId}_${cleanSlot.date}`;
     const dailySnap = await getDoc(doc(dbFirestore, 'settings', dailyKey));
     const dailySlots = dailySnap.exists() ? dailySnap.data()?.slots || {} : {};
-    dailySlots[`${newSlot.courtId}_${newSlot.startTime}`] = true;
+    dailySlots[`${cleanSlot.courtId}_${cleanSlot.startTime}`] = true;
     await setDoc(
       doc(dbFirestore, 'settings', dailyKey),
-      {
-        clubId,
-        date: newSlot.date,
-        slots: dailySlots,
-        updatedAt: new Date().toISOString(),
-      },
+      JSON.parse(
+        JSON.stringify({
+          clubId,
+          date: cleanSlot.date,
+          slots: dailySlots,
+          updatedAt: new Date().toISOString(),
+        })
+      ),
       { merge: true }
     );
 
@@ -609,16 +614,18 @@ export async function saveClubActiveSlotFirestore(
       if (fixedSnap.exists() && Array.isArray(fixedSnap.data()?.slots)) {
         fixedSlots = fixedSnap.data()?.slots;
       }
-      const updatedFixed = fixedSlots.filter((s) => s.id !== newSlot.id);
-      if (newSlot.isFixedSlot && newSlot.status === 'ACTIVE') {
-        updatedFixed.unshift(newSlot);
+      const updatedFixed = fixedSlots.filter((s) => s && s.id !== cleanSlot.id);
+      if (cleanSlot.isFixedSlot && cleanSlot.status === 'ACTIVE') {
+        updatedFixed.unshift(cleanSlot);
       }
       await setDoc(
         fixedRegistryRef,
-        {
-          slots: updatedFixed,
-          updatedAt: new Date().toISOString(),
-        },
+        JSON.parse(
+          JSON.stringify({
+            slots: updatedFixed,
+            updatedAt: new Date().toISOString(),
+          })
+        ),
         { merge: true }
       );
     } catch (fixedErr) {
@@ -651,11 +658,13 @@ export async function deleteClubActiveSlotFirestore(
 
     await setDoc(
       doc(dbFirestore, 'settings', docKey),
-      {
-        clubId,
-        slots: updated,
-        updatedAt: new Date().toISOString(),
-      },
+      JSON.parse(
+        JSON.stringify({
+          clubId,
+          slots: updated,
+          updatedAt: new Date().toISOString(),
+        })
+      ),
       { merge: true }
     );
 
@@ -667,10 +676,12 @@ export async function deleteClubActiveSlotFirestore(
         delete dailySlots[`${toDelete.courtId}_${toDelete.startTime}`];
         await setDoc(
           doc(dbFirestore, 'settings', dailyKey),
-          {
-            slots: dailySlots,
-            updatedAt: new Date().toISOString(),
-          },
+          JSON.parse(
+            JSON.stringify({
+              slots: dailySlots,
+              updatedAt: new Date().toISOString(),
+            })
+          ),
           { merge: true }
         );
       }
@@ -684,10 +695,12 @@ export async function deleteClubActiveSlotFirestore(
           const cleanedFixed = fixedSlots.filter((s) => s.id !== slotId);
           await setDoc(
             fixedRegistryRef,
-            {
-              slots: cleanedFixed,
-              updatedAt: new Date().toISOString(),
-            },
+            JSON.parse(
+              JSON.stringify({
+                slots: cleanedFixed,
+                updatedAt: new Date().toISOString(),
+              })
+            ),
             { merge: true }
           );
         }

@@ -501,7 +501,6 @@ export default function ClubPage() {
   const [publishIsCovered, setPublishIsCovered] = useState(true);
   const [publishHasLighting, setPublishHasLighting] = useState(true);
   const [publishIsFixedSlot, setPublishIsFixedSlot] = useState(false);
-  const [publishNotes, setPublishNotes] = useState('');
   const [isPublishingSlot, setIsPublishingSlot] = useState(false);
   const [publishError, setPublishError] = useState('');
   const [calendarMonth, setCalendarMonth] = useState(() => new Date());
@@ -678,33 +677,33 @@ export default function ClubPage() {
     const calculatedEnd = calculateEndTime(publishStartTime, publishDuration);
     const newSlotId = `slot_${activeClub.id}_${targetCourt.id}_${publishDate}_${publishStartTime.replace(':', '')}_${Date.now()}`;
 
-    const newRecord: PublishedSlotRecord = {
-      id: newSlotId,
-      clubId: activeClub.id,
-      clubName: activeClub.name,
-      courtId: targetCourt.id,
-      courtName: targetCourt.name,
-      sportType: targetCourt.sportType,
-      date: publishDate,
-      startTime: publishStartTime,
-      endTime: calculatedEnd,
-      durationMinutes: publishDuration,
-      price: Number(publishPrice) || targetCourt.pricePerHour || 24000,
-      isCovered: publishIsCovered,
-      hasLighting: publishHasLighting,
-      isFixedSlot: publishIsFixedSlot,
-      surface: targetCourt.surface,
-      notes: publishNotes.trim() || undefined,
-      status: 'ACTIVE',
-      createdAt: new Date().toISOString(),
-    };
+    const newRecord: PublishedSlotRecord = JSON.parse(
+      JSON.stringify({
+        id: newSlotId,
+        clubId: activeClub.id,
+        clubName: activeClub.name || 'Club de Prueba',
+        courtId: targetCourt.id,
+        courtName: targetCourt.name || 'Cancha',
+        sportType: targetCourt.sportType || 'PADEL',
+        date: publishDate,
+        startTime: publishStartTime,
+        endTime: calculatedEnd,
+        durationMinutes: publishDuration,
+        price: Number(publishPrice) || targetCourt.pricePerHour || 24000,
+        isCovered: Boolean(publishIsCovered),
+        hasLighting: Boolean(publishHasLighting),
+        isFixedSlot: Boolean(publishIsFixedSlot),
+        surface: targetCourt.surface || 'Césped Sintético',
+        status: 'ACTIVE',
+        createdAt: new Date().toISOString(),
+      })
+    );
 
     try {
       const ok = await saveClubActiveSlotFirestore(activeClub.id, newRecord);
       if (ok) {
         setActiveSlots((prev) => [newRecord, ...prev.filter((s) => s.id !== newSlotId)]);
         setIsPublishModalOpen(false);
-        setPublishNotes('');
       } else {
         setPublishError('No se pudo guardar el turno en Firebase. Intente nuevamente.');
       }
@@ -1998,7 +1997,6 @@ export default function ClubPage() {
                   setPublishStartTime('19:00');
                   setPublishDuration(90);
                   setPublishIsFixedSlot(false);
-                  setPublishNotes('');
                   setPublishError('');
                   setCalendarMonth(new Date());
                   setIsPublishModalOpen(true);
@@ -2143,7 +2141,6 @@ export default function ClubPage() {
                       setPublishStartTime('19:00');
                       setPublishDuration(90);
                       setPublishIsFixedSlot(false);
-                      setPublishNotes('');
                       setPublishError('');
                       setCalendarMonth(new Date());
                       setIsPublishModalOpen(true);
@@ -3382,24 +3379,6 @@ export default function ClubPage() {
                     </p>
                   </div>
                 </div>
-
-                <input
-                  type="text"
-                  value={publishNotes}
-                  onChange={(e) => setPublishNotes(e.target.value)}
-                  placeholder="Nota opcional para los jugadores (ej: Turno central disponible, vestuarios con lockers)"
-                  style={{
-                    width: '100%',
-                    marginTop: 10,
-                    backgroundColor: 'var(--color-surface-elevate)',
-                    color: 'var(--color-frost)',
-                    border: '1px solid var(--color-graphite)',
-                    borderRadius: '0px',
-                    padding: '10px 14px',
-                    fontSize: 13,
-                    outline: 'none',
-                  }}
-                />
               </div>
 
               {publishError && (
