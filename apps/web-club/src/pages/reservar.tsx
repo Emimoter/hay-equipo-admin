@@ -434,6 +434,8 @@ const SAMPLE_AVATARS = [
 export const CLUBS_DATA: WebClub[] = [
   {
     id: 'club-360-padel',
+    latitude: -37.9992,
+    longitude: -57.5988,
     name: '360 Padel Club',
     address: 'Solís 9565',
     city: 'Mar del Plata',
@@ -467,6 +469,8 @@ export const CLUBS_DATA: WebClub[] = [
   },
   {
     id: 'club-world-padel-center',
+    latitude: -38.0413,
+    longitude: -57.546,
     name: 'World Pádel Center',
     address: 'Acha 250 (esq. Brandsen)',
     city: 'Mar del Plata',
@@ -499,6 +503,8 @@ export const CLUBS_DATA: WebClub[] = [
   },
   {
     id: 'club-los-naranjos',
+    latitude: -37.9826,
+    longitude: -57.5507,
     name: 'Los Naranjos Pádel',
     address: 'Dorrego 333',
     city: 'Mar del Plata',
@@ -531,6 +537,8 @@ export const CLUBS_DATA: WebClub[] = [
   },
   {
     id: 'club-alfar-club',
+    latitude: -38.0065,
+    longitude: -57.5622,
     name: 'Alfar Club Deportivo',
     address: 'Alvarado 3280',
     city: 'Mar del Plata',
@@ -562,6 +570,8 @@ export const CLUBS_DATA: WebClub[] = [
   },
   {
     id: 'club-el-potrero',
+    latitude: -37.9985,
+    longitude: -57.552,
     name: 'El Potrero Fútbol 5',
     address: 'Salta 2248',
     city: 'Mar del Plata',
@@ -594,6 +604,8 @@ export const CLUBS_DATA: WebClub[] = [
   },
   {
     id: 'club-laverde-jara',
+    latitude: -38.004,
+    longitude: -57.575,
     name: 'La Verde Jara Fútbol & Pádel',
     address: 'Av. Jara 3450 (y Jara 470)',
     city: 'Mar del Plata',
@@ -627,6 +639,8 @@ export const CLUBS_DATA: WebClub[] = [
   },
   {
     id: 'club-complejo-la-meca',
+    latitude: -38.026,
+    longitude: -57.579,
     name: 'Complejo La Meca',
     address: 'Juan B. Justo 5279 / Uruguay 4064',
     city: 'Mar del Plata',
@@ -659,6 +673,8 @@ export const CLUBS_DATA: WebClub[] = [
   },
   {
     id: 'club-las-lomas',
+    latitude: -38.0377,
+    longitude: -57.5497,
     name: 'Complejo Deportivo Las Lomas',
     address: 'Gaboto 3875',
     city: 'Mar del Plata',
@@ -691,6 +707,8 @@ export const CLUBS_DATA: WebClub[] = [
   },
   {
     id: 'club-futbol-5-mb',
+    latitude: -37.991,
+    longitude: -57.57,
     name: 'Fútbol 5 MB',
     address: 'Av. Luro 5102 (esq. 1º de Mayo)',
     city: 'Mar del Plata',
@@ -723,6 +741,8 @@ export const CLUBS_DATA: WebClub[] = [
   },
   {
     id: 'club-punto-sur',
+    latitude: -38.0515,
+    longitude: -57.5461,
     name: 'Complejo Punto Sur',
     address: 'Av. de los Trabajadores 1079',
     city: 'Mar del Plata',
@@ -754,6 +774,8 @@ export const CLUBS_DATA: WebClub[] = [
   },
   {
     id: 'club-san-carlos-padel',
+    latitude: -37.9888,
+    longitude: -57.5607,
     name: 'San Carlos Pádel',
     address: '9 de Julio 4179',
     city: 'Mar del Plata',
@@ -786,6 +808,8 @@ export const CLUBS_DATA: WebClub[] = [
   },
   {
     id: 'club-parada-5',
+    latitude: -37.9693,
+    longitude: -57.5456,
     name: 'Complejo Parada 5',
     address: 'Av. Constitución 4205',
     city: 'Mar del Plata',
@@ -818,6 +842,8 @@ export const CLUBS_DATA: WebClub[] = [
   },
   {
     id: 'club-arenas-sport',
+    latitude: -38.029,
+    longitude: -57.555,
     name: 'Arenas Fútbol Club',
     address: 'Av. Juan B. Justo 2200',
     city: 'Mar del Plata',
@@ -850,6 +876,8 @@ export const CLUBS_DATA: WebClub[] = [
   },
   {
     id: 'club-matchpoint-palermo',
+    latitude: -34.5711,
+    longitude: -58.4233,
     name: 'Match Point Club Palermo',
     address: 'Av. del Libertador 4400',
     city: 'Buenos Aires (CABA)',

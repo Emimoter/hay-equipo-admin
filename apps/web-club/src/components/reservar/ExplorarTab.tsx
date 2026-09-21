@@ -139,8 +139,6 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
   const [viewMode, setViewMode] = useState<'MAP' | 'LIST'>('MAP');
   const [searchTerm, setSearchTerm] = useState('');
   const [sportFilter, setSportFilter] = useState<'ALL' | 'PADEL' | 'FUTBOL' | 'BOTH'>('ALL');
-  const [selectedAmenity, setSelectedAmenity] = useState<'ALL' | 'COVERED' | 'PARKING' | 'BUFFET'>('ALL');
-  const [onlyFixedFilter, setOnlyFixedFilter] = useState(false);
 
   const {
     containerRef: explorarSportContainerRef,
@@ -158,15 +156,6 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
       if (sportFilter === 'PADEL' && !hasPadel) return false;
       if (sportFilter === 'FUTBOL' && !hasFutbol) return false;
       if (sportFilter === 'BOTH' && (!hasPadel || !hasFutbol)) return false;
-
-      if (selectedAmenity === 'COVERED' && !club.amenities?.covered) return false;
-      if (selectedAmenity === 'PARKING' && !club.amenities?.parking) return false;
-      if (selectedAmenity === 'BUFFET' && !club.amenities?.buffet) return false;
-
-      if (onlyFixedFilter) {
-        const hasFixed = club.slots?.some((s: any) => Boolean(s.isFixedSlot) && s.available);
-        if (!hasFixed) return false;
-      }
 
       if (searchTerm.trim().length > 0) {
         const clean = (str: string) => (str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -201,7 +190,7 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
       const distB = typeof b.distanceKm === 'number' ? b.distanceKm : 999;
       return distA - distB;
     });
-  }, [clubs, userLocation, searchTerm, sportFilter, selectedAmenity, onlyFixedFilter]);
+  }, [clubs, userLocation, searchTerm, sportFilter]);
 
   return (
     <div className="explorar-root">
@@ -368,60 +357,6 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
             </div>
           </div>
         </div>
-
-        {/* Amenity Filters */}
-        <div className="explorar-amenities-row">
-          <span style={{ fontSize: 10.5, color: 'var(--color-graphite)', textTransform: 'uppercase', fontWeight: 700, marginRight: 4 }}>
-            Servicios:
-          </span>
-          {[
-            { id: 'ALL', label: 'Todos' },
-            { id: 'COVERED', label: 'Techada' },
-            { id: 'PARKING', label: 'Estacionamiento' },
-            { id: 'BUFFET', label: 'Buffet & Bar' },
-          ].map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setSelectedAmenity(item.id as any)}
-              style={{
-                backgroundColor: selectedAmenity === item.id ? 'rgba(252, 28, 70, 0.15)' : 'rgba(255, 255, 255, 0.04)',
-                color: selectedAmenity === item.id ? 'var(--color-crimson-signal)' : 'var(--color-ash)',
-                border: `1px solid ${selectedAmenity === item.id ? 'var(--color-crimson-signal)' : 'rgba(76, 76, 76, 0.4)'}`,
-                borderRadius: 'var(--radius-full)',
-                padding: '5px 12px',
-                fontSize: 10.5,
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {item.label}
-            </button>
-          ))}
-
-          <button
-            onClick={() => setOnlyFixedFilter(!onlyFixedFilter)}
-            style={{
-              backgroundColor: onlyFixedFilter ? 'rgba(252, 28, 70, 0.2)' : 'rgba(255, 255, 255, 0.04)',
-              color: onlyFixedFilter ? 'var(--color-crimson-signal)' : 'var(--color-ash)',
-              border: `1px solid ${onlyFixedFilter ? 'var(--color-crimson-signal)' : 'rgba(76, 76, 76, 0.4)'}`,
-              borderRadius: 'var(--radius-full)',
-              padding: '5px 12px',
-              fontSize: 10.5,
-              fontWeight: 700,
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 5,
-              transition: 'all 0.2s ease',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            <Icons.Repeat size={11} color={onlyFixedFilter ? 'var(--color-crimson-signal)' : 'var(--color-ash)'} />
-            <span>Turnos Fijos</span>
-          </button>
-        </div>
       </div>
 
       {/* ── Vista Condicional: MAPA o LISTA ── */}
@@ -483,7 +418,6 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
             onClick={() => {
               setSearchTerm('');
               setSportFilter('ALL');
-              setSelectedAmenity('ALL');
             }}
             style={{
               backgroundColor: 'var(--color-crimson-signal)',
