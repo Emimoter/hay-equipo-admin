@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useSlidingIndicator } from '../hooks/useSlidingIndicator';
 import Head from 'next/head';
+import Link from 'next/link';
 import { useRouter } from 'next/router';
 import {
   getBookingByIdFirestore,
@@ -1857,9 +1858,7 @@ export default function ReservarPage() {
         <ExplorarTab
           clubs={clubsList}
           onSelectClub={(club) => {
-            if (typeof window !== 'undefined') {
-              window.open(`/clubes/${club.id}`, '_blank');
-            }
+            router.push(`/clubes/${club.id}`);
           }}
           onNavigateHome={() => handleTabChange('INICIO')}
         />
@@ -2640,9 +2639,7 @@ export default function ReservarPage() {
                     height="100%"
                     style={{ minHeight: 220, height: '100%' }}
                     onCardClick={() => {
-                      if (typeof window !== 'undefined') {
-                        window.open(`/clubes/${club.id}`, '_blank');
-                      }
+                      router.push(`/clubes/${club.id}`);
                     }}
                     topRightBadge={
                       <div
@@ -2690,10 +2687,8 @@ export default function ReservarPage() {
                       {/* Encabezado Club */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, marginBottom: 8 }}>
                         <div>
-                          <a
+                          <Link
                             href={`/clubes/${club.id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
                             style={{ textDecoration: 'none', color: 'inherit' }}
                           >
                             <h3
@@ -2712,7 +2707,7 @@ export default function ReservarPage() {
                             >
                               {club.name}
                             </h3>
-                          </a>
+                          </Link>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--color-ash)', fontSize: 13, flexWrap: 'wrap' }}>
                             <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                               <Icons.MapPin size={13} color="var(--color-crimson-signal)" />
@@ -2849,10 +2844,8 @@ export default function ReservarPage() {
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                         {(availableSlots.length > 0 || club.slots.some((s) => s.available)) && (
-                          <a
+                          <Link
                             href={`/clubes/${club.id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
                             style={{
                               backgroundColor: 'var(--color-crimson-signal)',
                               color: '#ffffff',
@@ -2882,13 +2875,11 @@ export default function ReservarPage() {
                           >
                             <Icons.Calendar size={13} color="#ffffff" />
                             <span>Reservar Turno</span>
-                          </a>
+                          </Link>
                         )}
 
-                        <a
+                        <Link
                           href={`/clubes/${club.id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
                           style={{
                             backgroundColor: '#161616',
                             color: 'var(--color-frost)',
@@ -2917,7 +2908,7 @@ export default function ReservarPage() {
                         >
                           <span>Ficha & Canchas</span>
                           <Icons.ArrowUpRight size={12} />
-                        </a>
+                        </Link>
 
                         {club.whatsappPhone && (
                           <a

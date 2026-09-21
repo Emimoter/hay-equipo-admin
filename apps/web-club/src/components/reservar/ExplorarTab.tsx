@@ -1,4 +1,6 @@
 import React, { useState, useMemo } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { useSlidingIndicator } from '../../hooks/useSlidingIndicator';
 import { ClubImageCarousel } from './ClubImageCarousel';
 import { SportBadge } from '../SportBadge';
@@ -121,6 +123,7 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
   onSelectClub,
   onNavigateHome,
 }) => {
+  const router = useRouter();
   const [viewMode, setViewMode] = useState<'MAP' | 'LIST'>('MAP');
   const [searchTerm, setSearchTerm] = useState('');
   const [sportFilter, setSportFilter] = useState<'ALL' | 'PADEL' | 'FUTBOL' | 'BOTH'>('ALL');
@@ -512,9 +515,7 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
                 clubName={club.name}
                 height={200}
                 onCardClick={() => {
-                  if (typeof window !== 'undefined') {
-                    window.open(`/clubes/${club.id}`, '_blank');
-                  }
+                  router.push(`/clubes/${club.id}`);
                 }}
                 topRightBadge={
                   <div
@@ -543,10 +544,8 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
 
               {/* Contenido */}
               <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', flex: 1 }}>
-                <a
+                <Link
                   href={`/clubes/${club.id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
                   style={{ textDecoration: 'none', color: 'inherit' }}
                 >
                   <h3
@@ -563,7 +562,7 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
                   >
                     {club.name}
                   </h3>
-                </a>
+                </Link>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--color-ash)', fontSize: 13, marginBottom: 16, flexWrap: 'wrap' }}>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                     <Icons.MapPin size={13} color="var(--color-crimson-signal)" />
@@ -612,10 +611,8 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
                 {/* Botones de Acción (Pills) */}
                 <div style={{ marginTop: 'auto', paddingTop: 16, borderTop: '1px solid rgba(76, 76, 76, 0.3)', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {club.slots?.some((s: any) => s.available) && (
-                    <a
+                    <Link
                       href={`/clubes/${club.id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
                       style={{
                         flex: '1 1 100%',
                         backgroundColor: 'var(--color-crimson-signal)',
@@ -638,13 +635,11 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
                     >
                       <Icons.Calendar size={13} color="#ffffff" />
                       <span>Reservar Turno</span>
-                    </a>
+                    </Link>
                   )}
 
-                  <a
+                  <Link
                     href={`/clubes/${club.id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
                     style={{
                       flex: 1,
                       backgroundColor: 'rgba(255, 255, 255, 0.08)',
@@ -664,7 +659,7 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
                     }}
                   >
                     Ficha del Club
-                  </a>
+                  </Link>
                   {club.whatsappPhone ? (
                     <a
                       href={`https://wa.me/${club.whatsappPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
@@ -696,10 +691,8 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
                       <span>WhatsApp</span>
                     </a>
                   ) : (
-                    <a
+                    <Link
                       href={`/clubes/${club.id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
                       style={{
                         flex: 1,
                         backgroundColor: 'var(--color-crimson-signal)',
@@ -722,7 +715,7 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
                     >
                       <span>Ver Turnos</span>
                       <Icons.ArrowRight size={13} color="#fff" />
-                    </a>
+                    </Link>
                   )}
                 </div>
               </div>
