@@ -105,7 +105,7 @@ export const SportBadge: React.FC<SportBadgeProps> = ({
 
   // Paleta semántica estricta (hay-equipo-system)
   let badgeConfig = {
-    label: 'SOLO PÁDEL',
+    label: 'PÁDEL',
     color: 'var(--color-crimson-signal, #fc1c46)',
     backgroundColor: 'rgba(252, 28, 70, 0.12)',
     border: '1px solid rgba(252, 28, 70, 0.35)',
@@ -115,7 +115,7 @@ export const SportBadge: React.FC<SportBadgeProps> = ({
 
   if (category === 'FUTBOL') {
     badgeConfig = {
-      label: 'SOLO FÚTBOL',
+      label: 'FÚTBOL',
       color: 'var(--color-emerald, #10b981)',
       backgroundColor: 'rgba(16, 185, 129, 0.12)',
       border: '1px solid rgba(16, 185, 129, 0.35)',

@@ -1332,7 +1332,7 @@ export const TurnosFijosTab: React.FC<TurnosFijosTabProps> = ({ onNavigateHome, 
                       .map((club) => {
                         const hasP = club.sports?.includes('PADEL');
                         const hasF = club.sports?.some((s: string) => s.startsWith('FUTBOL'));
-                        const tag = hasP && hasF ? 'PÁDEL & FÚTBOL' : hasP ? 'SOLO PÁDEL' : 'SOLO FÚTBOL';
+                        const tag = hasP && hasF ? 'PÁDEL & FÚTBOL' : hasP ? 'PÁDEL' : 'FÚTBOL';
                         return (
                           <option key={club.id} value={club.id} style={{ backgroundColor: '#0a0a0a', color: '#ffffff' }}>
                             [{tag}] {club.name} ({club.city || 'Mar del Plata'})
