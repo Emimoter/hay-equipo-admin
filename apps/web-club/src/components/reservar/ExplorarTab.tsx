@@ -116,6 +116,18 @@ const Icons = {
       <line x1="3" y1="10" x2="21" y2="10" />
     </svg>
   ),
+  Clock: ({ size = 12, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </svg>
+  ),
+  Close: ({ size = 12, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  ),
 };
 
 export const ExplorarTab: React.FC<ExplorarTabProps> = ({
@@ -308,7 +320,7 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
                 }}
                 title="Borrar búsqueda"
               >
-                ✕
+                <Icons.Close size={12} color="var(--color-ash)" />
               </button>
             )}
           </div>
@@ -608,36 +620,45 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
                   )}
                 </div>
 
-                {/* Botones de Acción (Pills) */}
-                <div style={{ marginTop: 'auto', paddingTop: 16, borderTop: '1px solid rgba(76, 76, 76, 0.3)', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  {club.slots?.some((s: any) => s.available) && (
-                    <Link
-                      href={`/clubes/${club.id}`}
-                      style={{
-                        flex: '1 1 100%',
-                        backgroundColor: 'var(--color-crimson-signal)',
-                        color: '#ffffff',
-                        border: 'none',
-                        borderRadius: 'var(--radius-full)',
-                        padding: '10px 16px',
-                        fontSize: 11,
-                        fontWeight: 800,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.5px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 6,
-                        textDecoration: 'none',
-                        boxShadow: '0 3px 12px rgba(252, 28, 70, 0.35)',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <Icons.Calendar size={13} color="#ffffff" />
-                      <span>Reservar Turno</span>
-                    </Link>
-                  )}
+                {/* Available slot chips if online slots exist */}
+                {club.slots && club.slots.filter((s: any) => s.available).length > 0 && (
+                  <div style={{ marginTop: 12, marginBottom: 4 }}>
+                    <div style={{ fontSize: 9.5, color: 'var(--color-crimson-signal)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 6, fontWeight: 700 }}>
+                      Turnos disponibles hoy:
+                    </div>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      {club.slots
+                        .filter((s: any) => s.available)
+                        .slice(0, 4)
+                        .map((slot: any) => (
+                          <Link
+                            key={slot.id}
+                            href={`/checkout?clubId=${club.id}&slotId=${slot.id}&date=Hoy&time=${encodeURIComponent(slot.startTime)}&price=${slot.price}&court=${encodeURIComponent(slot.courtName || 'Cancha')}&sport=${slot.sport || 'PADEL'}&isFixed=${Boolean(slot.isFixedSlot)}&clubName=${encodeURIComponent(club.name)}`}
+                            style={{
+                              backgroundColor: '#141414',
+                              border: '1px solid rgba(255, 255, 255, 0.12)',
+                              borderRadius: 'var(--radius-full)',
+                              padding: '4px 10px',
+                              fontSize: 11,
+                              fontWeight: 700,
+                              color: 'var(--color-frost)',
+                              textDecoration: 'none',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 4,
+                              transition: 'all 0.15s ease',
+                            }}
+                          >
+                            <Icons.Clock size={10} color="var(--color-crimson-signal)" />
+                            <span>{slot.startTime} hs</span>
+                          </Link>
+                        ))}
+                    </div>
+                  </div>
+                )}
 
+                {/* Botones de Acción (Pills) — Máximo 2 botones */}
+                <div style={{ marginTop: 'auto', paddingTop: 16, borderTop: '1px solid rgba(76, 76, 76, 0.3)', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   <Link
                     href={`/clubes/${club.id}`}
                     style={{
@@ -660,7 +681,37 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
                   >
                     Ficha del Club
                   </Link>
-                  {club.whatsappPhone ? (
+
+                  {club.slots?.some((s: any) => s.available) ? (
+                    <Link
+                      href={(() => {
+                        const firstSlot = club.slots.find((s: any) => s.available);
+                        return `/checkout?clubId=${club.id}&slotId=${firstSlot?.id}&date=Hoy&time=${encodeURIComponent(firstSlot?.startTime || '19:00')}&price=${firstSlot?.price || 28000}&court=${encodeURIComponent(firstSlot?.courtName || 'Cancha')}&sport=${firstSlot?.sport || 'PADEL'}&isFixed=${Boolean(firstSlot?.isFixedSlot)}&clubName=${encodeURIComponent(club.name)}`;
+                      })()}
+                      style={{
+                        flex: 1,
+                        backgroundColor: 'var(--color-crimson-signal)',
+                        color: '#ffffff',
+                        border: 'none',
+                        borderRadius: 'var(--radius-full)',
+                        padding: '10px 16px',
+                        fontSize: 11,
+                        fontWeight: 800,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 6,
+                        textDecoration: 'none',
+                        boxShadow: '0 3px 12px rgba(252, 28, 70, 0.35)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <Icons.Calendar size={13} color="#ffffff" />
+                      <span>Reservar</span>
+                    </Link>
+                  ) : club.whatsappPhone ? (
                     <a
                       href={`https://wa.me/${club.whatsappPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
                         `Hola! Los vi en Hay Equipo y quería consultar disponibilidad de canchas en ${club.name}.`
@@ -713,7 +764,7 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
                         boxShadow: '0 2px 10px rgba(252, 28, 70, 0.3)',
                       }}
                     >
-                      <span>Ver Turnos</span>
+                      <span>Ver Horarios</span>
                       <Icons.ArrowRight size={13} color="#fff" />
                     </Link>
                   )}

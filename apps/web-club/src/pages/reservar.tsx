@@ -385,7 +385,7 @@ export interface WebClub {
   slots: WebSlot[];
 }
 
-export function getClubSlotsForDate(club: WebClub, date: Date, sport: 'PADEL' | 'FUTBOL'): WebSlot[] {
+export function getClubSlotsForDate(club: WebClub, date: Date, sport?: 'PADEL' | 'FUTBOL'): WebSlot[] {
   // Retorna únicamente turnos reales si el club los tiene publicados
   if (!club.slots || club.slots.length === 0) return [];
   const friendlyDate = getFriendlyDateLabel(date);
@@ -396,12 +396,31 @@ export function getClubSlotsForDate(club: WebClub, date: Date, sport: 'PADEL' | 
   const isToday = isSameDay(date, new Date());
 
   return club.slots.filter((s) => {
-    const sSport = ((s.sport || (s as any).sportType || '').toUpperCase().includes('PADEL') ? 'PADEL' : 'FUTBOL');
-    if (sSport !== sport) return false;
-    if (!s.available) return false;
+    const isStatusActive = !(s as any).status || String((s as any).status).toUpperCase() === 'ACTIVE' || s.available !== false;
+    if (!isStatusActive) return false;
+
+    if (sport) {
+      const rawSport = (s.sport || (s as any).sportType || '').toString().toUpperCase();
+      const sSport = rawSport.includes('PADEL') ? 'PADEL' : 'FUTBOL';
+      if (sSport !== sport) return false;
+    }
+
     if (!s.date) return true;
-    if (s.date === dateIso || s.date === friendlyDate) return true;
-    if (isToday && (s.date === 'Hoy' || s.date <= dateIso)) return true;
+    const sDate = String(s.date).trim();
+    if (sDate === dateIso || sDate.startsWith(dateIso) || sDate === friendlyDate) return true;
+    if (isToday && (sDate.toLowerCase() === 'hoy' || sDate <= dateIso)) return true;
+
+    // Robust date parsing comparison
+    const parsed = new Date(sDate);
+    if (!isNaN(parsed.getTime())) {
+      if (
+        parsed.getFullYear() === date.getFullYear() &&
+        parsed.getMonth() === date.getMonth() &&
+        parsed.getDate() === date.getDate()
+      ) {
+        return true;
+      }
+    }
     return false;
   });
 }
@@ -917,18 +936,22 @@ export default function ReservarPage() {
           const mapped: WebClub[] = firestoreClubs.map((fc: any) => {
             // Find courts belonging to this club
             const clubCourts = (firestoreCourts || [])
-              .filter((c: any) => c.clubId === fc.id)
+              .filter((c: any) => String(c.clubId || '').trim() === String(fc.id || '').trim())
               .map((c: any) => ({
                 id: c.id,
                 name: c.name,
-                sport: c.sportType === 'PADEL' ? ('PADEL' as const) : ('FUTBOL' as const),
+                sport: String(c.sportType || '').toUpperCase().includes('PADEL') ? ('PADEL' as const) : ('FUTBOL' as const),
                 surface: c.surface || 'Césped Sintético',
-                capacity: c.sportType === 'PADEL' ? 4 : (c.name?.includes('7') ? 14 : 10),
+                capacity: String(c.sportType || '').toUpperCase().includes('PADEL') ? 4 : (c.name?.includes('7') ? 14 : 10),
               }));
 
             // Map published active slots belonging to this club
             const clubSlots: WebSlot[] = (firestoreSlots || [])
-              .filter((s: PublishedSlotRecord) => s.clubId === fc.id && s.status === 'ACTIVE')
+              .filter((s: PublishedSlotRecord) => {
+                const sameClub = String(s.clubId || '').trim() === String(fc.id || '').trim();
+                const isActive = !s.status || String(s.status).toUpperCase() === 'ACTIVE' || (s as any).available !== false;
+                return sameClub && isActive;
+              })
               .map((s: PublishedSlotRecord) => {
                 const isPadel = ((s.sportType || (s as any).sport || '').toUpperCase().includes('PADEL'));
                 const capacity = isPadel ? 4 : (s.courtName?.includes('7') ? 14 : 10);
@@ -942,14 +965,18 @@ export default function ReservarPage() {
                   endTime: s.endTime,
                   price: s.price,
                   perPlayerPrice: Math.round(s.price / capacity),
-                  available: s.status === 'ACTIVE',
+                  available: !s.status || String(s.status).toUpperCase() === 'ACTIVE' || (s as any).available !== false,
                   isFixedSlot: Boolean(s.isFixedSlot),
                 };
               });
 
             let sportsList: ('PADEL' | 'FUTBOL')[] = [];
             if (Array.isArray(fc.sports) && fc.sports.length > 0) {
-              sportsList = fc.sports.filter((s: string) => s === 'PADEL' || s === 'FUTBOL');
+              fc.sports.forEach((s: string) => {
+                const norm = String(s).toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                if (norm.includes('PADEL') && !sportsList.includes('PADEL')) sportsList.push('PADEL');
+                if (norm.includes('FUTBOL') && !sportsList.includes('FUTBOL')) sportsList.push('FUTBOL');
+              });
             } else {
               const hasPadel = clubCourts.some((c: any) => c.sport === 'PADEL');
               const hasFutbol = clubCourts.some((c: any) => c.sport === 'FUTBOL');
@@ -978,42 +1005,40 @@ export default function ReservarPage() {
 
             return {
               id: fc.id,
-              name: fc.name,
-              address: fc.address || '',
+              name: fc.name || 'Club Deportivo',
+              address: fc.address || 'Mar del Plata',
               city: fc.city || 'Mar del Plata',
               zone: fc.zone || fc.city || 'Mar del Plata',
-              distanceKm: fc.distanceKm || 2.5,
-              latitude: fc.latitude,
-              longitude: fc.longitude,
-              minPrice: effectiveMinPrice,
-              rating: fc.rating || 4.8,
-              reviewCount: fc.reviewCount || 100,
+              distanceKm: fc.distanceKm ?? 2.1,
+              rating: fc.rating ?? 4.8,
+              reviewCount: fc.reviewCount ?? 12,
               sports: sportsList,
-              bookingMode: fc.bookingMode || (fc.active ? 'ONLINE' : 'DIRECT_CONTACT'),
-              whatsappPhone: String(fc.whatsappPhone || fc.whatsapp || fc.phone || '').replace(/[^0-9]/g, ''),
+              bookingMode: fc.bookingMode || 'ONLINE',
+              whatsappPhone: fc.whatsappPhone || fc.phone || '',
               phone: fc.phone || '',
-              images: (fc.images && fc.images.length > 0) ? [fc.images[0]] : [
+              images: Array.isArray(fc.images) && fc.images.length > 0 ? fc.images : [
                 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80',
               ],
               minPricePerPlayer: effectiveMinPerPlayer,
-              amenities: {
-                covered: !!fc.amenities?.covered,
-                parking: !!fc.amenities?.parking,
-                buffet: !!fc.amenities?.buffet,
-                lighting: !!fc.amenities?.lighting,
-                lockers: !!fc.amenities?.lockers,
-                syntheticWPT: !!fc.amenities?.syntheticWPT,
+              amenities: fc.amenities || {
+                covered: true,
+                parking: true,
+                buffet: true,
+                lighting: true,
+                lockers: true,
+                syntheticWPT: true,
               },
-              courts: clubCourts.length > 0 ? clubCourts : [
-                { id: `${fc.id}-c1`, name: 'Cancha Principal', sport: sportsList[0], surface: 'Césped Sintético Pro', capacity: sportsList[0] === 'PADEL' ? 4 : 10 },
-              ],
+              courts: clubCourts,
               slots: clubSlots,
             };
           });
 
-          if (mapped.length > 0) {
-            setClubsList(mapped);
-          }
+          // Merge: if Firestore club matches an ID in CLUBS_DATA, replace it; otherwise prepend it
+          setClubsList((prev) => {
+            const firestoreIds = new Set(mapped.map((c) => c.id));
+            const remainingLocal = prev.filter((c) => !firestoreIds.has(c.id));
+            return [...mapped, ...remainingLocal];
+          });
         }
       } catch (err) {
         console.warn('Could not sync clubs from Firestore, falling back to local list:', err);
@@ -1028,7 +1053,11 @@ export default function ReservarPage() {
         setClubsList((prevClubs) => {
           return prevClubs.map((club) => {
             const clubSlots: WebSlot[] = latestActiveSlots
-              .filter((s) => s.clubId === club.id && s.status === 'ACTIVE')
+              .filter((s) => {
+                const sameClub = String(s.clubId || '').trim() === String(club.id || '').trim();
+                const isActive = !s.status || String(s.status).toUpperCase() === 'ACTIVE' || (s as any).available !== false;
+                return sameClub && isActive;
+              })
               .map((s) => {
                 const isPadel = ((s.sportType || (s as any).sport || '').toUpperCase().includes('PADEL'));
                 const capacity = isPadel ? 4 : (s.courtName?.includes('7') ? 14 : 10);
@@ -1042,7 +1071,7 @@ export default function ReservarPage() {
                   endTime: s.endTime,
                   price: s.price,
                   perPlayerPrice: Math.round(s.price / capacity),
-                  available: s.status === 'ACTIVE',
+                  available: !s.status || String(s.status).toUpperCase() === 'ACTIVE' || (s as any).available !== false,
                   isFixedSlot: Boolean(s.isFixedSlot),
                 };
               });
@@ -1062,29 +1091,6 @@ export default function ReservarPage() {
     };
   }, []);
 
-  // Checkout Drawer state
-  const [selectedSlot, setSelectedSlot] = useState<WebSlot | null>(null);
-  const [selectedSlotClub, setSelectedSlotClub] = useState<WebClub | null>(null);
-  const [slotBookingMode, setSlotBookingMode] = useState<'SINGLE' | 'FIXED_RECURRING'>('SINGLE');
-  const [fixedDurationMonths, setFixedDurationMonths] = useState<number>(3);
-  const [paymentType, setPaymentType] = useState<'FULL' | 'SPLIT'>('SPLIT');
-  const [splitPlayers, setSplitPlayers] = useState<number>(4);
-  const [holdTimerSeconds, setHoldTimerSeconds] = useState<number>(420);
-  const [buyerName, setBuyerName] = useState<string>('');
-  const [buyerPhone, setBuyerPhone] = useState<string>('');
-  const [buyerEmail, setBuyerEmail] = useState<string>('');
-  const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const [confirmedBooking, setConfirmedBooking] = useState<{
-    bookingCode: string;
-    clubName: string;
-    courtName: string;
-    time: string;
-    totalPaid: number;
-    splitLink: string;
-    mpInitPoint?: string;
-  } | null>(null);
-  const [bookingError, setBookingError] = useState<string | null>(null);
-  const [copiedLink, setCopiedLink] = useState(false);
   const router = useRouter();
 
   // Authentication & User State
@@ -1092,20 +1098,6 @@ export default function ReservarPage() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement | null>(null);
 
-  // Auto-sync buyer info from authenticated Firebase user
-  useEffect(() => {
-    if (user) {
-      if (userProfile?.name || user.displayName) {
-        setBuyerName((prev) => prev.trim() || userProfile?.name || user.displayName || '');
-      }
-      if (user.email) {
-        setBuyerEmail((prev) => prev.trim() || user.email || '');
-      }
-      if (userProfile?.phone || user.phoneNumber) {
-        setBuyerPhone((prev) => prev.trim() || userProfile?.phone || user.phoneNumber || '');
-      }
-    }
-  }, [user, userProfile]);
 
   // Close user menu on outside click
   useEffect(() => {
@@ -1123,47 +1115,7 @@ export default function ReservarPage() {
     if (!router.isReady) return;
     const { bookingId } = router.query;
     if (bookingId && typeof bookingId === 'string') {
-      getBookingByIdFirestore(bookingId).then((b) => {
-        if (b) {
-          setConfirmedBooking({
-            bookingCode: b.id,
-            clubName: b.clubName,
-            courtName: b.courtName,
-            time: `${b.date} · ${b.startTime} hs`,
-            totalPaid: b.totalPaid,
-            splitLink: b.splitLink,
-            mpInitPoint: b.mpInitPoint,
-          });
-          setSelectedSlot({
-            id: b.courtId,
-            courtId: b.courtId,
-            courtName: b.courtName,
-            sport: b.sport,
-            date: b.date,
-            startTime: b.startTime,
-            endTime: b.endTime,
-            price: b.totalPrice,
-            perPlayerPrice: Math.round(b.totalPrice / b.splitPlayers),
-            available: true,
-          });
-          setSelectedSlotClub({
-            id: b.clubId,
-            name: b.clubName,
-            address: b.clubAddress || '',
-            city: '',
-            zone: 'CENTRO',
-            distanceKm: 1.0,
-            rating: 4.9,
-            reviewCount: 50,
-            sports: [b.sport],
-            images: [],
-            amenities: { covered: true, parking: true, buffet: true, lighting: true, lockers: true, syntheticWPT: true },
-            courts: [],
-            minPricePerPlayer: Math.round(b.totalPrice / b.splitPlayers),
-            slots: [],
-          });
-        }
-      });
+      setActiveNavTab('RESERVAS');
     }
   }, [router.isReady, router.query]);
 
@@ -1231,32 +1183,6 @@ export default function ReservarPage() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  // 7-minute countdown timer when slot is selected
-  useEffect(() => {
-    if (!selectedSlot) return;
-    setHoldTimerSeconds(420);
-    const interval = setInterval(() => {
-      setHoldTimerSeconds((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          alert('El tiempo de reserva temporal de 7 minutos ha expirado.');
-          setSelectedSlot(null);
-          setSelectedSlotClub(null);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [selectedSlot]);
-
-  // Format timer MM:SS
-  const timerDisplay = useMemo(() => {
-    const mins = Math.floor(holdTimerSeconds / 60);
-    const secs = holdTimerSeconds % 60;
-    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-  }, [holdTimerSeconds]);
 
   // Zone metadata definitions for custom UI
   const ZONE_OPTIONS = [
@@ -1373,202 +1299,10 @@ export default function ReservarPage() {
   };
 
   const handleOpenBooking = (slot: WebSlot, club: WebClub) => {
-    setSelectedSlot({
-      ...slot,
-      date: getFriendlyDateLabel(selectedDate),
-    });
-    setSelectedSlotClub(club);
-    setSplitPlayers(slot.sport === 'FUTBOL' ? (slot.courtName.includes('7') ? 14 : 10) : 4);
-    setConfirmedBooking(null);
-    setSlotBookingMode(slot.isFixedSlot ? 'FIXED_RECURRING' : 'SINGLE');
-    setFixedDurationMonths(1);
-  };
-
-  const handleExecutePayment = async () => {
-    if (!selectedSlot || !selectedSlotClub) return;
-    setBookingError(null);
-
-    // ── AUTH GATE: Require login before booking ──
-    if (!user) {
-      openAuthModal(
-        `Para confirmar tu reserva en ${selectedSlotClub.name}, por favor iniciá sesión o creá tu cuenta. Así tu turno quedará guardado para siempre.`,
-        () => {
-          // Success callback after login
-        }
-      );
-      return;
-    }
-
-    if (!buyerName.trim()) {
-      setBookingError('Por favor ingresá tu nombre y apellido para la reserva.');
-      return;
-    }
-    if (!buyerPhone.trim()) {
-      setBookingError('Por favor ingresá tu número de WhatsApp para enviarte la confirmación.');
-      return;
-    }
-
-    setIsProcessing(true);
-
-    const isRecurring = Boolean(selectedSlot.isFixedSlot && slotBookingMode === 'FIXED_RECURRING');
-    const discountRate = isRecurring
-      ? (fixedDurationMonths === 1 ? 0.05 : fixedDurationMonths === 3 ? 0.12 : 0.15)
-      : 0;
-    const effectivePrice = Math.round(selectedSlot.price * (1 - discountRate));
-
-    try {
-      const res = await fetch('/api/bookings/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          club: {
-            id: selectedSlotClub.id,
-            name: selectedSlotClub.name,
-            address: `${selectedSlotClub.address} · ${selectedSlotClub.city}`,
-          },
-          slot: {
-            ...selectedSlot,
-            price: effectivePrice,
-          },
-          buyer: {
-            name: buyerName.trim(),
-            email: buyerEmail.trim() || user.email || '',
-            phone: buyerPhone.trim(),
-          },
-          userId: user.uid,
-          paymentType,
-          splitPlayers,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || 'No se pudo registrar la reserva.');
-      }
-
-      setConfirmedBooking({
-        bookingCode: data.booking.id,
-        clubName: data.booking.clubName,
-        courtName: data.booking.courtName,
-        time: `${data.booking.date} · ${data.booking.startTime} hs`,
-        totalPaid: data.booking.totalPaid,
-        splitLink: data.booking.splitLink,
-        mpInitPoint: data.checkout?.initPoint,
-      });
-
-      // Si reservó como turno fijo recurrente, guardar suscripción en Firestore
-      if (isRecurring) {
-        try {
-          const subId = `sub_${user.uid}_${Date.now()}`;
-          const totalWeeks = fixedDurationMonths * 4;
-          const dayOfWeek = selectedDate ? selectedDate.getDay() : new Date().getDay();
-          const generatedOccurrences: RecurringOccurrenceFirestore[] = [];
-
-          for (let i = 0; i < totalWeeks; i++) {
-            const occDate = new Date();
-            occDate.setDate(occDate.getDate() + i * 7 + ((dayOfWeek - occDate.getDay() + 7) % 7));
-            const occDateStr = occDate.toISOString().split('T')[0];
-
-            generatedOccurrences.push({
-              id: `occ_${subId}_${i + 1}`,
-              subscriptionId: subId,
-              date: occDateStr,
-              dayOfWeek,
-              startTime: selectedSlot.startTime,
-              endTime: selectedSlot.endTime,
-              courtName: selectedSlot.courtName,
-              clubName: selectedSlotClub.name,
-              status: 'SCHEDULED',
-              isPaid: i === 0,
-              price: effectivePrice,
-            });
-          }
-
-          const newSub: Omit<FixedSlotSubscriptionFirestore, 'occurrences'> = {
-            id: subId,
-            userId: user.uid,
-            userName: buyerName.trim(),
-            userPhone: buyerPhone.trim(),
-            clubId: selectedSlotClub.id,
-            clubName: selectedSlotClub.name,
-            courtId: selectedSlot.courtId,
-            courtName: selectedSlot.courtName,
-            sportType: selectedSlot.sport === 'PADEL' ? 'PADEL' : 'FUTBOL_5',
-            dayOfWeek,
-            startTime: selectedSlot.startTime,
-            endTime: selectedSlot.endTime,
-            startDate: generatedOccurrences[0]?.date || new Date().toISOString().split('T')[0],
-            durationMonths: fixedDurationMonths,
-            pricePerOccurrence: effectivePrice,
-            discountMonthlyTotal: (selectedSlot.price - effectivePrice) * 4,
-            status: 'ACTIVE',
-            createdAt: new Date().toISOString(),
-          };
-
-          await saveUserFixedSlotFirestore(user.uid, newSub, generatedOccurrences);
-        } catch (fixedErr) {
-          console.error('Error saving user fixed slot subscription to Firestore:', fixedErr);
-        }
-      }
-
-      // Automatically store in localStorage for "Mis Reservas"
-      try {
-        const newBookingRecord: BookingRecord = {
-          id: data.booking.id,
-          userId: user.uid,
-          clubId: selectedSlotClub.id,
-          clubName: data.booking.clubName,
-          clubAddress: `${selectedSlotClub.address} · ${selectedSlotClub.city}`,
-          courtId: selectedSlot.courtId,
-          courtName: data.booking.courtName,
-          sport: selectedSlot.sport,
-          date: data.booking.date,
-          startTime: data.booking.startTime,
-          endTime: data.booking.endTime,
-          totalPrice: effectivePrice,
-          serviceFee: 0,
-          totalPaid: data.booking.totalPaid,
-          paymentType: paymentType,
-          splitPlayers: splitPlayers,
-          paidPlayersCount: 1,
-          isFixedSlot: isRecurring,
-          status: 'CONFIRMED',
-          buyer: {
-            name: buyerName.trim(),
-            email: buyerEmail.trim(),
-            phone: buyerPhone.trim(),
-          },
-          participants: data.booking.participants || [],
-          splitToken: data.booking.splitToken || data.booking.id.toLowerCase(),
-          splitLink: data.booking.splitLink || `https://hay-equipo-admin.vercel.app/split/${data.booking.id.toLowerCase()}`,
-          mpPreferenceId: data.checkout?.preferenceId,
-          mpInitPoint: data.checkout?.initPoint,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-
-        const currentList = JSON.parse(localStorage.getItem('hay_equipo_user_bookings') || '[]');
-        const updatedList = [newBookingRecord, ...currentList.filter((b: any) => b.id !== newBookingRecord.id)];
-        localStorage.setItem('hay_equipo_user_bookings', JSON.stringify(updatedList));
-        setStoredBookingsCount(updatedList.length);
-      } catch (errLocal) {
-        console.error('Error saving to localStorage:', errLocal);
-      }
-    } catch (err: any) {
-      console.error('Error procesando reserva:', err);
-      setBookingError(err.message || 'Error al conectar con la pasarela de reservas.');
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleCopyLink = () => {
-    if (!confirmedBooking) return;
-    navigator.clipboard.writeText(confirmedBooking.splitLink);
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2000);
+    const dateLabel = getFriendlyDateLabel(selectedDate);
+    router.push(
+      `/checkout?clubId=${club.id}&slotId=${slot.id}&date=${encodeURIComponent(dateLabel)}&time=${encodeURIComponent(slot.startTime)}&price=${slot.price}&court=${encodeURIComponent(slot.courtName)}&sport=${slot.sport}&isFixed=${Boolean(slot.isFixedSlot)}&clubName=${encodeURIComponent(club.name)}`
+    );
   };
 
   return (
@@ -1871,9 +1605,9 @@ export default function ReservarPage() {
       {activeNavTab === 'PERFIL' && (
         <PerfilTab
           onNavigateReservas={() => handleTabChange('RESERVAS')}
-          buyerName={buyerName}
-          buyerPhone={buyerPhone}
-          buyerEmail={buyerEmail}
+          buyerName={userProfile?.name || user?.displayName || ''}
+          buyerPhone={userProfile?.phone || ''}
+          buyerEmail={user?.email || ''}
         />
       )}
 
@@ -2843,41 +2577,6 @@ export default function ReservarPage() {
                       </div>
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                        {(availableSlots.length > 0 || club.slots.some((s) => s.available)) && (
-                          <Link
-                            href={`/clubes/${club.id}`}
-                            style={{
-                              backgroundColor: 'var(--color-crimson-signal)',
-                              color: '#ffffff',
-                              border: 'none',
-                              borderRadius: 'var(--radius-full)',
-                              padding: '10px 18px',
-                              fontSize: 11,
-                              fontWeight: 800,
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.6px',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 6,
-                              textDecoration: 'none',
-                              boxShadow: '0 3px 12px rgba(252, 28, 70, 0.35)',
-                              transition: 'all 0.2s ease',
-                              cursor: 'pointer',
-                            }}
-                            onMouseEnter={(e) => {
-                              (e.currentTarget as HTMLElement).style.filter = 'brightness(1.1)';
-                              (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)';
-                            }}
-                            onMouseLeave={(e) => {
-                              (e.currentTarget as HTMLElement).style.filter = 'none';
-                              (e.currentTarget as HTMLElement).style.transform = 'none';
-                            }}
-                          >
-                            <Icons.Calendar size={13} color="#ffffff" />
-                            <span>Reservar Turno</span>
-                          </Link>
-                        )}
-
                         <Link
                           href={`/clubes/${club.id}`}
                           style={{
@@ -2885,8 +2584,8 @@ export default function ReservarPage() {
                             color: 'var(--color-frost)',
                             border: '1px solid rgba(255, 255, 255, 0.18)',
                             borderRadius: 'var(--radius-full)',
-                            padding: '10px 16px',
-                            fontSize: 11,
+                            padding: '10px 18px',
+                            fontSize: 11.5,
                             fontWeight: 700,
                             textTransform: 'uppercase',
                             letterSpacing: '0.5px',
@@ -2898,19 +2597,48 @@ export default function ReservarPage() {
                             transition: 'all 0.2s ease',
                           }}
                           onMouseEnter={(e) => {
-                            (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255, 255, 255, 0.4)';
-                            (e.currentTarget as HTMLElement).style.backgroundColor = '#202020';
+                            (e.currentTarget as HTMLElement).style.backgroundColor = '#222222';
                           }}
                           onMouseLeave={(e) => {
-                            (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255, 255, 255, 0.18)';
                             (e.currentTarget as HTMLElement).style.backgroundColor = '#161616';
                           }}
                         >
-                          <span>Ficha & Canchas</span>
+                          <span>Ficha del Club</span>
                           <Icons.ArrowUpRight size={12} />
                         </Link>
 
-                        {club.whatsappPhone && (
+                        {availableSlots.length > 0 ? (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenBooking(availableSlots[0], club)}
+                            style={{
+                              backgroundColor: 'var(--color-crimson-signal)',
+                              color: '#ffffff',
+                              border: 'none',
+                              borderRadius: 'var(--radius-full)',
+                              padding: '10px 20px',
+                              fontSize: 11.5,
+                              fontWeight: 800,
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.5px',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 6,
+                              boxShadow: '0 3px 14px rgba(252, 28, 70, 0.4)',
+                              transition: 'all 0.2s ease',
+                            }}
+                            onMouseEnter={(e) => {
+                              (e.currentTarget as HTMLElement).style.filter = 'brightness(1.12)';
+                            }}
+                            onMouseLeave={(e) => {
+                              (e.currentTarget as HTMLElement).style.filter = 'none';
+                            }}
+                          >
+                            <Icons.Calendar size={13} color="#ffffff" />
+                            <span>Reservar Turno</span>
+                          </button>
+                        ) : club.whatsappPhone ? (
                           <a
                             href={`https://wa.me/${club.whatsappPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
                               `Hola! Los vi en Hay Equipo y quería consultar disponibilidad de turnos para jugar ${
@@ -2936,44 +2664,11 @@ export default function ReservarPage() {
                               boxShadow: '0 2px 10px rgba(37, 211, 102, 0.25)',
                               transition: 'all 0.2s ease',
                             }}
-                            onMouseEnter={(e) => {
-                              (e.currentTarget as HTMLElement).style.opacity = '0.9';
-                            }}
-                            onMouseLeave={(e) => {
-                              (e.currentTarget as HTMLElement).style.opacity = '1';
-                            }}
                           >
                             <Icons.WhatsApp size={14} color="#000000" />
                             <span>Consultar WhatsApp</span>
                           </a>
-                        )}
-
-                        {availableSlots.length > 0 && (
-                          <button
-                            onClick={() => {
-                              const firstSlot = availableSlots[0];
-                              if (firstSlot) handleOpenBooking(firstSlot, club);
-                            }}
-                            style={{
-                              backgroundColor: 'var(--color-crimson-signal)',
-                              color: 'var(--color-frost)',
-                              border: 'none',
-                              padding: '10px 24px',
-                              fontSize: 12,
-                              fontWeight: 700,
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.6px',
-                              cursor: 'pointer',
-                              borderRadius: 'var(--radius-full)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 6,
-                            }}
-                          >
-                            <span>Elegir Horario</span>
-                            <Icons.ArrowUpRight size={13} color="#ffffff" />
-                          </button>
-                        )}
+                        ) : null}
                       </div>
                     </div>
                   </div>
@@ -2985,795 +2680,6 @@ export default function ReservarPage() {
       </section>
       </>
       )}
-
-      {/* ═══════════════════════════════════════════════════════
-          MODAL: CHECKOUT DE RESERVA EN VIVO (MERCADO PAGO + SPLIT)
-          ═══════════════════════════════════════════════════════ */}
-      {selectedSlot && selectedSlotClub && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.85)',
-            backdropFilter: 'blur(12px)',
-            zIndex: 100,
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: '20px',
-          }}
-          onClick={() => {
-            if (!isProcessing) {
-              setSelectedSlot(null);
-              setSelectedSlotClub(null);
-            }
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: '#0c0c0c',
-              border: '1px solid var(--color-graphite)',
-              width: '100%',
-              maxWidth: 580,
-              maxHeight: '92vh',
-              overflowY: 'auto',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.95), 0 0 40px rgba(252, 28, 70, 0.2)',
-              position: 'relative',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header del Modal */}
-            <div
-              style={{
-                padding: '20px 24px',
-                borderBottom: '1px solid rgba(76, 76, 76, 0.4)',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                backgroundColor: '#090909',
-              }}
-            >
-              <div>
-                <div style={{ fontSize: 10, color: 'var(--color-crimson-signal)', textTransform: 'uppercase', letterSpacing: '1.5px', fontWeight: 700 }}>
-                  CONFIRMACIÓN Y CHECKOUT
-                </div>
-                <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-frost)', textTransform: 'uppercase', letterSpacing: '-0.5px' }}>
-                  Reservá tu Turno
-                </div>
-              </div>
-
-              <button
-                onClick={() => {
-                  setSelectedSlot(null);
-                  setSelectedSlotClub(null);
-                }}
-                style={{
-                  backgroundColor: 'transparent',
-                  border: 'none',
-                  color: 'var(--color-ash)',
-                  cursor: 'pointer',
-                  padding: 6,
-                }}
-              >
-                <Icons.Close size={18} />
-              </button>
-            </div>
-
-            {/* Holding Countdown Bar (7 minutos) */}
-            <div
-              style={{
-                padding: '10px 24px',
-                backgroundColor: 'rgba(252, 28, 70, 0.12)',
-                borderBottom: '1px solid rgba(252, 28, 70, 0.3)',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span
-                  style={{
-                    width: 7,
-                    height: 7,
-                    borderRadius: '50%',
-                    backgroundColor: 'var(--color-crimson-signal)',
-                    animation: 'pulse 1.2s infinite',
-                  }}
-                />
-                <span style={{ fontSize: 12, color: 'var(--color-frost)', fontWeight: 600 }}>
-                  Turno bloqueado temporalmente:
-                </span>
-              </div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-crimson-signal)', fontFamily: 'monospace', letterSpacing: '1px' }}>
-                {timerDisplay}
-              </div>
-            </div>
-
-            <div style={{ padding: '24px' }}>
-              {confirmedBooking ? (
-                /* ── Booking Success Screen ── */
-                <div style={{ textAlign: 'center', padding: '16px 0' }}>
-                  <div
-                    style={{
-                      width: 56,
-                      height: 56,
-                      borderRadius: '50%',
-                      backgroundColor: 'rgba(252, 28, 70, 0.15)',
-                      border: '2px solid var(--color-crimson-signal)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      margin: '0 auto 20px',
-                    }}
-                  >
-                    <Icons.CheckCircle size={28} color="var(--color-crimson-signal)" />
-                  </div>
-
-                  <h3 style={{ fontSize: 24, fontWeight: 700, color: 'var(--color-frost)', textTransform: 'uppercase', margin: '0 0 8px' }}>
-                    ¡Turno Reservado con Éxito!
-                  </h3>
-                  <p style={{ color: 'var(--color-ash)', fontSize: 14, margin: '0 0 24px' }}>
-                    Código de reserva: <strong style={{ color: 'var(--color-crimson-signal)' }}>{confirmedBooking.bookingCode}</strong>
-                  </p>
-
-                  <div style={{ backgroundColor: '#111', border: '1px solid var(--color-graphite)', padding: '16px', textAlign: 'left', marginBottom: 20 }}>
-                    <div style={{ fontSize: 11, color: 'var(--color-graphite)', textTransform: 'uppercase', marginBottom: 4 }}>Detalle del Partido</div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-frost)', marginBottom: 2 }}>{confirmedBooking.clubName}</div>
-                    <div style={{ fontSize: 13, color: 'var(--color-ash)', marginBottom: 6 }}>{confirmedBooking.courtName}</div>
-                    <div style={{ fontSize: 13, color: 'var(--color-crimson-signal)', fontWeight: 600, marginBottom: 8 }}>{confirmedBooking.time}</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--color-ash)', borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: 8 }}>
-                      <Icons.Check size={13} color="var(--color-crimson-signal)" />
-                      <span>Registrado en tiempo real en la nube</span>
-                    </div>
-                  </div>
-
-                  {confirmedBooking.mpInitPoint && (
-                    <div style={{ marginBottom: 20 }}>
-                      <a
-                        href={confirmedBooking.mpInitPoint}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: 8,
-                          backgroundColor: '#009EE3',
-                          color: '#fff',
-                          borderRadius: 'var(--radius-full)',
-                          padding: '13px 24px',
-                          textDecoration: 'none',
-                          fontWeight: 700,
-                          fontSize: 13,
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.6px',
-                          boxShadow: '0 0 20px rgba(0, 158, 227, 0.35)',
-                        }}
-                      >
-                        <Icons.Lock size={14} color="#fff" />
-                        <span>Completar Pago en Mercado Pago</span>
-                        <Icons.ArrowUpRight size={14} color="#fff" />
-                      </a>
-                      <div style={{ fontSize: 10.5, color: 'var(--color-graphite)', marginTop: 6 }}>
-                        Aboná con tarjeta de débito, crédito o dinero en cuenta
-                      </div>
-                    </div>
-                  )}
-
-                  {paymentType === 'SPLIT' && (
-                    <div style={{ backgroundColor: 'rgba(37, 211, 102, 0.08)', border: '1px solid rgba(37, 211, 102, 0.3)', padding: '18px', marginBottom: 24, textAlign: 'left' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                        <Icons.WhatsApp size={18} />
-                        <span style={{ fontSize: 13, fontWeight: 700, color: '#ffffff' }}>Link de Pago para tu Equipo</span>
-                      </div>
-                      <p style={{ fontSize: 12, color: 'var(--color-ash)', margin: '0 0 14px', lineHeight: 1.4 }}>
-                        Compartí este link en el grupo de WhatsApp. Cada jugador paga su parte directamente por Mercado Pago sin que tengas que poner plata de más.
-                      </p>
-
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        <input
-                          type="text"
-                          readOnly
-                          value={confirmedBooking.splitLink}
-                          style={{
-                            backgroundColor: '#000',
-                            border: '1px solid rgba(255, 255, 255, 0.2)',
-                            color: '#fff',
-                            padding: '8px 12px',
-                            fontSize: 12,
-                            width: '100%',
-                          }}
-                        />
-                        <button
-                          onClick={handleCopyLink}
-                          style={{
-                            backgroundColor: copiedLink ? '#25D366' : '#222',
-                            color: '#fff',
-                            border: 'none',
-                            borderRadius: 'var(--radius-full)',
-                            padding: '8px 18px',
-                            fontSize: 12,
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 6,
-                          }}
-                        >
-                          <Icons.Copy size={13} />
-                          <span>{copiedLink ? 'Copiado' : 'Copiar'}</span>
-                        </button>
-                      </div>
-
-                      <a
-                        href={`https://wa.me/?text=${encodeURIComponent('¡Muchachos! Ya reservé la cancha en ' + confirmedBooking.clubName + ' (' + confirmedBooking.time + '). Entren acá para pagar su parte con Mercado Pago: ' + confirmedBooking.splitLink)}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: 8,
-                          backgroundColor: '#25D366',
-                          color: '#000',
-                          borderRadius: 'var(--radius-full)',
-                          padding: '13px 20px',
-                          textDecoration: 'none',
-                          fontWeight: 700,
-                          fontSize: 13,
-                          marginTop: 14,
-                          textTransform: 'uppercase',
-                        }}
-                      >
-                        <Icons.WhatsApp size={16} color="#000" />
-                        <span>Enviar por WhatsApp al equipo</span>
-                      </a>
-                    </div>
-                  )}
-
-                  <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
-                    <button
-                      onClick={() => {
-                        setSelectedSlot(null);
-                        setSelectedSlotClub(null);
-                        handleTabChange('RESERVAS');
-                      }}
-                      style={{
-                        flex: 1,
-                        backgroundColor: 'var(--color-crimson-signal)',
-                        color: '#fff',
-                        border: 'none',
-                        padding: '11px 18px',
-                        fontSize: 12,
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        borderRadius: 'var(--radius-full)',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.4px',
-                      }}
-                    >
-                      Ver en Mis Reservas
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSelectedSlot(null);
-                        setSelectedSlotClub(null);
-                      }}
-                      style={{
-                        backgroundColor: 'transparent',
-                        color: 'var(--color-ash)',
-                        border: '1px solid var(--color-graphite)',
-                        padding: '11px 18px',
-                        fontSize: 12,
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        borderRadius: 'var(--radius-full)',
-                      }}
-                    >
-                      Cerrar
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                /* ── Checkout Form ── */
-                <div>
-                  <div
-                    style={{
-                      backgroundColor: '#101010',
-                      border: '1px solid rgba(255, 255, 255, 0.08)',
-                      padding: '16px',
-                      marginBottom: 20,
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-                      <div>
-                        <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-frost)' }}>
-                          {selectedSlot.courtName}
-                        </div>
-                        <div style={{ fontSize: 13, color: 'var(--color-ash)' }}>
-                          {selectedSlotClub.name} · {selectedSlotClub.address}
-                        </div>
-                      </div>
-                      <div
-                        style={{
-                          padding: '4px 10px',
-                          backgroundColor: 'var(--color-crimson-signal)',
-                          color: '#fff',
-                          borderRadius: 'var(--radius-full)',
-                          fontSize: 11,
-                          fontWeight: 700,
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.6px',
-                        }}
-                      >
-                        {selectedSlot.sport}
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--color-frost)', fontSize: 13, fontWeight: 600 }}>
-                      <Icons.Clock size={13} color="var(--color-crimson-signal)" />
-                      <span>{selectedSlot.date} · {selectedSlot.startTime} a {selectedSlot.endTime} hs</span>
-                    </div>
-                  </div>
-
-                  {/* Tipo de Reserva: Puntual vs Fijo Semanal (si el turno lo permite) */}
-                  {selectedSlot.isFixedSlot && (
-                    <div
-                      style={{
-                        marginBottom: 20,
-                        padding: '16px',
-                        backgroundColor: '#101010',
-                        border: '1px solid rgba(252, 28, 70, 0.3)',
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                        <div style={{ fontSize: 10.5, color: 'var(--color-crimson-signal)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700 }}>
-                          MODALIDAD DE TURNO
-                        </div>
-                        <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 'var(--radius-full)', backgroundColor: 'rgba(252, 28, 70, 0.2)', color: 'var(--color-crimson-signal)', fontWeight: 700 }}>
-                          DISPONIBLE COMO FIJO
-                        </span>
-                      </div>
-
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: slotBookingMode === 'FIXED_RECURRING' ? 14 : 0 }}>
-                        <button
-                          type="button"
-                          onClick={() => setSlotBookingMode('SINGLE')}
-                          style={{
-                            backgroundColor: slotBookingMode === 'SINGLE' ? 'rgba(255, 255, 255, 0.1)' : '#080808',
-                            border: '1px solid ' + (slotBookingMode === 'SINGLE' ? 'var(--color-frost)' : 'var(--color-graphite)'),
-                            padding: '12px',
-                            textAlign: 'left',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          <div style={{ fontSize: 12, fontWeight: 700, color: '#fff', marginBottom: 2 }}>
-                            Turno Puntual
-                          </div>
-                          <div style={{ fontSize: 10.5, color: 'var(--color-ash)' }}>
-                            Solo juegas esta fecha puntual.
-                          </div>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setSlotBookingMode('FIXED_RECURRING')}
-                          style={{
-                            backgroundColor: slotBookingMode === 'FIXED_RECURRING' ? 'rgba(252, 28, 70, 0.15)' : '#080808',
-                            border: '1px solid ' + (slotBookingMode === 'FIXED_RECURRING' ? 'var(--color-crimson-signal)' : 'var(--color-graphite)'),
-                            padding: '12px',
-                            textAlign: 'left',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 700, color: '#fff', marginBottom: 2 }}>
-                            <Icons.Repeat size={12} color="var(--color-crimson-signal)" />
-                            <span>Fijo Semanal</span>
-                          </div>
-                          <div style={{ fontSize: 10.5, color: 'var(--color-ash)' }}>
-                            Tu cancha fija cada semana.
-                          </div>
-                        </button>
-                      </div>
-
-                      {slotBookingMode === 'FIXED_RECURRING' && (
-                        <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: 12, marginTop: 10 }}>
-                          <div style={{ fontSize: 10.5, color: 'var(--color-ash)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 8, fontWeight: 600 }}>
-                            Duración del Compromiso Semanal:
-                          </div>
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-                            {[
-                              { months: 1, discount: '5% OFF' },
-                              { months: 3, discount: '12% OFF' },
-                              { months: 6, discount: '15% OFF' },
-                            ].map((item) => {
-                              const isSelected = fixedDurationMonths === item.months;
-                              return (
-                                <button
-                                  key={item.months}
-                                  type="button"
-                                  onClick={() => setFixedDurationMonths(item.months as 1 | 3 | 6)}
-                                  style={{
-                                    backgroundColor: isSelected ? 'var(--color-crimson-signal)' : '#161616',
-                                    color: isSelected ? '#ffffff' : 'var(--color-ash)',
-                                    border: isSelected ? 'none' : '1px solid var(--color-graphite)',
-                                    borderRadius: 'var(--radius-full)',
-                                    padding: '7px 8px',
-                                    fontSize: 11,
-                                    fontWeight: 700,
-                                    cursor: 'pointer',
-                                    textAlign: 'center',
-                                    transition: 'all 0.2s ease',
-                                  }}
-                                >
-                                  {item.months} {item.months === 1 ? 'mes' : 'meses'} ({item.discount})
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Modalidad de Pago: Full vs Split */}
-                  <div style={{ marginBottom: 20 }}>
-                    <div style={{ fontSize: 11, color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 8, fontWeight: 700 }}>
-                      Modalidad de Pago
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                      <button
-                        onClick={() => setPaymentType('SPLIT')}
-                        style={{
-                          backgroundColor: paymentType === 'SPLIT' ? 'rgba(252, 28, 70, 0.15)' : '#101010',
-                          border: '1px solid ' + (paymentType === 'SPLIT' ? 'var(--color-crimson-signal)' : 'var(--color-graphite)'),
-                          padding: '14px',
-                          textAlign: 'left',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 4 }}>
-                          <Icons.Users size={14} color={paymentType === 'SPLIT' ? 'var(--color-crimson-signal)' : '#fff'} />
-                          <span>Dividir Pago (Split)</span>
-                        </div>
-                        <div style={{ fontSize: 11, color: 'var(--color-ash)' }}>
-                          Pagás tu cuota ahora y compartís el link al resto.
-                        </div>
-                      </button>
-
-                      <button
-                        onClick={() => setPaymentType('FULL')}
-                        style={{
-                          backgroundColor: paymentType === 'FULL' ? 'rgba(252, 28, 70, 0.15)' : '#101010',
-                          border: '1px solid ' + (paymentType === 'FULL' ? 'var(--color-crimson-signal)' : 'var(--color-graphite)'),
-                          padding: '14px',
-                          textAlign: 'left',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 4 }}>
-                          <Icons.ShieldCheck size={14} color={paymentType === 'FULL' ? 'var(--color-crimson-signal)' : '#fff'} />
-                          <span>Pago Total (100%)</span>
-                        </div>
-                        <div style={{ fontSize: 11, color: 'var(--color-ash)' }}>
-                          Abonás el turno completo ({formatCurrency(selectedSlot.price)}).
-                        </div>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Cantidad de Jugadores para Split */}
-                  {paymentType === 'SPLIT' && (
-                    <div style={{ marginBottom: 20, padding: '14px', backgroundColor: '#101010', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                        <span style={{ fontSize: 12, color: 'var(--color-frost)', fontWeight: 600 }}>Cantidad de jugadores para dividir:</span>
-                        <div style={{ display: 'flex', gap: 6 }}>
-                          {[4, 10, 14].map((num) => (
-                            <button
-                              key={num}
-                              onClick={() => setSplitPlayers(num)}
-                              style={{
-                                backgroundColor: splitPlayers === num ? 'var(--color-crimson-signal)' : '#1a1a1a',
-                                color: '#fff',
-                                border: 'none',
-                                borderRadius: 'var(--radius-full)',
-                                padding: '5px 12px',
-                                fontSize: 11,
-                                fontWeight: 700,
-                                cursor: 'pointer',
-                              }}
-                            >
-                              {num}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                      <div style={{ fontSize: 12, color: 'var(--color-ash)' }}>
-                        Cuota por persona: <strong style={{ color: 'var(--color-frost)' }}>{formatCurrency(Math.round(selectedSlot.price / splitPlayers))}</strong>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Estado de Autenticación del Pagador */}
-                  {user ? (
-                    <div
-                      style={{
-                        backgroundColor: 'rgba(16, 185, 129, 0.08)',
-                        border: '1px solid rgba(16, 185, 129, 0.3)',
-                        padding: '12px 16px',
-                        marginBottom: 16,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: 12,
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div
-                          style={{
-                            width: 10,
-                            height: 10,
-                            borderRadius: '50%',
-                            backgroundColor: '#10b981',
-                            boxShadow: '0 0 10px #10b981',
-                          }}
-                        />
-                        <div>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-frost)' }}>
-                            Reservando como: {userProfile?.name || user.displayName || user.email}
-                          </div>
-                          <div style={{ fontSize: 11, color: '#a7f3d0', display: 'flex', alignItems: 'center', gap: 5 }}>
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="20 6 9 17 4 12" />
-                            </svg>
-                            <span>Turno vinculado permanentemente a tu cuenta</span>
-                          </div>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => openAuthModal()}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: 'var(--color-ash)',
-                          fontSize: 11,
-                          textDecoration: 'underline',
-                          cursor: 'pointer',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        Cambiar
-                      </button>
-                    </div>
-                  ) : (
-                    <div
-                      style={{
-                        backgroundColor: 'rgba(252, 28, 70, 0.08)',
-                        border: '1px solid rgba(252, 28, 70, 0.35)',
-                        padding: '14px 16px',
-                        marginBottom: 18,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: 14,
-                      }}
-                    >
-                      <div>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-frost)', marginBottom: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--color-crimson-signal)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <rect x="3" y="11" width="18" height="11" />
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                          </svg>
-                          <span>Identificate para reservar</span>
-                        </div>
-                        <div style={{ fontSize: 11, color: 'var(--color-ash)' }}>
-                          Accedé con Google, Email o Teléfono para asegurar este turno y rastrearlo cuando quieras.
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          openAuthModal(
-                            `Para reservar en ${selectedSlotClub.name}, por favor ingresá con tu cuenta.`
-                          )
-                        }
-                        style={{
-                          backgroundColor: 'var(--color-crimson-signal)',
-                          color: '#ffffff',
-                          border: 'none',
-                          borderRadius: 'var(--radius-buttons)',
-                          padding: '8px 16px',
-                          fontSize: 11,
-                          fontWeight: 800,
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.4px',
-                          cursor: 'pointer',
-                          whiteSpace: 'nowrap',
-                          boxShadow: '0 0 12px rgba(252, 28, 70, 0.4)',
-                        }}
-                      >
-                        Ingresar
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Formulario del Pagador */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
-                    <div>
-                      <label style={{ display: 'block', fontSize: 11, color: 'var(--color-ash)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
-                        Nombre y Apellido
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Ej: Emiliano Moter"
-                        value={buyerName}
-                        onChange={(e) => setBuyerName(e.target.value)}
-                        style={{
-                          width: '100%',
-                          backgroundColor: '#101010',
-                          border: '1px solid var(--color-graphite)',
-                          color: '#fff',
-                          padding: '10px 14px',
-                          fontSize: 13,
-                        }}
-                      />
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                      <div>
-                        <label style={{ display: 'block', fontSize: 11, color: 'var(--color-ash)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
-                          WhatsApp (Para confirmación)
-                        </label>
-                        <input
-                          type="tel"
-                          placeholder="+54 9 223 555-0100"
-                          value={buyerPhone}
-                          onChange={(e) => setBuyerPhone(e.target.value)}
-                          style={{
-                            width: '100%',
-                            backgroundColor: '#101010',
-                            border: '1px solid var(--color-graphite)',
-                            color: '#fff',
-                            padding: '10px 14px',
-                            fontSize: 13,
-                          }}
-                        />
-                      </div>
-                      <div>
-                        <label style={{ display: 'block', fontSize: 11, color: 'var(--color-ash)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
-                          Email
-                        </label>
-                        <input
-                          type="email"
-                          placeholder="tu@email.com"
-                          value={buyerEmail}
-                          onChange={(e) => setBuyerEmail(e.target.value)}
-                          style={{
-                            width: '100%',
-                            backgroundColor: '#101010',
-                            border: '1px solid var(--color-graphite)',
-                            color: '#fff',
-                            padding: '10px 14px',
-                            fontSize: 13,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Desglose de Precios */}
-                  {(() => {
-                    const isRecurring = Boolean(selectedSlot.isFixedSlot && slotBookingMode === 'FIXED_RECURRING');
-                    const dRate = isRecurring ? (fixedDurationMonths === 1 ? 0.05 : fixedDurationMonths === 3 ? 0.12 : 0.15) : 0;
-                    const effPrice = Math.round(selectedSlot.price * (1 - dRate));
-                    const baseAmount = paymentType === 'FULL' ? effPrice : Math.round(effPrice / splitPlayers);
-                    const fee = paymentType === 'FULL' ? 1500 : 500;
-                    const totalToday = baseAmount + fee;
-
-                    return (
-                      <div style={{ borderTop: '1px solid rgba(76, 76, 76, 0.4)', paddingTop: 16, marginBottom: 20 }}>
-                        {isRecurring && dRate > 0 && (
-                          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#10b981', fontSize: 12, fontWeight: 700, marginBottom: 10, backgroundColor: 'rgba(16, 185, 129, 0.08)', padding: '6px 12px', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
-                            <span>Descuento Fijo Semanal ({fixedDurationMonths} {fixedDurationMonths === 1 ? 'mes' : 'meses'})</span>
-                            <span>-{Math.round(dRate * 100)}% OFF APLICADO</span>
-                          </div>
-                        )}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--color-ash)', fontSize: 13, marginBottom: 6 }}>
-                          <span>{paymentType === 'FULL' ? 'Subtotal Cancha' : `Tu cuota (1 de ${splitPlayers})`}</span>
-                          <span>
-                            {isRecurring && dRate > 0 && (
-                              <span style={{ textDecoration: 'line-through', color: 'var(--color-graphite)', marginRight: 6, fontSize: 11.5 }}>
-                                {paymentType === 'FULL' ? formatCurrency(selectedSlot.price) : formatCurrency(Math.round(selectedSlot.price / splitPlayers))}
-                              </span>
-                            )}
-                            {formatCurrency(baseAmount)}
-                          </span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--color-ash)', fontSize: 13, marginBottom: 10 }}>
-                          <span>Tarifa de servicio de reserva</span>
-                          <span>{formatCurrency(fee)}</span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--color-frost)', fontSize: 18, fontWeight: 700, borderTop: '1px dashed rgba(76, 76, 76, 0.4)', paddingTop: 10 }}>
-                          <span>Total a abonar hoy</span>
-                          <span style={{ color: 'var(--color-crimson-signal)' }}>
-                            {formatCurrency(totalToday)}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })()}
-
-                  {bookingError && (
-                    <div
-                      style={{
-                        marginBottom: 16,
-                        padding: '12px 16px',
-                        backgroundColor: 'rgba(252, 28, 70, 0.15)',
-                        border: '1px solid var(--color-crimson-signal)',
-                        color: 'var(--color-frost)',
-                        fontSize: 12.5,
-                        fontWeight: 600,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 10,
-                      }}
-                    >
-                      <Icons.Close size={14} color="var(--color-crimson-signal)" />
-                      <span>{bookingError}</span>
-                    </div>
-                  )}
-
-                  {/* Botón Mercado Pago */}
-                  <button
-                    onClick={handleExecutePayment}
-                    disabled={isProcessing}
-                    style={{
-                      width: '100%',
-                      backgroundColor: 'var(--color-crimson-signal)',
-                      color: 'var(--color-frost)',
-                      border: 'none',
-                      borderRadius: 'var(--radius-full)',
-                      padding: '16px 28px',
-                      fontSize: 14,
-                      fontWeight: 700,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.8px',
-                      cursor: isProcessing ? 'wait' : 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 8,
-                      opacity: isProcessing ? 0.7 : 1,
-                      boxShadow: '0 0 25px rgba(252, 28, 70, 0.4)',
-                    }}
-                  >
-                    {isProcessing ? (
-                      <span>Procesando pago con Mercado Pago...</span>
-                    ) : (
-                      <>
-                        <Icons.ShieldCheck size={16} color="#ffffff" />
-                        <span>Pagar con Mercado Pago</span>
-                        <Icons.ArrowUpRight size={14} color="#ffffff" />
-                      </>
-                    )}
-                  </button>
-
-                  <div style={{ textAlign: 'center', marginTop: 12, fontSize: 11, color: 'var(--color-graphite)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                    <Icons.Lock size={12} color="var(--color-graphite)" />
-                    <span>Pago 100% Protegido con Mercado Pago Oficial · SSL 256-bit</span>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
 
       {/* ═══════════════════════════════════════════════════════
           FOOTER — ThoughtLab Swiss Minimal
