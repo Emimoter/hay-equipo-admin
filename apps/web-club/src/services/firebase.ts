@@ -559,6 +559,81 @@ export async function getAvailableFixedSlotsFirestore(): Promise<PublishedSlotRe
 }
 
 /**
+ * Retrieves all published active slots across all clubs
+ */
+export async function getAllActiveSlotsFirestore(): Promise<PublishedSlotRecord[]> {
+  const mapById = new Map<string, PublishedSlotRecord>();
+  try {
+    // 1. Direct global registry
+    const snap = await getDoc(doc(dbFirestore, 'settings', 'hay_equipo_all_active_slots'));
+    if (snap.exists() && Array.isArray(snap.data()?.slots)) {
+      (snap.data()?.slots as PublishedSlotRecord[]).forEach((s) => {
+        if (s && s.status === 'ACTIVE') {
+          mapById.set(s.id, s);
+        }
+      });
+    }
+
+    // 2. Also scan all clubs in hay_equipo_clubs to ensure 100% completeness
+    const clubsSnap = await getDoc(doc(dbFirestore, 'settings', 'hay_equipo_clubs'));
+    if (clubsSnap.exists() && Array.isArray(clubsSnap.data()?.clubs)) {
+      const clubsList = clubsSnap.data()?.clubs || [];
+      await Promise.all(
+        clubsList.map(async (c: any) => {
+          if (!c?.id) return;
+          try {
+            const slotSnap = await getDoc(doc(dbFirestore, 'settings', `club_slots_${c.id}`));
+            if (slotSnap.exists() && Array.isArray(slotSnap.data()?.slots)) {
+              (slotSnap.data()?.slots as PublishedSlotRecord[]).forEach((s) => {
+                if (s && s.status === 'ACTIVE') {
+                  mapById.set(s.id, {
+                    ...s,
+                    clubName: s.clubName || c.name || 'Club Hay Equipo',
+                  });
+                }
+              });
+            }
+          } catch {}
+        })
+      );
+    }
+  } catch (e) {
+    console.error('Error fetching all active slots:', e);
+  }
+
+  return Array.from(mapById.values()).sort((a, b) => {
+    return (a.date + a.startTime).localeCompare(b.date + b.startTime);
+  });
+}
+
+/**
+ * Real-time listener for all active published slots across all clubs
+ */
+export function subscribeToAllActiveSlotsFirestore(
+  callback: (slots: PublishedSlotRecord[]) => void
+): () => void {
+  try {
+    return onSnapshot(
+      doc(dbFirestore, 'settings', 'hay_equipo_all_active_slots'),
+      (snap) => {
+        if (snap.exists() && Array.isArray(snap.data()?.slots)) {
+          const active = (snap.data()?.slots as PublishedSlotRecord[]).filter(
+            (s) => s && s.status === 'ACTIVE'
+          );
+          callback(active);
+        }
+      },
+      (err) => {
+        console.warn('Real-time active slots subscription error:', err);
+      }
+    );
+  } catch (e) {
+    console.error('Error attaching active slots listener:', e);
+    return () => {};
+  }
+}
+
+/**
  * Saves a new published slot or updates the list for a club
  */
 export async function saveClubActiveSlotFirestore(
@@ -605,6 +680,32 @@ export async function saveClubActiveSlotFirestore(
       ),
       { merge: true }
     );
+
+    // Index in global all active slots registry
+    try {
+      const allRegistryRef = doc(dbFirestore, 'settings', 'hay_equipo_all_active_slots');
+      const allSnap = await getDoc(allRegistryRef);
+      let allSlots: PublishedSlotRecord[] = [];
+      if (allSnap.exists() && Array.isArray(allSnap.data()?.slots)) {
+        allSlots = allSnap.data()?.slots;
+      }
+      const updatedAll = allSlots.filter((s) => s && s.id !== cleanSlot.id);
+      if (cleanSlot.status === 'ACTIVE') {
+        updatedAll.unshift(cleanSlot);
+      }
+      await setDoc(
+        allRegistryRef,
+        JSON.parse(
+          JSON.stringify({
+            slots: updatedAll,
+            updatedAt: new Date().toISOString(),
+          })
+        ),
+        { merge: true }
+      );
+    } catch (allErr) {
+      console.error('Error updating global active slots registry:', allErr);
+    }
 
     // If marked as available for Turno Fijo, index in global fixed slots registry
     try {
@@ -684,6 +785,28 @@ export async function deleteClubActiveSlotFirestore(
           ),
           { merge: true }
         );
+      }
+
+      // Clean up from global all active slots registry
+      try {
+        const allRegistryRef = doc(dbFirestore, 'settings', 'hay_equipo_all_active_slots');
+        const allSnap = await getDoc(allRegistryRef);
+        if (allSnap.exists() && Array.isArray(allSnap.data()?.slots)) {
+          const allSlots: PublishedSlotRecord[] = allSnap.data()?.slots;
+          const cleanedAll = allSlots.filter((s) => s && s.id !== slotId);
+          await setDoc(
+            allRegistryRef,
+            JSON.parse(
+              JSON.stringify({
+                slots: cleanedAll,
+                updatedAt: new Date().toISOString(),
+              })
+            ),
+            { merge: true }
+          );
+        }
+      } catch (allErr) {
+        console.error('Error cleaning up global active slots registry:', allErr);
       }
 
       // Also clean up from global fixed slots registry

@@ -2,7 +2,15 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useSlidingIndicator } from '../hooks/useSlidingIndicator';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import { getBookingByIdFirestore, BookingRecord, getClubsFirestore, getCourtsFirestore } from '../services/firebase';
+import {
+  getBookingByIdFirestore,
+  BookingRecord,
+  getClubsFirestore,
+  getCourtsFirestore,
+  getAllActiveSlotsFirestore,
+  subscribeToAllActiveSlotsFirestore,
+  PublishedSlotRecord,
+} from '../services/firebase';
 import { ReservarNavTabs, NavTabType } from '../components/reservar/ReservarNavTabs';
 import { MisReservasTab } from '../components/reservar/MisReservasTab';
 import { ExplorarTab } from '../components/reservar/ExplorarTab';
@@ -369,8 +377,19 @@ function getClubSlotsForDate(club: WebClub, date: Date, sport: 'PADEL' | 'FUTBOL
   // Retorna únicamente turnos reales si el club los tiene publicados
   if (!club.slots || club.slots.length === 0) return [];
   const friendlyDate = getFriendlyDateLabel(date);
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  const dateIso = `${y}-${m}-${d}`;
+
   return club.slots.filter(
-    (s) => s.sport === sport && (!s.date || s.date === friendlyDate || s.date === 'Hoy') && s.available
+    (s) =>
+      s.sport === sport &&
+      (!s.date ||
+        s.date === dateIso ||
+        s.date === friendlyDate ||
+        (s.date === 'Hoy' && isSameDay(date, new Date()))) &&
+      s.available
   );
 }
 
@@ -870,11 +889,14 @@ export default function ReservarPage() {
 
   // Load clubs & courts dynamically from Firestore database if available
   useEffect(() => {
+    let unsubscribeSlots: (() => void) | null = null;
+
     async function loadFirestoreData() {
       try {
-        const [firestoreClubs, firestoreCourts] = await Promise.all([
+        const [firestoreClubs, firestoreCourts, firestoreSlots] = await Promise.all([
           getClubsFirestore(),
           getCourtsFirestore(),
+          getAllActiveSlotsFirestore(),
         ]);
 
         if (Array.isArray(firestoreClubs) && firestoreClubs.length > 0) {
@@ -890,6 +912,26 @@ export default function ReservarPage() {
                 capacity: c.sportType === 'PADEL' ? 4 : (c.name?.includes('7') ? 14 : 10),
               }));
 
+            // Map published active slots belonging to this club
+            const clubSlots: WebSlot[] = (firestoreSlots || [])
+              .filter((s: PublishedSlotRecord) => s.clubId === fc.id && s.status === 'ACTIVE')
+              .map((s: PublishedSlotRecord) => {
+                const isPadel = s.sportType === 'PADEL';
+                const capacity = isPadel ? 4 : (s.courtName?.includes('7') ? 14 : 10);
+                return {
+                  id: s.id,
+                  courtId: s.courtId,
+                  courtName: s.courtName || 'Cancha',
+                  sport: isPadel ? ('PADEL' as const) : ('FUTBOL' as const),
+                  date: s.date,
+                  startTime: s.startTime,
+                  endTime: s.endTime,
+                  price: s.price,
+                  perPlayerPrice: Math.round(s.price / capacity),
+                  available: s.status === 'ACTIVE',
+                };
+              });
+
             let sportsList: ('PADEL' | 'FUTBOL')[] = [];
             if (Array.isArray(fc.sports) && fc.sports.length > 0) {
               sportsList = fc.sports.filter((s: string) => s === 'PADEL' || s === 'FUTBOL');
@@ -898,8 +940,26 @@ export default function ReservarPage() {
               const hasFutbol = clubCourts.some((c: any) => c.sport === 'FUTBOL');
               if (hasPadel) sportsList.push('PADEL');
               if (hasFutbol) sportsList.push('FUTBOL');
-              if (sportsList.length === 0) sportsList.push('PADEL');
             }
+
+            // Ensure any sports from published slots are included
+            clubSlots.forEach((slot) => {
+              if (!sportsList.includes(slot.sport)) {
+                sportsList.push(slot.sport);
+              }
+            });
+
+            if (sportsList.length === 0) sportsList.push('PADEL');
+
+            // Dynamic min prices based on actual slots or court rates
+            const slotPrices = clubSlots.map((s) => s.price);
+            const effectiveMinPrice =
+              slotPrices.length > 0 ? Math.min(...slotPrices) : (fc.minPrice || 24000);
+            const slotPerPlayerPrices = clubSlots.map((s) => s.perPlayerPrice);
+            const effectiveMinPerPlayer =
+              slotPerPlayerPrices.length > 0
+                ? Math.min(...slotPerPlayerPrices)
+                : Math.round(effectiveMinPrice / 4);
 
             return {
               id: fc.id,
@@ -910,7 +970,7 @@ export default function ReservarPage() {
               distanceKm: fc.distanceKm || 2.5,
               latitude: fc.latitude,
               longitude: fc.longitude,
-              minPrice: fc.minPrice,
+              minPrice: effectiveMinPrice,
               rating: fc.rating || 4.8,
               reviewCount: fc.reviewCount || 100,
               sports: sportsList,
@@ -920,7 +980,7 @@ export default function ReservarPage() {
               images: (fc.images && fc.images.length > 0) ? [fc.images[0]] : [
                 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80',
               ],
-              minPricePerPlayer: fc.minPrice ? Math.round(fc.minPrice / 4) : 4500,
+              minPricePerPlayer: effectiveMinPerPlayer,
               amenities: {
                 covered: !!fc.amenities?.covered,
                 parking: !!fc.amenities?.parking,
@@ -932,7 +992,7 @@ export default function ReservarPage() {
               courts: clubCourts.length > 0 ? clubCourts : [
                 { id: `${fc.id}-c1`, name: 'Cancha Principal', sport: sportsList[0], surface: 'Césped Sintético Pro', capacity: sportsList[0] === 'PADEL' ? 4 : 10 },
               ],
-              slots: [],
+              slots: clubSlots,
             };
           });
 
@@ -944,7 +1004,46 @@ export default function ReservarPage() {
         console.warn('Could not sync clubs from Firestore, falling back to local list:', err);
       }
     }
+
     loadFirestoreData();
+
+    // Subscribe to live slots updates in real-time
+    try {
+      unsubscribeSlots = subscribeToAllActiveSlotsFirestore((latestActiveSlots) => {
+        setClubsList((prevClubs) => {
+          return prevClubs.map((club) => {
+            const clubSlots: WebSlot[] = latestActiveSlots
+              .filter((s) => s.clubId === club.id && s.status === 'ACTIVE')
+              .map((s) => {
+                const isPadel = s.sportType === 'PADEL';
+                const capacity = isPadel ? 4 : (s.courtName?.includes('7') ? 14 : 10);
+                return {
+                  id: s.id,
+                  courtId: s.courtId,
+                  courtName: s.courtName || 'Cancha',
+                  sport: isPadel ? ('PADEL' as const) : ('FUTBOL' as const),
+                  date: s.date,
+                  startTime: s.startTime,
+                  endTime: s.endTime,
+                  price: s.price,
+                  perPlayerPrice: Math.round(s.price / capacity),
+                  available: s.status === 'ACTIVE',
+                };
+              });
+            return {
+              ...club,
+              slots: clubSlots,
+            };
+          });
+        });
+      });
+    } catch (e) {}
+
+    window.addEventListener('focus', loadFirestoreData);
+    return () => {
+      if (unsubscribeSlots) unsubscribeSlots();
+      window.removeEventListener('focus', loadFirestoreData);
+    };
   }, []);
 
   // Checkout Drawer state
@@ -3697,6 +3796,61 @@ export default function ReservarPage() {
                   </div>
                 )}
               </div>
+
+              {/* Turnos disponibles para reservar directo desde la ficha */}
+              {(() => {
+                const modalSlots = getClubSlotsForDate(clubModalData, selectedDate, activeSport).filter((s) => s.available);
+                if (modalSlots.length === 0) return null;
+                return (
+                  <div style={{ marginBottom: 20, padding: '16px', backgroundColor: '#090909', border: '1px solid var(--color-graphite)' }}>
+                    <div style={{ fontSize: 10, color: 'var(--color-crimson-signal)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700, marginBottom: 10 }}>
+                      Turnos Disponibles · {getFullDateLabel(selectedDate).toUpperCase()}
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {modalSlots.map((slot) => (
+                        <button
+                          key={slot.id}
+                          onClick={() => {
+                            const targetClub = clubModalData;
+                            setClubModalData(null);
+                            handleOpenBooking(slot, targetClub);
+                          }}
+                          style={{
+                            backgroundColor: '#141414',
+                            border: '1px solid var(--color-graphite)',
+                            borderRadius: 'var(--radius-full)',
+                            color: 'var(--color-frost)',
+                            padding: '8px 16px',
+                            textAlign: 'left',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8,
+                          }}
+                          onMouseEnter={(e) => {
+                            (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-crimson-signal)';
+                            (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(252, 28, 70, 0.12)';
+                          }}
+                          onMouseLeave={(e) => {
+                            (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-graphite)';
+                            (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#141414';
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700 }}>
+                            <Icons.Clock size={12} color="var(--color-crimson-signal)" />
+                            <span>{slot.startTime} hs</span>
+                          </div>
+                          <span style={{ color: 'var(--color-graphite)' }}>·</span>
+                          <span style={{ fontSize: 11, color: 'var(--color-ash)', fontWeight: 500 }}>
+                            {formatCurrency(slot.perPlayerPrice)} / pers
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {clubModalData.whatsappPhone && (
