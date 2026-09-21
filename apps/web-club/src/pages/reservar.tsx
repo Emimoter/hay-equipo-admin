@@ -1591,14 +1591,9 @@ export default function ReservarPage() {
               zIndex: 2,
             }}
           >
-        <div style={{ maxWidth: 1400, margin: '0 auto' }}>
-          {/* Eyebrow */}
-          <TrackingBlurReveal inView={isLoaded} delay={0.1} style={{ fontSize: '10px', color: 'var(--color-crimson-signal)', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: 20, fontWeight: 700 }}>
-            01 / DISPONIBILIDAD EN TIEMPO REAL
-          </TrackingBlurReveal>
-
-          {/* Staggered Giant Headline + Sport Pills */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 24, marginBottom: 36 }}>
+            <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+              {/* Staggered Giant Headline */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 24, marginBottom: 16 }}>
             <h1 style={{ margin: 0, padding: 0 }}>
               <div style={{ display: 'block' }}>
                 <MaskedText inView={isLoaded} delay={0.2} duration={1.0}>
@@ -1616,8 +1611,6 @@ export default function ReservarPage() {
               </div>
             </h1>
           </div>
-
-          <HairlineRule inView={isLoaded} delay={0.4} />
         </div>
       </section>
 
