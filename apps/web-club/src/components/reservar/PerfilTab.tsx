@@ -173,7 +173,7 @@ export const PerfilTab: React.FC<PerfilTabProps> = ({
   buyerName = 'Emiliano',
   buyerPhone = '+54 9 11 5555-0001',
 }) => {
-  const { user, userProfile, logout, openAuthModal, updateUserProfileData } = useAuth();
+  const { user, userProfile, openAuthModal, updateUserProfileData } = useAuth();
 
   /* ── Internal tab ── */
   const [activeTab, setActiveTab] = useState<'CUENTA' | 'DEPORTE'>('CUENTA');
@@ -551,56 +551,32 @@ export const PerfilTab: React.FC<PerfilTabProps> = ({
                 />
               </div>
 
-              {/* Save button & Logout */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, marginTop: 8, paddingTop: 16, borderTop: '1px solid rgba(76,76,76,0.3)', flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                  <button
-                    type="submit"
-                    disabled={isSaving}
-                    style={{
-                      backgroundColor: 'var(--color-crimson-signal)',
-                      color: '#ffffff',
-                      border: 'none',
-                      borderRadius: '9999px',
-                      padding: '13px 32px',
-                      fontSize: 12,
-                      fontWeight: 800,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.6px',
-                      cursor: isSaving ? 'wait' : 'pointer',
-                      boxShadow: '0 0 18px rgba(252,28,70,0.4)',
-                    }}
-                  >
-                    {isSaving ? 'Guardando...' : 'Guardar cambios'}
-                  </button>
-                  {savedSuccess && (
-                    <span style={{ fontSize: 12, color: '#10b981', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <Icons.Check size={14} color="#10b981" /> Guardado exitosamente
-                    </span>
-                  )}
-                </div>
-
+              {/* Save button */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 8 }}>
                 <button
-                  type="button"
-                  onClick={logout}
+                  type="submit"
+                  disabled={isSaving}
                   style={{
-                    backgroundColor: 'transparent',
-                    border: '1px solid rgba(239,68,68,0.25)',
+                    backgroundColor: 'var(--color-crimson-signal)',
+                    color: '#ffffff',
+                    border: 'none',
                     borderRadius: '9999px',
-                    padding: '10px 20px',
-                    color: '#f87171',
-                    fontSize: 11,
-                    fontWeight: 700,
+                    padding: '13px 32px',
+                    fontSize: 12,
+                    fontWeight: 800,
                     textTransform: 'uppercase',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
+                    letterSpacing: '0.6px',
+                    cursor: isSaving ? 'wait' : 'pointer',
+                    boxShadow: '0 0 18px rgba(252,28,70,0.4)',
                   }}
                 >
-                  <Icons.LogOut size={13} color="#f87171" />
-                  Cerrar Sesión
+                  {isSaving ? 'Guardando...' : 'Guardar cambios'}
                 </button>
+                {savedSuccess && (
+                  <span style={{ fontSize: 12, color: '#10b981', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Icons.Check size={14} color="#10b981" /> Guardado exitosamente
+                  </span>
+                )}
               </div>
             </div>
           )}
