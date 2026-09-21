@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useSlidingIndicator } from '../../hooks/useSlidingIndicator';
 
-export type NavTabType = 'INICIO' | 'EXPLORAR' | 'RESERVAS' | 'FIJOS' | 'PERFIL';
+export type NavTabType = 'INICIO' | 'EXPLORAR' | 'RESERVAS' | 'PERFIL';
 
 interface ReservarNavTabsProps {
   activeTab: NavTabType;
@@ -51,7 +51,6 @@ const TABS: { id: NavTabType; label: string; icon: (color: string, size: number)
   { id: 'INICIO', label: 'Inicio', icon: (c, s) => <TabIcons.Home color={c} size={s} /> },
   { id: 'EXPLORAR', label: 'Explorar', icon: (c, s) => <TabIcons.Compass color={c} size={s} /> },
   { id: 'RESERVAS', label: 'Mis Reservas', icon: (c, s) => <TabIcons.Calendar color={c} size={s} /> },
-  { id: 'FIJOS', label: 'Turnos Fijos', icon: (c, s) => <TabIcons.Repeat color={c} size={s} /> },
   { id: 'PERFIL', label: 'Mi Perfil', icon: (c, s) => <TabIcons.User color={c} size={s} /> },
 ];
 
@@ -162,7 +161,7 @@ export const ReservarNavTabs: React.FC<ReservarNavTabsProps> = ({
                 )}
               </div>
               <span style={{ fontSize: '10px', textTransform: 'capitalize' }}>
-                {tab.id === 'RESERVAS' ? 'Reservas' : tab.id === 'FIJOS' ? 'Fijos' : tab.label}
+                {tab.id === 'RESERVAS' ? 'Reservas' : tab.label}
               </span>
             </button>
           );

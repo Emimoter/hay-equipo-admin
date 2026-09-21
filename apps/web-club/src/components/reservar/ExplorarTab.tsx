@@ -98,6 +98,14 @@ const Icons = {
       <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
     </svg>
   ),
+  Repeat: ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="17 1 21 5 17 9" />
+      <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+      <polyline points="7 23 3 19 7 15" />
+      <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+    </svg>
+  ),
 };
 
 export const ExplorarTab: React.FC<ExplorarTabProps> = ({
@@ -109,6 +117,7 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [sportFilter, setSportFilter] = useState<'ALL' | 'PADEL' | 'FUTBOL' | 'BOTH'>('ALL');
   const [selectedAmenity, setSelectedAmenity] = useState<'ALL' | 'COVERED' | 'PARKING' | 'BUFFET'>('ALL');
+  const [onlyFixedFilter, setOnlyFixedFilter] = useState(false);
 
   const {
     containerRef: explorarSportContainerRef,
@@ -130,6 +139,11 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
       if (selectedAmenity === 'COVERED' && !club.amenities?.covered) return false;
       if (selectedAmenity === 'PARKING' && !club.amenities?.parking) return false;
       if (selectedAmenity === 'BUFFET' && !club.amenities?.buffet) return false;
+
+      if (onlyFixedFilter) {
+        const hasFixed = club.slots?.some((s: any) => Boolean(s.isFixedSlot) && s.available);
+        if (!hasFixed) return false;
+      }
 
       if (searchTerm.trim().length > 0) {
         const clean = (str: string) => (str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -164,7 +178,7 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
       const distB = typeof b.distanceKm === 'number' ? b.distanceKm : 999;
       return distA - distB;
     });
-  }, [clubs, userLocation, searchTerm, sportFilter, selectedAmenity]);
+  }, [clubs, userLocation, searchTerm, sportFilter, selectedAmenity, onlyFixedFilter]);
 
   return (
     <div className="explorar-root">
@@ -362,6 +376,28 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
               {item.label}
             </button>
           ))}
+
+          <button
+            onClick={() => setOnlyFixedFilter(!onlyFixedFilter)}
+            style={{
+              backgroundColor: onlyFixedFilter ? 'rgba(252, 28, 70, 0.2)' : 'rgba(255, 255, 255, 0.04)',
+              color: onlyFixedFilter ? 'var(--color-crimson-signal)' : 'var(--color-ash)',
+              border: `1px solid ${onlyFixedFilter ? 'var(--color-crimson-signal)' : 'rgba(76, 76, 76, 0.4)'}`,
+              borderRadius: 'var(--radius-full)',
+              padding: '5px 12px',
+              fontSize: 10.5,
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
+              transition: 'all 0.2s ease',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <Icons.Repeat size={11} color={onlyFixedFilter ? 'var(--color-crimson-signal)' : 'var(--color-ash)'} />
+            <span>Turnos Fijos</span>
+          </button>
         </div>
       </div>
 
@@ -533,6 +569,12 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
                   {club.amenities?.buffet && (
                     <span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 'var(--radius-full)', backgroundColor: 'rgba(255, 255, 255, 0.06)', color: 'var(--color-frost)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
                       Buffet & Bar
+                    </span>
+                  )}
+                  {club.slots?.some((s: any) => Boolean(s.isFixedSlot) && s.available) && (
+                    <span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 'var(--radius-full)', backgroundColor: 'rgba(252, 28, 70, 0.15)', color: 'var(--color-crimson-signal)', border: '1px solid rgba(252, 28, 70, 0.35)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      <Icons.Repeat size={10} color="var(--color-crimson-signal)" />
+                      <span>Fijos Semanales</span>
                     </span>
                   )}
                 </div>

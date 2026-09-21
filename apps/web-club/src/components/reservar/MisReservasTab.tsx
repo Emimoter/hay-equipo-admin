@@ -1,10 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { BookingRecord, getBookingByIdFirestore, getUserBookingsFirestore } from '../../services/firebase';
+import {
+  BookingRecord,
+  getBookingByIdFirestore,
+  getUserBookingsFirestore,
+  getUserFixedSlotsFirestore,
+  liberateOccurrenceFirestore,
+  FixedSlotSubscriptionFirestore,
+  RecurringOccurrenceFirestore,
+} from '../../services/firebase';
 import { useAuth } from '../../context/AuthContext';
 
 interface MisReservasTabProps {
   onNavigateSearch: () => void;
 }
+
+const DAY_NAMES_ES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
 const Icons = {
   Calendar: ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
@@ -70,12 +80,31 @@ const Icons = {
       <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
     </svg>
   ),
+  Repeat: ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="17 1 21 5 17 9" />
+      <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+      <polyline points="7 23 3 19 7 15" />
+      <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+    </svg>
+  ),
+  Close: ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  ),
 };
 
 export const MisReservasTab: React.FC<MisReservasTabProps> = ({ onNavigateSearch }) => {
   const { user, userProfile, openAuthModal } = useAuth();
   const [subTab, setSubTab] = useState<'UPCOMING' | 'FIXED' | 'PAST'>('UPCOMING');
   const [bookings, setBookings] = useState<BookingRecord[]>([]);
+  const [fixedSubs, setFixedSubs] = useState<FixedSlotSubscriptionFirestore[]>([]);
+  const [occurrences, setOccurrences] = useState<RecurringOccurrenceFirestore[]>([]);
+  const [liberateModalOcc, setLiberateModalOcc] = useState<RecurringOccurrenceFirestore | null>(null);
+  const [isLiberating, setIsLiberating] = useState<boolean>(false);
+  const [liberateSuccessMessage, setLiberateSuccessMessage] = useState<string | null>(null);
   const [isLoadingCloud, setIsLoadingCloud] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
@@ -121,6 +150,17 @@ export const MisReservasTab: React.FC<MisReservasTabProps> = ({ onNavigateSearch
         })
         .catch((err) => console.error('Error loading cloud bookings:', err))
         .finally(() => setIsLoadingCloud(false));
+
+      // Fetch fixed slot subscriptions
+      getUserFixedSlotsFirestore(user.uid)
+        .then(({ subscriptions, occurrences: occs }) => {
+          setFixedSubs(subscriptions || []);
+          setOccurrences(occs || []);
+        })
+        .catch((err) => console.error('Error loading fixed slots:', err));
+    } else {
+      setFixedSubs([]);
+      setOccurrences([]);
     }
   }, [user]);
 
@@ -166,11 +206,38 @@ export const MisReservasTab: React.FC<MisReservasTabProps> = ({ onNavigateSearch
     setTimeout(() => setCopiedToken(null), 2000);
   };
 
-  const filteredBookings = bookings.filter((b) => {
-    if (subTab === 'FIXED') return false; // Turnos fijos recurren en pestaña fijos
-    if (subTab === 'PAST') return b.status === 'CANCELLED';
-    return b.status === 'CONFIRMED' || b.status === 'PENDING';
-  });
+  const handleConfirmLiberate = async () => {
+    if (!liberateModalOcc || !user) return;
+    setIsLiberating(true);
+    try {
+      const ok = await liberateOccurrenceFirestore(
+        user.uid,
+        liberateModalOcc.subscriptionId,
+        liberateModalOcc.id
+      );
+      if (ok) {
+        setOccurrences((prev) =>
+          prev.map((occ) =>
+            occ.id === liberateModalOcc.id
+              ? { ...occ, status: 'RELEASED_TO_MARKETPLACE' }
+              : occ
+          )
+        );
+        setLiberateSuccessMessage(
+          `¡Fecha liberada! El turno del ${liberateModalOcc.date} (${liberateModalOcc.startTime} hs) se puso a la venta en el directorio.`
+        );
+        setLiberateModalOcc(null);
+      }
+    } catch (e) {
+      console.error('Error liberating occurrence:', e);
+    } finally {
+      setIsLiberating(false);
+    }
+  };
+
+  const upcomingBookings = bookings.filter((b) => b.status === 'CONFIRMED' || b.status === 'PENDING');
+  const pastBookings = bookings.filter((b) => b.status === 'CANCELLED');
+  const filteredBookings = subTab === 'PAST' ? pastBookings : upcomingBookings;
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '120px 24px 80px' }}>
@@ -360,6 +427,41 @@ export const MisReservasTab: React.FC<MisReservasTabProps> = ({ onNavigateSearch
         )}
       </div>
 
+      {/* ── Banner de Éxito al Liberar Fecha ── */}
+      {liberateSuccessMessage && (
+        <div
+          style={{
+            backgroundColor: 'rgba(16, 185, 129, 0.12)',
+            border: '1px solid rgba(16, 185, 129, 0.3)',
+            padding: '14px 20px',
+            marginBottom: 24,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Icons.CheckCircle size={16} color="#10b981" />
+            <span style={{ fontSize: 13, color: '#10b981', fontWeight: 600 }}>
+              {liberateSuccessMessage}
+            </span>
+          </div>
+          <button
+            onClick={() => setLiberateSuccessMessage(null)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#10b981',
+              cursor: 'pointer',
+              padding: 4,
+            }}
+          >
+            <Icons.Close size={14} />
+          </button>
+        </div>
+      )}
+
       {/* ── Sub-Tabs de Reservas (Pills) ── */}
       <div style={{ display: 'flex', gap: 10, paddingBottom: 16, marginBottom: 28, flexWrap: 'wrap' }}>
         <button
@@ -367,7 +469,7 @@ export const MisReservasTab: React.FC<MisReservasTabProps> = ({ onNavigateSearch
           style={{
             background: subTab === 'UPCOMING' ? 'var(--color-crimson-signal)' : 'rgba(255, 255, 255, 0.05)',
             border: subTab === 'UPCOMING' ? '1px solid var(--color-crimson-signal)' : '1px solid rgba(255, 255, 255, 0.1)',
-            borderRadius: 'var(--radius-buttons)',
+            borderRadius: 'var(--radius-full)',
             color: subTab === 'UPCOMING' ? '#ffffff' : 'var(--color-ash)',
             fontSize: 12,
             fontWeight: 700,
@@ -378,7 +480,30 @@ export const MisReservasTab: React.FC<MisReservasTabProps> = ({ onNavigateSearch
             transition: 'all 0.2s ease',
           }}
         >
-          Próximas ({filteredBookings.length})
+          Próximas ({upcomingBookings.length})
+        </button>
+
+        <button
+          onClick={() => setSubTab('FIXED')}
+          style={{
+            background: subTab === 'FIXED' ? 'var(--color-crimson-signal)' : 'rgba(255, 255, 255, 0.05)',
+            border: subTab === 'FIXED' ? '1px solid var(--color-crimson-signal)' : '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: 'var(--radius-full)',
+            color: subTab === 'FIXED' ? '#ffffff' : 'var(--color-ash)',
+            fontSize: 12,
+            fontWeight: 700,
+            cursor: 'pointer',
+            padding: '8px 18px',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+            transition: 'all 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
+          <Icons.Repeat size={12} color={subTab === 'FIXED' ? '#fff' : 'var(--color-ash)'} />
+          <span>Turnos Fijos ({fixedSubs.length})</span>
         </button>
 
         <button
@@ -386,7 +511,7 @@ export const MisReservasTab: React.FC<MisReservasTabProps> = ({ onNavigateSearch
           style={{
             background: subTab === 'PAST' ? 'var(--color-crimson-signal)' : 'rgba(255, 255, 255, 0.05)',
             border: subTab === 'PAST' ? '1px solid var(--color-crimson-signal)' : '1px solid rgba(255, 255, 255, 0.1)',
-            borderRadius: 'var(--radius-buttons)',
+            borderRadius: 'var(--radius-full)',
             color: subTab === 'PAST' ? '#ffffff' : 'var(--color-ash)',
             fontSize: 12,
             fontWeight: 700,
@@ -397,13 +522,194 @@ export const MisReservasTab: React.FC<MisReservasTabProps> = ({ onNavigateSearch
             transition: 'all 0.2s ease',
           }}
         >
-          Historial / Canceladas
+          Historial ({pastBookings.length})
         </button>
       </div>
 
-      {/* ── Lista de Reservas ── */}
-      {filteredBookings.length === 0 ? (
-        <div
+      {/* ── Vista de Turnos Fijos ── */}
+      {subTab === 'FIXED' ? (
+        fixedSubs.length === 0 ? (
+          <div
+            style={{
+              textAlign: 'center',
+              padding: '64px 24px',
+              backgroundColor: '#0a0a0a',
+              border: '1px dashed rgba(76, 76, 76, 0.4)',
+            }}
+          >
+            <div style={{ width: 48, height: 48, borderRadius: '50%', backgroundColor: 'rgba(252, 28, 70, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+              <Icons.Repeat size={22} color="var(--color-crimson-signal)" />
+            </div>
+            <h3 style={{ fontSize: 18, color: 'var(--color-frost)', fontWeight: 700, marginBottom: 8, textTransform: 'uppercase' }}>
+              No tenés turnos fijos contratados
+            </h3>
+            <p style={{ color: 'var(--color-ash)', fontSize: 13, maxWidth: 460, margin: '0 auto 24px', lineHeight: 1.5 }}>
+              Asegurate tu cancha todas las semanas para tu equipo. Encontrá turnos con la opción <strong style={{ color: 'var(--color-frost)' }}>Fijo Semanal</strong> en Inicio o Explorar y reservalo una sola vez.
+            </p>
+            <button
+              onClick={onNavigateSearch}
+              style={{
+                backgroundColor: 'var(--color-crimson-signal)',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: 'var(--radius-full)',
+                padding: '12px 28px',
+                fontSize: 13,
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.6px',
+                cursor: 'pointer',
+              }}
+            >
+              Buscar Canchas con Turno Fijo
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gap: 24 }}>
+            {fixedSubs.map((sub) => {
+              const subOccs = occurrences
+                .filter((o) => o.subscriptionId === sub.id)
+                .slice(0, 4); // Próximas 4 semanas
+
+              return (
+                <div
+                  key={sub.id}
+                  style={{
+                    backgroundColor: '#0a0a0a',
+                    border: '1px solid rgba(76, 76, 76, 0.5)',
+                    padding: '24px 28px',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 14, marginBottom: 16 }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                        <span
+                          style={{
+                            backgroundColor: 'rgba(252, 28, 70, 0.15)',
+                            color: 'var(--color-crimson-signal)',
+                            border: '1px solid rgba(252, 28, 70, 0.35)',
+                            borderRadius: 'var(--radius-full)',
+                            fontSize: 10,
+                            fontWeight: 800,
+                            padding: '3px 10px',
+                            letterSpacing: '0.8px',
+                            textTransform: 'uppercase',
+                          }}
+                        >
+                          FIJO ACTIVO · {sub.durationMonths} MESES
+                        </span>
+                        <span style={{ fontSize: 12, color: 'var(--color-graphite)' }}>
+                          ID: {sub.id}
+                        </span>
+                      </div>
+                      <h3 style={{ fontSize: 20, fontWeight: 700, color: 'var(--color-frost)', textTransform: 'uppercase', margin: '0 0 4px' }}>
+                        {sub.courtName}
+                      </h3>
+                      <div style={{ fontSize: 13, color: 'var(--color-ash)' }}>
+                        {sub.clubName}
+                      </div>
+                    </div>
+
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: 11, color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600 }}>
+                        Día y Horario Semanal
+                      </div>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-frost)' }}>
+                        Todos los {DAY_NAMES_ES[sub.dayOfWeek]}s
+                      </div>
+                      <div style={{ fontSize: 13, color: 'var(--color-crimson-signal)', fontWeight: 600 }}>
+                        {sub.startTime} a {sub.endTime} hs
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Próximas Ocurrencias / Semanas */}
+                  <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: 16, marginTop: 12 }}>
+                    <div style={{ fontSize: 11, color: 'var(--color-crimson-signal)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700, marginBottom: 12 }}>
+                      Próximas fechas agendadas:
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
+                      {subOccs.map((occ) => {
+                        const isReleased = occ.status === 'RELEASED_TO_MARKETPLACE';
+                        return (
+                          <div
+                            key={occ.id}
+                            style={{
+                              backgroundColor: '#121212',
+                              border: isReleased ? '1px dashed rgba(252, 28, 70, 0.5)' : '1px solid rgba(255, 255, 255, 0.08)',
+                              padding: '12px 14px',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              justifyContent: 'space-between',
+                              gap: 10,
+                            }}
+                          >
+                            <div>
+                              <div style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>
+                                {occ.date}
+                              </div>
+                              <div style={{ fontSize: 11, color: 'var(--color-ash)' }}>
+                                {occ.startTime} hs
+                              </div>
+                            </div>
+
+                            {isReleased ? (
+                              <div
+                                style={{
+                                  fontSize: 10,
+                                  color: 'var(--color-crimson-signal)',
+                                  backgroundColor: 'rgba(252, 28, 70, 0.12)',
+                                  padding: '4px 8px',
+                                  borderRadius: 'var(--radius-full)',
+                                  textAlign: 'center',
+                                  fontWeight: 700,
+                                  textTransform: 'uppercase',
+                                }}
+                              >
+                                Puesto a la venta
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setLiberateModalOcc(occ)}
+                                style={{
+                                  backgroundColor: '#1c1c1c',
+                                  border: '1px solid var(--color-graphite)',
+                                  borderRadius: 'var(--radius-full)',
+                                  color: 'var(--color-ash)',
+                                  padding: '6px 10px',
+                                  fontSize: 10.5,
+                                  fontWeight: 700,
+                                  textTransform: 'uppercase',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.2s ease',
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.borderColor = 'var(--color-crimson-signal)';
+                                  e.currentTarget.style.color = '#fff';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.borderColor = 'var(--color-graphite)';
+                                  e.currentTarget.style.color = 'var(--color-ash)';
+                                }}
+                              >
+                                Liberar semana
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )
+      ) : (
+        /* ── Lista de Reservas Puntuales ── */
+        filteredBookings.length === 0 ? (
+          <div
           style={{
             textAlign: 'center',
             padding: '60px 20px',
@@ -653,6 +959,86 @@ export const MisReservasTab: React.FC<MisReservasTabProps> = ({ onNavigateSearch
               </div>
             );
           })}
+        </div>
+      )
+    )}
+
+      {/* ── Modal Confirmar Liberación de Fecha ── */}
+      {liberateModalOcc && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: 20,
+          }}
+          onClick={() => !isLiberating && setLiberateModalOcc(null)}
+        >
+          <div
+            style={{
+              backgroundColor: '#0a0a0a',
+              border: '1px solid var(--color-crimson-signal)',
+              padding: '32px',
+              maxWidth: 480,
+              width: '100%',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ fontSize: 11, color: 'var(--color-crimson-signal)', textTransform: 'uppercase', letterSpacing: '1.5px', fontWeight: 800, marginBottom: 8 }}>
+              LIBERAR SEMANA DE TURNO FIJO
+            </div>
+            <h3 style={{ fontSize: 20, fontWeight: 700, color: 'var(--color-frost)', textTransform: 'uppercase', margin: '0 0 12px' }}>
+              ¿No juegan esta fecha?
+            </h3>
+            <p style={{ color: 'var(--color-ash)', fontSize: 13, lineHeight: 1.6, margin: '0 0 20px' }}>
+              Tu turno del <strong style={{ color: 'var(--color-frost)' }}>{liberateModalOcc.date} a las {liberateModalOcc.startTime} hs</strong> en <strong style={{ color: 'var(--color-frost)' }}>{liberateModalOcc.clubName}</strong> quedará publicado en el directorio para que otro grupo lo reserve. Si se reserva, el importe se acredita a tu favor.
+            </p>
+
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                onClick={() => setLiberateModalOcc(null)}
+                disabled={isLiberating}
+                style={{
+                  flex: 1,
+                  backgroundColor: 'transparent',
+                  border: '1px solid var(--color-graphite)',
+                  borderRadius: 'var(--radius-full)',
+                  color: 'var(--color-ash)',
+                  padding: '11px',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  cursor: isLiberating ? 'not-allowed' : 'pointer',
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirmLiberate}
+                disabled={isLiberating}
+                style={{
+                  flex: 1,
+                  backgroundColor: 'var(--color-crimson-signal)',
+                  border: 'none',
+                  borderRadius: 'var(--radius-full)',
+                  color: '#fff',
+                  padding: '11px',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  cursor: isLiberating ? 'not-allowed' : 'pointer',
+                  boxShadow: '0 0 16px rgba(252, 28, 70, 0.4)',
+                }}
+              >
+                {isLiberating ? 'Publicando...' : 'Confirmar y Publicar'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
