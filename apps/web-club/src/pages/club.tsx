@@ -19,13 +19,12 @@ import {
   PublishedSlotRecord,
 } from '../services/firebase';
 import { SportBadge } from '../components/SportBadge';
-import { useSlidingIndicator } from '../hooks/useSlidingIndicator';
 
 /* ────────────────────────────────────────────────────────────
    Types
    ──────────────────────────────────────────────────────────── */
 
-type ClubTab = 'REQUESTS' | 'PUBLISH_SLOTS' | 'COURTS' | 'PAYOUTS';
+type ClubTab = 'DASHBOARD' | 'REQUESTS' | 'PUBLISH_SLOTS' | 'COURTS' | 'PAYOUTS';
 
 interface CourtItem {
   id: string;
@@ -54,6 +53,23 @@ const DEFAULT_HOURS = [
    ──────────────────────────────────────────────────────────── */
 
 const Icons = {
+  Dashboard: ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle', flexShrink: 0 }}>
+      <rect x="3" y="3" width="7" height="7" rx="0" />
+      <rect x="14" y="3" width="7" height="7" rx="0" />
+      <rect x="14" y="14" width="7" height="7" rx="0" />
+      <rect x="3" y="14" width="7" height="7" rx="0" />
+    </svg>
+  ),
+  Pitch: ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle', flexShrink: 0 }}>
+      <rect x="2" y="4" width="20" height="16" rx="0" />
+      <line x1="12" y1="4" x2="12" y2="20" />
+      <circle cx="12" cy="12" r="3" />
+      <path d="M2 9h3v6H2" />
+      <path d="M22 9h-3v6h3" />
+    </svg>
+  ),
   Bell: ({ size = 15, color = 'currentColor' }: { size?: number; color?: string }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
@@ -151,14 +167,19 @@ const Icons = {
       <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
     </svg>
   ),
-  ChevronLeft: ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  ChevronLeft: ({ size = 14, color = 'currentColor', style }: { size?: number; color?: string; style?: React.CSSProperties }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
       <polyline points="15 18 9 12 15 6" />
     </svg>
   ),
-  ChevronRight: ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  ChevronRight: ({ size = 14, color = 'currentColor', style }: { size?: number; color?: string; style?: React.CSSProperties }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
       <polyline points="9 18 15 12 9 6" />
+    </svg>
+  ),
+  ChevronDown: ({ size = 14, color = 'currentColor', style }: { size?: number; color?: string; style?: React.CSSProperties }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
+      <polyline points="6 9 12 15 18 9" />
     </svg>
   ),
   SettingsSliders: () => (
@@ -507,6 +528,48 @@ const CalendarWidget: React.FC<CalendarWidgetProps> = ({
 };
 
 /* ────────────────────────────────────────────────────────────
+   Tactical Pitch Watermark (Sports Blueprint SVG)
+   ──────────────────────────────────────────────────────────── */
+
+const TacticalPitchWatermark: React.FC = () => (
+  <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', userSelect: 'none' }}>
+    {/* Left court tactical lines */}
+    <svg
+      style={{ position: 'absolute', left: -20, top: '50%', transform: 'translateY(-50%)', opacity: 0.14 }}
+      width="320"
+      height="260"
+      viewBox="0 0 320 260"
+      fill="none"
+      stroke="#ffffff"
+      strokeWidth="1.2"
+    >
+      <ellipse cx="80" cy="130" rx="100" ry="70" strokeDasharray="5 5" />
+      <line x1="20" y1="30" x2="260" y2="75" />
+      <line x1="20" y1="230" x2="260" y2="185" />
+      <line x1="260" y1="75" x2="260" y2="185" />
+      <circle cx="260" cy="130" r="36" />
+    </svg>
+
+    {/* Right court tactical lines */}
+    <svg
+      style={{ position: 'absolute', right: -20, top: '50%', transform: 'translateY(-50%)', opacity: 0.14 }}
+      width="320"
+      height="260"
+      viewBox="0 0 320 260"
+      fill="none"
+      stroke="#ffffff"
+      strokeWidth="1.2"
+    >
+      <line x1="60" y1="75" x2="300" y2="30" />
+      <line x1="60" y1="185" x2="300" y2="230" />
+      <line x1="60" y1="75" x2="60" y2="185" />
+      <ellipse cx="240" cy="130" rx="100" ry="70" strokeDasharray="5 5" />
+      <circle cx="60" cy="130" r="36" />
+    </svg>
+  </div>
+);
+
+/* ────────────────────────────────────────────────────────────
    MAIN COMPONENT: /club (TERMINAL EXCLUSIVA DE CLUBES)
    ──────────────────────────────────────────────────────────── */
 
@@ -533,9 +596,8 @@ export default function ClubPage() {
   const [isReceptionOpen, setIsReceptionOpen] = useState(true);
   const [isSoundOn, setIsSoundOn] = useState(true);
 
-  // Tabs
+  // Tabs (Dashboard, Solicitudes, Publicar Turnos, Mis Canchas, Liquidaciones)
   const [activeTab, setActiveTab] = useState<ClubTab>('REQUESTS');
-  const { containerRef, setItemRef, indicatorStyle } = useSlidingIndicator<ClubTab>(activeTab);
 
   // Real Data (100% Firebase, ZERO MOCKS)
   const [bookings, setBookings] = useState<BookingRecord[]>([]);
@@ -1506,60 +1568,63 @@ export default function ClubPage() {
       {/* ═══════════════════════════════════════════════════════
           HEADER — Exact Match with Landing Page Aesthetics
           ═══════════════════════════════════════════════════════ */}
+      {/* ═══════════════════════════════════════════════════════
+          HEADER — Exact Match with Reference Screenshot
+          ═══════════════════════════════════════════════════════ */}
       <header
         style={{
           position: 'sticky',
           top: 0,
           zIndex: 40,
-          height: 72,
-          padding: '0 36px',
+          height: 68,
+          padding: '0 28px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          backgroundColor: 'rgba(0, 0, 0, 0.94)',
-          backdropFilter: 'blur(16px)',
-          borderBottom: '1px solid rgba(76, 76, 76, 0.4)',
+          backgroundColor: '#0a0a0a',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
         }}
       >
         {/* Left: Branding */}
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 20 }}>
-          <span style={{ fontSize: 26, fontWeight: 700, color: 'var(--color-frost)', letterSpacing: '-0.9px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <span style={{ fontSize: 20, fontWeight: 800, color: '#ffffff', letterSpacing: '-0.6px', fontFamily: "'Space Grotesk', sans-serif" }}>
             HAY EQUIPO?
           </span>
-          <span style={{ fontSize: 10, color: 'var(--color-ash)', letterSpacing: '1.5px', textTransform: 'uppercase', opacity: 0.7 }}>
+          <span style={{ fontSize: 11, color: '#94a3b8', letterSpacing: '0.8px', textTransform: 'uppercase', opacity: 0.8 }}>
             / Terminal de Clubes
           </span>
         </div>
 
         {/* Right: Club Identity & Real-time Reception Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           {/* Active Club Name Badge */}
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 8,
+              gap: 6,
               padding: '6px 14px',
-              backgroundColor: 'var(--color-surface-elevate)',
-              border: '1px solid var(--color-graphite)',
-              borderRadius: 'var(--radius-full)',
+              backgroundColor: 'rgba(255, 255, 255, 0.04)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: 9999,
               fontSize: 12,
-              fontWeight: 700,
+              color: '#ffffff',
             }}
           >
-            <span style={{ color: 'var(--color-ash)', fontWeight: 500 }}>Club:</span>
-            <span style={{ color: 'var(--color-frost)' }}>{activeClub?.name || 'Mi Club'}</span>
+            <span style={{ color: '#94a3b8', fontWeight: 500 }}>Club:</span>
+            <span style={{ fontWeight: 700 }}>{activeClub?.name || 'Mi Club'}</span>
+            <Icons.ChevronRight size={12} color="#94a3b8" style={{ transform: 'rotate(90deg)' }} />
           </div>
 
           {/* Google User Profile Pill */}
           {user && (
             <div
               style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.06)',
-                color: 'var(--color-frost)',
-                border: '1px solid rgba(255, 255, 255, 0.18)',
-                borderRadius: 'var(--radius-full)',
-                padding: '4px 14px 4px 6px',
+                backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                color: '#ffffff',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: 9999,
+                padding: '4px 12px 4px 5px',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 8,
@@ -1571,15 +1636,15 @@ export default function ClubPage() {
                   src={user.photoURL}
                   alt={user.displayName || 'Google'}
                   referrerPolicy="no-referrer"
-                  style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover' }}
+                  style={{ width: 24, height: 24, borderRadius: '50%', objectFit: 'cover' }}
                 />
               ) : (
                 <div
                   style={{
-                    width: 26,
-                    height: 26,
+                    width: 24,
+                    height: 24,
                     borderRadius: '50%',
-                    backgroundColor: 'var(--color-crimson-signal)',
+                    backgroundColor: '#fc1c46',
                     color: '#fff',
                     display: 'flex',
                     alignItems: 'center',
@@ -1605,24 +1670,24 @@ export default function ClubPage() {
               display: 'flex',
               alignItems: 'center',
               gap: 6,
-              backgroundColor: 'transparent',
-              color: 'var(--color-ash)',
-              border: '1px dashed var(--color-graphite)',
-              borderRadius: 'var(--radius-full)',
-              padding: '6px 12px',
-              fontSize: 11,
+              backgroundColor: 'rgba(255, 255, 255, 0.04)',
+              color: '#ffffff',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: 9999,
+              padding: '6px 14px',
+              fontSize: 12,
               fontWeight: 600,
               cursor: 'pointer',
+              transition: 'all 0.15s ease',
             }}
             title="Agregar otro Gmail autorizado para este club (ej: recepcionista o canchero)"
           >
-            <Icons.UserCheck size={13} />
+            <Icons.UserCheck size={14} color="#94a3b8" />
             <span>+ Encargado</span>
           </button>
 
-          {/* Sound Alert Toggle */}
-          <button
-            type="button"
+          {/* Sound Alert Toggle Switch */}
+          <div
             onClick={() => {
               const next = !isSoundOn;
               setIsSoundOn(next);
@@ -1631,21 +1696,39 @@ export default function ClubPage() {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 6,
-              backgroundColor: isSoundOn ? 'rgba(16, 185, 129, 0.15)' : 'var(--color-surface-elevate)',
-              color: isSoundOn ? 'var(--color-emerald)' : 'var(--color-ash)',
-              border: isSoundOn ? '1px solid var(--color-emerald)' : '1px solid var(--color-graphite)',
-              borderRadius: 'var(--radius-full)',
-              padding: '6px 14px',
-              fontSize: 12,
-              fontWeight: 700,
+              gap: 8,
               cursor: 'pointer',
+              userSelect: 'none',
+              padding: '4px 6px',
             }}
-            title={isSoundOn ? 'Audio activo' : 'Audio silenciado'}
+            title={isSoundOn ? 'Alerta sonora activada' : 'Alerta sonora silenciada'}
           >
-            {isSoundOn ? <Icons.Volume size={14} /> : <Icons.VolumeX size={14} />}
-            <span>{isSoundOn ? 'AUDIO' : 'MUTE'}</span>
-          </button>
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', letterSpacing: '0.6px' }}>AUDIO</span>
+            <div
+              style={{
+                width: 36,
+                height: 20,
+                borderRadius: 9999,
+                backgroundColor: isSoundOn ? '#10b981' : 'rgba(255, 255, 255, 0.12)',
+                position: 'relative',
+                transition: 'background-color 0.2s ease',
+              }}
+            >
+              <div
+                style={{
+                  width: 16,
+                  height: 16,
+                  borderRadius: '50%',
+                  backgroundColor: '#ffffff',
+                  position: 'absolute',
+                  top: 2,
+                  left: isSoundOn ? 18 : 2,
+                  transition: 'left 0.2s ease',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.4)',
+                }}
+              />
+            </div>
+          </div>
 
           {/* Reception Status Indicator */}
           <button
@@ -1654,23 +1737,27 @@ export default function ClubPage() {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 8,
-              backgroundColor: isReceptionOpen ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
-              color: isReceptionOpen ? 'var(--color-emerald)' : '#ef4444',
-              border: isReceptionOpen ? '1px solid var(--color-emerald)' : '1px solid #ef4444',
-              borderRadius: 'var(--radius-full)',
+              gap: 6,
+              backgroundColor: isReceptionOpen ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+              color: isReceptionOpen ? '#10b981' : '#ef4444',
+              border: isReceptionOpen ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid rgba(239, 68, 68, 0.4)',
+              borderRadius: 9999,
               padding: '6px 14px',
-              fontSize: 12,
-              fontWeight: 700,
+              fontSize: 11,
+              fontWeight: 800,
+              letterSpacing: '0.6px',
               cursor: 'pointer',
+              transition: 'all 0.15s ease',
             }}
+            title={isReceptionOpen ? 'Recepción activa para recibir solicitudes' : 'Recepción en pausa'}
           >
             <span
               style={{
-                width: 7,
-                height: 7,
+                width: 6,
+                height: 6,
                 borderRadius: '50%',
-                backgroundColor: isReceptionOpen ? 'var(--color-emerald)' : '#ef4444',
+                backgroundColor: isReceptionOpen ? '#10b981' : '#ef4444',
+                boxShadow: isReceptionOpen ? '0 0 8px #10b981' : 'none',
               }}
             />
             <span>{isReceptionOpen ? 'ONLINE' : 'PAUSADO'}</span>
@@ -1689,12 +1776,13 @@ export default function ClubPage() {
             }}
             style={{
               backgroundColor: 'transparent',
-              color: 'var(--color-ash)',
+              color: '#94a3b8',
               border: 'none',
-              fontSize: 12,
-              fontWeight: 600,
               cursor: 'pointer',
               padding: '6px 8px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
             title="Cerrar sesión"
           >
@@ -1704,231 +1792,510 @@ export default function ClubPage() {
       </header>
 
       {/* ═══════════════════════════════════════════════════════
-          SUB-HEADER: Sliding Pill Navigation Bar (Seamless, No Divider Line)
+          2-COLUMN LAYOUT: SIDEBAR (LEFT) + CONTENT (RIGHT)
           ═══════════════════════════════════════════════════════ */}
-      <div
-        style={{
-          backgroundColor: 'transparent',
-          padding: '16px 36px 4px',
-        }}
-      >
-        <div style={{ maxWidth: 1280, margin: '0 auto' }}>
-          <div
-            ref={containerRef as any}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              backgroundColor: 'var(--color-surface-elevate)',
-              padding: '4px',
-              borderRadius: 'var(--radius-full)',
-              border: '1px solid var(--color-graphite)',
-              position: 'relative',
-              overflow: 'hidden',
-            }}
-          >
-            <div style={indicatorStyle} />
-
+      <div style={{ display: 'flex', minHeight: 'calc(100vh - 68px)', backgroundColor: '#070707' }}>
+        {/* SIDEBAR NAVIGATION (LEFT) */}
+        <aside
+          style={{
+            width: 220,
+            minWidth: 220,
+            backgroundColor: '#0a0a0a',
+            borderRight: '1px solid rgba(255, 255, 255, 0.08)',
+            padding: '24px 14px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            flexShrink: 0,
+          }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {/* 1. Dashboard */}
             <button
-              ref={setItemRef('REQUESTS')}
+              type="button"
+              onClick={() => setActiveTab('DASHBOARD')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '11px 16px',
+                borderRadius: 9999,
+                border: 'none',
+                backgroundColor: activeTab === 'DASHBOARD' ? '#fc1c46' : 'transparent',
+                color: activeTab === 'DASHBOARD' ? '#ffffff' : '#94a3b8',
+                fontWeight: activeTab === 'DASHBOARD' ? 800 : 600,
+                fontSize: 13,
+                cursor: 'pointer',
+                textAlign: 'left',
+                width: '100%',
+                boxShadow: activeTab === 'DASHBOARD' ? '0 4px 20px rgba(252, 28, 70, 0.4)' : 'none',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <Icons.Dashboard size={16} color={activeTab === 'DASHBOARD' ? '#ffffff' : '#94a3b8'} />
+              <span>Dashboard</span>
+            </button>
+
+            {/* 2. Solicitudes */}
+            <button
+              type="button"
               onClick={() => setActiveTab('REQUESTS')}
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 8,
-                padding: '8px 20px',
-                borderRadius: 'var(--radius-full)',
-                fontSize: 13,
-                fontWeight: 700,
-                color: activeTab === 'REQUESTS' ? '#ffffff' : 'var(--color-ash)',
-                background: 'transparent',
+                justifyContent: 'space-between',
+                padding: '11px 16px',
+                borderRadius: 9999,
                 border: 'none',
+                backgroundColor: activeTab === 'REQUESTS' ? '#fc1c46' : 'transparent',
+                color: activeTab === 'REQUESTS' ? '#ffffff' : '#94a3b8',
+                fontWeight: activeTab === 'REQUESTS' ? 800 : 600,
+                fontSize: 13,
                 cursor: 'pointer',
-                position: 'relative',
-                zIndex: 2,
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
+                textAlign: 'left',
+                width: '100%',
+                boxShadow: activeTab === 'REQUESTS' ? '0 4px 20px rgba(252, 28, 70, 0.4)' : 'none',
+                transition: 'all 0.15s ease',
               }}
             >
-              <Icons.Bell size={14} />
-              <span>Solicitudes</span>
-              {pendingCount > 0 && (
-                <span
-                  style={{
-                    backgroundColor: activeTab === 'REQUESTS' ? '#ffffff' : 'var(--color-crimson-signal)',
-                    color: activeTab === 'REQUESTS' ? 'var(--color-crimson-signal)' : '#ffffff',
-                    fontSize: 11,
-                    fontWeight: 800,
-                    padding: '1px 7px',
-                    borderRadius: 'var(--radius-full)',
-                  }}
-                >
-                  {pendingCount}
-                </span>
-              )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <Icons.Bell size={16} color={activeTab === 'REQUESTS' ? '#ffffff' : '#94a3b8'} />
+                <span>Solicitudes</span>
+              </div>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 800,
+                  padding: '2px 8px',
+                  borderRadius: 9999,
+                  backgroundColor: activeTab === 'REQUESTS' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.06)',
+                  color: activeTab === 'REQUESTS' ? '#ffffff' : '#94a3b8',
+                }}
+              >
+                ({pendingCount})
+              </span>
             </button>
 
+            {/* 3. Publicar Turnos */}
             <button
-              ref={setItemRef('PUBLISH_SLOTS')}
+              type="button"
               onClick={() => setActiveTab('PUBLISH_SLOTS')}
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 8,
-                padding: '8px 20px',
-                borderRadius: 'var(--radius-full)',
-                fontSize: 13,
-                fontWeight: 700,
-                color: activeTab === 'PUBLISH_SLOTS' ? '#ffffff' : 'var(--color-ash)',
-                background: 'transparent',
+                gap: 12,
+                padding: '11px 16px',
+                borderRadius: 9999,
                 border: 'none',
+                backgroundColor: activeTab === 'PUBLISH_SLOTS' ? '#fc1c46' : 'transparent',
+                color: activeTab === 'PUBLISH_SLOTS' ? '#ffffff' : '#94a3b8',
+                fontWeight: activeTab === 'PUBLISH_SLOTS' ? 800 : 600,
+                fontSize: 13,
                 cursor: 'pointer',
-                position: 'relative',
-                zIndex: 2,
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
+                textAlign: 'left',
+                width: '100%',
+                boxShadow: activeTab === 'PUBLISH_SLOTS' ? '0 4px 20px rgba(252, 28, 70, 0.4)' : 'none',
+                transition: 'all 0.15s ease',
               }}
             >
-              <Icons.Calendar size={14} />
+              <Icons.Calendar size={16} color={activeTab === 'PUBLISH_SLOTS' ? '#ffffff' : '#94a3b8'} />
               <span>Publicar Turnos</span>
-              {activeSlots.length > 0 && (
-                <span
-                  style={{
-                    backgroundColor: activeTab === 'PUBLISH_SLOTS' ? '#ffffff' : 'rgba(255, 255, 255, 0.1)',
-                    color: activeTab === 'PUBLISH_SLOTS' ? 'var(--color-crimson-signal)' : 'var(--color-frost)',
-                    fontSize: 11,
-                    fontWeight: 800,
-                    padding: '1px 7px',
-                    borderRadius: 'var(--radius-full)',
-                  }}
-                >
-                  {activeSlots.length}
-                </span>
-              )}
             </button>
 
+            {/* 4. Mis Canchas */}
             <button
-              ref={setItemRef('COURTS')}
+              type="button"
               onClick={() => setActiveTab('COURTS')}
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 8,
-                padding: '8px 20px',
-                borderRadius: 'var(--radius-full)',
-                fontSize: 13,
-                fontWeight: 700,
-                color: activeTab === 'COURTS' ? '#ffffff' : 'var(--color-ash)',
-                background: 'transparent',
+                justifyContent: 'space-between',
+                padding: '11px 16px',
+                borderRadius: 9999,
                 border: 'none',
+                backgroundColor: activeTab === 'COURTS' ? '#fc1c46' : 'transparent',
+                color: activeTab === 'COURTS' ? '#ffffff' : '#94a3b8',
+                fontWeight: activeTab === 'COURTS' ? 800 : 600,
+                fontSize: 13,
                 cursor: 'pointer',
-                position: 'relative',
-                zIndex: 2,
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
+                textAlign: 'left',
+                width: '100%',
+                boxShadow: activeTab === 'COURTS' ? '0 4px 20px rgba(252, 28, 70, 0.4)' : 'none',
+                transition: 'all 0.15s ease',
               }}
             >
-              <span>Mis Canchas ({courts.length})</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <Icons.Pitch size={16} color={activeTab === 'COURTS' ? '#ffffff' : '#94a3b8'} />
+                <span>Mis Canchas</span>
+              </div>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 800,
+                  padding: '2px 8px',
+                  borderRadius: 9999,
+                  backgroundColor: activeTab === 'COURTS' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.06)',
+                  color: activeTab === 'COURTS' ? '#ffffff' : '#94a3b8',
+                }}
+              >
+                ({courts.length})
+              </span>
             </button>
 
+            {/* 5. Liquidaciones */}
             <button
-              ref={setItemRef('PAYOUTS')}
+              type="button"
               onClick={() => setActiveTab('PAYOUTS')}
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 8,
-                padding: '8px 20px',
-                borderRadius: 'var(--radius-full)',
-                fontSize: 13,
-                fontWeight: 700,
-                color: activeTab === 'PAYOUTS' ? '#ffffff' : 'var(--color-ash)',
-                background: 'transparent',
+                gap: 12,
+                padding: '11px 16px',
+                borderRadius: 9999,
                 border: 'none',
+                backgroundColor: activeTab === 'PAYOUTS' ? '#fc1c46' : 'transparent',
+                color: activeTab === 'PAYOUTS' ? '#ffffff' : '#94a3b8',
+                fontWeight: activeTab === 'PAYOUTS' ? 800 : 600,
+                fontSize: 13,
                 cursor: 'pointer',
-                position: 'relative',
-                zIndex: 2,
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
+                textAlign: 'left',
+                width: '100%',
+                boxShadow: activeTab === 'PAYOUTS' ? '0 4px 20px rgba(252, 28, 70, 0.4)' : 'none',
+                transition: 'all 0.15s ease',
               }}
             >
-              <Icons.DollarSign size={14} />
+              <Icons.DollarSign size={16} color={activeTab === 'PAYOUTS' ? '#ffffff' : '#94a3b8'} />
               <span>Liquidaciones</span>
             </button>
           </div>
-        </div>
-      </div>
 
-      {/* ═══════════════════════════════════════════════════════
-          MAIN CONTENT AREA (ZERO MOCKS, 100% FIREBASE REAL DATA)
-          ═══════════════════════════════════════════════════════ */}
-      <main style={{ maxWidth: 1280, margin: '0 auto', padding: '28px 36px 80px' }}>
-
-        {/* ─── TAB 1: SOLICITUDES EN VIVO ─── */}
-        {activeTab === 'REQUESTS' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-            {/* Filter pills */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                {(['PENDING', 'ALL', 'CONFIRMED', 'REJECTED'] as const).map((key) => {
-                  const titles = {
-                    PENDING: `SOLICITUDES PENDIENTES (${pendingCount})`,
-                    ALL: `TODAS (${bookings.length})`,
-                    CONFIRMED: `CONFIRMADAS (${bookings.filter((b) => b.status === 'CONFIRMED').length})`,
-                    REJECTED: `RECHAZADAS (${bookings.filter((b) => b.status === 'REJECTED').length})`,
-                  };
-                  const active = requestFilter === key;
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => setRequestFilter(key)}
-                      style={{
-                        padding: '6px 16px',
-                        borderRadius: 'var(--radius-full)',
-                        fontSize: 12,
-                        fontWeight: 700,
-                        backgroundColor: active ? 'var(--color-frost)' : 'var(--color-surface-elevate)',
-                        color: active ? '#000000' : 'var(--color-ash)',
-                        border: active ? '1px solid var(--color-frost)' : '1px solid var(--color-graphite)',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {titles[key]}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {pendingCount > 0 && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--color-crimson-signal)', fontSize: 13, fontWeight: 700 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: 'var(--color-crimson-signal)' }} />
-                  <span>{pendingCount} {pendingCount === 1 ? 'solicitud esperando respuesta' : 'solicitudes esperando respuesta'}</span>
-                </div>
-              )}
+          {/* Footer Badge */}
+          <div
+            style={{
+              padding: '10px 12px',
+              backgroundColor: 'rgba(255, 255, 255, 0.02)',
+              border: '1px solid rgba(255, 255, 255, 0.05)',
+              borderRadius: 0,
+              fontSize: 11,
+              color: '#94a3b8',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 3,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#ffffff', fontWeight: 700 }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#fc1c46' }} />
+              <span>Terminal Activa</span>
             </div>
+            <div style={{ fontSize: 10, opacity: 0.7 }}>v2.4 · 100% Firebase</div>
+          </div>
+        </aside>
 
-            {/* Requests list */}
-            {visibleBookings.length === 0 ? (
-              <div
-                style={{
-                  backgroundColor: 'var(--color-obsidian)',
-                  border: '1px solid var(--color-graphite)',
-                  borderRadius: '0px',
-                  padding: '64px 24px',
-                  textAlign: 'center',
-                }}
-              >
-                <div style={{ display: 'inline-flex', padding: 16, backgroundColor: 'var(--color-surface-elevate)', borderRadius: 'var(--radius-full)', marginBottom: 16 }}>
-                  <Icons.Bell size={28} color="var(--color-ash)" />
-                </div>
-                <h3 style={{ fontSize: 18, fontWeight: 700, margin: '0 0 8px' }}>
-                  {requestFilter === 'PENDING' ? 'No tenés solicitudes pendientes ahora mismo' : 'No hay reservas registradas en este estado'}
-                </h3>
-                <p style={{ color: 'var(--color-ash)', fontSize: 14, maxWidth: 480, margin: '0 auto' }}>
-                  Cuando un jugador elija una cancha libre desde la web o app de Hay Equipo, su solicitud aparecerá acá con alerta sonora para aceptar o rechazar en 1 click.
+        {/* MAIN CONTENT AREA (RIGHT) */}
+        <main style={{ flex: 1, padding: '32px 40px 80px', overflowY: 'auto', minWidth: 0 }}>
+          {/* ─── TAB 0: DASHBOARD ─── */}
+          {activeTab === 'DASHBOARD' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+              <div>
+                <h2 style={{ fontSize: 24, fontWeight: 800, fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.5px', color: '#ffffff', margin: '0 0 6px', textTransform: 'uppercase' }}>
+                  DASHBOARD
+                </h2>
+                <p style={{ fontSize: 13, color: '#94a3b8', margin: 0 }}>
+                  Resumen operativo en tiempo real de {activeClub?.name || 'tu club'}.
                 </p>
               </div>
-            ) : (
+
+              {/* 4 Stat Cards */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
+                <div
+                  onClick={() => setActiveTab('REQUESTS')}
+                  style={{
+                    backgroundColor: '#0a0a0a',
+                    border: pendingCount > 0 ? '1px solid #fc1c46' : '1px solid rgba(255, 255, 255, 0.08)',
+                    borderRadius: 0,
+                    padding: '22px 24px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      Solicitudes Pendientes
+                    </span>
+                    <div style={{ width: 32, height: 32, borderRadius: '50%', backgroundColor: pendingCount > 0 ? 'rgba(252,28,70,0.15)' : 'rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: pendingCount > 0 ? '#fc1c46' : '#94a3b8' }}>
+                      <Icons.Bell size={16} />
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 32, fontWeight: 800, color: pendingCount > 0 ? '#fc1c46' : '#ffffff' }}>
+                    {pendingCount}
+                  </div>
+                  <span style={{ fontSize: 12, color: pendingCount > 0 ? '#fc1c46' : '#94a3b8', marginTop: 4, display: 'block' }}>
+                    {pendingCount > 0 ? 'Esperando tu confirmación' : 'Al día, sin pendientes'}
+                  </span>
+                </div>
+
+                <div
+                  onClick={() => setActiveTab('PUBLISH_SLOTS')}
+                  style={{
+                    backgroundColor: '#0a0a0a',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    borderRadius: 0,
+                    padding: '22px 24px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      Turnos a la Venta
+                    </span>
+                    <div style={{ width: 32, height: 32, borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>
+                      <Icons.Calendar size={16} />
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 32, fontWeight: 800, color: '#ffffff' }}>
+                    {activeSlots.length}
+                  </div>
+                  <span style={{ fontSize: 12, color: '#94a3b8', marginTop: 4, display: 'block' }}>
+                    Turnos libres publicados
+                  </span>
+                </div>
+
+                <div
+                  onClick={() => setActiveTab('COURTS')}
+                  style={{
+                    backgroundColor: '#0a0a0a',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    borderRadius: 0,
+                    padding: '22px 24px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      Canchas Habilitadas
+                    </span>
+                    <div style={{ width: 32, height: 32, borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>
+                      <Icons.Pitch size={16} />
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 32, fontWeight: 800, color: '#ffffff' }}>
+                    {courts.length}
+                  </div>
+                  <span style={{ fontSize: 12, color: '#10b981', marginTop: 4, display: 'block' }}>
+                    {courts.filter(c => c.active).length} activas en Firebase
+                  </span>
+                </div>
+
+                <div
+                  onClick={() => setActiveTab('PAYOUTS')}
+                  style={{
+                    backgroundColor: '#0a0a0a',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    borderRadius: 0,
+                    padding: '22px 24px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      Recaudación Total
+                    </span>
+                    <div style={{ width: 32, height: 32, borderRadius: '50%', backgroundColor: 'rgba(16,185,129,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981' }}>
+                      <Icons.DollarSign size={16} />
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 32, fontWeight: 800, color: '#10b981' }}>
+                    {formatCurrency(confirmedRevenue)}
+                  </div>
+                  <span style={{ fontSize: 12, color: '#94a3b8', marginTop: 4, display: 'block' }}>
+                    {bookings.filter((b) => b.status === 'CONFIRMED').length} reservas completadas
+                  </span>
+                </div>
+              </div>
+
+              {/* Quick Actions Bar */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', paddingTop: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (courts.length > 0) {
+                      const defaultCourt = courts[0];
+                      setPublishCourtId(defaultCourt.id);
+                      setPublishPrice(defaultCourt.pricePerHour || 24000);
+                      setPublishIsCovered(defaultCourt.isCovered ?? true);
+                      setPublishHasLighting(defaultCourt.hasLighting ?? true);
+                    }
+                    setPublishDate(getTodayString());
+                    setPublishStartTime('19:00');
+                    setPublishDuration(90);
+                    setPublishIsFixedSlot(false);
+                    setPublishError('');
+                    setCalendarMonth(new Date());
+                    setIsPublishModalOpen(true);
+                  }}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    backgroundColor: '#fc1c46',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: 9999,
+                    padding: '12px 24px',
+                    fontSize: 13,
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 18px rgba(252, 28, 70, 0.35)',
+                  }}
+                >
+                  <Icons.Plus size={15} />
+                  <span>Publicar Turno Nuevo</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleOpenAddCourt}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    backgroundColor: '#141414',
+                    color: '#ffffff',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: 9999,
+                    padding: '12px 22px',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  <Icons.Plus size={15} />
+                  <span>Agregar Cancha</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('REQUESTS')}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    backgroundColor: 'transparent',
+                    color: '#94a3b8',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: 9999,
+                    padding: '12px 22px',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  <Icons.Bell size={14} />
+                  <span>Ver Solicitudes ({pendingCount})</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ─── TAB 1: SOLICITUDES EN VIVO ─── */}
+          {activeTab === 'REQUESTS' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              {/* Title & Filter pills */}
+              <div>
+                <h2 style={{ fontSize: 24, fontWeight: 800, fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.5px', color: '#ffffff', margin: '0 0 16px', textTransform: 'uppercase' }}>
+                  SOLICITUDES
+                </h2>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  {(['PENDING', 'ALL', 'CONFIRMED', 'REJECTED'] as const).map((key) => {
+                    const countMap = {
+                      PENDING: pendingCount,
+                      ALL: bookings.length,
+                      CONFIRMED: bookings.filter((b) => b.status === 'CONFIRMED').length,
+                      REJECTED: bookings.filter((b) => b.status === 'REJECTED').length,
+                    };
+                    const labelMap = {
+                      PENDING: 'PENDIENTES',
+                      ALL: 'TODAS',
+                      CONFIRMED: 'CONFIRMADAS',
+                      REJECTED: 'RECHAZADAS',
+                    };
+                    const active = requestFilter === key;
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setRequestFilter(key)}
+                        style={{
+                          padding: '7px 16px',
+                          borderRadius: 9999,
+                          fontSize: 11,
+                          fontWeight: active ? 800 : 700,
+                          letterSpacing: '0.6px',
+                          textTransform: 'uppercase',
+                          backgroundColor: active ? 'rgba(252, 28, 70, 0.12)' : '#111111',
+                          color: active ? '#ffffff' : '#94a3b8',
+                          border: active ? '1px solid #fc1c46' : '1px solid rgba(255, 255, 255, 0.08)',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        {labelMap[key]} ({countMap[key]})
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Requests list or Empty State Card */}
+              {visibleBookings.length === 0 ? (
+                <div
+                  style={{
+                    backgroundColor: '#0f1115',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    borderRadius: 14,
+                    padding: '72px 32px',
+                    textAlign: 'center',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <TacticalPitchWatermark />
+
+                  <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <div
+                      style={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: '50%',
+                        backgroundColor: 'rgba(252, 28, 70, 0.12)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: 16,
+                        boxShadow: '0 0 24px rgba(252, 28, 70, 0.3)',
+                      }}
+                    >
+                      <Icons.Bell size={24} color="#fc1c46" />
+                    </div>
+
+                    <h3 style={{ fontSize: 18, fontWeight: 800, margin: '0 0 8px', color: '#ffffff', fontFamily: "'Space Grotesk', sans-serif" }}>
+                      {requestFilter === 'PENDING' ? 'No tenés solicitudes pendientes ahora mismo' : 'No hay reservas registradas en este estado'}
+                    </h3>
+
+                    <p style={{ color: '#94a3b8', fontSize: 13, maxWidth: 480, margin: 0, lineHeight: 1.6 }}>
+                      Cuando un jugador elija una cancha libre desde la web o app de Hay Equipo, su solicitud aparecerá acá con alerta sonora para aceptar o rechazar en 1 click.
+                    </p>
+                  </div>
+                </div>
+              ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {visibleBookings.map((b) => {
                   const isPending = b.status === 'PENDING';
@@ -2759,6 +3126,7 @@ export default function ClubPage() {
         )}
 
       </main>
+      </div>
 
       {/* ─── MODAL: AGREGAR GMAIL DE ENCARGADO / RECEPCIONISTA ─── */}
       {isAddStaffModalOpen && (
