@@ -241,6 +241,7 @@ export default function JugadorPublicPage() {
                   <img
                     src={player.photoURL}
                     alt={player.name}
+                    referrerPolicy="no-referrer"
                     style={{
                       width: 84,
                       height: 84,

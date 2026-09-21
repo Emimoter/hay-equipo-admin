@@ -183,6 +183,7 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({ isOpen, 
               <img
                 src={player.photoURL}
                 alt={player.name}
+                referrerPolicy="no-referrer"
                 style={{
                   width: 72,
                   height: 72,

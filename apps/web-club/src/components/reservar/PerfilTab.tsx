@@ -434,6 +434,7 @@ export const PerfilTab: React.FC<PerfilTabProps> = ({
                   <img
                     src={user.photoURL}
                     alt={name}
+                    referrerPolicy="no-referrer"
                     style={{
                       width: 80,
                       height: 80,
@@ -734,6 +735,7 @@ export const PerfilTab: React.FC<PerfilTabProps> = ({
                   <img
                     src={user.photoURL}
                     alt={name}
+                    referrerPolicy="no-referrer"
                     style={{
                       width: 64,
                       height: 64,

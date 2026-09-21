@@ -1715,6 +1715,10 @@ export default function ReservarPage() {
                   <img
                     src={user.photoURL}
                     alt={user.displayName || 'Avatar'}
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLElement).style.display = 'none';
+                    }}
                     style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover' }}
                   />
                 ) : (

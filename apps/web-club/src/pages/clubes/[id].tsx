@@ -5,6 +5,7 @@ import { useRouter } from 'next/router';
 import { useAuth } from '../../context/AuthContext';
 import { useUserLocation } from '../../context/LocationContext';
 import { ClubImageCarousel } from '../../components/reservar/ClubImageCarousel';
+import { ReservarNavTabs } from '../../components/reservar/ReservarNavTabs';
 import {
   getClubsFirestore,
   getCourtsFirestore,
@@ -129,6 +130,11 @@ const Icons = {
       <path d="M7 11V7a5 5 0 0 1 10 0v4" />
     </svg>
   ),
+  ChevronDown: ({ size = 11, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  ),
 };
 
 /* ────────────────────────────────────────────────────────────
@@ -214,7 +220,7 @@ function isSameDay(d1: Date, d2: Date) {
 export default function ClubPublicPage() {
   const router = useRouter();
   const { id } = router.query;
-  const { user, userProfile, openAuthModal } = useAuth();
+  const { user, userProfile, openAuthModal, logout } = useAuth();
   const { userLocation } = useUserLocation();
 
   const [club, setClub] = useState<WebClub | null>(null);
@@ -222,6 +228,20 @@ export default function ClubPublicPage() {
   const [selectedSport, setSelectedSport] = useState<'PADEL' | 'FUTBOL'>('PADEL');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [copiedLink, setCopiedLink] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement | null>(null);
+
+  // Close user menu on outside click
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setIsUserMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Booking Checkout Drawer State
   const [selectedSlot, setSelectedSlot] = useState<WebSlot | null>(null);
@@ -718,101 +738,265 @@ export default function ClubPublicPage() {
       </Head>
 
       {/* ═══════════════════════════════════════════════════════
-          TOP BAR (STICKY BRUSHED OBSIDIAN)
+          HEADER — Fixed ThoughtLab Glass Navigation (Landing / Web-Club Style)
           ═══════════════════════════════════════════════════════ */}
       <header
+        className="landing-header"
         style={{
-          position: 'sticky',
+          position: 'fixed',
           top: 0,
-          zIndex: 50,
-          backgroundColor: 'rgba(0, 0, 0, 0.9)',
-          backdropFilter: 'blur(12px)',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-          padding: '14px 24px',
+          left: 0,
+          right: 0,
+          height: 72,
+          padding: '0 36px',
           display: 'flex',
-          alignItems: 'center',
           justifyContent: 'space-between',
+          alignItems: 'center',
+          zIndex: 100,
+          background: 'rgba(0, 0, 0, 0.94)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          borderBottom: '1px solid rgba(76, 76, 76, 0.35)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <Link
-            href="/reservar"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              color: 'var(--color-frost)',
-              backgroundColor: '#141414',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              borderRadius: 'var(--radius-full)',
-              padding: '8px 16px',
-              fontSize: 12,
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-              textDecoration: 'none',
-              transition: 'all 0.2s ease',
-            }}
-          >
-            <Icons.ArrowLeft size={14} />
-            <span>Volver a Reservas</span>
-          </Link>
+        {/* Brand Logo */}
+        <Link href="/reservar" style={{ display: 'flex', alignItems: 'baseline', gap: 22, textDecoration: 'none' }}>
+          <span className="landing-header-logo" style={{ fontSize: 26, fontWeight: 700, color: 'var(--color-frost)', letterSpacing: '-0.9px' }}>
+            HAY EQUIPO?
+          </span>
+          <span className="landing-header-logo-sub" style={{ fontSize: 10, color: 'var(--color-graphite)', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
+            / Red Deportiva · Argentina
+          </span>
+        </Link>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: 'var(--color-crimson-signal)' }} />
-            <span style={{ fontSize: 13, fontWeight: 800, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
-              HAY EQUIPO
-            </span>
-          </div>
-        </div>
+        {/* Center: ReservarNavTabs with activeTab="EXPLORAR" */}
+        <ReservarNavTabs
+          activeTab="EXPLORAR"
+          onChangeTab={(tab) => {
+            if (tab === 'INICIO') router.push('/reservar?tab=inicio');
+            else if (tab === 'EXPLORAR') router.push('/reservar?tab=explorar');
+            else if (tab === 'RESERVAS') router.push('/reservar?tab=reservas');
+            else if (tab === 'PERFIL') router.push('/reservar?tab=perfil');
+          }}
+        />
 
+        {/* Right: App Mobile Pill + User Profile Dropdown */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button
-            onClick={handleShareClub}
+          <a
+            href="/#descargar"
+            className="landing-header-btn-outline"
             style={{
-              backgroundColor: '#161616',
-              color: copiedLink ? '#10b981' : 'var(--color-frost)',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
+              backgroundColor: 'rgba(255, 255, 255, 0.04)',
+              color: 'var(--color-frost)',
+              border: '1px solid rgba(255, 255, 255, 0.18)',
               borderRadius: 'var(--radius-full)',
-              padding: '8px 16px',
-              fontSize: 11,
-              fontWeight: 700,
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
+              padding: '9px 18px',
+              fontSize: 12.5,
+              fontWeight: 600,
+              textDecoration: 'none',
               textTransform: 'uppercase',
               letterSpacing: '0.4px',
+              transition: 'all 0.2s ease',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
             }}
           >
-            {copiedLink ? <Icons.Check size={13} color="#10b981" /> : <Icons.Share size={13} />}
-            <span>{copiedLink ? 'Link Copiado' : 'Compartir'}</span>
-          </button>
+            <span>App Mobile</span>
+            <span
+              style={{
+                fontSize: 9,
+                padding: '2px 6px',
+                borderRadius: 'var(--radius-full)',
+                backgroundColor: 'rgba(252, 28, 70, 0.15)',
+                color: 'var(--color-crimson-signal)',
+                fontWeight: 700,
+                letterSpacing: '0.4px',
+              }}
+            >
+              PRONTO
+            </span>
+          </a>
 
-          {user ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ width: 32, height: 32, borderRadius: 'var(--radius-full)', backgroundColor: 'var(--color-crimson-signal)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800 }}>
-                {(userProfile?.name || user.displayName || user.email || 'J')[0].toUpperCase()}
-              </div>
-            </div>
-          ) : (
+          {!user ? (
             <button
+              type="button"
               onClick={() => openAuthModal('Iniciá sesión para reservar tu turno y administrar tus partidos.')}
+              className="landing-header-btn-cta"
               style={{
                 backgroundColor: 'var(--color-crimson-signal)',
                 color: '#ffffff',
                 border: 'none',
                 borderRadius: 'var(--radius-full)',
-                padding: '8px 16px',
-                fontSize: 11,
-                fontWeight: 800,
+                padding: '9px 20px',
+                fontSize: 12.5,
+                fontWeight: 700,
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px',
                 cursor: 'pointer',
+                boxShadow: '0 0 16px rgba(252, 28, 70, 0.4)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                transition: 'all 0.2s ease',
               }}
             >
-              Ingresar
+              <Icons.Lock size={12} color="#ffffff" />
+              <span>Ingresar</span>
             </button>
+          ) : (
+            <div ref={userMenuRef} style={{ position: 'relative' }}>
+              <button
+                type="button"
+                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                  border: '1px solid rgba(255, 255, 255, 0.18)',
+                  borderRadius: 'var(--radius-full)',
+                  padding: '4px 14px 4px 6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  cursor: 'pointer',
+                  color: 'var(--color-frost)',
+                  transition: 'background-color 0.2s',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.12)')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)')}
+              >
+                {user.photoURL && !avatarError ? (
+                  <img
+                    src={user.photoURL}
+                    alt={user.displayName || 'Avatar'}
+                    referrerPolicy="no-referrer"
+                    onError={() => setAvatarError(true)}
+                    style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: 26,
+                      height: 26,
+                      borderRadius: '50%',
+                      backgroundColor: 'var(--color-crimson-signal)',
+                      color: '#fff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 11,
+                      fontWeight: 800,
+                    }}
+                  >
+                    {(userProfile?.name || user.displayName || user.email || 'J').substring(0, 1).toUpperCase()}
+                  </div>
+                )}
+                <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.2px' }}>
+                  {(userProfile?.name || user.displayName || user.email?.split('@')[0] || 'Jugador').split(' ')[0]}
+                </span>
+                <Icons.ChevronDown size={11} color="var(--color-ash)" />
+              </button>
+
+              {isUserMenuOpen && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 10px)',
+                    right: 0,
+                    width: 220,
+                    backgroundColor: '#0c0c0c',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    boxShadow: '0 16px 40px rgba(0, 0, 0, 0.9), 0 0 20px rgba(252, 28, 70, 0.1)',
+                    padding: '8px 0',
+                    zIndex: 9999,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    animation: 'fadeIn 0.15s ease-out',
+                  }}
+                >
+                  <div style={{ padding: '8px 16px 10px', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-frost)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {userProfile?.name || user.displayName || 'Jugador'}
+                    </div>
+                    <div style={{ fontSize: 10.5, color: 'var(--color-ash)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {user.email || user.phoneNumber || ''}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      router.push('/reservar?tab=reservas');
+                      setIsUserMenuOpen(false);
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      padding: '10px 16px',
+                      textAlign: 'left',
+                      color: 'var(--color-frost)',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                  >
+                    <Icons.Calendar size={13} color="var(--color-crimson-signal)" />
+                    <span>Mis Reservas</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      router.push('/reservar?tab=perfil');
+                      setIsUserMenuOpen(false);
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      padding: '10px 16px',
+                      textAlign: 'left',
+                      color: 'var(--color-frost)',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                  >
+                    <Icons.Users size={13} color="var(--color-crimson-signal)" />
+                    <span>Mi Perfil Deportivo</span>
+                  </button>
+
+                  <div style={{ height: 1, backgroundColor: 'rgba(255, 255, 255, 0.08)', margin: '4px 0' }} />
+
+                  <button
+                    onClick={() => {
+                      logout();
+                      setIsUserMenuOpen(false);
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      padding: '10px 16px',
+                      textAlign: 'left',
+                      color: '#f87171',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                  >
+                    Cerrar Sesión
+                  </button>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </header>
@@ -820,7 +1004,30 @@ export default function ClubPublicPage() {
       {/* ═══════════════════════════════════════════════════════
           HERO SECTION: CLUB COVER & MAIN INFO
           ═══════════════════════════════════════════════════════ */}
-      <div style={{ maxWidth: 1180, margin: '0 auto', padding: '32px 20px 80px' }}>
+      <div style={{ maxWidth: 1180, margin: '0 auto', padding: '96px 20px 80px' }}>
+        {/* Breadcrumb de Navegación */}
+        <div style={{ marginBottom: 20 }}>
+          <Link
+            href="/reservar"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              color: 'var(--color-ash)',
+              fontSize: 12,
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.6px',
+              textDecoration: 'none',
+              transition: 'color 0.2s',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-frost)')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-ash)')}
+          >
+            <Icons.ArrowLeft size={14} />
+            <span>Volver a Explorar Clubes</span>
+          </Link>
+        </div>
         {/* Encabezado del Club */}
         <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 20 }}>
           <div style={{ flex: 1, minWidth: 280 }}>
@@ -930,6 +1137,30 @@ export default function ClubPublicPage() {
                 <span>WhatsApp Club</span>
               </a>
             )}
+
+            <button
+              type="button"
+              onClick={handleShareClub}
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                color: copiedLink ? '#10b981' : 'var(--color-frost)',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                borderRadius: 'var(--radius-full)',
+                padding: '12px 20px',
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                textTransform: 'uppercase',
+                letterSpacing: '0.4px',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              {copiedLink ? <Icons.Check size={14} color="#10b981" /> : <Icons.Share size={14} />}
+              <span>{copiedLink ? 'Link Copiado' : 'Compartir Club'}</span>
+            </button>
           </div>
         </div>
 
