@@ -50,8 +50,8 @@ const TabIcons = {
 const TABS: { id: NavTabType; label: string; icon: (color: string, size: number) => React.ReactNode }[] = [
   { id: 'INICIO', label: 'Inicio', icon: (c, s) => <TabIcons.Home color={c} size={s} /> },
   { id: 'EXPLORAR', label: 'Explorar', icon: (c, s) => <TabIcons.Compass color={c} size={s} /> },
-  { id: 'RESERVAS', label: 'Mis Reservas', icon: (c, s) => <TabIcons.Calendar color={c} size={s} /> },
-  { id: 'PERFIL', label: 'Mi Perfil', icon: (c, s) => <TabIcons.User color={c} size={s} /> },
+  { id: 'RESERVAS', label: 'Reservas', icon: (c, s) => <TabIcons.Calendar color={c} size={s} /> },
+  { id: 'PERFIL', label: 'Perfil', icon: (c, s) => <TabIcons.User color={c} size={s} /> },
 ];
 
 export const ReservarNavTabs: React.FC<ReservarNavTabsProps> = ({
@@ -161,7 +161,7 @@ export const ReservarNavTabs: React.FC<ReservarNavTabsProps> = ({
                 )}
               </div>
               <span style={{ fontSize: '10px', textTransform: 'capitalize' }}>
-                {tab.id === 'RESERVAS' ? 'Reservas' : tab.label}
+                {tab.label}
               </span>
             </button>
           );

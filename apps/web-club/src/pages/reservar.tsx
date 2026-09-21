@@ -334,7 +334,7 @@ function getFullDateLabel(d: Date): string {
    Argentine Real Clubs & Courts Data
    ──────────────────────────────────────────────────────────── */
 
-interface WebSlot {
+export interface WebSlot {
   id: string;
   courtId: string;
   courtName: string;
@@ -348,7 +348,7 @@ interface WebSlot {
   isFixedSlot?: boolean;
 }
 
-interface WebClub {
+export interface WebClub {
   id: string;
   name: string;
   address: string;
@@ -384,7 +384,7 @@ interface WebClub {
   slots: WebSlot[];
 }
 
-function getClubSlotsForDate(club: WebClub, date: Date, sport: 'PADEL' | 'FUTBOL'): WebSlot[] {
+export function getClubSlotsForDate(club: WebClub, date: Date, sport: 'PADEL' | 'FUTBOL'): WebSlot[] {
   // Retorna únicamente turnos reales si el club los tiene publicados
   if (!club.slots || club.slots.length === 0) return [];
   const friendlyDate = getFriendlyDateLabel(date);
@@ -392,16 +392,17 @@ function getClubSlotsForDate(club: WebClub, date: Date, sport: 'PADEL' | 'FUTBOL
   const m = String(date.getMonth() + 1).padStart(2, '0');
   const d = String(date.getDate()).padStart(2, '0');
   const dateIso = `${y}-${m}-${d}`;
+  const isToday = isSameDay(date, new Date());
 
-  return club.slots.filter(
-    (s) =>
-      s.sport === sport &&
-      (!s.date ||
-        s.date === dateIso ||
-        s.date === friendlyDate ||
-        (s.date === 'Hoy' && isSameDay(date, new Date()))) &&
-      s.available
-  );
+  return club.slots.filter((s) => {
+    const sSport = ((s.sport || (s as any).sportType || '').toUpperCase().includes('PADEL') ? 'PADEL' : 'FUTBOL');
+    if (sSport !== sport) return false;
+    if (!s.available) return false;
+    if (!s.date) return true;
+    if (s.date === dateIso || s.date === friendlyDate) return true;
+    if (isToday && (s.date === 'Hoy' || s.date <= dateIso)) return true;
+    return false;
+  });
 }
 
 const SAMPLE_AVATARS = [
@@ -410,7 +411,7 @@ const SAMPLE_AVATARS = [
   'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=120&q=80',
 ];
 
-const CLUBS_DATA: WebClub[] = [
+export const CLUBS_DATA: WebClub[] = [
   {
     id: 'club-360-padel',
     name: '360 Padel Club',
@@ -928,7 +929,7 @@ export default function ReservarPage() {
             const clubSlots: WebSlot[] = (firestoreSlots || [])
               .filter((s: PublishedSlotRecord) => s.clubId === fc.id && s.status === 'ACTIVE')
               .map((s: PublishedSlotRecord) => {
-                const isPadel = s.sportType === 'PADEL';
+                const isPadel = ((s.sportType || (s as any).sport || '').toUpperCase().includes('PADEL'));
                 const capacity = isPadel ? 4 : (s.courtName?.includes('7') ? 14 : 10);
                 return {
                   id: s.id,
@@ -1028,7 +1029,7 @@ export default function ReservarPage() {
             const clubSlots: WebSlot[] = latestActiveSlots
               .filter((s) => s.clubId === club.id && s.status === 'ACTIVE')
               .map((s) => {
-                const isPadel = s.sportType === 'PADEL';
+                const isPadel = ((s.sportType || (s as any).sport || '').toUpperCase().includes('PADEL'));
                 const capacity = isPadel ? 4 : (s.courtName?.includes('7') ? 14 : 10);
                 return {
                   id: s.id,
@@ -1205,8 +1206,6 @@ export default function ReservarPage() {
     }
   };
 
-  // Club Detail Modal
-  const [clubModalData, setClubModalData] = useState<WebClub | null>(null);
 
   // InView hooks
   const [heroRef, heroInView] = useInView({ threshold: 0.1 });
@@ -1853,7 +1852,11 @@ export default function ReservarPage() {
       {activeNavTab === 'EXPLORAR' && (
         <ExplorarTab
           clubs={clubsList}
-          onSelectClub={(club) => setClubModalData(club)}
+          onSelectClub={(club) => {
+            if (typeof window !== 'undefined') {
+              window.open(`/clubes/${club.id}`, '_blank');
+            }
+          }}
           onNavigateHome={() => handleTabChange('INICIO')}
         />
       )}
@@ -1876,159 +1879,12 @@ export default function ReservarPage() {
           ═══════════════════════════════════════════════════════ */}
       {activeNavTab === 'INICIO' && (
         <>
-          {/* ═══════════════════════════════════════════════════════
-              BANNER SUPERIOR: ANUNCIOS & TURNOS DESTACADOS DEL DÍA
-              ═══════════════════════════════════════════════════════ */}
-          <section
-            style={{
-              position: 'relative',
-              paddingTop: 110,
-              paddingBottom: 16,
-              paddingLeft: 36,
-              paddingRight: 36,
-              zIndex: 10,
-            }}
-          >
-            <div style={{ maxWidth: 1400, margin: '0 auto' }}>
-              <div
-                style={{
-                  position: 'relative',
-                  backgroundColor: '#080808',
-                  border: '1px solid var(--color-graphite)',
-                  padding: '30px 38px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  flexWrap: 'wrap',
-                  gap: 28,
-                  overflow: 'hidden',
-                  boxShadow: '0 0 35px rgba(252, 28, 70, 0.08)',
-                }}
-              >
-                {/* Radial glow halo */}
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: '-40%',
-                    right: '10%',
-                    width: 450,
-                    height: 450,
-                    borderRadius: '50%',
-                    background: 'radial-gradient(circle, rgba(252, 28, 70, 0.18) 0%, rgba(8, 8, 8, 0) 70%)',
-                    pointerEvents: 'none',
-                  }}
-                />
-
-                <div style={{ maxWidth: 640, position: 'relative', zIndex: 2 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-                    <div
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 6,
-                        padding: '4px 12px',
-                        backgroundColor: 'rgba(252, 28, 70, 0.12)',
-                        border: '1px solid rgba(252, 28, 70, 0.4)',
-                        borderRadius: 'var(--radius-full)',
-                        fontSize: 10,
-                        fontWeight: 700,
-                        color: 'var(--color-crimson-signal)',
-                        letterSpacing: '1px',
-                        textTransform: 'uppercase',
-                      }}
-                    >
-                      <Icons.Zap size={11} color="var(--color-crimson-signal)" />
-                      <span>TURNO FIJO SEMANAL</span>
-                    </div>
-                    <div
-                      style={{
-                        padding: '4px 10px',
-                        backgroundColor: '#161616',
-                        border: '1px solid rgba(255, 255, 255, 0.15)',
-                        borderRadius: 'var(--radius-full)',
-                        fontSize: 10,
-                        fontWeight: 700,
-                        color: 'var(--color-frost)',
-                        letterSpacing: '0.5px',
-                      }}
-                    >
-                      -15% OFF
-                    </div>
-                  </div>
-
-                  <h2 style={{ fontSize: 'clamp(24px, 3.2vw, 38px)', fontWeight: 700, color: 'var(--color-frost)', letterSpacing: '-1px', margin: '0 0 10px', textTransform: 'uppercase' }}>
-                    Asegurá tu Cancha Fija
-                  </h2>
-
-                  <p style={{ fontSize: 14.5, color: 'var(--color-ash)', lineHeight: 1.45, margin: '0 0 20px', maxWidth: 520 }}>
-                    {activeSport === 'PADEL'
-                      ? 'Mismo día y horario cada semana con cobro y split automatizado entre los 4 jugadores. Sin transferencias manuales ni cancelaciones a último minuto.'
-                      : 'Fútbol semanal para tu equipo con link de pago único para el grupo de WhatsApp. Si alguien no paga, el sistema avisa automáticamente.'}
-                  </p>
-
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setOnlyFixedSlots(true);
-                        const el = document.getElementById('complejos-disponibles');
-                        if (el) {
-                          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }
-                      }}
-                      style={{
-                        backgroundColor: 'var(--color-crimson-signal)',
-                        color: 'var(--color-frost)',
-                        border: 'none',
-                        padding: '12px 28px',
-                        borderRadius: 'var(--radius-full)',
-                        fontSize: 13,
-                        fontWeight: 700,
-                        letterSpacing: '0.6px',
-                        textTransform: 'uppercase',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8,
-                        cursor: 'pointer',
-                        boxShadow: '0 0 20px rgba(252, 28, 70, 0.35)',
-                        transition: 'transform 0.2s ease',
-                      }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.03)'; }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}
-                    >
-                      <span>Asegurar Turno Fijo</span>
-                      <Icons.ArrowUpRight size={14} color="#ffffff" />
-                    </button>
-                    <span style={{ fontSize: 12, color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                      Sin permanencia mínima
-                    </span>
-                  </div>
-                </div>
-
-                {/* Dynamic 3D Cutout Image */}
-                <div style={{ position: 'relative', zIndex: 1, paddingRight: 20 }}>
-                  <img
-                    src={activeSport === 'PADEL' ? '/padel_rackets_cutout.png' : '/soccer_ball_cutout.png'}
-                    alt={activeSport}
-                    style={{
-                      width: 'clamp(170px, 20vw, 250px)',
-                      height: 'auto',
-                      objectFit: 'contain',
-                      filter: 'drop-shadow(0 20px 30px rgba(0, 0, 0, 0.8))',
-                      transform: 'rotate(-4deg)',
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          </section>
-
           {/* ── HERO SECTION: RESERVÁ TU CANCHA ── */}
           <section
             ref={heroRef}
             style={{
               position: 'relative',
-              paddingTop: 24,
+              paddingTop: 110,
               paddingBottom: 24,
               paddingLeft: 36,
               paddingRight: 36,
@@ -2059,74 +1915,6 @@ export default function ReservarPage() {
                 </MaskedText>
               </div>
             </h1>
-
-            {/* Sport Toggle Switch (Sliding Pill Switch — hay-equipo-system) */}
-            <div
-              ref={sportContainerRef as any}
-              style={{
-                position: 'relative',
-                display: 'inline-flex',
-                padding: '5px',
-                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                borderRadius: 'var(--radius-full)',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-              }}
-            >
-              {/* Sliding Red Pill Indicator */}
-              <div style={sportIndicatorStyle} />
-
-              <button
-                ref={setSportItemRef('PADEL')}
-                onClick={() => setActiveSport('PADEL')}
-                style={{
-                  position: 'relative',
-                  zIndex: 2,
-                  backgroundColor: 'transparent',
-                  color: activeSport === 'PADEL' ? 'var(--color-frost)' : 'var(--color-ash)',
-                  border: 'none',
-                  borderRadius: 'var(--radius-full)',
-                  padding: '11px 30px',
-                  fontSize: 13,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  letterSpacing: '0.6px',
-                  textTransform: 'uppercase',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  transition: 'color 0.2s ease',
-                }}
-              >
-                <Icons.Padel size={15} color={activeSport === 'PADEL' ? '#ffffff' : 'var(--color-ash)'} />
-                <span>Pádel</span>
-              </button>
-
-              <button
-                ref={setSportItemRef('FUTBOL')}
-                onClick={() => setActiveSport('FUTBOL')}
-                style={{
-                  position: 'relative',
-                  zIndex: 2,
-                  backgroundColor: 'transparent',
-                  color: activeSport === 'FUTBOL' ? 'var(--color-frost)' : 'var(--color-ash)',
-                  border: 'none',
-                  borderRadius: 'var(--radius-full)',
-                  padding: '11px 30px',
-                  fontSize: 13,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  letterSpacing: '0.6px',
-                  textTransform: 'uppercase',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  transition: 'color 0.2s ease',
-                }}
-              >
-                <Icons.Football size={15} color={activeSport === 'FUTBOL' ? '#ffffff' : 'var(--color-ash)'} />
-                <span>Fútbol</span>
-              </button>
-            </div>
           </div>
 
           <HairlineRule inView={isLoaded} delay={0.4} />
@@ -2847,7 +2635,11 @@ export default function ReservarPage() {
                     clubName={club.name}
                     height="100%"
                     style={{ minHeight: 220, height: '100%' }}
-                    onCardClick={() => setClubModalData(club)}
+                    onCardClick={() => {
+                      if (typeof window !== 'undefined') {
+                        window.open(`/clubes/${club.id}`, '_blank');
+                      }
+                    }}
                     topRightBadge={
                       <div
                         style={{
@@ -2894,9 +2686,29 @@ export default function ReservarPage() {
                       {/* Encabezado Club */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, marginBottom: 8 }}>
                         <div>
-                          <h3 style={{ fontSize: 'clamp(20px, 2.5vw, 25px)', fontWeight: 700, color: 'var(--color-frost)', letterSpacing: '-0.6px', margin: '0 0 6px', textTransform: 'uppercase' }}>
-                            {club.name}
-                          </h3>
+                          <a
+                            href={`/clubes/${club.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ textDecoration: 'none', color: 'inherit' }}
+                          >
+                            <h3
+                              style={{
+                                fontSize: 'clamp(20px, 2.5vw, 25px)',
+                                fontWeight: 700,
+                                color: 'var(--color-frost)',
+                                letterSpacing: '-0.6px',
+                                margin: '0 0 6px',
+                                textTransform: 'uppercase',
+                                cursor: 'pointer',
+                                transition: 'color 0.2s ease',
+                              }}
+                              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = 'var(--color-crimson-signal)')}
+                              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = 'var(--color-frost)')}
+                            >
+                              {club.name}
+                            </h3>
+                          </a>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--color-ash)', fontSize: 13, flexWrap: 'wrap' }}>
                             <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                               <Icons.MapPin size={13} color="var(--color-crimson-signal)" />
@@ -3032,8 +2844,47 @@ export default function ReservarPage() {
                       </div>
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                        <button
-                          onClick={() => setClubModalData(club)}
+                        {(availableSlots.length > 0 || club.slots.some((s) => s.available)) && (
+                          <a
+                            href={`/clubes/${club.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              backgroundColor: 'var(--color-crimson-signal)',
+                              color: '#ffffff',
+                              border: 'none',
+                              borderRadius: 'var(--radius-full)',
+                              padding: '10px 18px',
+                              fontSize: 11,
+                              fontWeight: 800,
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.6px',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 6,
+                              textDecoration: 'none',
+                              boxShadow: '0 3px 12px rgba(252, 28, 70, 0.35)',
+                              transition: 'all 0.2s ease',
+                              cursor: 'pointer',
+                            }}
+                            onMouseEnter={(e) => {
+                              (e.currentTarget as HTMLElement).style.filter = 'brightness(1.1)';
+                              (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)';
+                            }}
+                            onMouseLeave={(e) => {
+                              (e.currentTarget as HTMLElement).style.filter = 'none';
+                              (e.currentTarget as HTMLElement).style.transform = 'none';
+                            }}
+                          >
+                            <Icons.Calendar size={13} color="#ffffff" />
+                            <span>Reservar Turno</span>
+                          </a>
+                        )}
+
+                        <a
+                          href={`/clubes/${club.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           style={{
                             backgroundColor: '#161616',
                             color: 'var(--color-frost)',
@@ -3048,20 +2899,21 @@ export default function ReservarPage() {
                             display: 'inline-flex',
                             alignItems: 'center',
                             gap: 6,
+                            textDecoration: 'none',
                             transition: 'all 0.2s ease',
                           }}
                           onMouseEnter={(e) => {
-                            (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255, 255, 255, 0.4)';
-                            (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#202020';
+                            (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255, 255, 255, 0.4)';
+                            (e.currentTarget as HTMLElement).style.backgroundColor = '#202020';
                           }}
                           onMouseLeave={(e) => {
-                            (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255, 255, 255, 0.18)';
-                            (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#161616';
+                            (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255, 255, 255, 0.18)';
+                            (e.currentTarget as HTMLElement).style.backgroundColor = '#161616';
                           }}
                         >
                           <span>Ficha & Canchas</span>
                           <Icons.ArrowUpRight size={12} />
-                        </button>
+                        </a>
 
                         {club.whatsappPhone && (
                           <a
@@ -3927,288 +3779,6 @@ export default function ReservarPage() {
         </div>
       )}
 
-      {/* ═══════════════════════════════════════════════════════
-          MODAL: DETALLE DEL CLUB & FOTOS
-          ═══════════════════════════════════════════════════════ */}
-      {clubModalData && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.85)',
-            backdropFilter: 'blur(12px)',
-            zIndex: 90,
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: '20px',
-          }}
-          onClick={() => setClubModalData(null)}
-        >
-          <div
-            style={{
-              backgroundColor: '#0c0c0c',
-              border: '1px solid var(--color-graphite)',
-              width: '100%',
-              maxWidth: 680,
-              maxHeight: '90vh',
-              overflowY: 'auto',
-              position: 'relative',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{ position: 'relative' }}>
-              <ClubImageCarousel
-                images={clubModalData.images}
-                clubName={clubModalData.name}
-                height={280}
-              />
-              <button
-                onClick={() => setClubModalData(null)}
-                style={{
-                  position: 'absolute',
-                  top: 14,
-                  right: 14,
-                  backgroundColor: 'rgba(0, 0, 0, 0.75)',
-                  backdropFilter: 'blur(8px)',
-                  border: '1px solid rgba(255, 255, 255, 0.3)',
-                  color: '#fff',
-                  width: 32,
-                  height: 32,
-                  borderRadius: 'var(--radius-full)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  zIndex: 25,
-                  transition: 'background-color 0.2s ease',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-crimson-signal)')}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.75)')}
-                aria-label="Cerrar ficha"
-              >
-                <Icons.Close size={16} />
-              </button>
-            </div>
-
-            <div style={{ padding: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                <div>
-                  <h3 style={{ fontSize: 24, fontWeight: 700, color: 'var(--color-frost)', textTransform: 'uppercase', margin: '0 0 4px' }}>
-                    {clubModalData.name}
-                  </h3>
-                  <div style={{ color: 'var(--color-ash)', fontSize: 13 }}>
-                    {clubModalData.address} · {clubModalData.city}
-                  </div>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#FACC15', fontWeight: 700, fontSize: 14 }}>
-                  <Icons.Star size={14} />
-                  <span>{clubModalData.rating}</span>
-                </div>
-              </div>
-
-              <div style={{ fontSize: 12, color: 'var(--color-crimson-signal)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700, marginBottom: 12 }}>
-                Canchas e Instalaciones
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
-                {clubModalData.courts.map((court) => (
-                  <div
-                    key={court.id}
-                    style={{
-                      padding: '12px 16px',
-                      backgroundColor: '#111',
-                      border: '1px solid rgba(255, 255, 255, 0.08)',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>{court.name}</div>
-                      <div style={{ fontSize: 12, color: 'var(--color-ash)' }}>{court.surface}</div>
-                    </div>
-                    <div style={{ fontSize: 11, color: 'var(--color-graphite)', textTransform: 'uppercase', fontWeight: 600 }}>
-                      Capacidad: {court.capacity} personas
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
-                {clubModalData.amenities.covered && (
-                  <div style={{ padding: '4px 10px', backgroundColor: '#141414', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 'var(--radius-full)', fontSize: 11, color: 'var(--color-ash)' }}>
-                    Techada / Indoor
-                  </div>
-                )}
-                {clubModalData.amenities.parking && (
-                  <div style={{ padding: '4px 10px', backgroundColor: '#141414', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 'var(--radius-full)', fontSize: 11, color: 'var(--color-ash)' }}>
-                    Parking Custodiado
-                  </div>
-                )}
-                {clubModalData.amenities.buffet && (
-                  <div style={{ padding: '4px 10px', backgroundColor: '#141414', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 'var(--radius-full)', fontSize: 11, color: 'var(--color-ash)' }}>
-                    Buffet & Bar
-                  </div>
-                )}
-                {clubModalData.amenities.lighting && (
-                  <div style={{ padding: '4px 10px', backgroundColor: '#141414', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 'var(--radius-full)', fontSize: 11, color: 'var(--color-ash)' }}>
-                    Iluminación LED Pro
-                  </div>
-                )}
-              </div>
-
-              {/* Turnos disponibles para reservar directo desde la ficha */}
-              {(() => {
-                const modalSlots = getClubSlotsForDate(clubModalData, selectedDate, activeSport).filter((s) => s.available);
-                if (modalSlots.length === 0) return null;
-                return (
-                  <div style={{ marginBottom: 20, padding: '16px', backgroundColor: '#090909', border: '1px solid var(--color-graphite)' }}>
-                    <div style={{ fontSize: 10, color: 'var(--color-crimson-signal)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700, marginBottom: 10 }}>
-                      Turnos Disponibles · {getFullDateLabel(selectedDate).toUpperCase()}
-                    </div>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      {modalSlots.map((slot) => (
-                        <button
-                          key={slot.id}
-                          onClick={() => {
-                            const targetClub = clubModalData;
-                            setClubModalData(null);
-                            handleOpenBooking(slot, targetClub);
-                          }}
-                          style={{
-                            backgroundColor: slot.isFixedSlot ? 'rgba(252, 28, 70, 0.08)' : '#141414',
-                            border: slot.isFixedSlot ? '1px solid rgba(252, 28, 70, 0.45)' : '1px solid var(--color-graphite)',
-                            borderRadius: 'var(--radius-full)',
-                            color: 'var(--color-frost)',
-                            padding: '8px 16px',
-                            textAlign: 'left',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s ease',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 8,
-                          }}
-                          onMouseEnter={(e) => {
-                            (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-crimson-signal)';
-                            (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(252, 28, 70, 0.18)';
-                          }}
-                          onMouseLeave={(e) => {
-                            (e.currentTarget as HTMLButtonElement).style.borderColor = slot.isFixedSlot ? 'rgba(252, 28, 70, 0.45)' : 'var(--color-graphite)';
-                            (e.currentTarget as HTMLButtonElement).style.backgroundColor = slot.isFixedSlot ? 'rgba(252, 28, 70, 0.08)' : '#141414';
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700 }}>
-                            {slot.isFixedSlot ? (
-                              <Icons.Repeat size={12} color="var(--color-crimson-signal)" />
-                            ) : (
-                              <Icons.Clock size={12} color="var(--color-crimson-signal)" />
-                            )}
-                            <span>{slot.startTime} hs</span>
-                            {slot.isFixedSlot && (
-                              <span style={{ fontSize: 8.5, padding: '1px 5px', borderRadius: 'var(--radius-full)', backgroundColor: 'var(--color-crimson-signal)', color: '#ffffff', fontWeight: 800, letterSpacing: '0.4px', textTransform: 'uppercase' }}>
-                                FIJO
-                              </span>
-                            )}
-                          </div>
-                          <span style={{ color: 'var(--color-graphite)' }}>·</span>
-                          <span style={{ fontSize: 11, color: 'var(--color-ash)', fontWeight: 500 }}>
-                            {formatCurrency(slot.perPlayerPrice)} / pers
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })()}
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {clubModalData.whatsappPhone && (
-                  <a
-                    href={`https://wa.me/${clubModalData.whatsappPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
-                      `Hola! Los vi en Hay Equipo y quería consultar disponibilidad de canchas de ${
-                        activeSport === 'PADEL' ? 'pádel' : 'fútbol'
-                      } en ${clubModalData.name}.`
-                    )}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 8,
-                      backgroundColor: '#25D366',
-                      color: '#000',
-                      borderRadius: 'var(--radius-full)',
-                      padding: '13px 24px',
-                      textDecoration: 'none',
-                      fontSize: 13,
-                      fontWeight: 800,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.6px',
-                    }}
-                  >
-                    <Icons.WhatsApp size={16} color="#000" />
-                    <span>Contactar por WhatsApp Oficial</span>
-                  </a>
-                )}
-
-                {clubModalData.phone && (
-                  <a
-                    href={`tel:${clubModalData.phone.replace(/[^0-9]/g, '')}`}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 8,
-                      backgroundColor: '#161616',
-                      color: '#fff',
-                      border: '1px solid var(--color-graphite)',
-                      borderRadius: 'var(--radius-full)',
-                      padding: '12px 24px',
-                      textDecoration: 'none',
-                      fontSize: 13,
-                      fontWeight: 700,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.5px',
-                    }}
-                  >
-                    <Icons.Phone size={14} color="var(--color-crimson-signal)" />
-                    <span>Llamar al Club ({clubModalData.phone})</span>
-                  </a>
-                )}
-
-                <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(clubModalData.name + ' ' + clubModalData.address + ' ' + clubModalData.city)}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 8,
-                    backgroundColor: '#161616',
-                    color: '#fff',
-                    border: '1px solid var(--color-graphite)',
-                    borderRadius: 'var(--radius-full)',
-                    padding: '12px 24px',
-                    textDecoration: 'none',
-                    fontSize: 13,
-                    fontWeight: 600,
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  <Icons.MapPin size={14} color="var(--color-crimson-signal)" />
-                  <span>Abrir ubicación en Google Maps</span>
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ═══════════════════════════════════════════════════════
           FOOTER — ThoughtLab Swiss Minimal

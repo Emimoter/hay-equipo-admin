@@ -106,6 +106,14 @@ const Icons = {
       <path d="M21 13v2a4 4 0 0 1-4 4H3" />
     </svg>
   ),
+  Calendar: ({ size = 13, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+      <line x1="16" y1="2" x2="16" y2="6" />
+      <line x1="8" y1="2" x2="8" y2="6" />
+      <line x1="3" y1="10" x2="21" y2="10" />
+    </svg>
+  ),
 };
 
 export const ExplorarTab: React.FC<ExplorarTabProps> = ({
@@ -503,7 +511,11 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
                 images={club.images || (club.coverImage ? [club.coverImage] : [])}
                 clubName={club.name}
                 height={200}
-                onCardClick={() => onSelectClub(club)}
+                onCardClick={() => {
+                  if (typeof window !== 'undefined') {
+                    window.open(`/clubes/${club.id}`, '_blank');
+                  }
+                }}
                 topRightBadge={
                   <div
                     style={{
@@ -531,9 +543,27 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
 
               {/* Contenido */}
               <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', flex: 1 }}>
-                <h3 style={{ fontSize: 19, fontWeight: 700, color: 'var(--color-frost)', margin: '0 0 6px' }}>
-                  {club.name}
-                </h3>
+                <a
+                  href={`/clubes/${club.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ textDecoration: 'none', color: 'inherit' }}
+                >
+                  <h3
+                    style={{
+                      fontSize: 19,
+                      fontWeight: 700,
+                      color: 'var(--color-frost)',
+                      margin: '0 0 6px',
+                      cursor: 'pointer',
+                      transition: 'color 0.2s ease',
+                    }}
+                    onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = 'var(--color-crimson-signal)')}
+                    onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = 'var(--color-frost)')}
+                  >
+                    {club.name}
+                  </h3>
+                </a>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--color-ash)', fontSize: 13, marginBottom: 16, flexWrap: 'wrap' }}>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                     <Icons.MapPin size={13} color="var(--color-crimson-signal)" />
@@ -580,9 +610,41 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
                 </div>
 
                 {/* Botones de Acción (Pills) */}
-                <div style={{ marginTop: 'auto', paddingTop: 16, borderTop: '1px solid rgba(76, 76, 76, 0.3)', display: 'flex', gap: 10 }}>
-                  <button
-                    onClick={() => onSelectClub(club)}
+                <div style={{ marginTop: 'auto', paddingTop: 16, borderTop: '1px solid rgba(76, 76, 76, 0.3)', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {club.slots?.some((s: any) => s.available) && (
+                    <a
+                      href={`/clubes/${club.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        flex: '1 1 100%',
+                        backgroundColor: 'var(--color-crimson-signal)',
+                        color: '#ffffff',
+                        border: 'none',
+                        borderRadius: 'var(--radius-full)',
+                        padding: '10px 16px',
+                        fontSize: 11,
+                        fontWeight: 800,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 6,
+                        textDecoration: 'none',
+                        boxShadow: '0 3px 12px rgba(252, 28, 70, 0.35)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <Icons.Calendar size={13} color="#ffffff" />
+                      <span>Reservar Turno</span>
+                    </a>
+                  )}
+
+                  <a
+                    href={`/clubes/${club.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     style={{
                       flex: 1,
                       backgroundColor: 'rgba(255, 255, 255, 0.08)',
@@ -595,10 +657,14 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
                       cursor: 'pointer',
                       textTransform: 'uppercase',
                       letterSpacing: '0.4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      textDecoration: 'none',
                     }}
                   >
                     Ficha del Club
-                  </button>
+                  </a>
                   {club.whatsappPhone ? (
                     <a
                       href={`https://wa.me/${club.whatsappPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
@@ -630,8 +696,10 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
                       <span>WhatsApp</span>
                     </a>
                   ) : (
-                    <button
-                      onClick={() => onSelectClub(club)}
+                    <a
+                      href={`/clubes/${club.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       style={{
                         flex: 1,
                         backgroundColor: 'var(--color-crimson-signal)',
@@ -640,14 +708,21 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
                         borderRadius: 'var(--radius-full)',
                         padding: '10px 16px',
                         fontSize: 11,
-                        fontWeight: 700,
+                        fontWeight: 800,
                         cursor: 'pointer',
                         textTransform: 'uppercase',
                         letterSpacing: '0.4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 6,
+                        textDecoration: 'none',
+                        boxShadow: '0 2px 10px rgba(252, 28, 70, 0.3)',
                       }}
                     >
-                      Ver Contacto
-                    </button>
+                      <span>Ver Turnos</span>
+                      <Icons.ArrowRight size={13} color="#fff" />
+                    </a>
                   )}
                 </div>
               </div>
