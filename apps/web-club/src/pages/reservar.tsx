@@ -905,10 +905,6 @@ export default function ReservarPage() {
   } = useSlidingIndicator(activeSport);
 
   // Search Bar state
-  const [selectedZone, setSelectedZone] = useState<string>('TODAS');
-  const [isZoneDropdownOpen, setIsZoneDropdownOpen] = useState<boolean>(false);
-  const zoneDropdownRef = useRef<HTMLDivElement | null>(null);
-
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
   const [calendarMonth, setCalendarMonth] = useState<Date>(() => new Date());
   const [isDateDropdownOpen, setIsDateDropdownOpen] = useState<boolean>(false);
@@ -1173,9 +1169,6 @@ export default function ReservarPage() {
   // Handle clicking outside custom dropdowns
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (zoneDropdownRef.current && !zoneDropdownRef.current.contains(event.target as Node)) {
-        setIsZoneDropdownOpen(false);
-      }
       if (dateDropdownRef.current && !dateDropdownRef.current.contains(event.target as Node)) {
         setIsDateDropdownOpen(false);
       }
@@ -1184,31 +1177,7 @@ export default function ReservarPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Zone metadata definitions for custom UI
-  const ZONE_OPTIONS = [
-    {
-      value: 'TODAS',
-      label: 'Todas las Zonas',
-      sublabel: 'Todo el país · Canchas en Mar del Plata y CABA',
-      badge: '14 COMPLEJOS',
-    },
-    {
-      value: 'MDP',
-      label: 'Mar del Plata (MDP)',
-      sublabel: 'Alem, Centro, Alvarado, Jara, Güemes, Constitución, Juan B. Justo',
-      badge: '13 COMPLEJOS',
-    },
-    {
-      value: 'CABA',
-      label: 'Buenos Aires (CABA)',
-      sublabel: 'Palermo, Belgrano, Puerto Madero y alrededores',
-      badge: '1 COMPLEJO',
-    },
-  ];
-
-  const selectedZoneItem = ZONE_OPTIONS.find((z) => z.value === selectedZone) || ZONE_OPTIONS[0];
-
-  // Filtered & Proximity-Sorted Clubs
+  // Filtered & Proximity-Sorted Clubs (Mar del Plata focus)
   const filteredClubs = useMemo(() => {
     const filtered = clubsList.filter((c) => {
       // 1. Filtro del deporte activo del buscador
@@ -1220,11 +1189,6 @@ export default function ReservarPage() {
       if (activeSportTypeFilter === 'PADEL_ONLY' && (!hasPadel || hasFutbol)) return false;
       if (activeSportTypeFilter === 'FUTBOL_ONLY' && (!hasFutbol || hasPadel)) return false;
       if (activeSportTypeFilter === 'BOTH' && (!hasPadel || !hasFutbol)) return false;
-
-      if (selectedZone !== 'TODAS') {
-        if (selectedZone === 'MDP' && !c.city.toLowerCase().includes('mar del plata')) return false;
-        if (selectedZone === 'CABA' && !c.city.toLowerCase().includes('buenos aires')) return false;
-      }
 
       if (searchQuery.trim().length > 0) {
         const clean = (str: string) => (str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -1270,7 +1234,7 @@ export default function ReservarPage() {
       const distB = typeof b.distanceKm === 'number' ? b.distanceKm : 999;
       return distA - distB;
     });
-  }, [clubsList, userLocation, activeSport, activeSportTypeFilter, selectedZone, searchQuery, activeAmenityFilter, onlyFixedSlots]);
+  }, [clubsList, userLocation, activeSport, activeSportTypeFilter, searchQuery, activeAmenityFilter, onlyFixedSlots]);
 
   // Instant Available Slots for Selected Date and Sport
   const instantSlots = useMemo(() => {
@@ -1289,7 +1253,6 @@ export default function ReservarPage() {
 
   const handleSearchTurnos = () => {
     setIsDateDropdownOpen(false);
-    setIsZoneDropdownOpen(false);
     setHasSearched(true);
 
     const el = document.getElementById('complejos-disponibles');
@@ -1672,205 +1635,122 @@ export default function ReservarPage() {
       >
         <div style={{ maxWidth: 1400, margin: '0 auto' }}>
           <div
+            className="search-bar-unified"
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr)) auto',
               alignItems: 'center',
               backgroundColor: '#0a0a0a',
               border: '1px solid var(--color-graphite)',
-              padding: '8px',
-              gap: '6px',
+              padding: '8px 12px',
+              gap: '8px',
               position: 'relative',
             }}
           >
-            {/* ── Segmento 1: Ciudad / Zona (Custom Popover) ── */}
+            {/* ── Segmento 1: Deporte (Pádel / Fútbol) ── */}
             <div
-              ref={zoneDropdownRef}
+              className="search-segment-sport"
               style={{
-                padding: '10px 18px',
+                padding: '8px 14px',
                 borderRight: '1px solid rgba(76, 76, 76, 0.4)',
-                position: 'relative',
-                cursor: 'pointer',
-                transition: 'background-color 0.2s ease',
-              }}
-              onClick={() => {
-                setIsZoneDropdownOpen(!isZoneDropdownOpen);
-                setIsDateDropdownOpen(false);
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 5,
               }}
             >
-              <div style={{ fontSize: 10, color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 4, fontWeight: 700 }}>
-                ¿Dónde querés jugar?
+              <div style={{ fontSize: 9.5, color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700 }}>
+                Deporte
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
-                  <Icons.MapPin size={13} color="var(--color-crimson-signal)" />
-                  <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-frost)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
-                    {selectedZoneItem.label}
-                  </span>
-                </div>
-                <div
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  backgroundColor: '#121212',
+                  padding: '3px',
+                  borderRadius: 'var(--radius-full)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  gap: 4,
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setActiveSport('PADEL')}
                   style={{
-                    transform: isZoneDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                    transition: 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
                     display: 'flex',
                     alignItems: 'center',
-                    color: isZoneDropdownOpen ? 'var(--color-crimson-signal)' : 'var(--color-ash)',
+                    gap: 6,
+                    padding: '6px 14px',
+                    borderRadius: 'var(--radius-full)',
+                    border: 'none',
+                    backgroundColor: activeSport === 'PADEL' ? 'var(--color-crimson-signal)' : 'transparent',
+                    color: activeSport === 'PADEL' ? '#ffffff' : 'var(--color-ash)',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    boxShadow: activeSport === 'PADEL' ? '0 0 12px rgba(252, 28, 70, 0.4)' : 'none',
+                    whiteSpace: 'nowrap',
                   }}
                 >
-                  <Icons.ChevronDown size={13} />
-                </div>
-              </div>
-
-              {/* Custom Brutalist Popover Panel para Zonas */}
-              {isZoneDropdownOpen && (
-                <div
+                  <Icons.Padel size={12} color={activeSport === 'PADEL' ? '#ffffff' : 'var(--color-ash)'} />
+                  <span>Pádel</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveSport('FUTBOL')}
                   style={{
-                    position: 'absolute',
-                    top: 'calc(100% + 12px)',
-                    left: 0,
-                    width: 'max(320px, 100%)',
-                    maxWidth: 380,
-                    backgroundColor: '#0c0c0c',
-                    border: '1px solid var(--color-graphite)',
-                    borderTop: '2px solid var(--color-crimson-signal)',
-                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.98), 0 0 35px rgba(252, 28, 70, 0.18)',
-                    zIndex: 100,
-                    padding: '8px',
                     display: 'flex',
-                    flexDirection: 'column',
-                    gap: '4px',
-                    backdropFilter: 'blur(20px)',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '6px 14px',
+                    borderRadius: 'var(--radius-full)',
+                    border: 'none',
+                    backgroundColor: activeSport === 'FUTBOL' ? 'var(--color-crimson-signal)' : 'transparent',
+                    color: activeSport === 'FUTBOL' ? '#ffffff' : 'var(--color-ash)',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    boxShadow: activeSport === 'FUTBOL' ? '0 0 12px rgba(252, 28, 70, 0.4)' : 'none',
+                    whiteSpace: 'nowrap',
                   }}
-                  onClick={(e) => e.stopPropagation()}
                 >
-                  <div style={{ padding: '6px 10px 8px', fontSize: 10, color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700, borderBottom: '1px solid rgba(76, 76, 76, 0.3)' }}>
-                    SELECCIONÁ TU ZONA O CIUDAD
-                  </div>
-
-                  {ZONE_OPTIONS.map((opt) => {
-                    const isSelected = selectedZone === opt.value;
-                    return (
-                      <button
-                        key={opt.value}
-                        onClick={() => {
-                          setSelectedZone(opt.value);
-                          setIsZoneDropdownOpen(false);
-                        }}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'flex-start',
-                          justifyContent: 'space-between',
-                          gap: 12,
-                          padding: '12px 14px',
-                          backgroundColor: isSelected ? 'rgba(252, 28, 70, 0.12)' : '#111111',
-                          border: '1px solid ' + (isSelected ? 'rgba(252, 28, 70, 0.4)' : 'rgba(255, 255, 255, 0.04)'),
-                          borderLeft: isSelected ? '3px solid var(--color-crimson-signal)' : '3px solid transparent',
-                          cursor: 'pointer',
-                          textAlign: 'left',
-                          width: '100%',
-                          transition: 'all 0.15s ease',
-                        }}
-                        onMouseEnter={(e) => {
-                          if (!isSelected) {
-                            (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(255, 255, 255, 0.06)';
-                            (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255, 255, 255, 0.15)';
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (!isSelected) {
-                            (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#111111';
-                            (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255, 255, 255, 0.04)';
-                          }
-                        }}
-                      >
-                        <div style={{ flex: 1 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                            <Icons.MapPin size={12} color={isSelected ? 'var(--color-crimson-signal)' : 'var(--color-ash)'} />
-                            <span style={{ fontSize: 13, fontWeight: 700, color: isSelected ? 'var(--color-frost)' : '#f0f0f0' }}>
-                              {opt.label}
-                            </span>
-                          </div>
-                          <div style={{ fontSize: 11, color: 'var(--color-ash)', lineHeight: 1.3, paddingLeft: 18 }}>
-                            {opt.sublabel}
-                          </div>
-                        </div>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-                          <span
-                            style={{
-                              fontSize: 9,
-                              fontWeight: 700,
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.6px',
-                              padding: '2px 8px',
-                              borderRadius: 'var(--radius-full)',
-                              backgroundColor: isSelected ? 'var(--color-crimson-signal)' : '#181818',
-                              color: isSelected ? '#ffffff' : 'var(--color-graphite)',
-                              border: '1px solid ' + (isSelected ? 'transparent' : 'rgba(255, 255, 255, 0.1)'),
-                            }}
-                          >
-                            {opt.badge}
-                          </span>
-                          {isSelected && (
-                            <span style={{ color: 'var(--color-crimson-signal)', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                              <Icons.Check size={12} color="var(--color-crimson-signal)" />
-                              <span>Activo</span>
-                            </span>
-                          )}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* ── Segmento 2: Deporte Activo ── */}
-            <div
-              style={{
-                padding: '10px 18px',
-                borderRight: '1px solid rgba(76, 76, 76, 0.4)',
-                cursor: 'pointer',
-              }}
-              onClick={() => setActiveSport(activeSport === 'PADEL' ? 'FUTBOL' : 'PADEL')}
-            >
-              <div style={{ fontSize: 10, color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 4, fontWeight: 700 }}>
-                Deporte activo (Clic para cambiar)
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                {activeSport === 'PADEL' ? (
-                  <Icons.Padel size={13} color="var(--color-crimson-signal)" />
-                ) : (
-                  <Icons.Football size={13} color="var(--color-crimson-signal)" />
-                )}
-                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-frost)' }}>
-                  {activeSport === 'PADEL' ? 'Pádel (Cristal & WPT)' : 'Fútbol (F5 / F7 / F8)'}
-                </span>
+                  <Icons.Football size={12} color={activeSport === 'FUTBOL' ? '#ffffff' : 'var(--color-ash)'} />
+                  <span>Fútbol</span>
+                </button>
               </div>
             </div>
 
-            {/* ── Segmento 3: Fecha (Custom Calendar Popover) ── */}
+            {/* ── Segmento 2: Fecha de Juego (Custom Calendar Popover) ── */}
             <div
               ref={dateDropdownRef}
+              className="search-segment-date"
               style={{
-                padding: '10px 18px',
+                padding: '8px 14px',
                 borderRight: '1px solid rgba(76, 76, 76, 0.4)',
                 position: 'relative',
                 cursor: 'pointer',
-                transition: 'background-color 0.2s ease',
               }}
-              onClick={() => {
-                setIsDateDropdownOpen(!isDateDropdownOpen);
-                setIsZoneDropdownOpen(false);
-              }}
+              onClick={() => setIsDateDropdownOpen(!isDateDropdownOpen)}
             >
-              <div style={{ fontSize: 10, color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 4, fontWeight: 700 }}>
-                Fecha
+              <div style={{ fontSize: 9.5, color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 5, fontWeight: 700 }}>
+                Fecha de juego
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 10,
+                  backgroundColor: '#121212',
+                  border: isDateDropdownOpen ? '1px solid var(--color-crimson-signal)' : '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: 'var(--radius-full)',
+                  padding: '7px 14px',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
                   <Icons.Calendar size={13} color="var(--color-crimson-signal)" />
-                  <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-frost)' }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-frost)', whiteSpace: 'nowrap' }}>
                     {getFriendlyDateLabel(selectedDate)}
                   </span>
                 </div>
@@ -1883,24 +1763,25 @@ export default function ReservarPage() {
                     color: isDateDropdownOpen ? 'var(--color-crimson-signal)' : 'var(--color-ash)',
                   }}
                 >
-                  <Icons.ChevronDown size={13} />
+                  <Icons.ChevronDown size={12} />
                 </div>
               </div>
 
               {/* Custom Brutalist Popover Calendar para Fechas */}
               {isDateDropdownOpen && (
                 <div
+                  className="search-calendar-popover"
                   style={{
                     position: 'absolute',
-                    top: 'calc(100% + 12px)',
+                    top: 'calc(100% + 10px)',
                     left: 0,
-                    width: 340,
-                    maxWidth: 'calc(100vw - 40px)',
+                    width: 330,
+                    maxWidth: 'calc(100vw - 32px)',
                     backgroundColor: '#0c0c0c',
-                    border: '1px solid var(--color-graphite)',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
                     borderTop: '2px solid var(--color-crimson-signal)',
                     boxShadow: '0 25px 60px -12px rgba(0, 0, 0, 0.98), 0 0 35px rgba(252, 28, 70, 0.18)',
-                    zIndex: 100,
+                    zIndex: 150,
                     padding: '16px',
                     display: 'flex',
                     flexDirection: 'column',
@@ -1998,7 +1879,7 @@ export default function ReservarPage() {
                         icon: (color: string) => <Icons.Trophy size={11} color={color} />,
                         getDate: () => {
                           const d = new Date();
-                          const day = d.getDay(); // 0=Sun, 6=Sat
+                          const day = d.getDay();
                           const diff = day === 6 ? 0 : (6 - day);
                           d.setDate(d.getDate() + (diff === 0 ? 7 : diff));
                           return d;
@@ -2166,55 +2047,114 @@ export default function ReservarPage() {
               )}
             </div>
 
-            {/* ── Segmento 4: Filtro Nombre Club ── */}
-            <div style={{ padding: '10px 18px' }}>
-              <div style={{ fontSize: 10, color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 4, fontWeight: 700 }}>
-                Buscar club específico
+            {/* ── Segmento 3: Buscar Club / Complejo ── */}
+            <div
+              className="search-segment-input"
+              style={{
+                padding: '8px 14px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 5,
+                flex: 1,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+                <span style={{ fontSize: 9.5, color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700 }}>
+                  Club o Complejo
+                </span>
+                <span style={{ fontSize: 9, color: 'var(--color-crimson-signal)', textTransform: 'uppercase', letterSpacing: '0.6px', fontWeight: 700 }}>
+                  Mar del Plata
+                </span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  backgroundColor: '#121212',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: 'var(--radius-full)',
+                  padding: '7px 14px',
+                }}
+              >
                 <Icons.Search size={13} color="var(--color-ash)" />
                 <input
                   type="text"
-                  placeholder="Ej: 360, Alfar, La Verde..."
+                  placeholder="Buscar por nombre o dirección..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   style={{
                     backgroundColor: 'transparent',
                     color: 'var(--color-frost)',
                     border: 'none',
+                    outline: 'none',
                     fontSize: 13,
                     width: '100%',
+                    fontWeight: 500,
                   }}
                 />
+                {searchQuery.trim().length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      color: 'var(--color-ash)',
+                    }}
+                  >
+                    <Icons.Close size={12} />
+                  </button>
+                )}
               </div>
             </div>
 
-            {/* ── Botón Buscar ── */}
-            <div style={{ padding: '4px' }}>
+            {/* ── Segmento 4: Botón Buscar ── */}
+            <div
+              className="search-segment-button"
+              style={{
+                padding: '8px 10px',
+                display: 'flex',
+                alignItems: 'flex-end',
+              }}
+            >
               <button
+                type="button"
                 onClick={handleSearchTurnos}
                 style={{
                   backgroundColor: 'var(--color-crimson-signal)',
-                  color: 'var(--color-frost)',
+                  color: '#ffffff',
                   border: 'none',
                   borderRadius: 'var(--radius-full)',
-                  padding: '14px 28px',
+                  padding: '11px 24px',
                   fontWeight: 700,
-                  fontSize: 13,
+                  fontSize: 12.5,
                   textTransform: 'uppercase',
                   letterSpacing: '0.8px',
                   cursor: 'pointer',
-                  display: 'flex',
+                  display: 'inline-flex',
                   alignItems: 'center',
+                  justifyContent: 'center',
                   gap: 8,
-                  transition: 'opacity 0.2s ease',
+                  boxShadow: '0 0 16px rgba(252, 28, 70, 0.45)',
+                  transition: 'all 0.2s ease',
                   whiteSpace: 'nowrap',
                 }}
-                onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.opacity = '0.9')}
-                onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.opacity = '1')}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.filter = 'brightness(1.15)';
+                  e.currentTarget.style.transform = 'scale(1.02)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.filter = 'none';
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
               >
                 <span>Buscar Turnos</span>
-                <Icons.ArrowUpRight size={14} color="#ffffff" />
+                <Icons.ArrowUpRight size={13} color="#ffffff" />
               </button>
             </div>
           </div>
@@ -2267,7 +2207,7 @@ export default function ReservarPage() {
                     DISPONIBILIDAD CONFIRMADA
                   </div>
                   <div style={{ fontSize: 14, color: 'var(--color-frost)', fontWeight: 600 }}>
-                    {getFullDateLabel(selectedDate)} · {activeSport === 'PADEL' ? 'Pádel' : 'Fútbol'} ({selectedZoneItem.label})
+                    {getFullDateLabel(selectedDate)} · {activeSport === 'PADEL' ? 'Pádel' : 'Fútbol'} · Mar del Plata
                   </div>
                 </div>
               </div>
@@ -2729,6 +2669,48 @@ export default function ReservarPage() {
           100% {
             opacity: 1;
             transform: scale(1);
+          }
+        }
+
+        .search-bar-unified {
+          grid-template-columns: auto minmax(210px, 240px) 1fr auto;
+        }
+
+        @media (max-width: 960px) {
+          .search-bar-unified {
+            grid-template-columns: 1fr 1fr !important;
+            gap: 12px !important;
+            padding: 12px !important;
+          }
+          .search-segment-sport {
+            border-right: none !important;
+            border-bottom: 1px solid rgba(76, 76, 76, 0.4);
+            padding-bottom: 10px !important;
+          }
+          .search-segment-date {
+            border-right: none !important;
+            border-bottom: 1px solid rgba(76, 76, 76, 0.4);
+            padding-bottom: 10px !important;
+          }
+          .search-segment-input {
+            grid-column: span 2;
+          }
+          .search-segment-button {
+            grid-column: span 2;
+          }
+          .search-segment-button button {
+            width: 100% !important;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .search-bar-unified {
+            grid-template-columns: 1fr !important;
+            gap: 10px !important;
+          }
+          .search-segment-sport,
+          .search-segment-date {
+            grid-column: span 1 !important;
           }
         }
 
