@@ -1628,533 +1628,127 @@ export default function ReservarPage() {
       >
         <div style={{ maxWidth: 1400, margin: '0 auto' }}>
           <div
-            className="search-bar-unified"
             style={{
-              display: 'grid',
+              display: 'flex',
               alignItems: 'center',
               backgroundColor: '#0a0a0a',
               border: '1px solid var(--color-graphite)',
-              padding: '8px 12px',
-              gap: '8px',
+              padding: '8px',
               position: 'relative',
             }}
           >
-            {/* ── Segmento 1: Deporte (Pádel / Fútbol) ── */}
+            {/* ── Input de búsqueda ── */}
             <div
-              className="search-segment-sport"
               style={{
-                padding: '8px 14px',
-                borderRight: '1px solid rgba(76, 76, 76, 0.4)',
+                flex: 1,
                 display: 'flex',
-                flexDirection: 'column',
-                gap: 5,
-              }}
-            >
-              <div style={{ fontSize: 9.5, color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700 }}>
-                Deporte
-              </div>
-              <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  backgroundColor: '#121212',
-                  padding: '3px',
-                  borderRadius: 'var(--radius-full)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  gap: 4,
-                }}
-              >
-                <button
-                  type="button"
-                  onClick={() => setActiveSport('PADEL')}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: '6px 14px',
-                    borderRadius: 'var(--radius-full)',
-                    border: 'none',
-                    backgroundColor: activeSport === 'PADEL' ? 'var(--color-crimson-signal)' : 'transparent',
-                    color: activeSport === 'PADEL' ? '#ffffff' : 'var(--color-ash)',
-                    fontSize: 12,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                    boxShadow: activeSport === 'PADEL' ? '0 0 12px rgba(252, 28, 70, 0.4)' : 'none',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  <Icons.Padel size={12} color={activeSport === 'PADEL' ? '#ffffff' : 'var(--color-ash)'} />
-                  <span>Pádel</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveSport('FUTBOL')}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: '6px 14px',
-                    borderRadius: 'var(--radius-full)',
-                    border: 'none',
-                    backgroundColor: activeSport === 'FUTBOL' ? 'var(--color-crimson-signal)' : 'transparent',
-                    color: activeSport === 'FUTBOL' ? '#ffffff' : 'var(--color-ash)',
-                    fontSize: 12,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                    boxShadow: activeSport === 'FUTBOL' ? '0 0 12px rgba(252, 28, 70, 0.4)' : 'none',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  <Icons.Football size={12} color={activeSport === 'FUTBOL' ? '#ffffff' : 'var(--color-ash)'} />
-                  <span>Fútbol</span>
-                </button>
-              </div>
-            </div>
-
-            {/* ── Segmento 2: Fecha de Juego (Custom Calendar Popover) ── */}
-            <div
-              ref={dateDropdownRef}
-              className="search-segment-date"
-              style={{
-                padding: '8px 14px',
+                alignItems: 'center',
+                gap: 10,
+                padding: '6px 16px',
                 borderRight: '1px solid rgba(76, 76, 76, 0.4)',
-                position: 'relative',
-                cursor: 'pointer',
               }}
-              onClick={() => setIsDateDropdownOpen(!isDateDropdownOpen)}
             >
-              <div style={{ fontSize: 9.5, color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 5, fontWeight: 700 }}>
-                Fecha de juego
-              </div>
-              <div
+              <Icons.Search size={14} color="var(--color-ash)" />
+              <input
+                type="text"
+                placeholder="Buscar club, barrio o zona..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: 10,
-                  backgroundColor: '#121212',
-                  border: isDateDropdownOpen ? '1px solid var(--color-crimson-signal)' : '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: 'var(--radius-full)',
-                  padding: '7px 14px',
-                  transition: 'all 0.15s ease',
+                  backgroundColor: 'transparent',
+                  color: 'var(--color-frost)',
+                  border: 'none',
+                  outline: 'none',
+                  fontSize: 14,
+                  fontWeight: 500,
+                  width: '100%',
+                  letterSpacing: '0.1px',
                 }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
-                  <Icons.Calendar size={13} color="var(--color-crimson-signal)" />
-                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-frost)', whiteSpace: 'nowrap' }}>
-                    {getFriendlyDateLabel(selectedDate)}
-                  </span>
-                </div>
-                <div
+              />
+              {searchQuery.trim().length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
                   style={{
-                    transform: isDateDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                    transition: 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: 0,
                     display: 'flex',
                     alignItems: 'center',
-                    color: isDateDropdownOpen ? 'var(--color-crimson-signal)' : 'var(--color-ash)',
+                    color: 'var(--color-ash)',
+                    flexShrink: 0,
                   }}
                 >
-                  <Icons.ChevronDown size={12} />
-                </div>
-              </div>
-
-              {/* Custom Brutalist Popover Calendar para Fechas */}
-              {isDateDropdownOpen && (
-                <div
-                  className="search-calendar-popover"
-                  style={{
-                    position: 'absolute',
-                    top: 'calc(100% + 10px)',
-                    left: 0,
-                    width: 330,
-                    maxWidth: 'calc(100vw - 32px)',
-                    backgroundColor: '#0c0c0c',
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
-                    borderTop: '2px solid var(--color-crimson-signal)',
-                    boxShadow: '0 25px 60px -12px rgba(0, 0, 0, 0.98), 0 0 35px rgba(252, 28, 70, 0.18)',
-                    zIndex: 150,
-                    padding: '16px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '12px',
-                    backdropFilter: 'blur(24px)',
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {/* Subtitle & Month Navigation */}
-                  <div>
-                    <div style={{ fontSize: 9, color: 'var(--color-crimson-signal)', textTransform: 'uppercase', letterSpacing: '1.2px', fontWeight: 700, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: 'var(--color-crimson-signal)' }} />
-                      SELECCIONÁ DÍA DE JUEGO
-                    </div>
-
-                    {/* Month & Year Navigation Header */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#141414', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '6px 10px', borderRadius: 0 }}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const prev = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1);
-                          const currentMonthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-                          if (prev >= currentMonthStart) {
-                            setCalendarMonth(prev);
-                          }
-                        }}
-                        disabled={
-                          calendarMonth.getFullYear() === new Date().getFullYear() &&
-                          calendarMonth.getMonth() === new Date().getMonth()
-                        }
-                        style={{
-                          width: 28,
-                          height: 28,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                          border: '1px solid rgba(255, 255, 255, 0.08)',
-                          borderRadius: 'var(--radius-full)',
-                          color: (calendarMonth.getFullYear() === new Date().getFullYear() && calendarMonth.getMonth() === new Date().getMonth()) ? '#3a3a3a' : 'var(--color-frost)',
-                          cursor: (calendarMonth.getFullYear() === new Date().getFullYear() && calendarMonth.getMonth() === new Date().getMonth()) ? 'not-allowed' : 'pointer',
-                        }}
-                        title="Mes anterior"
-                      >
-                        <Icons.ChevronLeft size={12} />
-                      </button>
-
-                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-frost)', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                        {MONTH_NAMES_ES[calendarMonth.getMonth()]} {calendarMonth.getFullYear()}
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1));
-                        }}
-                        style={{
-                          width: 28,
-                          height: 28,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                          border: '1px solid rgba(255, 255, 255, 0.08)',
-                          borderRadius: 'var(--radius-full)',
-                          color: 'var(--color-frost)',
-                          cursor: 'pointer',
-                        }}
-                        title="Mes siguiente"
-                      >
-                        <Icons.ChevronRight size={12} />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Quick Preset Pills (Custom SVG Icons - No Emojis) */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
-                    {[
-                      {
-                        label: 'Hoy',
-                        icon: (color: string) => <Icons.Zap size={11} color={color} />,
-                        getDate: () => new Date(),
-                      },
-                      {
-                        label: 'Mañana',
-                        icon: (color: string) => <Icons.Calendar size={11} color={color} />,
-                        getDate: () => {
-                          const d = new Date();
-                          d.setDate(d.getDate() + 1);
-                          return d;
-                        },
-                      },
-                      {
-                        label: 'Fin de Sem.',
-                        icon: (color: string) => <Icons.Trophy size={11} color={color} />,
-                        getDate: () => {
-                          const d = new Date();
-                          const day = d.getDay();
-                          const diff = day === 6 ? 0 : (6 - day);
-                          d.setDate(d.getDate() + (diff === 0 ? 7 : diff));
-                          return d;
-                        },
-                      },
-                    ].map((preset, idx) => {
-                      const pDate = preset.getDate();
-                      const isActive = isSameDay(selectedDate, pDate);
-                      return (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => {
-                            setSelectedDate(pDate);
-                            setCalendarMonth(new Date(pDate.getFullYear(), pDate.getMonth(), 1));
-                            setIsDateDropdownOpen(false);
-                          }}
-                          style={{
-                            padding: '7px 6px',
-                            fontSize: 10.5,
-                            fontWeight: 700,
-                            backgroundColor: isActive ? 'var(--color-crimson-signal)' : '#141414',
-                            border: isActive ? '1px solid var(--color-crimson-signal)' : '1px solid rgba(255, 255, 255, 0.08)',
-                            color: isActive ? '#ffffff' : 'var(--color-ash)',
-                            borderRadius: 'var(--radius-full)',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: 5,
-                            transition: 'all 0.15s ease',
-                          }}
-                        >
-                          {preset.icon(isActive ? '#ffffff' : 'var(--color-crimson-signal)')}
-                          <span>{preset.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Calendar Grid Container */}
-                  <div style={{ backgroundColor: '#0e0e0e', border: '1px solid rgba(255, 255, 255, 0.06)', padding: '10px 8px', borderRadius: 0 }}>
-                    {/* Weekdays Header */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, marginBottom: 8, textAlign: 'center' }}>
-                      {WEEKDAYS_ES.map((wd) => (
-                        <div key={wd} style={{ fontSize: 9.5, fontWeight: 700, color: 'var(--color-graphite)', letterSpacing: '0.5px' }}>
-                          {wd}
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Days Grid */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 3 }}>
-                      {/* Empty slots before first day */}
-                      {Array.from({
-                        length: (new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1).getDay() + 6) % 7,
-                      }).map((_, idx) => (
-                        <div key={`empty-${idx}`} style={{ height: 32 }} />
-                      ))}
-
-                      {/* Month Days */}
-                      {Array.from({
-                        length: new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 0).getDate(),
-                      }).map((_, idx) => {
-                        const dayNum = idx + 1;
-                        const cellDate = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), dayNum);
-                        const isPast = isPastDay(cellDate);
-                        const isToday = isSameDay(cellDate, new Date());
-                        const isSelected = isSameDay(cellDate, selectedDate);
-
-                        return (
-                          <button
-                            key={dayNum}
-                            type="button"
-                            disabled={isPast}
-                            onClick={() => {
-                              if (!isPast) {
-                                setSelectedDate(cellDate);
-                                setIsDateDropdownOpen(false);
-                              }
-                            }}
-                            style={{
-                              height: 32,
-                              width: 32,
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontSize: 12,
-                              fontWeight: isSelected || isToday ? 700 : 500,
-                              backgroundColor: isSelected
-                                ? 'var(--color-crimson-signal)'
-                                : isToday
-                                ? 'rgba(252, 28, 70, 0.12)'
-                                : 'transparent',
-                              border: isSelected
-                                ? '1px solid var(--color-crimson-signal)'
-                                : isToday
-                                ? '1px solid var(--color-crimson-signal)'
-                                : '1px solid transparent',
-                              borderRadius: 'var(--radius-full)',
-                              color: isPast
-                                ? '#3a3a3a'
-                                : isSelected
-                                ? '#ffffff'
-                                : isToday
-                                ? 'var(--color-crimson-signal)'
-                                : 'var(--color-frost)',
-                              cursor: isPast ? 'not-allowed' : 'pointer',
-                              position: 'relative',
-                              transition: 'all 0.12s ease',
-                              boxShadow: isSelected ? '0 0 14px rgba(252, 28, 70, 0.5)' : 'none',
-                              padding: 0,
-                            }}
-                          >
-                            {dayNum}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Calendar Footer with Selected Date and Confirm */}
-                  <div
-                    style={{
-                      borderTop: '1px solid rgba(76, 76, 76, 0.3)',
-                      paddingTop: 8,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: 10,
-                    }}
-                  >
-                    <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                      <span style={{ fontSize: 9, color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 700 }}>
-                        FECHA ELEGIDA
-                      </span>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-frost)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
-                        {getFullDateLabel(selectedDate)}
-                      </span>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => setIsDateDropdownOpen(false)}
-                      style={{
-                        backgroundColor: 'var(--color-crimson-signal)',
-                        color: '#fff',
-                        border: 'none',
-                        padding: '6px 14px',
-                        borderRadius: 'var(--radius-full)',
-                        fontSize: 10.5,
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.5px',
-                        cursor: 'pointer',
-                        whiteSpace: 'nowrap',
-                        boxShadow: '0 0 10px rgba(252, 28, 70, 0.3)',
-                      }}
-                    >
-                      Listo
-                    </button>
-                  </div>
-                </div>
+                  <Icons.Close size={13} />
+                </button>
               )}
             </div>
 
-            {/* ── Segmento 3: Buscar Club / Complejo ── */}
+            {/* ── Selector de deporte ── */}
             <div
-              className="search-segment-input"
               style={{
-                padding: '8px 14px',
                 display: 'flex',
-                flexDirection: 'column',
-                gap: 5,
-                flex: 1,
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
-                <span style={{ fontSize: 9.5, color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700 }}>
-                  Club o Complejo
-                </span>
-                <span style={{ fontSize: 9, color: 'var(--color-crimson-signal)', textTransform: 'uppercase', letterSpacing: '0.6px', fontWeight: 700 }}>
-                  Mar del Plata
-                </span>
-              </div>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  backgroundColor: '#121212',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: 'var(--radius-full)',
-                  padding: '7px 14px',
-                }}
-              >
-                <Icons.Search size={13} color="var(--color-ash)" />
-                <input
-                  type="text"
-                  placeholder="Buscar por nombre o dirección..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  style={{
-                    backgroundColor: 'transparent',
-                    color: 'var(--color-frost)',
-                    border: 'none',
-                    outline: 'none',
-                    fontSize: 13,
-                    width: '100%',
-                    fontWeight: 500,
-                  }}
-                />
-                {searchQuery.trim().length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchQuery('')}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      padding: 0,
-                      display: 'flex',
-                      alignItems: 'center',
-                      color: 'var(--color-ash)',
-                    }}
-                  >
-                    <Icons.Close size={12} />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* ── Segmento 4: Botón Buscar ── */}
-            <div
-              className="search-segment-button"
-              style={{
-                padding: '8px 10px',
-                display: 'flex',
-                alignItems: 'flex-end',
+                alignItems: 'center',
+                gap: 4,
+                padding: '4px 10px',
+                flexShrink: 0,
               }}
             >
               <button
                 type="button"
-                onClick={handleSearchTurnos}
+                onClick={() => setActiveSport('PADEL')}
                 style={{
-                  backgroundColor: 'var(--color-crimson-signal)',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: 'var(--radius-full)',
-                  padding: '11px 24px',
-                  fontWeight: 700,
-                  fontSize: 12.5,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.8px',
-                  cursor: 'pointer',
                   display: 'inline-flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 8,
-                  boxShadow: '0 0 16px rgba(252, 28, 70, 0.45)',
-                  transition: 'all 0.2s ease',
+                  gap: 6,
+                  padding: '9px 20px',
+                  borderRadius: 'var(--radius-full)',
+                  border: 'none',
+                  backgroundColor: activeSport === 'PADEL' ? 'var(--color-crimson-signal)' : 'transparent',
+                  color: activeSport === 'PADEL' ? '#ffffff' : 'var(--color-ash)',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
                   whiteSpace: 'nowrap',
                 }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.filter = 'brightness(1.15)';
-                  e.currentTarget.style.transform = 'scale(1.02)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.filter = 'none';
-                  e.currentTarget.style.transform = 'scale(1)';
+              >
+                <Icons.Padel size={12} color={activeSport === 'PADEL' ? '#ffffff' : 'var(--color-ash)'} />
+                Pádel
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveSport('FUTBOL')}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '9px 20px',
+                  borderRadius: 'var(--radius-full)',
+                  border: 'none',
+                  backgroundColor: activeSport === 'FUTBOL' ? 'var(--color-crimson-signal)' : 'transparent',
+                  color: activeSport === 'FUTBOL' ? '#ffffff' : 'var(--color-ash)',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  whiteSpace: 'nowrap',
                 }}
               >
-                <span>Buscar Turnos</span>
-                <Icons.ArrowUpRight size={13} color="#ffffff" />
+                <Icons.Football size={12} color={activeSport === 'FUTBOL' ? '#ffffff' : 'var(--color-ash)'} />
+                Fútbol
               </button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════
+            {/* ═══════════════════════════════════════════════════════
           SECTION: COMPLEJOS CON CANCHAS LIBRES
           ═══════════════════════════════════════════════════════ */}
       <section
