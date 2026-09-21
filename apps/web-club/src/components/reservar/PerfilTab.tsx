@@ -442,81 +442,19 @@ export const PerfilTab: React.FC<PerfilTabProps> = ({
           </div>
         </div>
 
-        {/* Stats */}
-        <div style={{ display: 'flex', gap: 24, textAlign: 'center' }}>
-          <div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: '#ffffff' }}>{userProfile?.matchesPlayed ?? 24}</div>
-            <div style={{ fontSize: 10, color: '#94a3b8', textTransform: 'uppercase', marginTop: 2 }}>Partidos</div>
+        {/* Stats: Partidos jugados */}
+        <div
+          style={{
+            textAlign: 'center',
+            padding: '10px 20px',
+            backgroundColor: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.08)',
+          }}
+        >
+          <div style={{ fontSize: 24, fontWeight: 800, color: '#ffffff' }}>{userProfile?.matchesPlayed ?? 24}</div>
+          <div style={{ fontSize: 10, color: '#94a3b8', textTransform: 'uppercase', marginTop: 2, letterSpacing: '0.5px' }}>
+            Partidos jugados
           </div>
-          <div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: '#10b981' }}>{userProfile?.punctualityRate ?? 98}%</div>
-            <div style={{ fontSize: 10, color: '#94a3b8', textTransform: 'uppercase', marginTop: 2 }}>Puntualidad</div>
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 3, justifyContent: 'center' }}>
-              <span style={{ fontSize: 22, fontWeight: 800, color: 'var(--color-crimson-signal)' }}>{userProfile?.fairPlayRating ?? 4.9}</span>
-              <Icons.Star size={12} color="#facc15" />
-            </div>
-            <div style={{ fontSize: 10, color: '#94a3b8', textTransform: 'uppercase', marginTop: 2 }}>Fair Play</div>
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 180 }}>
-          <button
-            onClick={onNavigateReservas}
-            style={{
-              backgroundColor: 'rgba(255,255,255,0.06)',
-              border: '1px solid rgba(255,255,255,0.15)',
-              borderRadius: '9999px',
-              padding: '10px 18px',
-              color: '#ffffff',
-              fontSize: 11,
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: 8,
-            }}
-          >
-            <Icons.Calendar size={13} color="var(--color-crimson-signal)" />
-            Mis Reservas
-          </button>
-          <button
-            onClick={handleCopyPublicLink}
-            style={{
-              backgroundColor: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: '9999px',
-              padding: '10px 18px',
-              color: '#94a3b8',
-              fontSize: 11,
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: 8,
-            }}
-          >
-            {copiedLink ? <Icons.Check size={13} color="#10b981" /> : <Icons.Share size={13} color="#94a3b8" />}
-            {copiedLink ? 'Enlace copiado' : 'Compartir perfil'}
-          </button>
-          <button
-            onClick={logout}
-            style={{
-              backgroundColor: 'transparent',
-              border: '1px solid rgba(239,68,68,0.25)',
-              borderRadius: '9999px',
-              padding: '9px 18px',
-              color: '#f87171',
-              fontSize: 11,
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: 8,
-            }}
-          >
-            <Icons.LogOut size={13} color="#f87171" />
-            Cerrar Sesión
-          </button>
         </div>
       </div>
 
@@ -613,32 +551,56 @@ export const PerfilTab: React.FC<PerfilTabProps> = ({
                 />
               </div>
 
-              {/* Save button */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 4 }}>
+              {/* Save button & Logout */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, marginTop: 8, paddingTop: 16, borderTop: '1px solid rgba(76,76,76,0.3)', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <button
+                    type="submit"
+                    disabled={isSaving}
+                    style={{
+                      backgroundColor: 'var(--color-crimson-signal)',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: '9999px',
+                      padding: '13px 32px',
+                      fontSize: 12,
+                      fontWeight: 800,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.6px',
+                      cursor: isSaving ? 'wait' : 'pointer',
+                      boxShadow: '0 0 18px rgba(252,28,70,0.4)',
+                    }}
+                  >
+                    {isSaving ? 'Guardando...' : 'Guardar cambios'}
+                  </button>
+                  {savedSuccess && (
+                    <span style={{ fontSize: 12, color: '#10b981', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Icons.Check size={14} color="#10b981" /> Guardado exitosamente
+                    </span>
+                  )}
+                </div>
+
                 <button
-                  type="submit"
-                  disabled={isSaving}
+                  type="button"
+                  onClick={logout}
                   style={{
-                    backgroundColor: 'var(--color-crimson-signal)',
-                    color: '#ffffff',
-                    border: 'none',
+                    backgroundColor: 'transparent',
+                    border: '1px solid rgba(239,68,68,0.25)',
                     borderRadius: '9999px',
-                    padding: '13px 32px',
-                    fontSize: 12,
-                    fontWeight: 800,
+                    padding: '10px 20px',
+                    color: '#f87171',
+                    fontSize: 11,
+                    fontWeight: 700,
                     textTransform: 'uppercase',
-                    letterSpacing: '0.6px',
-                    cursor: isSaving ? 'wait' : 'pointer',
-                    boxShadow: '0 0 18px rgba(252,28,70,0.4)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
                   }}
                 >
-                  {isSaving ? 'Guardando...' : 'Guardar cambios'}
+                  <Icons.LogOut size={13} color="#f87171" />
+                  Cerrar Sesión
                 </button>
-                {savedSuccess && (
-                  <span style={{ fontSize: 12, color: '#10b981', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <Icons.Check size={14} color="#10b981" /> Guardado exitosamente
-                  </span>
-                )}
               </div>
             </div>
           )}
