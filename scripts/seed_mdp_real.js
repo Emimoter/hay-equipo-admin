@@ -36,23 +36,10 @@ const MDP_REAL_CLUBS = [
     longitude: -57.562843,
     phone: '',
     whatsapp: '',
-    rating: 4.8,
-    reviewCount: 142,
     images: [
       'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=800&auto=format&fit=crop&q=80'
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: true,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
-    },
     openingTime: '08:00',
     closingTime: '01:00',
     minPrice: 28000,
@@ -70,23 +57,10 @@ const MDP_REAL_CLUBS = [
     longitude: -57.5587,
     phone: '',
     whatsapp: '',
-    rating: 4.7,
-    reviewCount: 118,
     images: [
       'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=800&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=800&auto=format&fit=crop&q=80'
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: false,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
-    },
     openingTime: '08:00',
     closingTime: '00:00',
     minPrice: 26000,
@@ -104,23 +78,10 @@ const MDP_REAL_CLUBS = [
     longitude: -57.574533,
     phone: '',
     whatsapp: '',
-    rating: 4.9,
-    reviewCount: 195,
     images: [
       'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop&q=80'
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: true,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
-    },
     openingTime: '08:30',
     closingTime: '01:00',
     minPrice: 32000,
@@ -138,23 +99,10 @@ const MDP_REAL_CLUBS = [
     longitude: -57.557516,
     phone: '',
     whatsapp: '',
-    rating: 4.8,
-    reviewCount: 164,
     images: [
       'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=800&auto=format&fit=crop&q=80'
     ],
-    amenities: {
-      parking: false,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: false,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
-    },
     openingTime: '09:00',
     closingTime: '00:30',
     minPrice: 25000,
@@ -172,23 +120,10 @@ const MDP_REAL_CLUBS = [
     longitude: -57.558361,
     phone: '',
     whatsapp: '',
-    rating: 4.7,
-    reviewCount: 88,
     images: [
       'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=800&auto=format&fit=crop&q=80'
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: true,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
-    },
     openingTime: '08:00',
     closingTime: '00:00',
     minPrice: 24000,
@@ -206,23 +141,10 @@ const MDP_REAL_CLUBS = [
     longitude: -57.571676,
     phone: '',
     whatsapp: '',
-    rating: 4.6,
-    reviewCount: 76,
     images: [
       'https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=800&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=800&auto=format&fit=crop&q=80'
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: false,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
-    },
     openingTime: '09:00',
     closingTime: '00:00',
     minPrice: 24000,
@@ -240,23 +162,10 @@ const MDP_REAL_CLUBS = [
     longitude: -57.549071,
     phone: '',
     whatsapp: '',
-    rating: 4.9,
-    reviewCount: 153,
     images: [
       'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop&q=80'
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: true,
-      wifi: true,
-      equipmentRental: true,
-      covered: false,
-      lighting: true
-    },
     openingTime: '09:00',
     closingTime: '01:00',
     minPrice: 34000,
@@ -274,23 +183,10 @@ const MDP_REAL_CLUBS = [
     longitude: -57.549731,
     phone: '',
     whatsapp: '',
-    rating: 4.7,
-    reviewCount: 92,
     images: [
       'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&auto=format&fit=crop&q=80'
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: true,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
-    },
     openingTime: '08:00',
     closingTime: '00:30',
     minPrice: 27000,
@@ -308,23 +204,10 @@ const MDP_REAL_CLUBS = [
     longitude: -57.57273,
     phone: '',
     whatsapp: '',
-    rating: 4.8,
-    reviewCount: 114,
     images: [
       'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=800&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=800&auto=format&fit=crop&q=80'
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: true,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
-    },
     openingTime: '08:00',
     closingTime: '01:00',
     minPrice: 29000,
@@ -342,23 +225,10 @@ const MDP_REAL_CLUBS = [
     longitude: -57.545654,
     phone: '',
     whatsapp: '',
-    rating: 4.9,
-    reviewCount: 220,
     images: [
       'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=800&auto=format&fit=crop&q=80'
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: true,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
-    },
     openingTime: '08:00',
     closingTime: '01:30',
     minPrice: 30000,
@@ -376,23 +246,10 @@ const MDP_REAL_CLUBS = [
     longitude: -57.575339,
     phone: '',
     whatsapp: '',
-    rating: 4.7,
-    reviewCount: 105,
     images: [
       'https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=800&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=800&auto=format&fit=crop&q=80'
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: false,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
-    },
     openingTime: '09:00',
     closingTime: '00:00',
     minPrice: 25000,
@@ -410,23 +267,10 @@ const MDP_REAL_CLUBS = [
     longitude: -57.583203,
     phone: '',
     whatsapp: '',
-    rating: 4.8,
-    reviewCount: 130,
     images: [
       'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop&q=80'
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: true,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
-    },
     openingTime: '08:30',
     closingTime: '01:00',
     minPrice: 27000,
@@ -444,23 +288,10 @@ const MDP_REAL_CLUBS = [
     longitude: -57.568,
     phone: '',
     whatsapp: '',
-    rating: 4.7,
-    reviewCount: 82,
     images: [
       'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&auto=format&fit=crop&q=80'
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: true,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
-    },
     openingTime: '09:00',
     closingTime: '00:00',
     minPrice: 25000,
@@ -478,23 +309,10 @@ const MDP_REAL_CLUBS = [
     longitude: -57.556655,
     phone: '',
     whatsapp: '',
-    rating: 4.8,
-    reviewCount: 147,
     images: [
       'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=800&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=800&auto=format&fit=crop&q=80'
     ],
-    amenities: {
-      parking: false,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: false,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
-    },
     openingTime: '08:00',
     closingTime: '01:00',
     minPrice: 26000,
@@ -512,23 +330,10 @@ const MDP_REAL_CLUBS = [
     longitude: -57.593922,
     phone: '',
     whatsapp: '',
-    rating: 4.7,
-    reviewCount: 94,
     images: [
       'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop&q=80'
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: true,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
-    },
     openingTime: '09:00',
     closingTime: '00:30',
     minPrice: 27000,
@@ -546,23 +351,10 @@ const MDP_REAL_CLUBS = [
     longitude: -57.5615,
     phone: '',
     whatsapp: '',
-    rating: 4.8,
-    reviewCount: 160,
     images: [
       'https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=800&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=800&auto=format&fit=crop&q=80'
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: false,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
-    },
     openingTime: '08:00',
     closingTime: '01:00',
     minPrice: 28000,
@@ -580,23 +372,10 @@ const MDP_REAL_CLUBS = [
     longitude: -57.594034,
     phone: '',
     whatsapp: '',
-    rating: 4.9,
-    reviewCount: 210,
     images: [
       'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&auto=format&fit=crop&q=80'
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: true,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
-    },
     openingTime: '08:00',
     closingTime: '01:30',
     minPrice: 30000,
@@ -614,23 +393,10 @@ const MDP_REAL_CLUBS = [
     longitude: -57.599907,
     phone: '',
     whatsapp: '',
-    rating: 4.8,
-    reviewCount: 175,
     images: [
       'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=800&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=800&auto=format&fit=crop&q=80'
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: true,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
-    },
     openingTime: '08:30',
     closingTime: '01:00',
     minPrice: 28000,
@@ -648,23 +414,10 @@ const MDP_REAL_CLUBS = [
     longitude: -57.594152,
     phone: '',
     whatsapp: '',
-    rating: 4.9,
-    reviewCount: 188,
     images: [
       'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop&q=80'
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: true,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
-    },
     openingTime: '08:00',
     closingTime: '01:30',
     minPrice: 32000,
@@ -682,23 +435,10 @@ const MDP_REAL_CLUBS = [
     longitude: -57.580255,
     phone: '',
     whatsapp: '',
-    rating: 4.8,
-    reviewCount: 135,
     images: [
       'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=800&auto=format&fit=crop&q=80'
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: true,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
-    },
     openingTime: '09:00',
     closingTime: '01:00',
     minPrice: 27000,
@@ -716,23 +456,10 @@ const MDP_REAL_CLUBS = [
     longitude: -57.630487,
     phone: '',
     whatsapp: '',
-    rating: 4.9,
-    reviewCount: 162,
     images: [
       'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&auto=format&fit=crop&q=80'
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: true,
-      wifi: true,
-      equipmentRental: true,
-      covered: false,
-      lighting: true
-    },
     openingTime: '09:00',
     closingTime: '01:00',
     minPrice: 30000,
@@ -750,23 +477,10 @@ const MDP_REAL_CLUBS = [
     longitude: -57.576428,
     phone: '',
     whatsapp: '',
-    rating: 4.8,
-    reviewCount: 140,
     images: [
       'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=800&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=800&auto=format&fit=crop&q=80'
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: false,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
-    },
     openingTime: '08:00',
     closingTime: '00:30',
     minPrice: 28000,
@@ -784,23 +498,10 @@ const MDP_REAL_CLUBS = [
     longitude: -57.562824,
     phone: '',
     whatsapp: '',
-    rating: 4.7,
-    reviewCount: 98,
     images: [
       'https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=800&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop&q=80'
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: true,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
-    },
     openingTime: '08:30',
     closingTime: '01:00',
     minPrice: 26000,
@@ -818,23 +519,10 @@ const MDP_REAL_CLUBS = [
     longitude: -57.571109,
     phone: '',
     whatsapp: '',
-    rating: 4.8,
-    reviewCount: 112,
     images: [
       'https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=800&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&auto=format&fit=crop&q=80'
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: true,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
-    },
     openingTime: '08:00',
     closingTime: '00:00',
     minPrice: 25000,
@@ -852,23 +540,10 @@ const MDP_REAL_CLUBS = [
     longitude: -57.596954,
     phone: '',
     whatsapp: '',
-    rating: 4.7,
-    reviewCount: 89,
     images: [
       'https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=800&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop&q=80'
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: false,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
-    },
     openingTime: '09:00',
     closingTime: '00:00',
     minPrice: 24000,
@@ -886,23 +561,10 @@ const MDP_REAL_CLUBS = [
     longitude: -57.564404,
     phone: '',
     whatsapp: '',
-    rating: 4.9,
-    reviewCount: 178,
     images: [
       'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&auto=format&fit=crop&q=80'
     ],
-    amenities: {
-      parking: true,
-      showers: true,
-      lockerRooms: true,
-      buffet: true,
-      grill: true,
-      wifi: true,
-      equipmentRental: true,
-      covered: true,
-      lighting: true
-    },
     openingTime: '08:00',
     closingTime: '01:00',
     minPrice: 31000,

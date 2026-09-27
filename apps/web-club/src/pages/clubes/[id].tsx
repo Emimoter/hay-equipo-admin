@@ -162,8 +162,8 @@ interface WebClub {
   city: string;
   zone: string;
   distanceKm: number;
-  rating: number;
-  reviewCount: number;
+  rating?: number;
+  reviewCount?: number;
   sports: ('PADEL' | 'FUTBOL')[];
   images: string[];
   minPricePerPlayer: number;
@@ -173,13 +173,15 @@ interface WebClub {
   bookingMode?: 'ONLINE' | 'DIRECT_CONTACT';
   whatsappPhone?: string;
   phone?: string;
-  amenities: {
-    covered: boolean;
-    parking: boolean;
-    buffet: boolean;
-    lighting: boolean;
-    lockers: boolean;
-    syntheticWPT: boolean;
+  openingTime?: string;
+  closingTime?: string;
+  amenities?: {
+    covered?: boolean;
+    parking?: boolean;
+    buffet?: boolean;
+    lighting?: boolean;
+    lockers?: boolean;
+    syntheticWPT?: boolean;
   };
   courts: {
     id: string;
@@ -314,24 +316,19 @@ export default function ClubPublicPage() {
             distanceKm: rawClub.distanceKm || 2.5,
             latitude: rawClub.latitude,
             longitude: rawClub.longitude,
-            rating: rawClub.rating || 4.9,
-            reviewCount: rawClub.reviewCount || 120,
+            rating: rawClub.rating,
+            reviewCount: rawClub.reviewCount,
             sports: sportsList,
             bookingMode: rawClub.bookingMode || 'ONLINE',
             whatsappPhone: String(rawClub.whatsappPhone || rawClub.whatsapp || rawClub.phone || '').replace(/[^0-9]/g, ''),
             phone: rawClub.phone || '',
+            openingTime: rawClub.openingTime,
+            closingTime: rawClub.closingTime,
             images: (rawClub.images && rawClub.images.length > 0) ? rawClub.images : [
               'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80',
             ],
             minPricePerPlayer: 6500,
-            amenities: {
-              covered: !!rawClub.amenities?.covered,
-              parking: !!rawClub.amenities?.parking,
-              buffet: !!rawClub.amenities?.buffet,
-              lighting: !!rawClub.amenities?.lighting,
-              lockers: !!rawClub.amenities?.lockers,
-              syntheticWPT: !!rawClub.amenities?.syntheticWPT,
-            },
+            amenities: rawClub.amenities,
             courts: clubCourts.length > 0 ? clubCourts : [
               { id: `${rawClub.id}-c1`, name: 'Cancha Principal', sport: sportsList[0], surface: 'Césped Sintético Pro', capacity: sportsList[0] === 'PADEL' ? 4 : 10 },
             ],
@@ -803,12 +800,6 @@ export default function ClubPublicPage() {
                 <Icons.ShieldCheck size={12} color="#10b981" />
                 <span>Club Verificado</span>
               </span>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, backgroundColor: 'rgba(250, 204, 21, 0.12)', border: '1px solid rgba(250, 204, 21, 0.3)', padding: '2px 8px', borderRadius: 'var(--radius-full)', fontSize: 11, fontWeight: 700, color: '#facc15' }}>
-                <Icons.Star size={11} color="#facc15" />
-                <span>{club.rating}</span>
-                <span style={{ color: 'var(--color-ash)', fontSize: 10 }}>({club.reviewCount} opiniones)</span>
-              </div>
             </div>
 
             <h1 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '-1px', margin: '0 0 10px', color: 'var(--color-frost)' }}>
@@ -949,38 +940,38 @@ export default function ClubPublicPage() {
           <div style={{ backgroundColor: '#0a0a0a', border: '1px solid var(--color-graphite)', padding: '24px 28px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
             <div>
               <div style={{ fontSize: 11, color: 'var(--color-crimson-signal)', textTransform: 'uppercase', letterSpacing: '1.2px', fontWeight: 700, marginBottom: 8 }}>
-                INSTALACIONES & COMODIDADES
+                INFORMACIÓN DEL COMPLEJO
               </div>
               <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-frost)', textTransform: 'uppercase', marginBottom: 16 }}>
-                Servicios del Complejo
+                Datos Generales
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 24 }}>
                 <div style={{ padding: '12px', backgroundColor: '#111', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                  <div style={{ fontSize: 11, color: 'var(--color-ash)', textTransform: 'uppercase', marginBottom: 2 }}>Techada / Indoor</div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: club.amenities.covered ? '#10b981' : 'var(--color-graphite)' }}>
-                    {club.amenities.covered ? 'Disponible' : 'Canchas al aire libre'}
+                  <div style={{ fontSize: 11, color: 'var(--color-ash)', textTransform: 'uppercase', marginBottom: 2 }}>Deportes</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-frost)' }}>
+                    {club.sports.join(' · ')}
                   </div>
                 </div>
 
                 <div style={{ padding: '12px', backgroundColor: '#111', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                  <div style={{ fontSize: 11, color: 'var(--color-ash)', textTransform: 'uppercase', marginBottom: 2 }}>Estacionamiento</div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: club.amenities.parking ? '#10b981' : 'var(--color-graphite)' }}>
-                    {club.amenities.parking ? 'Custodiado y Gratis' : 'En la vía pública'}
+                  <div style={{ fontSize: 11, color: 'var(--color-ash)', textTransform: 'uppercase', marginBottom: 2 }}>Horario</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-frost)' }}>
+                    {club.openingTime || '08:00'} a {club.closingTime || '23:30'} hs
                   </div>
                 </div>
 
                 <div style={{ padding: '12px', backgroundColor: '#111', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                  <div style={{ fontSize: 11, color: 'var(--color-ash)', textTransform: 'uppercase', marginBottom: 2 }}>Buffet & Bar</div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: club.amenities.buffet ? '#10b981' : 'var(--color-graphite)' }}>
-                    {club.amenities.buffet ? 'Servicio Completo' : 'No disponible'}
+                  <div style={{ fontSize: 11, color: 'var(--color-ash)', textTransform: 'uppercase', marginBottom: 2 }}>Ubicación</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-frost)' }}>
+                    {club.city}
                   </div>
                 </div>
 
                 <div style={{ padding: '12px', backgroundColor: '#111', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                  <div style={{ fontSize: 11, color: 'var(--color-ash)', textTransform: 'uppercase', marginBottom: 2 }}>Iluminación</div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: club.amenities.lighting ? '#10b981' : 'var(--color-graphite)' }}>
-                    {club.amenities.lighting ? 'LED Pro Torneo' : 'Convencional'}
+                  <div style={{ fontSize: 11, color: 'var(--color-ash)', textTransform: 'uppercase', marginBottom: 2 }}>Modalidad de Reserva</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#10b981' }}>
+                    {club.bookingMode === 'ONLINE' ? 'En Vivo y Directa' : 'Contacto Directo'}
                   </div>
                 </div>
               </div>

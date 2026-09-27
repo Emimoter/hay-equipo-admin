@@ -175,10 +175,14 @@ export interface BookingRecord {
   splitPlayers: number;
   paidPlayersCount: number;
   isFixedSlot?: boolean;
-  status: 'PENDING' | 'CONFIRMED' | 'REJECTED' | 'CANCELLED';
+  status: 'PENDING' | 'CONFIRMED' | 'REJECTED' | 'CANCELLED' | 'EXPIRED';
   rejectReason?: string;
   confirmedAt?: string;
   rejectedAt?: string;
+  expiredAt?: string;
+  expiresAt?: string;
+  mpPaymentId?: string;
+  paymentStatus?: 'AUTHORIZED' | 'CAPTURED' | 'REFUNDED' | 'CANCELLED' | 'PENDING';
   buyer: {
     name: string;
     email: string;
@@ -421,11 +425,11 @@ export function listenClubBookingsFirestore(
 }
 
 /**
- * Updates booking status (CONFIRMED or REJECTED)
+ * Updates booking status (CONFIRMED, REJECTED, EXPIRED, CANCELLED)
  */
 export async function updateBookingStatusFirestore(
   bookingId: string,
-  status: 'CONFIRMED' | 'REJECTED',
+  status: 'CONFIRMED' | 'REJECTED' | 'EXPIRED' | 'CANCELLED',
   reason?: string
 ): Promise<boolean> {
   try {
@@ -452,6 +456,7 @@ export async function updateBookingStatusFirestore(
       updatedAt: now,
       ...(status === 'CONFIRMED' ? { confirmedAt: now } : {}),
       ...(status === 'REJECTED' ? { rejectedAt: now, rejectReason: reason || 'Rechazado por el club' } : {}),
+      ...(status === 'EXPIRED' ? { expiredAt: now, rejectReason: reason || 'Tiempo de espera de 15 min expirado sin confirmación del club' } : {}),
     };
 
     const cleanUpdated = JSON.parse(JSON.stringify(updatedBooking));
@@ -1263,3 +1268,29 @@ export async function liberateOccurrenceFirestore(
   }
 }
 
+/**
+ * Persists club registration leads to Firestore as a safety net
+ */
+export async function saveClubLeadFirestore(lead: {
+  clubName: string;
+  phone: string;
+  address?: string;
+  sport?: string;
+  contactName?: string;
+  email?: string;
+  notes?: string;
+}): Promise<boolean> {
+  try {
+    const leadId = `lead_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    await setDoc(doc(dbFirestore, 'club_leads', leadId), {
+      id: leadId,
+      ...lead,
+      status: 'PENDING',
+      createdAt: new Date().toISOString(),
+    });
+    return true;
+  } catch (e) {
+    console.error('Error saving club lead to Firestore:', e);
+    return false;
+  }
+}

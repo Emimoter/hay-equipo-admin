@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { saveClubLeadFirestore } from '../../services/firebase';
 
 type ResponseData = {
   success: boolean;
@@ -20,7 +21,18 @@ export default async function handler(
   }
 
   try {
-    // 1. Dispatch form submission to Emiliano's email via Formsubmit backend gateway
+    // 1. Persist lead in Firestore as first-class record
+    await saveClubLeadFirestore({
+      clubName,
+      phone,
+      address,
+      sport,
+      contactName,
+      email,
+      notes,
+    });
+
+    // 2. Dispatch form submission to Emiliano's email via Formsubmit backend gateway
     const payload = {
       _subject: `[Hay Equipo] Nueva solicitud de club: ${clubName}`,
       _replyto: email || 'no-reply@hayequipo.app',

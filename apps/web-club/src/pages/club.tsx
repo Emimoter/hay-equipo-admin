@@ -19,6 +19,7 @@ import {
   PublishedSlotRecord,
 } from '../services/firebase';
 import { SportBadge } from '../components/SportBadge';
+import { MDP_REAL_CLUBS, MDP_REAL_COURTS } from '@hay-equipo/db';
 
 /* ────────────────────────────────────────────────────────────
    Types
@@ -564,10 +565,67 @@ const TacticalPitchWatermark: React.FC = () => (
       <line x1="60" y1="185" x2="300" y2="230" />
       <line x1="60" y1="75" x2="60" y2="185" />
       <ellipse cx="240" cy="130" rx="100" ry="70" strokeDasharray="5 5" />
-      <circle cx="60" cy="130" r="36" />
     </svg>
   </div>
 );
+
+/* ────────────────────────────────────────────────────────────
+   Countdown Timer Pill (15-Minute Hold Window)
+   ──────────────────────────────────────────────────────────── */
+
+export const CountdownPill: React.FC<{
+  expiresAt?: string;
+  createdAt?: string;
+  onExpire?: () => void;
+}> = ({ expiresAt, createdAt, onExpire }) => {
+  const targetTime = useMemo(() => {
+    if (expiresAt) return new Date(expiresAt).getTime();
+    if (createdAt) return new Date(createdAt).getTime() + 15 * 60 * 1000;
+    return Date.now() + 15 * 60 * 1000;
+  }, [expiresAt, createdAt]);
+
+  const [remainingSec, setRemainingSec] = useState(() =>
+    Math.max(0, Math.floor((targetTime - Date.now()) / 1000))
+  );
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const left = Math.max(0, Math.floor((targetTime - Date.now()) / 1000));
+      setRemainingSec(left);
+      if (left === 0) {
+        clearInterval(timer);
+        if (onExpire) onExpire();
+      }
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [targetTime, onExpire]);
+
+  const mm = String(Math.floor(remainingSec / 60)).padStart(2, '0');
+  const ss = String(remainingSec % 60).padStart(2, '0');
+  const isUrgent = remainingSec < 180; // under 3 min
+
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 6,
+        fontSize: 11,
+        fontWeight: 800,
+        padding: '3px 10px',
+        borderRadius: 'var(--radius-full)',
+        backgroundColor: isUrgent ? 'rgba(252, 28, 70, 0.2)' : 'rgba(245, 158, 11, 0.15)',
+        color: isUrgent ? 'var(--color-crimson-signal)' : '#f59e0b',
+        border: `1px solid ${isUrgent ? 'rgba(252, 28, 70, 0.5)' : 'rgba(245, 158, 11, 0.35)'}`,
+        fontFamily: "'Space Grotesk', monospace",
+        letterSpacing: '0.4px',
+      }}
+    >
+      <Icons.Clock size={12} color={isUrgent ? 'var(--color-crimson-signal)' : '#f59e0b'} />
+      <span>{remainingSec > 0 ? `${mm}:${ss} min` : 'TIEMPO EXPIRADO'}</span>
+    </span>
+  );
+};
 
 /* ────────────────────────────────────────────────────────────
    MAIN COMPONENT: /club (TERMINAL EXCLUSIVA DE CLUBES)
@@ -664,7 +722,41 @@ export default function ClubPage() {
   const loadClubsAndMatch = useCallback(async () => {
     setIsLoadingClubs(true);
     const data = await getClubsFirestore();
-    const loadedList = Array.isArray(data) ? data : [];
+    const firestoreClubs = Array.isArray(data) ? data : [];
+
+    // Seed with all real complexes from MDP_REAL_CLUBS
+    const clubMap = new Map<string, any>();
+    MDP_REAL_CLUBS.forEach((c: any) => {
+      clubMap.set(c.id, {
+        id: c.id,
+        name: c.name,
+        slug: c.slug || c.id,
+        address: c.address || '',
+        phone: c.phone || '',
+        whatsapp: c.whatsapp || c.phone || '',
+        description: c.description || '',
+        openingTime: c.openingTime || '08:00',
+        closingTime: c.closingTime || '23:30',
+        images: c.images || [],
+        amenities: c.amenities || {},
+        sportTypes: c.sportTypes || c.sports || ['PADEL'],
+        adminEmail: '',
+        adminEmails: [],
+        ownerUid: '',
+        active: true,
+      });
+    });
+
+    // Merge in Firestore records (they take precedence for admin emails, custom details, edits)
+    firestoreClubs.forEach((fc: any) => {
+      const existing = clubMap.get(fc.id) || {};
+      clubMap.set(fc.id, {
+        ...existing,
+        ...fc,
+      });
+    });
+
+    const loadedList = Array.from(clubMap.values());
     setClubsList(loadedList);
 
     // If user is authenticated, resolve their club
@@ -718,12 +810,34 @@ export default function ClubPage() {
     if (!activeClub?.id) return;
     setIsLoadingData(true);
     const allCourts = await getCourtsFirestore();
-    if (Array.isArray(allCourts)) {
-      const filtered = allCourts.filter((c: any) => c.clubId === activeClub.id);
-      setCourts(filtered);
-    } else {
-      setCourts([]);
-    }
+    const firestoreCourts = Array.isArray(allCourts) ? allCourts : [];
+
+    const courtMap = new Map<string, any>();
+    // Seed real courts from MDP_REAL_COURTS for this club
+    MDP_REAL_COURTS.filter((c: any) => c.clubId === activeClub.id).forEach((c: any) => {
+      courtMap.set(c.id, {
+        id: c.id,
+        clubId: c.clubId,
+        name: c.name,
+        sportType: c.sportType || 'PADEL',
+        surface: c.surface || '',
+        pricePerHour: c.pricePerHour || 16000,
+        durationMinutes: c.durationMinutes || 90,
+        isCovered: !!c.isCovered,
+        hasLighting: c.hasLighting ?? true,
+        active: true,
+      });
+    });
+
+    // Merge in Firestore courts
+    firestoreCourts.filter((c: any) => c.clubId === activeClub.id).forEach((c: any) => {
+      courtMap.set(c.id, {
+        ...(courtMap.get(c.id) || {}),
+        ...c,
+      });
+    });
+
+    setCourts(Array.from(courtMap.values()));
     setIsLoadingData(false);
   }, [activeClub?.id]);
 
@@ -1003,16 +1117,22 @@ export default function ClubPage() {
     }
   };
 
-  // Actions: Accept / Reject Booking
+  // Actions: Accept / Reject / Expire Booking
   const handleAccept = async (bookingId: string) => {
     setIsActionPending(true);
     try {
-      await updateBookingStatusFirestore(bookingId, 'CONFIRMED');
+      await fetch('/api/bookings/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId, status: 'CONFIRMED' }),
+      });
       setBookings((prev) =>
         prev.map((b) => (b.id === bookingId ? { ...b, status: 'CONFIRMED', confirmedAt: new Date().toISOString() } : b))
       );
     } catch (err) {
       console.error('Error accepting:', err);
+      // Fallback to direct Firestore update
+      await updateBookingStatusFirestore(bookingId, 'CONFIRMED');
     } finally {
       setIsActionPending(false);
     }
@@ -1022,7 +1142,11 @@ export default function ClubPage() {
     if (!rejectBooking) return;
     setIsActionPending(true);
     try {
-      await updateBookingStatusFirestore(rejectBooking.id, 'REJECTED', rejectReason);
+      await fetch('/api/bookings/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId: rejectBooking.id, status: 'REJECTED', reason: rejectReason }),
+      });
       setBookings((prev) =>
         prev.map((b) =>
           b.id === rejectBooking.id
@@ -1033,8 +1157,24 @@ export default function ClubPage() {
       setRejectBooking(null);
     } catch (err) {
       console.error('Error rejecting:', err);
+      await updateBookingStatusFirestore(rejectBooking.id, 'REJECTED', rejectReason);
     } finally {
       setIsActionPending(false);
+    }
+  };
+
+  const handleExpireBooking = async (bookingId: string) => {
+    try {
+      await fetch('/api/bookings/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId, status: 'EXPIRED', reason: 'Tiempo límite de 15 minutos superado' }),
+      });
+      setBookings((prev) =>
+        prev.map((b) => (b.id === bookingId ? { ...b, status: 'EXPIRED' } : b))
+      );
+    } catch (err) {
+      console.error('Error expiring booking:', err);
     }
   };
 
@@ -2090,13 +2230,20 @@ export default function ClubPage() {
                                 fontWeight: 800,
                                 padding: '3px 10px',
                                 borderRadius: 'var(--radius-full)',
-                                backgroundColor: isPending ? 'rgba(252, 28, 70, 0.2)' : isConfirmed ? 'rgba(16, 185, 129, 0.2)' : 'rgba(100, 116, 139, 0.2)',
-                                color: isPending ? 'var(--color-crimson-signal)' : isConfirmed ? 'var(--color-emerald)' : 'var(--color-ash)',
+                                backgroundColor: isPending ? 'rgba(252, 28, 70, 0.2)' : isConfirmed ? 'rgba(16, 185, 129, 0.2)' : b.status === 'EXPIRED' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(100, 116, 139, 0.2)',
+                                color: isPending ? 'var(--color-crimson-signal)' : isConfirmed ? 'var(--color-emerald)' : b.status === 'EXPIRED' ? '#f59e0b' : 'var(--color-ash)',
                                 textTransform: 'uppercase',
                               }}
                             >
-                              {isPending ? 'SOLICITUD ENTRANTE' : isConfirmed ? 'TURNO CONFIRMADO' : 'RECHAZADO'}
+                              {isPending ? 'SOLICITUD ENTRANTE' : isConfirmed ? 'TURNO CONFIRMADO' : b.status === 'EXPIRED' ? 'TIEMPO EXPIRADO' : 'RECHAZADO'}
                             </span>
+                            {isPending && (
+                              <CountdownPill
+                                expiresAt={b.expiresAt}
+                                createdAt={b.createdAt}
+                                onExpire={() => handleExpireBooking(b.id)}
+                              />
+                            )}
                             <span style={{ fontSize: 12, color: 'var(--color-ash)', fontWeight: 600 }}>#{b.id}</span>
                             <SportBadge sports={[b.sport]} size="sm" />
                           </div>

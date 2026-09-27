@@ -18,10 +18,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const paymentData = await mpResponse.json();
         const bookingId = paymentData.metadata?.booking_id || paymentData.external_reference;
 
-        if (bookingId && paymentData.status === 'approved') {
+        if (bookingId) {
           const booking = await getBookingByIdFirestore(bookingId);
           if (booking) {
-            booking.status = 'CONFIRMED';
+            booking.mpPaymentId = String(paymentId);
+            if (paymentData.status === 'approved') {
+              booking.paymentStatus = 'CAPTURED';
+            } else if (paymentData.status === 'authorized') {
+              booking.paymentStatus = 'AUTHORIZED';
+            }
             booking.updatedAt = new Date().toISOString();
             await createBookingFirestore(booking);
           }

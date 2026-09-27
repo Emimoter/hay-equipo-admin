@@ -291,8 +291,12 @@ export default function LandingPage() {
       <Head>
         <title>HAY EQUIPO? — Reservá tu cancha, armá tu equipo</title>
         <meta name="description" content="La app que conecta jugadores con las mejores canchas deportivas de Argentina. Reservá al instante, dividí los gastos y armá tu equipo." />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <meta property="og:title" content="HAY EQUIPO? — Reservá tu cancha, armá tu equipo" />
+        <meta property="og:description" content="La app que conecta jugadores con las mejores canchas deportivas de Argentina. Reservá al instante, dividí los gastos y armá tu equipo." />
+        <meta property="og:image" content="/og-image.png" />
+        <meta name="twitter:title" content="HAY EQUIPO? — Reservá tu cancha, armá tu equipo" />
+        <meta name="twitter:description" content="La app que conecta jugadores con las mejores canchas deportivas de Argentina. Reservá al instante, dividí los gastos y armá tu equipo." />
+        <meta name="twitter:image" content="/og-image.png" />
         {/* Preload ball textures for instant lag-free GPU rendering */}
         <link rel="preload" as="image" href="/soccer-ball-hd.jpg" />
         <link rel="preload" as="image" href="/padel-ball-red.jpg" />
@@ -1349,20 +1353,21 @@ export default function LandingPage() {
             <div style={{ fontSize: 14, color: 'var(--color-frost)', marginBottom: 14 }}>Contacto</div>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
               <li><a href="mailto:hola@hayequipo.app" style={{ fontSize: 14, color: 'var(--color-ash)', textDecoration: 'none' }}>hola@hayequipo.app</a></li>
+              <li style={{ marginTop: 6 }}><a href="https://wa.me/5492235948332?text=Hola!%20Quiero%20hacer%20una%20consulta%20sobre%20Hay%20Equipo." target="_blank" rel="noopener noreferrer" style={{ fontSize: 14, color: 'var(--color-ash)', textDecoration: 'none' }}>WhatsApp: +54 9 223 594-8332</a></li>
             </ul>
           </div>
           <div>
             <div style={{ fontSize: 14, color: 'var(--color-frost)', marginBottom: 14 }}>Seguinos</div>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <li><a href="#" style={{ fontSize: 14, color: 'var(--color-ash)', textDecoration: 'none' }}>Instagram</a></li>
-              <li><a href="#" style={{ fontSize: 14, color: 'var(--color-ash)', textDecoration: 'none' }}>Twitter / X</a></li>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <li><a href="https://www.instagram.com/hayequipo.app" target="_blank" rel="noopener noreferrer" style={{ fontSize: 14, color: 'var(--color-ash)', textDecoration: 'none' }}>Instagram (@hayequipo.app)</a></li>
+              <li><a href="https://wa.me/5492235948332?text=Hola!%20Quiero%20sumarme%20a%20la%20comunidad%20de%20Hay%20Equipo." target="_blank" rel="noopener noreferrer" style={{ fontSize: 14, color: 'var(--color-ash)', textDecoration: 'none' }}>Canal de WhatsApp</a></li>
             </ul>
           </div>
           <div>
             <div style={{ fontSize: 14, color: 'var(--color-frost)', marginBottom: 14 }}>Clubes</div>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-              <li><a href="/" style={{ fontSize: 14, color: 'var(--color-ash)', textDecoration: 'none' }}>Panel de Gestión</a></li>
-              <li style={{ marginTop: 4 }}><a href="#" style={{ fontSize: 14, color: 'var(--color-ash)', textDecoration: 'none' }}>Asociar mi club</a></li>
+              <li><a href="/club" style={{ fontSize: 14, color: 'var(--color-ash)', textDecoration: 'none' }}>Panel de Gestión</a></li>
+              <li style={{ marginTop: 6 }}><a href="/registro-club" style={{ fontSize: 14, color: 'var(--color-ash)', textDecoration: 'none' }}>Asociar mi club</a></li>
             </ul>
           </div>
         </div>

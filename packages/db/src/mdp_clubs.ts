@@ -13,8 +13,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.5990018,
     "phone": "+54 223 481-9565",
     "whatsapp": "+54 9 223 555-0201",
-    "rating": 4.8,
-    "reviewCount": 95,
     "minPrice": 26000,
     "sports": [
       "PADEL"
@@ -23,17 +21,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": true,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -50,8 +37,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.5622248,
     "phone": "+54 223 472-3280",
     "whatsapp": "+54 9 223 555-0202",
-    "rating": 4.7,
-    "reviewCount": 88,
     "minPrice": 25000,
     "sports": [
       "PADEL",
@@ -61,17 +46,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": false,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -88,8 +62,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.5458232,
     "phone": "+54 223 480-1079",
     "whatsapp": "+54 9 223 555-0203",
-    "rating": 4.9,
-    "reviewCount": 140,
     "minPrice": 28000,
     "sports": [
       "PADEL"
@@ -98,17 +70,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": true,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -125,8 +86,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.5630695,
     "phone": "+54 223 479-5951",
     "whatsapp": "+54 9 223 555-0204",
-    "rating": 4.8,
-    "reviewCount": 160,
     "minPrice": 28000,
     "sports": [
       "PADEL"
@@ -135,17 +94,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": false,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -162,8 +110,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.578622,
     "phone": "+54 223 478-5402",
     "whatsapp": "+54 9 223 555-0205",
-    "rating": 4.8,
-    "reviewCount": 175,
     "minPrice": 27000,
     "sports": [
       "PADEL"
@@ -172,17 +118,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": true,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -199,8 +134,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.5447012,
     "phone": "+54 223 474-0846",
     "whatsapp": "+54 9 223 555-0206",
-    "rating": 4.7,
-    "reviewCount": 110,
     "minPrice": 24000,
     "sports": [
       "PADEL"
@@ -209,17 +142,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": false,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -236,8 +158,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.5503029,
     "phone": "+54 223 473-0333",
     "whatsapp": "+54 9 223 555-0207",
-    "rating": 4.9,
-    "reviewCount": 220,
     "minPrice": 28000,
     "sports": [
       "PADEL"
@@ -246,17 +166,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": true,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -273,8 +182,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.5626264,
     "phone": "+54 223 472-1660",
     "whatsapp": "+54 9 223 555-0208",
-    "rating": 4.6,
-    "reviewCount": 85,
     "minPrice": 24000,
     "sports": [
       "PADEL"
@@ -283,17 +190,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": false,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -310,8 +206,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.5749873,
     "phone": "+54 223 479-7147",
     "whatsapp": "+54 9 223 555-0209",
-    "rating": 4.8,
-    "reviewCount": 190,
     "minPrice": 28000,
     "sports": [
       "PADEL"
@@ -320,17 +214,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": true,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -347,8 +230,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.560643,
     "phone": "+54 223 475-4179",
     "whatsapp": "+54 9 223 555-0210",
-    "rating": 4.7,
-    "reviewCount": 98,
     "minPrice": 25000,
     "sports": [
       "PADEL",
@@ -358,17 +239,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": false,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -385,8 +255,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.5746782,
     "phone": "+54 223 473-1155",
     "whatsapp": "+54 9 223 555-0211",
-    "rating": 4.9,
-    "reviewCount": 130,
     "minPrice": 26000,
     "sports": [
       "PADEL",
@@ -396,17 +264,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": true,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -423,8 +280,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.5640963,
     "phone": "+54 223 494-4182",
     "whatsapp": "+54 9 223 555-0212",
-    "rating": 4.7,
-    "reviewCount": 115,
     "minPrice": 26000,
     "sports": [
       "PADEL"
@@ -433,17 +288,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": false,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -460,8 +304,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.548207,
     "phone": "+54 223 480-0566",
     "whatsapp": "+54 9 223 555-0213",
-    "rating": 4.8,
-    "reviewCount": 145,
     "minPrice": 25000,
     "sports": [
       "PADEL",
@@ -471,17 +313,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": true,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -498,8 +329,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.5612266,
     "phone": "+54 223 495-2961",
     "whatsapp": "+54 9 223 555-0214",
-    "rating": 4.7,
-    "reviewCount": 105,
     "minPrice": 25000,
     "sports": [
       "PADEL"
@@ -508,17 +337,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": false,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -535,8 +353,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.5382036,
     "phone": "+54 223 451-0253",
     "whatsapp": "+54 9 223 555-0215",
-    "rating": 4.9,
-    "reviewCount": 180,
     "minPrice": 30000,
     "sports": [
       "PADEL"
@@ -545,17 +361,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": true,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -572,8 +377,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.5912086,
     "phone": "+54 223 482-2422",
     "whatsapp": "+54 9 223 555-0216",
-    "rating": 4.8,
-    "reviewCount": 125,
     "minPrice": 26000,
     "sports": [
       "PADEL"
@@ -582,17 +385,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": false,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -609,8 +401,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.5523908,
     "phone": "+54 223 480-0055",
     "whatsapp": "+54 9 223 555-0217",
-    "rating": 4.8,
-    "reviewCount": 135,
     "minPrice": 26000,
     "sports": [
       "PADEL"
@@ -619,17 +409,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": true,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -646,8 +425,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.5790108,
     "phone": "+54 223 475-4214",
     "whatsapp": "+54 9 223 555-0218",
-    "rating": 4.7,
-    "reviewCount": 92,
     "minPrice": 25000,
     "sports": [
       "PADEL"
@@ -656,17 +433,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": false,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -683,8 +449,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.5732196,
     "phone": "+54 223 482-6344",
     "whatsapp": "+54 9 223 555-0219",
-    "rating": 4.9,
-    "reviewCount": 210,
     "minPrice": 28000,
     "sports": [
       "PADEL"
@@ -693,17 +457,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": true,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -720,8 +473,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.5891696,
     "phone": "+54 223 474-4064",
     "whatsapp": "+54 9 223 555-0220",
-    "rating": 4.8,
-    "reviewCount": 115,
     "minPrice": 26000,
     "sports": [
       "PADEL"
@@ -730,17 +481,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": false,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -757,8 +497,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.5831756,
     "phone": "+54 223 478-2767",
     "whatsapp": "+54 9 223 555-0221",
-    "rating": 4.9,
-    "reviewCount": 155,
     "minPrice": 28000,
     "sports": [
       "PADEL"
@@ -767,17 +505,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": true,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -794,8 +521,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.5914554,
     "phone": "+54 223 477-6457",
     "whatsapp": "+54 9 223 555-0222",
-    "rating": 4.7,
-    "reviewCount": 89,
     "minPrice": 24000,
     "sports": [
       "PADEL"
@@ -804,17 +529,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": false,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -831,8 +545,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.5716764,
     "phone": "+54 223 470-5102",
     "whatsapp": "+54 9 223 555-0223",
-    "rating": 4.8,
-    "reviewCount": 140,
     "minPrice": 27000,
     "sports": [
       "PADEL",
@@ -842,17 +554,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": true,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -869,8 +570,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.5865331,
     "phone": "+54 223 479-5322",
     "whatsapp": "+54 9 223 555-0224",
-    "rating": 4.9,
-    "reviewCount": 230,
     "minPrice": 26000,
     "sports": [
       "PADEL"
@@ -879,17 +578,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": false,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -906,8 +594,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.5581512,
     "phone": "+54 223 471-0271",
     "whatsapp": "+54 9 223 555-0225",
-    "rating": 4.8,
-    "reviewCount": 165,
     "minPrice": 26000,
     "sports": [
       "PADEL"
@@ -916,17 +602,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": true,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -943,8 +618,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.546572,
     "phone": "+54 223 480-0800",
     "whatsapp": "+54 9 223 555-0226",
-    "rating": 4.8,
-    "reviewCount": 120,
     "minPrice": 28000,
     "sports": [
       "PADEL"
@@ -953,17 +626,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": false,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -980,8 +642,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.5640099,
     "phone": "+54 223 451-3264",
     "whatsapp": "+54 9 223 555-0227",
-    "rating": 4.7,
-    "reviewCount": 105,
     "minPrice": 25000,
     "sports": [
       "PADEL"
@@ -990,17 +650,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": true,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -1017,8 +666,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.5930017,
     "phone": "+54 223 467-4326",
     "whatsapp": "+54 9 223 555-0228",
-    "rating": 4.8,
-    "reviewCount": 135,
     "minPrice": 26000,
     "sports": [
       "PADEL",
@@ -1028,17 +675,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": false,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -1055,8 +691,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.5497306,
     "phone": "+54 223 481-3875",
     "whatsapp": "+54 9 223 555-0229",
-    "rating": 4.7,
-    "reviewCount": 95,
     "minPrice": 25000,
     "sports": [
       "PADEL",
@@ -1066,17 +700,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": true,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -1093,8 +716,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.5628425,
     "phone": "+54 223 475-1234",
     "whatsapp": "+54 9 223 555-0101",
-    "rating": 4.8,
-    "reviewCount": 142,
     "minPrice": 28000,
     "sports": [
       "FUTBOL_5",
@@ -1104,17 +725,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": false,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -1131,8 +741,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.5587,
     "phone": "+54 223 491-5678",
     "whatsapp": "+54 9 223 555-0102",
-    "rating": 4.7,
-    "reviewCount": 118,
     "minPrice": 26000,
     "sports": [
       "FUTBOL_5",
@@ -1142,17 +750,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": true,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -1169,8 +766,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.5745327,
     "phone": "+54 223 479-9900",
     "whatsapp": "+54 9 223 555-0103",
-    "rating": 4.9,
-    "reviewCount": 195,
     "minPrice": 32000,
     "sports": [
       "FUTBOL_7",
@@ -1181,17 +776,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": false,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -1208,8 +792,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.5575158,
     "phone": "+54 223 495-2244",
     "whatsapp": "+54 9 223 555-0104",
-    "rating": 4.8,
-    "reviewCount": 164,
     "minPrice": 25000,
     "sports": [
       "FUTBOL_5"
@@ -1218,17 +800,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": true,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -1245,8 +816,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.5583613,
     "phone": "+54 223 494-3545",
     "whatsapp": "+54 9 223 555-0105",
-    "rating": 4.7,
-    "reviewCount": 88,
     "minPrice": 24000,
     "sports": [
       "FUTBOL_5",
@@ -1256,17 +825,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": false,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -1283,8 +841,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.5490708,
     "phone": "+54 223 480-0666",
     "whatsapp": "+54 9 223 555-0107",
-    "rating": 4.9,
-    "reviewCount": 153,
     "minPrice": 34000,
     "sports": [
       "FUTBOL_7",
@@ -1294,17 +850,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": true,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -1321,8 +866,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.596954,
     "phone": "+54 223 478-7254",
     "whatsapp": "+54 9 223 555-0125",
-    "rating": 4.7,
-    "reviewCount": 89,
     "minPrice": 24000,
     "sports": [
       "FUTBOL_5"
@@ -1331,17 +874,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": false,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -1358,8 +890,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.564404,
     "phone": "+54 223 494-3500",
     "whatsapp": "+54 9 223 555-0126",
-    "rating": 4.9,
-    "reviewCount": 178,
     "minPrice": 31000,
     "sports": [
       "FUTBOL_7",
@@ -1369,17 +899,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": true,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -1396,8 +915,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.564818,
     "phone": "+54 223 477-9534",
     "whatsapp": "+54 9 223 555-0123",
-    "rating": 4.7,
-    "reviewCount": 98,
     "minPrice": 26000,
     "sports": [
       "FUTBOL_5",
@@ -1407,17 +924,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": false,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -1434,8 +940,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.5840514,
     "phone": "+54 223 478-6350",
     "whatsapp": "+54 9 223 555-0130",
-    "rating": 4.8,
-    "reviewCount": 120,
     "minPrice": 26000,
     "sports": [
       "FUTBOL_5"
@@ -1444,17 +948,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": true,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -1471,8 +964,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.571545,
     "phone": "+54 223 479-6800",
     "whatsapp": "+54 9 223 555-0131",
-    "rating": 4.9,
-    "reviewCount": 185,
     "minPrice": 32000,
     "sports": [
       "FUTBOL_5",
@@ -1482,17 +973,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": false,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -1509,8 +989,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.5865331,
     "phone": "+54 223 479-5220",
     "whatsapp": "+54 9 223 555-0129",
-    "rating": 4.9,
-    "reviewCount": 250,
     "minPrice": 24000,
     "sports": [
       "PADEL",
@@ -1521,17 +999,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": true,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -1548,8 +1015,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.534211,
     "phone": "+54 223 480-0323",
     "whatsapp": "+54 9 223 555-0127",
-    "rating": 4.9,
-    "reviewCount": 240,
     "minPrice": 22000,
     "sports": [
       "TENIS",
@@ -1559,17 +1024,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": false,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true
@@ -1586,8 +1040,6 @@ export const MDP_REAL_CLUBS: Club[] = [
     "longitude": -57.5575706,
     "phone": "+54 223 489-1560",
     "whatsapp": "+54 9 223 555-0128",
-    "rating": 4.8,
-    "reviewCount": 165,
     "minPrice": 20000,
     "sports": [
       "TENIS"
@@ -1596,17 +1048,6 @@ export const MDP_REAL_CLUBS: Club[] = [
       "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=1000&auto=format&fit=crop&q=80"
     ],
-    "amenities": {
-      "parking": true,
-      "showers": true,
-      "lockerRooms": true,
-      "buffet": true,
-      "grill": true,
-      "wifi": true,
-      "equipmentRental": true,
-      "covered": true,
-      "lighting": true
-    },
     "openingTime": "08:00",
     "closingTime": "00:30",
     "active": true

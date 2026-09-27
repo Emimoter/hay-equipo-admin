@@ -124,7 +124,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       paymentType,
       splitPlayers: parsedSplitPlayers,
       paidPlayersCount: paymentType === 'FULL' ? parsedSplitPlayers : 1,
-      status: 'CONFIRMED',
+      status: 'PENDING',
       buyer: {
         name: buyer.name,
         email: buyer.email || '',
@@ -137,6 +137,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       mpInitPoint: initPoint,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+      paymentStatus: 'PENDING',
     };
 
     const saved = await createBookingFirestore(newBooking);

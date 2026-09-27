@@ -395,7 +395,7 @@ export default function CheckoutPage() {
           splitPlayers,
           paidPlayersCount: 1,
           isFixedSlot: isRecurring,
-          status: 'CONFIRMED',
+          status: 'PENDING',
           buyer: {
             name: buyerName.trim(),
             email: buyerEmail.trim() || user.email || '',
@@ -408,6 +408,7 @@ export default function CheckoutPage() {
           mpInitPoint: data.checkout?.initPoint,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
+          expiresAt: data.booking.expiresAt || new Date(Date.now() + 15 * 60 * 1000).toISOString(),
         };
 
         const existing = JSON.parse(localStorage.getItem('hay_equipo_user_bookings') || '[]');

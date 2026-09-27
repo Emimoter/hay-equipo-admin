@@ -96,6 +96,56 @@ const Icons = {
   ),
 };
 
+const CountdownPill: React.FC<{
+  expiresAt?: string;
+  createdAt?: string;
+}> = ({ expiresAt, createdAt }) => {
+  const targetTime = React.useMemo(() => {
+    if (expiresAt) return new Date(expiresAt).getTime();
+    if (createdAt) return new Date(createdAt).getTime() + 15 * 60 * 1000;
+    return Date.now() + 15 * 60 * 1000;
+  }, [expiresAt, createdAt]);
+
+  const [remainingSec, setRemainingSec] = React.useState(() =>
+    Math.max(0, Math.floor((targetTime - Date.now()) / 1000))
+  );
+
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      const left = Math.max(0, Math.floor((targetTime - Date.now()) / 1000));
+      setRemainingSec(left);
+      if (left === 0) clearInterval(timer);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [targetTime]);
+
+  const mm = String(Math.floor(remainingSec / 60)).padStart(2, '0');
+  const ss = String(remainingSec % 60).padStart(2, '0');
+  const isUrgent = remainingSec < 180;
+
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 6,
+        fontSize: 11,
+        fontWeight: 800,
+        padding: '3px 10px',
+        borderRadius: 'var(--radius-full)',
+        backgroundColor: isUrgent ? 'rgba(252, 28, 70, 0.2)' : 'rgba(245, 158, 11, 0.15)',
+        color: isUrgent ? 'var(--color-crimson-signal)' : '#f59e0b',
+        border: `1px solid ${isUrgent ? 'rgba(252, 28, 70, 0.5)' : 'rgba(245, 158, 11, 0.35)'}`,
+        fontFamily: "'Space Grotesk', monospace",
+        letterSpacing: '0.4px',
+      }}
+    >
+      <Icons.Clock size={12} color={isUrgent ? 'var(--color-crimson-signal)' : '#f59e0b'} />
+      <span>{remainingSec > 0 ? `${mm}:${ss} min restantes` : 'TIEMPO EXPIRADO'}</span>
+    </span>
+  );
+};
+
 export const MisReservasTab: React.FC<MisReservasTabProps> = ({ onNavigateSearch }) => {
   const { user, userProfile, openAuthModal } = useAuth();
   const [subTab, setSubTab] = useState<'UPCOMING' | 'FIXED' | 'PAST'>('UPCOMING');
@@ -235,8 +285,8 @@ export const MisReservasTab: React.FC<MisReservasTabProps> = ({ onNavigateSearch
     }
   };
 
-  const upcomingBookings = bookings.filter((b) => b.status === 'CONFIRMED' || b.status === 'PENDING');
-  const pastBookings = bookings.filter((b) => b.status === 'CANCELLED');
+  const upcomingBookings = bookings.filter((b) => b.status === 'CONFIRMED' || b.status === 'PENDING' || b.status === 'REJECTED' || b.status === 'EXPIRED');
+  const pastBookings = bookings.filter((b) => b.status === 'CANCELLED' || b.status === 'REJECTED' || b.status === 'EXPIRED');
   const filteredBookings = subTab === 'PAST' ? pastBookings : upcomingBookings;
 
   return (
@@ -281,34 +331,8 @@ export const MisReservasTab: React.FC<MisReservasTabProps> = ({ onNavigateSearch
         </div>
       </div>
 
-      {/* ── Status de Sincronización de Cuenta o Invitación al Login ── */}
-      {user ? (
-        <div
-          style={{
-            backgroundColor: 'rgba(16, 185, 129, 0.06)',
-            border: '1px solid rgba(16, 185, 129, 0.25)',
-            padding: '14px 20px',
-            marginBottom: 24,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 16,
-            flexWrap: 'wrap',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#10b981', boxShadow: '0 0 8px #10b981' }} />
-            <div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-frost)' }}>
-                Sincronizado con tu cuenta: {userProfile?.name || user.displayName || user.email}
-              </div>
-              <div style={{ fontSize: 11, color: '#a7f3d0' }}>
-                {isLoadingCloud ? 'Consultando últimas reservas en tiempo real...' : `${bookings.length} ${bookings.length === 1 ? 'reserva registrada' : 'reservas registradas'} en la nube`}
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : (
+      {/* ── Invitación al Login si no está autenticado ── */}
+      {!user && (
         <div
           style={{
             backgroundColor: 'rgba(252, 28, 70, 0.08)',
@@ -775,9 +799,29 @@ export const MisReservasTab: React.FC<MisReservasTabProps> = ({ onNavigateSearch
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
                     <span
                       style={{
-                        backgroundColor: b.status === 'CONFIRMED' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(252, 28, 70, 0.15)',
-                        color: b.status === 'CONFIRMED' ? '#10b981' : 'var(--color-crimson-signal)',
-                        border: `1px solid ${b.status === 'CONFIRMED' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(252, 28, 70, 0.3)'}`,
+                        backgroundColor:
+                          b.status === 'CONFIRMED'
+                            ? 'rgba(16, 185, 129, 0.15)'
+                            : b.status === 'REJECTED'
+                            ? 'rgba(252, 28, 70, 0.15)'
+                            : b.status === 'EXPIRED'
+                            ? 'rgba(245, 158, 11, 0.15)'
+                            : 'rgba(245, 158, 11, 0.15)',
+                        color:
+                          b.status === 'CONFIRMED'
+                            ? '#10b981'
+                            : b.status === 'REJECTED'
+                            ? 'var(--color-crimson-signal)'
+                            : b.status === 'EXPIRED'
+                            ? '#f59e0b'
+                            : '#f59e0b',
+                        border: `1px solid ${
+                          b.status === 'CONFIRMED'
+                            ? 'rgba(16, 185, 129, 0.3)'
+                            : b.status === 'REJECTED'
+                            ? 'rgba(252, 28, 70, 0.4)'
+                            : 'rgba(245, 158, 11, 0.35)'
+                        }`,
                         borderRadius: 'var(--radius-full)',
                         fontSize: 10,
                         fontWeight: 800,
@@ -786,8 +830,18 @@ export const MisReservasTab: React.FC<MisReservasTabProps> = ({ onNavigateSearch
                         textTransform: 'uppercase',
                       }}
                     >
-                      {b.status === 'CONFIRMED' ? 'CONFIRMADA' : 'PENDIENTE'}
+                      {b.status === 'CONFIRMED'
+                        ? 'CONFIRMADA'
+                        : b.status === 'REJECTED'
+                        ? 'SOLICITUD RECHAZADA'
+                        : b.status === 'EXPIRED'
+                        ? 'TIEMPO EXPIRADO'
+                        : 'ESPERANDO AL CLUB'}
                     </span>
+
+                    {b.status === 'PENDING' && (
+                      <CountdownPill expiresAt={b.expiresAt} createdAt={b.createdAt} />
+                    )}
 
                     <span style={{ fontSize: 12, color: 'var(--color-ash)', fontFamily: 'Space Grotesk, monospace', fontWeight: 600 }}>
                       ID: {b.id}
@@ -826,6 +880,77 @@ export const MisReservasTab: React.FC<MisReservasTabProps> = ({ onNavigateSearch
                       Total: ${b.totalPrice?.toLocaleString('es-AR')}
                     </div>
                   </div>
+
+                  {/* Banner de Estado Pendiente de Confirmación */}
+                  {b.status === 'PENDING' && (
+                    <div
+                      style={{
+                        marginTop: 14,
+                        backgroundColor: 'rgba(245, 158, 11, 0.08)',
+                        border: '1px solid rgba(245, 158, 11, 0.25)',
+                        padding: '12px 16px',
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: 12,
+                      }}
+                    >
+                      <span style={{ flexShrink: 0, marginTop: 2, display: 'inline-flex' }}>
+                        <Icons.Clock size={16} color="#f59e0b" />
+                      </span>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-frost)', marginBottom: 2 }}>
+                          Solicitud en revisión en la recepción del club
+                        </div>
+                        <div style={{ fontSize: 12, color: 'var(--color-ash)', lineHeight: 1.5 }}>
+                          El club tiene hasta 15 minutos para aceptar tu solicitud. <strong style={{ color: '#10b981' }}>Tus fondos están retenidos en garantía</strong> y sólo se debitarán cuando el club confirme tu turno. Si el club no responde o rechaza, la retención se anula automáticamente.
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Banner de Solicitud Expirada por Tiempo Límite */}
+                  {b.status === 'EXPIRED' && (
+                    <div
+                      style={{
+                        marginTop: 14,
+                        backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                        padding: '14px 18px',
+                      }}
+                    >
+                      <div style={{ color: '#f59e0b', fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 4 }}>
+                        Tiempo de espera superado (15 min)
+                      </div>
+                      <div style={{ fontSize: 13, color: 'var(--color-frost)', marginBottom: 6 }}>
+                        El club no confirmó la solicitud dentro de los 15 minutos reglamentarios. El turno fue liberado.
+                      </div>
+                      <div style={{ fontSize: 12, color: '#10b981', fontWeight: 600 }}>
+                        Fondos liberados: La retención de tu dinero se anuló automáticamente y no se debitó ningún cargo.
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Banner de Solicitud Rechazada por el Club */}
+                  {b.status === 'REJECTED' && (
+                    <div
+                      style={{
+                        marginTop: 14,
+                        backgroundColor: 'rgba(252, 28, 70, 0.08)',
+                        border: '1px solid rgba(252, 28, 70, 0.35)',
+                        padding: '14px 18px',
+                      }}
+                    >
+                      <div style={{ color: 'var(--color-crimson-signal)', fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 4 }}>
+                        Solicitud rechazada por el club
+                      </div>
+                      <div style={{ fontSize: 13, color: 'var(--color-frost)', marginBottom: 6 }}>
+                        Motivo: <strong>{b.rejectReason || 'Cancha ocupada o no disponible en ese horario'}</strong>
+                      </div>
+                      <div style={{ fontSize: 12, color: '#10b981', fontWeight: 600 }}>
+                        Tu dinero está protegido: El importe no fue debitado de tu cuenta (o la retención/reintegro fue liberada automáticamente).
+                      </div>
+                    </div>
+                  )}
 
                   {/* Split Payment Banner if applicable */}
                   {isSplit && (

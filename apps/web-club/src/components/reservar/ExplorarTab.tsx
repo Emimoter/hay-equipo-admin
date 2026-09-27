@@ -14,7 +14,7 @@ export interface ExplorarClub {
   city: string;
   zone?: string;
   distanceKm?: number;
-  rating: number;
+  rating?: number;
   reviewCount?: number;
   sports: ('PADEL' | 'FUTBOL')[];
   latitude?: number;
@@ -23,7 +23,7 @@ export interface ExplorarClub {
   minPricePerPlayer?: number;
   images?: string[];
   coverImage?: string;
-  amenities: {
+  amenities?: {
     parking?: boolean;
     buffet?: boolean;
     showers?: boolean;
@@ -463,29 +463,6 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
                 onCardClick={() => {
                   router.push(`/clubes/${club.id}`);
                 }}
-                topRightBadge={
-                  <div
-                    style={{
-                      backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                      backdropFilter: 'blur(8px)',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
-                      borderRadius: 'var(--radius-full)',
-                      padding: '4px 10px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 5,
-                      fontSize: 12,
-                      fontWeight: 700,
-                      color: '#ffffff',
-                    }}
-                  >
-                    <Icons.Star size={13} color="#FACC15" />
-                    <span>{club.rating}</span>
-                    <span style={{ color: 'var(--color-ash)', fontSize: 11 }}>
-                      ({club.reviewCount || club.reviewsCount || 45})
-                    </span>
-                  </div>
-                }
               />
 
               {/* Contenido */}
@@ -529,30 +506,15 @@ export const ExplorarTab: React.FC<ExplorarTabProps> = ({
                   )}
                 </div>
 
-                {/* Amenity Badges */}
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 20 }}>
-                  {club.amenities?.covered && (
-                    <span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 'var(--radius-full)', backgroundColor: 'rgba(255, 255, 255, 0.06)', color: 'var(--color-frost)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                      Techada
-                    </span>
-                  )}
-                  {club.amenities?.parking && (
-                    <span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 'var(--radius-full)', backgroundColor: 'rgba(255, 255, 255, 0.06)', color: 'var(--color-frost)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                      Estacionamiento
-                    </span>
-                  )}
-                  {club.amenities?.buffet && (
-                    <span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 'var(--radius-full)', backgroundColor: 'rgba(255, 255, 255, 0.06)', color: 'var(--color-frost)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                      Buffet & Bar
-                    </span>
-                  )}
-                  {club.slots?.some((s: any) => Boolean(s.isFixedSlot) && s.available) && (
+                {/* Fixed Slots Badge if available */}
+                {club.slots?.some((s: any) => Boolean(s.isFixedSlot) && s.available) && (
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 20 }}>
                     <span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 'var(--radius-full)', backgroundColor: 'rgba(252, 28, 70, 0.15)', color: 'var(--color-crimson-signal)', border: '1px solid rgba(252, 28, 70, 0.35)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                       <Icons.Repeat size={10} color="var(--color-crimson-signal)" />
                       <span>Fijos Semanales</span>
                     </span>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 {/* Available slot chips if online slots exist */}
                 {club.slots && club.slots.filter((s: any) => s.available).length > 0 && (

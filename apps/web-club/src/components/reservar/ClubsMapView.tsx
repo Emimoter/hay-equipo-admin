@@ -7,7 +7,7 @@ export interface MapClub {
   address: string;
   city: string;
   sports: ('PADEL' | 'FUTBOL')[];
-  rating: number;
+  rating?: number;
   reviewCount?: number;
   latitude?: number;
   longitude?: number;
@@ -593,13 +593,9 @@ export const ClubsMapView: React.FC<ClubsMapViewProps> = ({
             {/* Club Meta & Info */}
             <div className="map-card-info">
               <div className="map-card-meta-row">
-                <div className="map-card-rating">
-                  <Icons.Star size={11} fill="#FACC15" color="#FACC15" />
-                  <span>{selectedClub.rating || 4.8}</span>
-                </div>
                 {userLocation && selectedClub.latitude && selectedClub.longitude && (
                   <span className="map-card-distance">
-                    • a {calculateDistanceKm(userLocation.lat, userLocation.lng, selectedClub.latitude, selectedClub.longitude).toFixed(1)} km
+                    a {calculateDistanceKm(userLocation.lat, userLocation.lng, selectedClub.latitude, selectedClub.longitude).toFixed(1)} km
                   </span>
                 )}
               </div>

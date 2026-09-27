@@ -356,8 +356,8 @@ export interface WebClub {
   city: string;
   zone: string;
   distanceKm: number;
-  rating: number;
-  reviewCount: number;
+  rating?: number;
+  reviewCount?: number;
   sports: ('PADEL' | 'FUTBOL')[];
   images: string[];
   minPricePerPlayer: number;
@@ -367,13 +367,13 @@ export interface WebClub {
   bookingMode?: 'ONLINE' | 'DIRECT_CONTACT';
   whatsappPhone?: string;
   phone?: string;
-  amenities: {
-    covered: boolean;
-    parking: boolean;
-    buffet: boolean;
-    lighting: boolean;
-    lockers: boolean;
-    syntheticWPT: boolean;
+  amenities?: {
+    covered?: boolean;
+    parking?: boolean;
+    buffet?: boolean;
+    lighting?: boolean;
+    lockers?: boolean;
+    syntheticWPT?: boolean;
   };
   courts: {
     id: string;
@@ -425,490 +425,7 @@ export function getClubSlotsForDate(club: WebClub, date: Date, sport?: 'PADEL' |
   });
 }
 
-const SAMPLE_AVATARS = [
-  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
-  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&q=80',
-  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=120&q=80',
-];
-
-export const CLUBS_DATA: WebClub[] = [
-  {
-    id: 'club-360-padel',
-    latitude: -37.9992,
-    longitude: -57.5988,
-    name: '360 Padel Club',
-    address: 'Solís 9565',
-    city: 'Mar del Plata',
-    zone: 'Mar del Plata',
-    distanceKm: 1.2,
-    rating: 4.9,
-    reviewCount: 142,
-    sports: ['PADEL'],
-    bookingMode: 'ONLINE',
-    whatsappPhone: '5492236800369',
-    phone: '(0223) 472-9295',
-    images: [
-      'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80',
-    ],
-    minPricePerPlayer: 6500,
-    amenities: {
-      covered: true,
-      parking: true,
-      buffet: true,
-      lighting: true,
-      lockers: true,
-      syntheticWPT: true,
-    },
-    courts: [
-      { id: '360-c1', name: 'Cancha 1 — Cristal Panorámica WPT', sport: 'PADEL', surface: 'Vidrio Panorámico 12mm · Césped Texturado', capacity: 4 },
-      { id: '360-c2', name: 'Cancha 2 — Cristal Pro Indoor', sport: 'PADEL', surface: 'Vidrio Templado 10mm · Iluminación LED Torneo', capacity: 4 },
-      { id: '360-c3', name: 'Cancha 3 — Techada Climatizada', sport: 'PADEL', surface: 'Césped Sintético Azul WPT', capacity: 4 },
-    ],
-    slots: [],
-  },
-  {
-    id: 'club-world-padel-center',
-    latitude: -38.0413,
-    longitude: -57.546,
-    name: 'World Pádel Center',
-    address: 'Acha 250 (esq. Brandsen)',
-    city: 'Mar del Plata',
-    zone: 'Mar del Plata',
-    distanceKm: 1.8,
-    rating: 4.9,
-    reviewCount: 168,
-    sports: ['PADEL'],
-    bookingMode: 'DIRECT_CONTACT',
-    whatsappPhone: '5492236800369',
-    phone: '(0223) 680-0369',
-    images: [
-      'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80',
-    ],
-    minPricePerPlayer: 7000,
-    amenities: {
-      covered: true,
-      parking: true,
-      buffet: true,
-      lighting: true,
-      lockers: true,
-      syntheticWPT: true,
-    },
-    courts: [
-      { id: 'wpc-c1', name: 'Pista Panorámica WPT Oficial', sport: 'PADEL', surface: 'Cristal Panorámico 12mm · Mondo Supercourt', capacity: 4 },
-      { id: 'wpc-c2', name: 'Pista Indoor Climatizada 2', sport: 'PADEL', surface: 'Cristal Templado · LED Pro', capacity: 4 },
-    ],
-    slots: [],
-  },
-  {
-    id: 'club-los-naranjos',
-    latitude: -37.9826,
-    longitude: -57.5507,
-    name: 'Los Naranjos Pádel',
-    address: 'Dorrego 333',
-    city: 'Mar del Plata',
-    zone: 'Mar del Plata',
-    distanceKm: 2.3,
-    rating: 4.8,
-    reviewCount: 195,
-    sports: ['PADEL'],
-    bookingMode: 'DIRECT_CONTACT',
-    whatsappPhone: '5492235470343',
-    phone: '(0223) 472-9295',
-    images: [
-      'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80',
-    ],
-    minPricePerPlayer: 6000,
-    amenities: {
-      covered: true,
-      parking: true,
-      buffet: true,
-      lighting: true,
-      lockers: true,
-      syntheticWPT: true,
-    },
-    courts: [
-      { id: 'ln-c1', name: 'Cancha Central Cristal', sport: 'PADEL', surface: 'Vidrio Panorámico 10mm', capacity: 4 },
-      { id: 'ln-c2', name: 'Cancha 2 Techada', sport: 'PADEL', surface: 'Césped Sintético Texturado', capacity: 4 },
-    ],
-    slots: [],
-  },
-  {
-    id: 'club-alfar-club',
-    latitude: -38.0065,
-    longitude: -57.5622,
-    name: 'Alfar Club Deportivo',
-    address: 'Alvarado 3280',
-    city: 'Mar del Plata',
-    zone: 'Mar del Plata',
-    distanceKm: 2.1,
-    rating: 4.8,
-    reviewCount: 98,
-    sports: ['FUTBOL'],
-    bookingMode: 'ONLINE',
-    whatsappPhone: '5492235589812',
-    phone: '(0223) 558-9812',
-    images: [
-      'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=1000&auto=format&fit=crop&q=80',
-    ],
-    minPricePerPlayer: 4000,
-    amenities: {
-      covered: true,
-      parking: true,
-      buffet: true,
-      lighting: true,
-      lockers: true,
-      syntheticWPT: true,
-    },
-    courts: [
-      { id: 'alf-f5', name: 'Cancha F5 — Sintético Forbex 50mm', sport: 'FUTBOL', surface: 'Césped con Caucho Criogénico', capacity: 10 },
-    ],
-    slots: [],
-  },
-  {
-    id: 'club-el-potrero',
-    latitude: -37.9985,
-    longitude: -57.552,
-    name: 'El Potrero Fútbol 5',
-    address: 'Salta 2248',
-    city: 'Mar del Plata',
-    zone: 'Mar del Plata',
-    distanceKm: 1.5,
-    rating: 4.9,
-    reviewCount: 220,
-    sports: ['FUTBOL'],
-    bookingMode: 'DIRECT_CONTACT',
-    whatsappPhone: '5492234554400',
-    phone: '(0223) 496-0303',
-    images: [
-      'https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80',
-    ],
-    minPricePerPlayer: 4500,
-    amenities: {
-      covered: true,
-      parking: true,
-      buffet: true,
-      lighting: true,
-      lockers: true,
-      syntheticWPT: true,
-    },
-    courts: [
-      { id: 'pot-f5', name: 'Cancha F5 Techada Sintético', sport: 'FUTBOL', surface: 'Forbex 50mm Techado', capacity: 10 },
-      { id: 'pot-p1', name: 'Cancha Pádel Cristal Pro', sport: 'PADEL', surface: 'Vidrio Templado 10mm', capacity: 4 },
-    ],
-    slots: [],
-  },
-  {
-    id: 'club-laverde-jara',
-    latitude: -38.004,
-    longitude: -57.575,
-    name: 'La Verde Jara Fútbol & Pádel',
-    address: 'Av. Jara 3450 (y Jara 470)',
-    city: 'Mar del Plata',
-    zone: 'Mar del Plata',
-    distanceKm: 2.8,
-    rating: 4.7,
-    reviewCount: 165,
-    sports: ['FUTBOL', 'PADEL'],
-    bookingMode: 'ONLINE',
-    whatsappPhone: '5492235340140',
-    phone: '(0223) 476-3811',
-    images: [
-      'https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1000&auto=format&fit=crop&q=80',
-    ],
-    minPricePerPlayer: 3800,
-    amenities: {
-      covered: false,
-      parking: true,
-      buffet: true,
-      lighting: true,
-      lockers: true,
-      syntheticWPT: true,
-    },
-    courts: [
-      { id: 'lv-f7', name: 'Cancha Principal — Fútbol 7 Pro', sport: 'FUTBOL', surface: 'Césped Sintético Homologado AFA', capacity: 14 },
-      { id: 'lv-f5', name: 'Cancha Techada — Fútbol 5', sport: 'FUTBOL', surface: 'Césped Sintético Bajo Techo', capacity: 10 },
-      { id: 'lv-p1', name: 'Cancha 1 — Pádel Cristal', sport: 'PADEL', surface: 'Cristal Panorámico WPT', capacity: 4 },
-    ],
-    slots: [],
-  },
-  {
-    id: 'club-complejo-la-meca',
-    latitude: -38.026,
-    longitude: -57.579,
-    name: 'Complejo La Meca',
-    address: 'Juan B. Justo 5279 / Uruguay 4064',
-    city: 'Mar del Plata',
-    zone: 'Mar del Plata',
-    distanceKm: 3.2,
-    rating: 4.8,
-    reviewCount: 130,
-    sports: ['PADEL', 'FUTBOL'],
-    bookingMode: 'DIRECT_CONTACT',
-    whatsappPhone: '5492236802020',
-    phone: '(0223) 476-2606',
-    images: [
-      'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=1000&auto=format&fit=crop&q=80',
-    ],
-    minPricePerPlayer: 4500,
-    amenities: {
-      covered: true,
-      parking: true,
-      buffet: true,
-      lighting: true,
-      lockers: true,
-      syntheticWPT: true,
-    },
-    courts: [
-      { id: 'mec-p1', name: 'Pádel Cristal Indoor', sport: 'PADEL', surface: 'Vidrio Panorámico 10mm', capacity: 4 },
-      { id: 'mec-f5', name: 'Cancha F5 Sintético Techada', sport: 'FUTBOL', surface: 'Sintético 45mm', capacity: 10 },
-    ],
-    slots: [],
-  },
-  {
-    id: 'club-las-lomas',
-    latitude: -38.0377,
-    longitude: -57.5497,
-    name: 'Complejo Deportivo Las Lomas',
-    address: 'Gaboto 3875',
-    city: 'Mar del Plata',
-    zone: 'Mar del Plata',
-    distanceKm: 3.8,
-    rating: 4.7,
-    reviewCount: 110,
-    sports: ['FUTBOL'],
-    bookingMode: 'DIRECT_CONTACT',
-    whatsappPhone: '5492233125002',
-    phone: '(0223) 489-3643',
-    images: [
-      'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80',
-    ],
-    minPricePerPlayer: 3800,
-    amenities: {
-      covered: true,
-      parking: true,
-      buffet: true,
-      lighting: true,
-      lockers: true,
-      syntheticWPT: true,
-    },
-    courts: [
-      { id: 'lom-f5', name: 'Cancha F5 Techada Sintético', sport: 'FUTBOL', surface: 'Césped Sintético con Caucho', capacity: 10 },
-      { id: 'lom-parq', name: 'Cancha Parquet Indoor', sport: 'FUTBOL', surface: 'Parquet Profesional', capacity: 10 },
-    ],
-    slots: [],
-  },
-  {
-    id: 'club-futbol-5-mb',
-    latitude: -37.991,
-    longitude: -57.57,
-    name: 'Fútbol 5 MB',
-    address: 'Av. Luro 5102 (esq. 1º de Mayo)',
-    city: 'Mar del Plata',
-    zone: 'Mar del Plata',
-    distanceKm: 2.0,
-    rating: 4.8,
-    reviewCount: 180,
-    sports: ['FUTBOL'],
-    bookingMode: 'DIRECT_CONTACT',
-    whatsappPhone: '5492234739964',
-    phone: '(0223) 473-9964',
-    images: [
-      'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=1000&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80',
-    ],
-    minPricePerPlayer: 4200,
-    amenities: {
-      covered: true,
-      parking: true,
-      buffet: true,
-      lighting: true,
-      lockers: true,
-      syntheticWPT: true,
-    },
-    courts: [
-      { id: 'mb-c1', name: 'Cancha Techada 1 F5', sport: 'FUTBOL', surface: 'Sintético Forbex Techado', capacity: 10 },
-      { id: 'mb-c2', name: 'Cancha Techada 2 F5', sport: 'FUTBOL', surface: 'Sintético Forbex Techado', capacity: 10 },
-    ],
-    slots: [],
-  },
-  {
-    id: 'club-punto-sur',
-    latitude: -38.0515,
-    longitude: -57.5461,
-    name: 'Complejo Punto Sur',
-    address: 'Av. de los Trabajadores 1079',
-    city: 'Mar del Plata',
-    zone: 'Mar del Plata',
-    distanceKm: 4.2,
-    rating: 4.9,
-    reviewCount: 240,
-    sports: ['FUTBOL'],
-    bookingMode: 'DIRECT_CONTACT',
-    whatsappPhone: '5492234808600',
-    phone: '(0223) 480-8600',
-    images: [
-      'https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1000&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80',
-    ],
-    minPricePerPlayer: 4500,
-    amenities: {
-      covered: true,
-      parking: true,
-      buffet: true,
-      lighting: true,
-      lockers: true,
-      syntheticWPT: true,
-    },
-    courts: [
-      { id: 'ps-f7', name: 'Cancha Fútbol 7 Césped Sintético', sport: 'FUTBOL', surface: 'Sintético Pro', capacity: 14 },
-    ],
-    slots: [],
-  },
-  {
-    id: 'club-san-carlos-padel',
-    latitude: -37.9888,
-    longitude: -57.5607,
-    name: 'San Carlos Pádel',
-    address: '9 de Julio 4179',
-    city: 'Mar del Plata',
-    zone: 'Mar del Plata',
-    distanceKm: 1.6,
-    rating: 4.7,
-    reviewCount: 92,
-    sports: ['PADEL'],
-    bookingMode: 'DIRECT_CONTACT',
-    whatsappPhone: '5492234744669',
-    phone: '(0223) 474-4669',
-    images: [
-      'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80',
-    ],
-    minPricePerPlayer: 5500,
-    amenities: {
-      covered: true,
-      parking: false,
-      buffet: true,
-      lighting: true,
-      lockers: true,
-      syntheticWPT: true,
-    },
-    courts: [
-      { id: 'sc-p1', name: 'Cancha 1 Cristal', sport: 'PADEL', surface: 'Cristal 10mm', capacity: 4 },
-      { id: 'sc-p2', name: 'Cancha 2 Techada', sport: 'PADEL', surface: 'Césped Texturado', capacity: 4 },
-    ],
-    slots: [],
-  },
-  {
-    id: 'club-parada-5',
-    latitude: -37.9693,
-    longitude: -57.5456,
-    name: 'Complejo Parada 5',
-    address: 'Av. Constitución 4205',
-    city: 'Mar del Plata',
-    zone: 'Mar del Plata',
-    distanceKm: 3.5,
-    rating: 4.8,
-    reviewCount: 145,
-    sports: ['FUTBOL'],
-    bookingMode: 'DIRECT_CONTACT',
-    whatsappPhone: '5492234792524',
-    phone: '(0223) 479-2524',
-    images: [
-      'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=1000&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80',
-    ],
-    minPricePerPlayer: 4000,
-    amenities: {
-      covered: true,
-      parking: true,
-      buffet: true,
-      lighting: true,
-      lockers: true,
-      syntheticWPT: true,
-    },
-    courts: [
-      { id: 'p5-c1', name: 'Cancha F5 Principal Sintético', sport: 'FUTBOL', surface: 'Forbex 50mm', capacity: 10 },
-      { id: 'p5-c2', name: 'Cancha F5 Techada', sport: 'FUTBOL', surface: 'Sintético Bajo Techo', capacity: 10 },
-    ],
-    slots: [],
-  },
-  {
-    id: 'club-arenas-sport',
-    latitude: -38.029,
-    longitude: -57.555,
-    name: 'Arenas Fútbol Club',
-    address: 'Av. Juan B. Justo 2200',
-    city: 'Mar del Plata',
-    zone: 'Mar del Plata',
-    distanceKm: 3.4,
-    rating: 4.8,
-    reviewCount: 115,
-    sports: ['FUTBOL'],
-    bookingMode: 'ONLINE',
-    whatsappPhone: '5492234801590',
-    phone: '(0223) 480-1590',
-    images: [
-      'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=1000&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1000&auto=format&fit=crop&q=80',
-    ],
-    minPricePerPlayer: 4200,
-    amenities: {
-      covered: true,
-      parking: true,
-      buffet: true,
-      lighting: true,
-      lockers: true,
-      syntheticWPT: true,
-    },
-    courts: [
-      { id: 'as-p1', name: 'Cancha 1 Climatizada', sport: 'PADEL', surface: 'Vidrio Panorámico 12mm', capacity: 4 },
-      { id: 'as-f8', name: 'Cancha Fútbol 8 Techada', sport: 'FUTBOL', surface: 'Sintético Forbex 50mm', capacity: 16 },
-    ],
-    slots: [],
-  },
-  {
-    id: 'club-matchpoint-palermo',
-    latitude: -34.5711,
-    longitude: -58.4233,
-    name: 'Match Point Club Palermo',
-    address: 'Av. del Libertador 4400',
-    city: 'Buenos Aires (CABA)',
-    zone: 'CABA',
-    distanceKm: 4.5,
-    rating: 4.9,
-    reviewCount: 210,
-    sports: ['PADEL'],
-    bookingMode: 'ONLINE',
-    whatsappPhone: '5491144005500',
-    phone: '(011) 4400-5500',
-    images: [
-      'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1000&auto=format&fit=crop&q=80',
-    ],
-    minPricePerPlayer: 7500,
-    amenities: {
-      covered: true,
-      parking: true,
-      buffet: true,
-      lighting: true,
-      lockers: true,
-      syntheticWPT: true,
-    },
-    courts: [
-      { id: 'mp-c1', name: 'Pista Central Premier Padel', sport: 'PADEL', surface: 'Panorámica 12mm Vidrio Templado', capacity: 4 },
-      { id: 'mp-c2', name: 'Pista 2 — Cristal Indoor', sport: 'PADEL', surface: 'Césped Texturado Mondo Supercourt', capacity: 4 },
-    ],
-    slots: [],
-  },
-];
+export const CLUBS_DATA: WebClub[] = [];
 
 function formatCurrency(val: number) {
   return new Intl.NumberFormat('es-AR', {
@@ -939,10 +456,10 @@ export default function ReservarPage() {
   const dateDropdownRef = useRef<HTMLDivElement | null>(null);
 
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [activeAmenityFilter, setActiveAmenityFilter] = useState<string>('ALL');
   const [activeSportTypeFilter, setActiveSportTypeFilter] = useState<'ALL' | 'PADEL_ONLY' | 'FUTBOL_ONLY' | 'BOTH'>('ALL');
   const [onlyFixedSlots, setOnlyFixedSlots] = useState<boolean>(false);
-  const [clubsList, setClubsList] = useState<WebClub[]>(CLUBS_DATA);
+  const [clubsList, setClubsList] = useState<WebClub[]>([]);
+  const [isLoadingClubs, setIsLoadingClubs] = useState<boolean>(true);
 
   // Load clubs & courts dynamically from Firestore database if available
   useEffect(() => {
@@ -1034,8 +551,8 @@ export default function ReservarPage() {
               city: fc.city || 'Mar del Plata',
               zone: fc.zone || fc.city || 'Mar del Plata',
               distanceKm: fc.distanceKm ?? 2.1,
-              rating: fc.rating ?? 4.8,
-              reviewCount: fc.reviewCount ?? 12,
+              rating: fc.rating,
+              reviewCount: fc.reviewCount,
               sports: sportsList,
               bookingMode: fc.bookingMode || 'ONLINE',
               whatsappPhone: fc.whatsappPhone || fc.phone || '',
@@ -1044,28 +561,18 @@ export default function ReservarPage() {
                 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80',
               ],
               minPricePerPlayer: effectiveMinPerPlayer,
-              amenities: fc.amenities || {
-                covered: true,
-                parking: true,
-                buffet: true,
-                lighting: true,
-                lockers: true,
-                syntheticWPT: true,
-              },
+              amenities: fc.amenities,
               courts: clubCourts,
               slots: clubSlots,
             };
           });
 
-          // Merge: if Firestore club matches an ID in CLUBS_DATA, replace it; otherwise prepend it
-          setClubsList((prev) => {
-            const firestoreIds = new Set(mapped.map((c) => c.id));
-            const remainingLocal = prev.filter((c) => !firestoreIds.has(c.id));
-            return [...mapped, ...remainingLocal];
-          });
+          setClubsList(mapped);
         }
       } catch (err) {
-        console.warn('Could not sync clubs from Firestore, falling back to local list:', err);
+        console.warn('Could not sync clubs from Firestore:', err);
+      } finally {
+        setIsLoadingClubs(false);
       }
     }
 
@@ -1234,10 +741,6 @@ export default function ReservarPage() {
         if (!matchName && !matchAddress && !matchCity && !matchSportKeyword) return false;
       }
 
-      if (activeAmenityFilter === 'COVERED' && !c.amenities.covered) return false;
-      if (activeAmenityFilter === 'PARKING' && !c.amenities.parking) return false;
-      if (activeAmenityFilter === 'BUFFET' && !c.amenities.buffet) return false;
-
       // 3. Filtro específico de Turnos Fijos Semanales
       if (onlyFixedSlots) {
         const hasFixed = c.slots?.some((s) => Boolean(s.isFixedSlot) && s.available);
@@ -1262,7 +765,7 @@ export default function ReservarPage() {
       const distB = typeof b.distanceKm === 'number' ? b.distanceKm : 999;
       return distA - distB;
     });
-  }, [clubsList, userLocation, activeSport, activeSportTypeFilter, searchQuery, activeAmenityFilter, onlyFixedSlots]);
+  }, [clubsList, userLocation, activeSport, activeSportTypeFilter, searchQuery, onlyFixedSlots]);
 
   // Instant Available Slots for Selected Date and Sport
   const instantSlots = useMemo(() => {
@@ -2311,7 +1814,17 @@ export default function ReservarPage() {
 
           {/* Listado de Tarjetas de Clubes */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-            {filteredClubs.map((club) => {
+            {isLoadingClubs ? (
+              <div style={{ padding: '60px 20px', textAlign: 'center', backgroundColor: '#070707', border: '1px solid var(--color-graphite)' }}>
+                <div style={{ color: 'var(--color-ash)', fontSize: 14 }}>Cargando complejos deportivos...</div>
+              </div>
+            ) : filteredClubs.length === 0 ? (
+              <div style={{ padding: '60px 20px', textAlign: 'center', backgroundColor: '#070707', border: '1px solid var(--color-graphite)' }}>
+                <div style={{ color: 'var(--color-frost)', fontSize: 16, fontWeight: 700, marginBottom: 8 }}>No se encontraron complejos</div>
+                <div style={{ color: 'var(--color-ash)', fontSize: 13 }}>Probá modificando los filtros de búsqueda o la fecha seleccionada.</div>
+              </div>
+            ) : (
+              filteredClubs.map((club) => {
               const availableSlots = getClubSlotsForDate(club, selectedDate, activeSport).filter((s) => s.available);
               return (
                 <div
@@ -2336,27 +1849,7 @@ export default function ReservarPage() {
                     onCardClick={() => {
                       router.push(`/clubes/${club.id}`);
                     }}
-                    topRightBadge={
-                      <div
-                        style={{
-                          padding: '4px 10px',
-                          backgroundColor: 'rgba(0, 0, 0, 0.75)',
-                          backdropFilter: 'blur(8px)',
-                          border: '1px solid rgba(255, 255, 255, 0.2)',
-                          borderRadius: 'var(--radius-full)',
-                          fontSize: 11,
-                          fontWeight: 700,
-                          color: 'var(--color-frost)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 4,
-                        }}
-                      >
-                        <Icons.Star size={11} />
-                        <span>{club.rating}</span>
-                        <span style={{ color: 'var(--color-ash)', fontSize: 10 }}>({club.reviewCount})</span>
-                      </div>
-                    }
+
                     bottomLeftBadge={
                       <div
                         style={{
@@ -2430,29 +1923,7 @@ export default function ReservarPage() {
                         </div>
                       </div>
 
-                      {/* Amenities Badges (Pills) */}
-                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: availableSlots.length > 0 ? 14 : 0 }}>
-                        {club.amenities.covered && (
-                          <div style={{ padding: '4px 10px', backgroundColor: '#141414', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 'var(--radius-full)', fontSize: 11, color: 'var(--color-ash)' }}>
-                            Techada / Indoor
-                          </div>
-                        )}
-                        {club.amenities.parking && (
-                          <div style={{ padding: '4px 10px', backgroundColor: '#141414', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 'var(--radius-full)', fontSize: 11, color: 'var(--color-ash)' }}>
-                            Parking Custodiado
-                          </div>
-                        )}
-                        {club.amenities.buffet && (
-                          <div style={{ padding: '4px 10px', backgroundColor: '#141414', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 'var(--radius-full)', fontSize: 11, color: 'var(--color-ash)' }}>
-                            Buffet & Bar
-                          </div>
-                        )}
-                        {club.amenities.lighting && (
-                          <div style={{ padding: '4px 10px', backgroundColor: '#141414', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 'var(--radius-full)', fontSize: 11, color: 'var(--color-ash)' }}>
-                            Iluminación LED Pro
-                          </div>
-                        )}
-                      </div>
+
 
                       {/* Turnos disponibles directo en la tarjeta si existen slots online */}
                       {availableSlots.length > 0 && (
@@ -2635,7 +2106,7 @@ export default function ReservarPage() {
                   </div>
                 </div>
               );
-            })}
+            }))}
           </div>
         </div>
       </section>

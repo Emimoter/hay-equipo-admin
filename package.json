@@ -10,7 +10,7 @@
   "scripts": {
     "build": "next build apps/web-club",
     "build:packages": "npm run build --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present",
+    "dev": "next dev apps/web-club -p 3000",
     "dev:web-club": "next dev apps/web-club -p 3000",
     "start:web-club": "next start apps/web-club -p 3000",
     "deploy": "vercel --prod"

@@ -9,6 +9,7 @@ import {
   saveCourtsFirestore,
   uploadImageFirebase,
 } from '../services/firebase';
+import { MDP_REAL_CLUBS, MDP_REAL_COURTS } from '@hay-equipo/db';
 import { SportBadge } from '../components/SportBadge';
 
 /* ────────────────────────────────────────────────────────────
@@ -61,12 +62,15 @@ export interface AdminClub {
   closingTime: string;
   latitude?: number;
   longitude?: number;
-  rating: number;
-  reviewCount: number;
+  rating?: number;
+  reviewCount?: number;
   amenities: AdminClubAmenities;
   images: string[];
   sports?: string[];
   sportCategory?: 'PADEL' | 'FUTBOL' | 'BOTH';
+  adminEmail?: string;
+  adminEmails?: string[];
+  ownerUid?: string;
 }
 
 /* ────────────────────────────────────────────────────────────
@@ -185,18 +189,66 @@ const Icons = {
       <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
     </svg>
   ),
+  Mail: ({ size = 13, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="4" width="20" height="16" rx="0" />
+      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+    </svg>
+  ),
+  Key: ({ size = 13, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m21 2-2 2m-1.5 1.5L16 7l-2 2m-2-2 2-2m-4 4 1 1-1.5 1.5-1.5-1.5M7.5 16.5A5 5 0 1 1 14 10l-6.5 6.5H5v2.5H2.5V21h5v-4.5z" />
+    </svg>
+  ),
+  AlertCircle: ({ size = 13, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <line x1="12" y1="8" x2="12" y2="12" />
+      <line x1="12" y1="16" x2="12.01" y2="16" />
+    </svg>
+  ),
+  Image: ({ size = 13, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="0" />
+      <circle cx="8.5" cy="8.5" r="1.5" />
+      <polyline points="21 15 16 10 5 21" />
+    </svg>
+  ),
+  Star: ({ size = 12, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+    </svg>
+  ),
+  Grid: ({ size = 13, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="7" height="7" rx="0" />
+      <rect x="14" y="3" width="7" height="7" rx="0" />
+      <rect x="14" y="14" width="7" height="7" rx="0" />
+      <rect x="3" y="14" width="7" height="7" rx="0" />
+    </svg>
+  ),
+  List: ({ size = 13, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="8" y1="6" x2="21" y2="6" />
+      <line x1="8" y1="12" x2="21" y2="12" />
+      <line x1="8" y1="18" x2="21" y2="18" />
+      <line x1="3" y1="6" x2="3.01" y2="6" />
+      <line x1="3" y1="12" x2="3.01" y2="12" />
+      <line x1="3" y1="18" x2="3.01" y2="18" />
+    </svg>
+  ),
 };
 
 const DEFAULT_AMENITIES: AdminClubAmenities = {
-  parking: true,
-  buffet: true,
-  equipmentRental: true,
-  wifi: true,
-  showers: true,
-  lockerRooms: true,
+  parking: false,
+  buffet: false,
+  equipmentRental: false,
+  wifi: false,
+  showers: false,
+  lockerRooms: false,
   grill: false,
-  lighting: true,
-  covered: true,
+  lighting: false,
+  covered: false,
   syntheticWPT: false,
 };
 
@@ -215,14 +267,18 @@ export default function AdminPage() {
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  // Search & Sport Filter
+  // Search & Filters
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [sportFilter, setSportFilter] = useState<'ALL' | 'PADEL' | 'FUTBOL' | 'BOTH'>('ALL');
+  const [adminFilter, setAdminFilter] = useState<'ALL' | 'ASSIGNED' | 'UNASSIGNED'>('ALL');
+  const [viewMode, setViewMode] = useState<'GRID' | 'LIST'>('GRID');
 
   // Modal state for Club Editing/Creation
   const [isClubModalOpen, setIsClubModalOpen] = useState<boolean>(false);
   const [editingClub, setEditingClub] = useState<AdminClub | null>(null);
   const [isNewClub, setIsNewClub] = useState<boolean>(false);
+  const [imageUrlInput, setImageUrlInput] = useState<string>('');
+  const [newAdminEmailInput, setNewAdminEmailInput] = useState<string>('');
 
   // Modal for Court Management
   const [isCourtsModalOpen, setIsCourtsModalOpen] = useState<boolean>(false);
@@ -264,7 +320,7 @@ export default function AdminPage() {
     }
   }, []);
 
-  // Fetch data from Firestore
+  // Fetch data from Firestore merged with all MDP clubs catalog
   const fetchData = async () => {
     setIsLoading(true);
     try {
@@ -273,34 +329,69 @@ export default function AdminPage() {
         getCourtsFirestore(),
       ]);
 
-      const normalizedClubs: AdminClub[] = (fetchedClubs || []).map((c: any) => ({
-        id: c.id || `club-${Date.now()}`,
-        slug: c.slug || c.id || '',
-        name: c.name || 'Sin Nombre',
-        address: c.address || '',
-        city: c.city || 'Mar del Plata',
-        province: c.province || 'Buenos Aires',
-        phone: c.phone || '',
-        whatsapp: c.whatsapp || c.whatsappPhone || '',
-        minPrice: c.minPrice || 25000,
-        active: c.active ?? true,
-        description: c.description || 'Complejo deportivo en Mar del Plata.',
-        openingTime: c.openingTime || '08:00',
-        closingTime: c.closingTime || '23:30',
-        latitude: c.latitude || -37.979858,
-        longitude: c.longitude || -57.589794,
-        rating: c.rating || 4.8,
-        reviewCount: c.reviewCount || 100,
-        amenities: {
-          ...DEFAULT_AMENITIES,
-          ...(c.amenities || {}),
-        },
-        images: Array.isArray(c.images) && c.images.length > 0 ? c.images : [
-          'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80',
-        ],
-      }));
+      const firestoreClubsList: any[] = Array.isArray(fetchedClubs) ? fetchedClubs : [];
+      const firestoreCourtsList: any[] = Array.isArray(fetchedCourts) ? fetchedCourts : [];
 
-      const normalizedCourts: AdminCourt[] = (fetchedCourts || []).map((c: any) => ({
+      // Merge: Keep Firestore clubs (with user's custom edits & adminEmail),
+      // and append any club from MDP_REAL_CLUBS not yet in Firestore.
+      const existingClubIds = new Set(firestoreClubsList.map((c: any) => c.id || c.slug));
+
+      const mergedRawClubs: any[] = [
+        ...firestoreClubsList,
+        ...MDP_REAL_CLUBS.filter((mdpClub: any) => !existingClubIds.has(mdpClub.id) && !existingClubIds.has(mdpClub.slug))
+      ];
+
+      const normalizedClubs: AdminClub[] = mergedRawClubs.map((c: any) => {
+        const primaryAdminEmail = c.adminEmail || (Array.isArray(c.adminEmails) && c.adminEmails.length > 0 ? c.adminEmails[0] : '');
+        const adminEmailsList: string[] = Array.isArray(c.adminEmails)
+          ? c.adminEmails.map((e: any) => String(e).trim().toLowerCase()).filter(Boolean)
+          : primaryAdminEmail ? [primaryAdminEmail.trim().toLowerCase()] : [];
+
+        if (primaryAdminEmail && !adminEmailsList.includes(primaryAdminEmail.trim().toLowerCase())) {
+          adminEmailsList.unshift(primaryAdminEmail.trim().toLowerCase());
+        }
+
+        return {
+          id: c.id || `club-${Date.now()}`,
+          slug: c.slug || c.id || '',
+          name: c.name || 'Sin Nombre',
+          address: c.address || '',
+          city: c.city || 'Mar del Plata',
+          province: c.province || 'Buenos Aires',
+          phone: c.phone || '',
+          whatsapp: c.whatsapp || c.whatsappPhone || '',
+          minPrice: c.minPrice || 25000,
+          active: c.active ?? true,
+          description: c.description || 'Complejo deportivo en Mar del Plata.',
+          openingTime: c.openingTime || '08:00',
+          closingTime: c.closingTime || '23:30',
+          latitude: c.latitude || -37.979858,
+          longitude: c.longitude || -57.589794,
+          rating: c.rating,
+          reviewCount: c.reviewCount,
+          amenities: {
+            ...DEFAULT_AMENITIES,
+            ...(c.amenities || {}),
+          },
+          images: Array.isArray(c.images) && c.images.length > 0 ? c.images : [
+            'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80',
+          ],
+          sports: Array.isArray(c.sports) ? c.sports : undefined,
+          sportCategory: c.sportCategory,
+          adminEmail: primaryAdminEmail ? primaryAdminEmail.trim().toLowerCase() : '',
+          adminEmails: adminEmailsList,
+          ownerUid: c.ownerUid || '',
+        };
+      });
+
+      // Merge courts
+      const existingCourtIds = new Set(firestoreCourtsList.map((ct: any) => ct.id));
+      const mergedRawCourts: any[] = [
+        ...firestoreCourtsList,
+        ...MDP_REAL_COURTS.filter((mdpCourt: any) => !existingCourtIds.has(mdpCourt.id))
+      ];
+
+      const normalizedCourts: AdminCourt[] = mergedRawCourts.map((c: any) => ({
         id: c.id || `court-${Date.now()}-${Math.random()}`,
         clubId: c.clubId || '',
         name: c.name || 'Cancha',
@@ -389,6 +480,9 @@ export default function AdminPage() {
       return hasP && hasF;
     }).length;
 
+    const clubsWithAdmin = clubs.filter(c => Boolean(c.adminEmail || (c.adminEmails && c.adminEmails.length > 0))).length;
+    const clubsWithoutAdmin = totalClubs - clubsWithAdmin;
+
     return {
       totalClubs,
       totalCourts,
@@ -400,17 +494,23 @@ export default function AdminPage() {
       padelOnlyClubs,
       futbolOnlyClubs,
       bothClubs,
+      clubsWithAdmin,
+      clubsWithoutAdmin,
     };
   }, [clubs, courts]);
 
-  // Filtered clubs list (Search + Sport only, no modalities)
+  // Filtered clubs list (Search + Sport + Admin status)
   const filteredClubs = useMemo(() => {
     return clubs.filter(club => {
       const matchesQuery =
         !searchQuery ||
         club.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         club.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        club.city.toLowerCase().includes(searchQuery.toLowerCase());
+        club.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (club.phone && club.phone.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (club.whatsapp && club.whatsapp.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (club.adminEmail && club.adminEmail.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (club.adminEmails && club.adminEmails.some(e => e.toLowerCase().includes(searchQuery.toLowerCase())));
 
       const clubCourts = courts.filter(c => c.clubId === club.id);
       const hasPadel = clubCourts.some(c => c.sportType === 'PADEL') || Boolean(club.sports?.includes('PADEL'));
@@ -421,9 +521,14 @@ export default function AdminPage() {
       if (sportFilter === 'FUTBOL') matchesSport = hasFutbol;
       if (sportFilter === 'BOTH') matchesSport = hasPadel && hasFutbol;
 
-      return matchesQuery && matchesSport;
+      const hasAdmin = Boolean(club.adminEmail || (club.adminEmails && club.adminEmails.length > 0));
+      let matchesAdmin = true;
+      if (adminFilter === 'ASSIGNED') matchesAdmin = hasAdmin;
+      if (adminFilter === 'UNASSIGNED') matchesAdmin = !hasAdmin;
+
+      return matchesQuery && matchesSport && matchesAdmin;
     });
-  }, [clubs, courts, searchQuery, sportFilter]);
+  }, [clubs, courts, searchQuery, sportFilter, adminFilter]);
 
   // Save changes to Firestore
   const handleSaveAllToFirestore = async (updatedClubsList = clubs, updatedCourtsList = courts) => {
@@ -435,7 +540,7 @@ export default function AdminPage() {
       ]);
 
       if (clubsOk && courtsOk) {
-        showNotification('success', 'Base de datos Firestore sincronizada con éxito.');
+        showNotification('success', `${updatedClubsList.length} clubes sincronizados en Firestore con éxito.`);
       } else {
         showNotification('error', 'Ocurrió un inconveniente al guardar en Firestore.');
       }
@@ -449,7 +554,15 @@ export default function AdminPage() {
 
   // Open Edit Modal for a Club
   const handleOpenEditClub = (club: AdminClub) => {
-    setEditingClub({ ...club, amenities: { ...club.amenities } });
+    setEditingClub({
+      ...club,
+      amenities: { ...club.amenities },
+      images: Array.isArray(club.images) ? [...club.images] : [],
+      adminEmail: club.adminEmail || (club.adminEmails && club.adminEmails[0]) || '',
+      adminEmails: Array.isArray(club.adminEmails) ? [...club.adminEmails] : (club.adminEmail ? [club.adminEmail] : []),
+    });
+    setImageUrlInput('');
+    setNewAdminEmailInput('');
     setIsNewClub(false);
     setIsClubModalOpen(true);
   };
@@ -473,14 +586,89 @@ export default function AdminPage() {
       closingTime: '23:30',
       latitude: -37.979858,
       longitude: -57.589794,
-      rating: 4.8,
-      reviewCount: 20,
       amenities: { ...DEFAULT_AMENITIES },
       images: ['https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1000&auto=format&fit=crop&q=80'],
+      adminEmail: '',
+      adminEmails: [],
     };
     setEditingClub(emptyClub);
+    setImageUrlInput('');
+    setNewAdminEmailInput('');
     setIsNewClub(true);
     setIsClubModalOpen(true);
+  };
+
+  // Photo handlers for editingClub
+  const handleAddImageUrl = () => {
+    if (!editingClub || !imageUrlInput.trim()) return;
+    const cleanUrl = imageUrlInput.trim();
+    if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://') && !cleanUrl.startsWith('/')) {
+      showNotification('error', 'Ingresá una URL válida (ej: https://... o /logos/...)');
+      return;
+    }
+    setEditingClub({
+      ...editingClub,
+      images: [...editingClub.images, cleanUrl],
+    });
+    setImageUrlInput('');
+    showNotification('success', 'Foto agregada a la lista.');
+  };
+
+  const handleMakeCoverImage = (index: number) => {
+    if (!editingClub || index === 0) return;
+    const target = editingClub.images[index];
+    const rest = editingClub.images.filter((_, idx) => idx !== index);
+    setEditingClub({
+      ...editingClub,
+      images: [target, ...rest],
+    });
+    showNotification('success', 'Foto establecida como portada.');
+  };
+
+  const handleRemoveImage = (index: number) => {
+    if (!editingClub) return;
+    if (editingClub.images.length <= 1) {
+      showNotification('error', 'El club debe tener al menos una foto.');
+      return;
+    }
+    const filtered = editingClub.images.filter((_, idx) => idx !== index);
+    setEditingClub({
+      ...editingClub,
+      images: filtered,
+    });
+  };
+
+  // Staff admin email handlers
+  const handleAddSecondaryAdminEmail = () => {
+    if (!editingClub || !newAdminEmailInput.trim()) return;
+    const email = newAdminEmailInput.trim().toLowerCase();
+    if (!email.includes('@') || !email.includes('.')) {
+      showNotification('error', 'Ingresá un formato de email válido.');
+      return;
+    }
+    const current = editingClub.adminEmails || [];
+    if (current.includes(email)) {
+      showNotification('error', 'Este correo ya está agregado.');
+      return;
+    }
+    const nextList = [...current, email];
+    setEditingClub({
+      ...editingClub,
+      adminEmail: editingClub.adminEmail || email,
+      adminEmails: nextList,
+    });
+    setNewAdminEmailInput('');
+  };
+
+  const handleRemoveSecondaryAdminEmail = (emailToRemove: string) => {
+    if (!editingClub) return;
+    const nextList = (editingClub.adminEmails || []).filter(e => e !== emailToRemove);
+    const nextPrimary = editingClub.adminEmail === emailToRemove ? (nextList[0] || '') : editingClub.adminEmail;
+    setEditingClub({
+      ...editingClub,
+      adminEmail: nextPrimary,
+      adminEmails: nextList,
+    });
   };
 
   // Save Club in state and sync Firestore
@@ -494,6 +682,14 @@ export default function AdminPage() {
     }
 
     const cleanSlug = editingClub.slug.trim() || editingClub.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const cleanAdminEmail = editingClub.adminEmail ? editingClub.adminEmail.trim().toLowerCase() : '';
+    let updatedAdminEmails = Array.isArray(editingClub.adminEmails)
+      ? editingClub.adminEmails.map(m => m.trim().toLowerCase()).filter(Boolean)
+      : [];
+    if (cleanAdminEmail && !updatedAdminEmails.includes(cleanAdminEmail)) {
+      updatedAdminEmails = [cleanAdminEmail, ...updatedAdminEmails];
+    }
+
     const readyClub: AdminClub = {
       ...editingClub,
       slug: cleanSlug,
@@ -501,6 +697,9 @@ export default function AdminPage() {
       address: editingClub.address.trim(),
       phone: editingClub.phone.trim(),
       whatsapp: editingClub.whatsapp.trim(),
+      adminEmail: cleanAdminEmail,
+      adminEmails: updatedAdminEmails,
+      images: editingClub.images.filter(img => Boolean(img && img.trim())),
     };
 
     let updatedClubs: AdminClub[];
@@ -515,6 +714,7 @@ export default function AdminPage() {
     setEditingClub(null);
 
     await handleSaveAllToFirestore(updatedClubs, courts);
+    showNotification('success', `Club "${readyClub.name}" guardado exitosamente.`);
   };
 
   // Delete Club
@@ -659,7 +859,31 @@ export default function AdminPage() {
           <title>Hay Equipo — Acceso Administrativo</title>
         </Head>
 
-        <div className="login-screen">
+        {/* Unified Top Header — ThoughtLab Swiss Minimal */}
+        <header className="landing-header">
+          <div className="header-left-col">
+            <Link href="/" className="header-brand-wrap">
+              <span className="brand-title">HAY EQUIPO?</span>
+              <div className="brand-tag-wrap">
+                <span className="live-dot-pulse" />
+                <span className="brand-sub">CONTROL CENTRAL</span>
+                <span className="brand-version-pill">DB V2</span>
+              </div>
+            </Link>
+          </div>
+
+          <div className="header-nav-actions">
+            <Link href="/reservar" target="_blank" className="header-nav-link">
+              <Icons.ExternalLink size={13} color="#94a3b8" />
+              <span>Ver Web</span>
+            </Link>
+            <Link href="/" className="header-nav-link">
+              <span>← Volver al Inicio</span>
+            </Link>
+          </div>
+        </header>
+
+        <div className="login-screen-wrap">
           <div className="login-box">
             <div className="login-badge">
               <Icons.Lock size={13} color="#fc1c46" />
@@ -684,7 +908,7 @@ export default function AdminPage() {
 
               {authError && <div className="error-badge">{authError}</div>}
 
-              <button type="submit" className="btn-pill-cta" style={{ width: '100%', marginTop: '16px' }}>
+              <button type="submit" className="header-cta-pill" style={{ width: '100%', marginTop: '16px', justifyContent: 'center', height: '42px' }}>
                 INGRESAR AL PANEL
               </button>
             </form>
@@ -701,10 +925,118 @@ export default function AdminPage() {
             background-color: #000000;
             color: #ffffff;
             display: flex;
+            flex-direction: column;
+            font-family: var(--font-sui, 'Space Grotesk', sans-serif);
+          }
+          :global(a), :global(a:visited), :global(a:active), :global(a:hover) {
+            text-decoration: none !important;
+            color: inherit !important;
+          }
+          :global(.landing-header) {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            height: 64px;
+            padding: 0 32px;
+            background: rgba(6, 6, 6, 0.88);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+          }
+          :global(.header-left-col) {
+            display: flex;
+            align-items: center;
+          }
+          :global(.header-brand-wrap) {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            text-decoration: none !important;
+            color: #ffffff !important;
+          }
+          :global(.brand-title) {
+            font-size: 20px;
+            font-weight: 800;
+            color: #ffffff !important;
+            letter-spacing: -0.6px;
+            font-family: var(--font-sui, 'Space Grotesk', sans-serif);
+            line-height: 1;
+          }
+          :global(.brand-tag-wrap) {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 3px 9px 3px 7px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 9999px;
+          }
+          :global(.live-dot-pulse) {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #10b981;
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.8);
+            display: inline-block;
+            animation: pulseGreen 2.2s infinite ease-in-out;
+          }
+          @keyframes pulseGreen {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.45; transform: scale(0.85); }
+          }
+          :global(.brand-sub) {
+            font-size: 10px;
+            font-weight: 700;
+            color: #94a3b8 !important;
+            letter-spacing: 1.1px;
+            text-transform: uppercase;
+          }
+          :global(.brand-version-pill) {
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: 0.6px;
+            color: #e2e8f0 !important;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 1px 6px;
+            border-radius: 9999px;
+          }
+          :global(.header-nav-actions) {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+          }
+          :global(.header-nav-link) {
+            background-color: rgba(255, 255, 255, 0.04);
+            color: #e2e8f0 !important;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 9999px;
+            padding: 7px 15px;
+            font-size: 12px;
+            font-weight: 600;
+            text-decoration: none !important;
+            letter-spacing: 0.2px;
+            transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            cursor: pointer;
+          }
+          :global(.header-nav-link:hover) {
+            background-color: rgba(255, 255, 255, 0.09);
+            border-color: rgba(255, 255, 255, 0.28);
+            color: #ffffff !important;
+            transform: translateY(-1px);
+          }
+          .login-screen-wrap {
+            flex: 1;
+            display: flex;
             align-items: center;
             justify-content: center;
-            padding: 24px;
-            font-family: var(--font-sui, 'Space Grotesk', sans-serif);
+            padding: 32px 24px;
           }
           .login-screen {
             width: 100%;
@@ -824,110 +1156,111 @@ export default function AdminPage() {
       )}
 
       {/* ═══════════════════════════════════════════════════════════
-          HEADER POLISHED & CLEAN (No visited purple colors)
+          HEADER — ThoughtLab Swiss Minimal (Consistent with Web)
           ═══════════════════════════════════════════════════════════ */}
-      <header className="admin-header">
-        <div className="header-container">
-          <div className="header-left">
-            <Link href="/" className="brand-link">
-              <span className="brand-dot" />
-              <span className="brand-title">HAY EQUIPO</span>
-              <span className="brand-badge">ADMIN</span>
-            </Link>
-
-            <div className="header-sep" />
-
-            <div className="status-indicator">
-              <span className="pulse-dot" />
-              <span className="status-text">Base de datos activa</span>
-              <span className="status-sub">· Mar del Plata</span>
+      <header className="landing-header">
+        <div className="header-left-col">
+          <Link href="/" className="header-brand-wrap">
+            <span className="brand-title">HAY EQUIPO?</span>
+            <div className="brand-tag-wrap">
+              <span className="live-dot-pulse" />
+              <span className="brand-sub">CONTROL CENTRAL</span>
+              <span className="brand-version-pill">DB LIVE</span>
             </div>
+          </Link>
+        </div>
+
+        {/* Center Live Database Indicator */}
+        <div className="header-center-col">
+          <div className="header-live-badge">
+            <Icons.Building size={13} color="#94a3b8" />
+            <span className="badge-text">Sincronizados:</span>
+            <span className="badge-highlight">{clubs.length} Clubes</span>
           </div>
+        </div>
 
-          <div className="header-right">
-            <Link href="/reservar" target="_blank" className="btn-header-ghost">
-              <Icons.ExternalLink size={13} color="#ffffff" />
-              <span>Ver Web</span>
-            </Link>
+        {/* Right Actions */}
+        <div className="header-nav-actions">
+          <Link href="/reservar" target="_blank" className="header-nav-link" title="Abrir marketplace de reservas">
+            <Icons.ExternalLink size={13} color="#94a3b8" />
+            <span>Ver Web</span>
+          </Link>
 
-            <button
-              onClick={() => handleSaveAllToFirestore()}
-              disabled={isSaving}
-              className="btn-header-dark"
-            >
-              <Icons.Database size={13} color="#10b981" />
-              <span>{isSaving ? 'Guardando...' : 'Sincronizar DB'}</span>
-            </button>
+          <Link href="/club" target="_blank" className="header-nav-link" title="Abrir panel operativo de clubes">
+            <Icons.Grid size={13} color="#94a3b8" />
+            <span>Terminal Clubes</span>
+          </Link>
 
-            <button
-              onClick={handleOpenNewClub}
-              className="btn-header-primary"
-            >
-              <Icons.Plus size={14} color="#ffffff" />
-              <span>Nuevo Club</span>
-            </button>
+          <button
+            type="button"
+            onClick={handleOpenNewClub}
+            className="header-btn-primary"
+            title="Crear un nuevo club en Firestore"
+          >
+            <Icons.Plus size={14} color="#ffffff" />
+            <span>Nuevo Club</span>
+          </button>
 
-            <button
-              onClick={handleLogout}
-              title="Cerrar sesión"
-              className="btn-header-icon"
-            >
-              <Icons.Close size={13} color="#94a3b8" />
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={handleLogout}
+            title="Cerrar sesión de administrador"
+            className="header-btn-exit"
+          >
+            <Icons.Close size={13} color="#94a3b8" />
+            <span>Salir</span>
+          </button>
         </div>
       </header>
 
       {/* Main Container */}
       <main className="admin-body">
-        {/* Metric Cards Bento Grid */}
+        {/* Metric Cards Bento Grid — 3 Clean Balanced Cards */}
         <div className="metrics-grid">
           <div className="metric-card">
-            <div className="metric-label">TOTAL CLUBES</div>
+            <div className="metric-label">COMPLEJOS EN MDP</div>
             <div className="metric-val">{stats.totalClubs}</div>
             <div className="metric-detail">
               <span className="metric-sub-item crimson">{stats.padelOnlyClubs} Pádel</span>
               <span className="metric-divider">·</span>
               <span className="metric-sub-item emerald">{stats.futbolOnlyClubs} Fútbol</span>
               <span className="metric-divider">·</span>
-              <span className="metric-sub-item" style={{ color: '#f59e0b' }}>{stats.bothClubs} Ambos</span>
+              <span className="metric-sub-item" style={{ color: '#f59e0b' }}>{stats.bothClubs} Mixtos</span>
             </div>
           </div>
 
           <div className="metric-card">
-            <div className="metric-label">TOTAL CANCHAS</div>
+            <div className="metric-label">CANCHAS REGISTRADAS</div>
             <div className="metric-val">{stats.totalCourts}</div>
             <div className="metric-detail">
               <span className="metric-sub-item crimson">{stats.padelCourts} Pádel</span>
               <span className="metric-divider">·</span>
               <span className="metric-sub-item emerald">{stats.totalFutbolCourts} Fútbol</span>
+              <span className="metric-divider">·</span>
+              <span className="metric-sub-item" style={{ color: '#888888' }}>{stats.futbol5Courts} F5 / {stats.futbol7Courts} F7 / {stats.futbol11Courts} F11</span>
             </div>
           </div>
 
-          <div className="metric-card">
-            <div className="metric-label">CANCHAS DE PÁDEL</div>
-            <div className="metric-val text-crimson">{stats.padelCourts}</div>
-            <div className="metric-detail">
-              <span>Capacidad: 4 jugadores p/ cancha</span>
+          <div className="metric-card highlight-admin">
+            <div className="metric-label">ADMINISTRADORES (/club)</div>
+            <div className="metric-val text-emerald">
+              {stats.clubsWithAdmin} <span style={{ fontSize: '18px', color: '#94a3b8', fontWeight: 500 }}>/ {stats.totalClubs}</span>
             </div>
-          </div>
-
-          <div className="metric-card">
-            <div className="metric-label">CANCHAS DE FÚTBOL</div>
-            <div className="metric-val text-emerald">{stats.totalFutbolCourts}</div>
             <div className="metric-detail">
-              <span>{stats.futbol5Courts} F5 (10p) · {stats.futbol7Courts} F7 (14p) · {stats.futbol11Courts} F11 (22p)</span>
+              <span className="metric-sub-item emerald">{stats.clubsWithAdmin} Vinculados</span>
+              <span className="metric-divider">·</span>
+              <span className="metric-sub-item" style={{ color: '#f59e0b' }}>{stats.clubsWithoutAdmin} Sin asignar</span>
             </div>
           </div>
         </div>
 
-        {/* Action & Filter Bar (No modalities) */}
+        {/* Action & Filter Bar */}
         <div className="action-bar">
           <div className="search-wrapper">
             <Icons.Search size={15} color="#94a3b8" />
             <input
               type="text"
-              placeholder="Buscar por nombre de club, dirección o barrio..."
+              placeholder="Buscar por complejo, dirección, teléfono o email de admin..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               className="search-input"
@@ -939,207 +1272,419 @@ export default function AdminPage() {
             )}
           </div>
 
-          {/* Filter Pills: Sport only */}
+          {/* Filter Pills: Sport and Admin Status */}
           <div className="filter-chips">
             <button
               onClick={() => setSportFilter('ALL')}
               className={`filter-chip ${sportFilter === 'ALL' ? 'active' : ''}`}
             >
-              TODOS ({stats.totalClubs} CLUBES)
+              TODOS ({stats.totalClubs})
             </button>
             <button
               onClick={() => setSportFilter('PADEL')}
               className={`filter-chip ${sportFilter === 'PADEL' ? 'active' : ''}`}
             >
-              PÁDEL ({stats.padelCourts} CANCHAS)
+              PÁDEL ({stats.padelCourts})
             </button>
             <button
               onClick={() => setSportFilter('FUTBOL')}
               className={`filter-chip ${sportFilter === 'FUTBOL' ? 'active' : ''}`}
             >
-              FÚTBOL ({stats.totalFutbolCourts} CANCHAS)
+              FÚTBOL ({stats.totalFutbolCourts})
             </button>
             <button
               onClick={() => setSportFilter('BOTH')}
               className={`filter-chip ${sportFilter === 'BOTH' ? 'active' : ''}`}
             >
-              AMBOS ({stats.bothClubs} CLUBES MIXTOS)
+              MIXTOS ({stats.bothClubs})
+            </button>
+
+            <span className="filter-chip-sep" />
+
+            <button
+              onClick={() => setAdminFilter('ALL')}
+              className={`filter-chip sub-chip ${adminFilter === 'ALL' ? 'active-sub' : ''}`}
+            >
+              TODOS LOS ACCESOS
+            </button>
+            <button
+              onClick={() => setAdminFilter('ASSIGNED')}
+              className={`filter-chip sub-chip ${adminFilter === 'ASSIGNED' ? 'active-emerald' : ''}`}
+            >
+              CON ADMIN ({stats.clubsWithAdmin})
+            </button>
+            <button
+              onClick={() => setAdminFilter('UNASSIGNED')}
+              className={`filter-chip sub-chip ${adminFilter === 'UNASSIGNED' ? 'active-amber' : ''}`}
+            >
+              SIN ADMIN ({stats.clubsWithoutAdmin})
             </button>
           </div>
         </div>
 
-        {/* Clubs Table View (No modalidad column) */}
-        <div className="table-container">
+        {/* Clubs Container: Grilla Minimalista / Lista */}
+        <div className="catalog-container">
           <div className="table-header-meta">
-            <span className="results-count">
-              MOSTRANDO {filteredClubs.length} DE {clubs.length} CLUBES EN MAR DEL PLATA
-            </span>
-            <button onClick={fetchData} className="btn-refresh" title="Recargar desde Firebase">
-              <Icons.Refresh size={13} />
-              <span>RECARGAR</span>
-            </button>
+            <div className="meta-left-group">
+              <span className="results-count">
+                MOSTRANDO {filteredClubs.length} DE {clubs.length} CLUBES EN MAR DEL PLATA
+              </span>
+
+              {/* View Mode Toggle: GRILLA vs LISTA */}
+              <div className="view-toggle-capsule">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('GRID')}
+                  className={`btn-view-toggle ${viewMode === 'GRID' ? 'active' : ''}`}
+                  title="Vista en Grilla de Bloques"
+                >
+                  <Icons.Grid size={12} />
+                  <span>GRILLA</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('LIST')}
+                  className={`btn-view-toggle ${viewMode === 'LIST' ? 'active' : ''}`}
+                  title="Vista en Lista"
+                >
+                  <Icons.List size={12} />
+                  <span>LISTA</span>
+                </button>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+              <button
+                onClick={() => handleSaveAllToFirestore()}
+                disabled={isSaving}
+                className="btn-sync-all"
+                title="Sincronizar todo el catálogo a Firestore"
+              >
+                <Icons.Database size={13} color="#10b981" />
+                <span>{isSaving ? 'GUARDANDO...' : 'GUARDAR EN FIRESTORE'}</span>
+              </button>
+              <button onClick={fetchData} className="btn-refresh" title="Recargar desde Firestore">
+                <Icons.Refresh size={13} />
+                <span>RECARGAR</span>
+              </button>
+            </div>
           </div>
 
           {isLoading ? (
             <div className="loading-state">
               <div className="spinner" />
-              <span>Cargando datos desde Firestore...</span>
+              <span>Cargando complejos desde base de datos...</span>
             </div>
           ) : filteredClubs.length === 0 ? (
             <div className="empty-state">
               <p>No se encontraron clubes con los filtros seleccionados.</p>
-              <button onClick={() => { setSearchQuery(''); setSportFilter('ALL'); }} className="btn-pill-reset" style={{ marginTop: '14px' }}>
+              <button
+                onClick={() => { setSearchQuery(''); setSportFilter('ALL'); setAdminFilter('ALL'); }}
+                className="btn-pill-reset"
+                style={{ marginTop: '14px' }}
+              >
                 REINICIAR BÚSQUEDA
               </button>
             </div>
-          ) : (
-            <table className="clubs-table">
-              <thead>
-                <tr>
-                  <th>CLUB / COMPLEJO</th>
-                  <th>DISCIPLINA</th>
-                  <th>DIRECCIÓN Y CIUDAD</th>
-                  <th>CANCHAS ACTIVAS</th>
-                  <th>CONTACTO</th>
-                  <th>ACCIONES</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredClubs.map(club => {
-                  const clubCourts = courts.filter(c => c.clubId === club.id);
-                  const padelCount = clubCourts.filter(c => c.sportType === 'PADEL').length;
-                  const f5Count = clubCourts.filter(c => c.sportType === 'FUTBOL_5').length;
-                  const f7Count = clubCourts.filter(c => c.sportType === 'FUTBOL_7').length;
-                  const f11Count = clubCourts.filter(c => c.sportType === 'FUTBOL_11').length;
-                  const cleanWhatsApp = club.whatsapp.replace(/[^0-9]/g, '');
+          ) : viewMode === 'GRID' ? (
+            /* ═══════════════════════════════════════════════════════════
+               GRILLA DE BLOQUES MINIMALISTAS (Cohesiva con Hay Equipo)
+               ═══════════════════════════════════════════════════════════ */
+            <div className="clubs-grid-layout">
+              {filteredClubs.map(club => {
+                const clubCourts = courts.filter(c => c.clubId === club.id);
+                const padelCount = clubCourts.filter(c => c.sportType === 'PADEL').length;
+                const f5Count = clubCourts.filter(c => c.sportType === 'FUTBOL_5').length;
+                const f7Count = clubCourts.filter(c => c.sportType === 'FUTBOL_7').length;
+                const f11Count = clubCourts.filter(c => c.sportType === 'FUTBOL_11').length;
+                const cleanWhatsApp = club.whatsapp.replace(/[^0-9]/g, '');
 
-                  // Detectar disciplina del club
-                  const derivedSports = club.sports && club.sports.length > 0 
-                    ? club.sports 
-                    : [
-                        ...(padelCount > 0 ? ['PADEL'] : []),
-                        ...(f5Count > 0 || f7Count > 0 || f11Count > 0 ? ['FUTBOL'] : [])
-                      ];
+                const derivedSports = club.sports && club.sports.length > 0 
+                  ? club.sports 
+                  : [
+                      ...(padelCount > 0 ? ['PADEL'] : []),
+                      ...(f5Count > 0 || f7Count > 0 || f11Count > 0 ? ['FUTBOL'] : [])
+                    ];
 
-                  return (
-                    <tr key={club.id} className={!club.active ? 'row-inactive' : ''}>
-                      {/* Name & Photo */}
-                      <td>
-                        <div className="club-cell">
-                          <div
-                            className="club-thumb"
-                            style={{
-                              backgroundImage: `url(${club.images[0] || 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=300'})`,
-                            }}
-                          />
-                          <div>
-                            <div className="club-cell-name">{club.name}</div>
-                            <div className="club-cell-slug">ID: {club.id}</div>
-                          </div>
-                        </div>
-                      </td>
+                const primaryEmail = club.adminEmail || (club.adminEmails && club.adminEmails[0]) || '';
+                const totalAdminsCount = club.adminEmails ? club.adminEmails.length : (club.adminEmail ? 1 : 0);
+                const coverImage = (club.images && club.images[0]) || 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop&q=80';
 
-                      {/* Disciplina Badge */}
-                      <td>
+                return (
+                  <div key={club.id} className={`club-block-card ${!club.active ? 'is-inactive' : ''}`}>
+                    {/* Visual Banner */}
+                    <div className="club-block-banner">
+                      <div
+                        className="club-block-cover-img"
+                        style={{ backgroundImage: `url(${coverImage})` }}
+                      />
+                      <div className="club-block-overlay" />
+
+                      {/* Top Badges */}
+                      <div className="club-block-top-row">
                         <SportBadge sports={derivedSports} size="sm" />
-                      </td>
 
+                        {primaryEmail ? (
+                          <span className="pill-admin-status ok" title={`Admin vinculado: ${primaryEmail}`}>
+                            <Icons.Key size={10} color="#10b981" />
+                            <span>ADMIN VINCULADO</span>
+                          </span>
+                        ) : (
+                          <span className="pill-admin-status pending" title="Sin email de administrador">
+                            <Icons.AlertCircle size={10} color="#94a3b8" />
+                            <span>SIN ADMIN</span>
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Name & Slug */}
+                      <div className="club-block-header-text">
+                        <h3 className="club-block-title" title={club.name}>{club.name}</h3>
+                        <div className="club-block-slug">ID: {club.id}</div>
+                      </div>
+                    </div>
+
+                    {/* Card Content Body */}
+                    <div className="club-block-body">
                       {/* Address */}
-                      <td>
-                        <div className="address-cell">
-                          <div className="address-main">{club.address || 'Sin dirección'}</div>
-                          <div className="address-city">{club.city || 'Mar del Plata'}</div>
-                        </div>
-                      </td>
+                      <div className="block-data-row">
+                        <Icons.MapPin size={13} color="#94a3b8" />
+                        <span className="block-data-text">
+                          {club.address || 'Sin dirección física'} · {club.city || 'Mar del Plata'}
+                        </span>
+                      </div>
 
                       {/* Courts Breakdown */}
-                      <td>
-                        <div className="courts-breakdown-cell">
-                          <div className="total-badge">
-                            {clubCourts.length} {clubCourts.length === 1 ? 'CANCHA' : 'CANCHAS'}
-                          </div>
-                          <div className="courts-chips">
-                            {padelCount > 0 && (
-                              <span className="court-chip padel">{padelCount} Pádel (4p)</span>
-                            )}
-                            {f5Count > 0 && (
-                              <span className="court-chip futbol">{f5Count} F5 (10p)</span>
-                            )}
-                            {f7Count > 0 && (
-                              <span className="court-chip futbol">{f7Count} F7 (14p)</span>
-                            )}
-                            {f11Count > 0 && (
-                              <span className="court-chip futbol">{f11Count} F11 (22p)</span>
-                            )}
-                            {clubCourts.length === 0 && (
-                              <span className="court-chip zero">Sin canchas asignadas</span>
-                            )}
-                          </div>
+                      <div className="block-courts-box">
+                        <span className="courts-box-label">
+                          {clubCourts.length} {clubCourts.length === 1 ? 'CANCHA' : 'CANCHAS'}
+                        </span>
+                        <div className="courts-box-chips">
+                          {padelCount > 0 && <span className="court-mini-chip padel">{padelCount} Pádel</span>}
+                          {f5Count > 0 && <span className="court-mini-chip futbol">{f5Count} F5</span>}
+                          {f7Count > 0 && <span className="court-mini-chip futbol">{f7Count} F7</span>}
+                          {f11Count > 0 && <span className="court-mini-chip futbol">{f11Count} F11</span>}
+                          {clubCourts.length === 0 && <span className="court-mini-chip zero">0 canchas</span>}
                         </div>
-                      </td>
+                      </div>
 
-                      {/* Contact Info */}
-                      <td>
-                        <div className="contact-cell">
-                          {cleanWhatsApp && (
-                            <a
-                              href={`https://wa.me/${cleanWhatsApp}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="contact-link whatsapp"
-                              title="Abrir WhatsApp"
-                            >
-                              <Icons.WhatsApp size={13} color="#10b981" />
-                              <span>{club.whatsapp}</span>
-                            </a>
-                          )}
-                          {club.phone && (
-                            <div className="contact-link phone">
-                              <Icons.Phone size={12} color="#94a3b8" />
-                              <span>{club.phone}</span>
-                            </div>
-                          )}
-                          {!cleanWhatsApp && !club.phone && (
-                            <span className="text-muted">Sin teléfono</span>
+                      {/* Admin Access Status & Email */}
+                      <div className="block-admin-row">
+                        <div className="block-admin-info">
+                          <Icons.Mail size={12} color={primaryEmail ? '#10b981' : '#64748b'} />
+                          <span className={`block-admin-email ${primaryEmail ? 'has-email' : 'no-email'}`}>
+                            {primaryEmail || 'Sin email de acceso asignado'}
+                          </span>
+                          {totalAdminsCount > 1 && (
+                            <span className="admin-extra-badge">+{totalAdminsCount - 1}</span>
                           )}
                         </div>
-                      </td>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditClub(club)}
+                          className="btn-block-assign"
+                        >
+                          {primaryEmail ? 'Editar' : '+ Asignar'}
+                        </button>
+                      </div>
 
-                      {/* Actions */}
-                      <td>
-                        <div className="action-buttons">
-                          <button
-                            onClick={() => handleOpenCourtsModal(club)}
-                            className="btn-pill-action"
-                            title="Gestionar canchas de este club"
+                      {/* Phone & WhatsApp */}
+                      <div className="block-contact-row">
+                        {cleanWhatsApp && (
+                          <a
+                            href={`https://wa.me/${cleanWhatsApp}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="block-contact-link whatsapp"
+                            title="Chatear por WhatsApp"
                           >
-                            <Icons.Pitch size={13} />
-                            <span>CANCHAS ({clubCourts.length})</span>
-                          </button>
+                            <Icons.WhatsApp size={12} color="#10b981" />
+                            <span>{club.whatsapp}</span>
+                          </a>
+                        )}
+                        {club.phone && (
+                          <a
+                            href={`tel:${club.phone.replace(/[^0-9+]/g, '')}`}
+                            className="block-contact-link phone"
+                            title="Llamar"
+                          >
+                            <Icons.Phone size={12} color="#94a3b8" />
+                            <span>{club.phone}</span>
+                          </a>
+                        )}
+                        {!cleanWhatsApp && !club.phone && (
+                          <span className="block-contact-empty">Sin teléfono de contacto</span>
+                        )}
+                      </div>
+                    </div>
 
-                          <button
-                            onClick={() => handleOpenEditClub(club)}
-                            className="btn-pill-action secondary"
-                            title="Editar datos del club"
-                          >
-                            <Icons.Edit size={13} />
-                            <span>EDITAR</span>
-                          </button>
+                    {/* Card Actions Footer */}
+                    <div className="club-block-footer">
+                      <div className="block-footer-left">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditClub(club)}
+                          className="btn-card-action"
+                          title="Editar información del club"
+                        >
+                          <Icons.Edit size={12} />
+                          <span>EDITAR</span>
+                        </button>
 
-                          <button
-                            onClick={() => handleDeleteClub(club.id, club.name)}
-                            className="btn-pill-action danger"
-                            title="Eliminar club"
-                          >
-                            <Icons.Trash size={13} />
-                          </button>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenCourtsModal(club)}
+                          className="btn-card-action"
+                          title="Gestionar canchas"
+                        >
+                          <Icons.Pitch size={12} />
+                          <span>CANCHAS ({clubCourts.length})</span>
+                        </button>
+                      </div>
+
+                      <div className="block-footer-right">
+                        <Link
+                          href={`/club?vincular=${club.id}`}
+                          target="_blank"
+                          className="btn-card-action highlight"
+                          title="Ver terminal privada en /club"
+                        >
+                          <Icons.ExternalLink size={11} />
+                          <span>/club</span>
+                        </Link>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteClub(club.id, club.name)}
+                          className="btn-card-action danger"
+                          title="Eliminar club"
+                        >
+                          <Icons.Trash size={12} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            /* ═══════════════════════════════════════════════════════════
+               LISTA MINIMALISTA DE CLUBES (Rediseñada y ordenada)
+               ═══════════════════════════════════════════════════════════ */
+            <div className="clubs-clean-list">
+              {filteredClubs.map(club => {
+                const clubCourts = courts.filter(c => c.clubId === club.id);
+                const padelCount = clubCourts.filter(c => c.sportType === 'PADEL').length;
+                const f5Count = clubCourts.filter(c => c.sportType === 'FUTBOL_5').length;
+                const f7Count = clubCourts.filter(c => c.sportType === 'FUTBOL_7').length;
+                const f11Count = clubCourts.filter(c => c.sportType === 'FUTBOL_11').length;
+                const cleanWhatsApp = club.whatsapp.replace(/[^0-9]/g, '');
+
+                const derivedSports = club.sports && club.sports.length > 0 
+                  ? club.sports 
+                  : [
+                      ...(padelCount > 0 ? ['PADEL'] : []),
+                      ...(f5Count > 0 || f7Count > 0 || f11Count > 0 ? ['FUTBOL'] : [])
+                    ];
+
+                const primaryEmail = club.adminEmail || (club.adminEmails && club.adminEmails[0]) || '';
+                const totalAdminsCount = club.adminEmails ? club.adminEmails.length : (club.adminEmail ? 1 : 0);
+                const coverImage = (club.images && club.images[0]) || 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=300';
+
+                return (
+                  <div key={club.id} className="clean-list-item">
+                    {/* Club Info */}
+                    <div className="clean-list-col-main">
+                      <div
+                        className="clean-list-thumb"
+                        style={{ backgroundImage: `url(${coverImage})` }}
+                      />
+                      <div>
+                        <div className="clean-list-name-row">
+                          <span className="clean-list-name">{club.name}</span>
+                          <SportBadge sports={derivedSports} size="sm" />
                         </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                        <div className="clean-list-slug">ID: {club.id}</div>
+                      </div>
+                    </div>
+
+                    {/* Address */}
+                    <div className="clean-list-col-address">
+                      <Icons.MapPin size={12} color="#94a3b8" />
+                      <span>{club.address || 'Sin dirección'} · {club.city || 'Mar del Plata'}</span>
+                    </div>
+
+                    {/* Courts */}
+                    <div className="clean-list-col-courts">
+                      <span className="courts-count-text">
+                        {clubCourts.length} {clubCourts.length === 1 ? 'CANCHA' : 'CANCHAS'}
+                      </span>
+                      <div className="courts-box-chips">
+                        {padelCount > 0 && <span className="court-mini-chip padel">{padelCount} P</span>}
+                        {f5Count > 0 && <span className="court-mini-chip futbol">{f5Count} F5</span>}
+                        {f7Count > 0 && <span className="court-mini-chip futbol">{f7Count} F7</span>}
+                        {f11Count > 0 && <span className="court-mini-chip futbol">{f11Count} F11</span>}
+                      </div>
+                    </div>
+
+                    {/* Admin */}
+                    <div className="clean-list-col-admin">
+                      {primaryEmail ? (
+                        <span className="pill-admin-status ok" title={primaryEmail}>
+                          <Icons.Key size={10} color="#10b981" />
+                          <span className="truncate">{primaryEmail}</span>
+                          {totalAdminsCount > 1 && <span className="admin-extra-badge">+{totalAdminsCount - 1}</span>}
+                        </span>
+                      ) : (
+                        <span className="pill-admin-status pending" onClick={() => handleOpenEditClub(club)} style={{ cursor: 'pointer' }}>
+                          <Icons.AlertCircle size={10} color="#94a3b8" />
+                          <span>Sin admin (+ Asignar)</span>
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="clean-list-col-actions">
+                      <button
+                        onClick={() => handleOpenEditClub(club)}
+                        className="btn-card-action"
+                        title="Editar datos del club"
+                      >
+                        <Icons.Edit size={12} />
+                        <span>EDITAR</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleOpenCourtsModal(club)}
+                        className="btn-card-action"
+                        title="Gestionar canchas"
+                      >
+                        <Icons.Pitch size={12} />
+                        <span>CANCHAS</span>
+                      </button>
+
+                      <Link
+                        href={`/club?vincular=${club.id}`}
+                        target="_blank"
+                        className="btn-card-action highlight"
+                        title="Abrir en /club"
+                      >
+                        <Icons.ExternalLink size={11} />
+                        <span>/club</span>
+                      </Link>
+
+                      <button
+                        onClick={() => handleDeleteClub(club.id, club.name)}
+                        className="btn-card-action danger"
+                        title="Eliminar club"
+                      >
+                        <Icons.Trash size={12} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
       </main>
@@ -1168,9 +1713,10 @@ export default function AdminPage() {
             </div>
 
             <form onSubmit={handleSaveClubModal} className="modal-form-body">
+              {/* Bloque 1: Identificación y Nombre */}
               <div className="form-grid-2">
                 <div>
-                  <label className="form-label">NOMBRE DEL CLUB *</label>
+                  <label className="form-label">NOMBRE DEL CLUB / COMPLEJO *</label>
                   <input
                     type="text"
                     required
@@ -1193,17 +1739,21 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className="form-grid-2">
-                <div>
-                  <label className="form-label">DIRECCIÓN *</label>
-                  <input
-                    type="text"
-                    required
-                    value={editingClub.address}
-                    onChange={e => setEditingClub({ ...editingClub, address: e.target.value })}
-                    placeholder="Ej: Dorrego 333"
-                    className="input-sharp"
-                  />
+              {/* Bloque 2: Ubicación Física y Dirección */}
+              <div className="form-grid-3">
+                <div style={{ gridColumn: 'span 2' }}>
+                  <label className="form-label">DIRECCIÓN FÍSICA *</label>
+                  <div className="input-with-icon">
+                    <Icons.MapPin size={14} color="#fc1c46" />
+                    <input
+                      type="text"
+                      required
+                      value={editingClub.address}
+                      onChange={e => setEditingClub({ ...editingClub, address: e.target.value })}
+                      placeholder="Ej: Dorrego 333"
+                      className="input-sharp input-padded"
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -1218,6 +1768,132 @@ export default function AdminPage() {
                 </div>
               </div>
 
+              {/* Bloque 3: Teléfonos y Contacto */}
+              <div className="form-grid-2">
+                <div>
+                  <label className="form-label">TELÉFONO FIJO / DE LÍNEA</label>
+                  <div className="input-with-icon">
+                    <Icons.Phone size={14} color="#94a3b8" />
+                    <input
+                      type="text"
+                      value={editingClub.phone}
+                      onChange={e => setEditingClub({ ...editingClub, phone: e.target.value })}
+                      placeholder="Ej: (0223) 472-9295"
+                      className="input-sharp input-padded"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="form-label">WHATSAPP DE CONTACTO (Móvil)</label>
+                  <div className="input-with-icon">
+                    <Icons.WhatsApp size={14} color="#10b981" />
+                    <input
+                      type="text"
+                      value={editingClub.whatsapp}
+                      onChange={e => setEditingClub({ ...editingClub, whatsapp: e.target.value })}
+                      placeholder="Ej: +54 9 223 547-0343"
+                      className="input-sharp input-padded"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Bloque 4: ACCESO DE ADMINISTRADOR DEL CLUB (DESTACADO) */}
+              <div className="admin-access-card">
+                <div className="admin-card-header">
+                  <div className="admin-card-title">
+                    <Icons.Key size={15} color="#fc1c46" />
+                    <span>ADMINISTRADOR DE CLUB (/club)</span>
+                  </div>
+                  <span className="admin-card-pill">SEGURIDAD Y PERMISOS</span>
+                </div>
+
+                <p className="admin-card-desc">
+                  Asigná el correo electrónico (Gmail o email registrado) del encargado o dueño del club. Con este correo, al ingresar a la pestaña <strong>/club</strong>, se le otorgará acceso inmediato al panel de gestión de sus canchas y reservas.
+                </p>
+
+                <div className="admin-fields-row">
+                  <div style={{ flex: 1 }}>
+                    <label className="form-label">CORREO PRINCIPAL DEL ADMINISTRADOR</label>
+                    <div className="input-with-icon">
+                      <Icons.Mail size={14} color="#10b981" />
+                      <input
+                        type="email"
+                        value={editingClub.adminEmail || ''}
+                        onChange={e => setEditingClub({ ...editingClub, adminEmail: e.target.value })}
+                        placeholder="ejemplo@gmail.com o admin@club.com"
+                        className="input-sharp input-padded"
+                      />
+                    </div>
+                  </div>
+
+                  {!isNewClub && (
+                    <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+                      <Link
+                        href={`/club?vincular=${editingClub.id}`}
+                        target="_blank"
+                        className="btn-test-club-panel"
+                        title="Abrir y verificar acceso al panel privado del club"
+                      >
+                        <Icons.ExternalLink size={12} />
+                        <span>PROBAR PANEL (/club)</span>
+                      </Link>
+                    </div>
+                  )}
+                </div>
+
+                {/* Administradores adicionales */}
+                <div className="additional-admins-box">
+                  <label className="form-label" style={{ marginBottom: 6 }}>
+                    CORREOS AUTORIZADOS ADICIONALES (RECEPCIONISTAS / SOCIOS)
+                  </label>
+                  
+                  {editingClub.adminEmails && editingClub.adminEmails.length > 0 && (
+                    <div className="admin-chips-list">
+                      {editingClub.adminEmails.map((email, idx) => (
+                        <div key={idx} className="admin-email-tag">
+                          <span>{email}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveSecondaryAdminEmail(email)}
+                            className="btn-del-email-tag"
+                            title="Quitar este acceso"
+                          >
+                            <Icons.Close size={10} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="add-email-row">
+                    <input
+                      type="email"
+                      value={newAdminEmailInput}
+                      onChange={e => setNewAdminEmailInput(e.target.value)}
+                      placeholder="Agregar otro correo de personal (ej: socio@club.com)..."
+                      className="input-sharp"
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddSecondaryAdminEmail();
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddSecondaryAdminEmail}
+                      className="btn-add-email-pill"
+                    >
+                      <Icons.Plus size={12} />
+                      <span>AGREGAR</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bloque 5: Disciplina del Complejo */}
               <div>
                 <label className="form-label">DISCIPLINA DEL COMPLEJO</label>
                 <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
@@ -1242,10 +1918,10 @@ export default function AdminPage() {
                         onClick={() => setEditingClub({ ...editingClub, sports: disc.sports, sportCategory: disc.id as any })}
                         style={{
                           flex: 1,
-                          padding: '8px 12px',
+                          padding: '10px 14px',
                           backgroundColor: isSelected ? 'rgba(252, 28, 70, 0.15)' : '#000000',
                           color: isSelected ? 'var(--color-crimson-signal)' : 'var(--color-ash)',
-                          border: `1px solid ${isSelected ? 'var(--color-crimson-signal)' : 'rgba(255, 255, 255, 0.2)'}`,
+                          border: `1px solid ${isSelected ? 'var(--color-crimson-signal)' : 'rgba(255, 255, 255, 0.18)'}`,
                           borderRadius: 'var(--radius-full, 9999px)',
                           fontSize: 11,
                           fontWeight: 700,
@@ -1260,30 +1936,7 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className="form-grid-2">
-                <div>
-                  <label className="form-label">TELÉFONO DE LÍNEA / FIJO</label>
-                  <input
-                    type="text"
-                    value={editingClub.phone}
-                    onChange={e => setEditingClub({ ...editingClub, phone: e.target.value })}
-                    placeholder="(0223) 472-9295"
-                    className="input-sharp"
-                  />
-                </div>
-
-                <div>
-                  <label className="form-label">WHATSAPP DE CONTACTO</label>
-                  <input
-                    type="text"
-                    value={editingClub.whatsapp}
-                    onChange={e => setEditingClub({ ...editingClub, whatsapp: e.target.value })}
-                    placeholder="Ej: +54 9 223 547-0343"
-                    className="input-sharp"
-                  />
-                </div>
-              </div>
-
+              {/* Bloque 6: Precios y Horarios */}
               <div className="form-grid-2">
                 <div>
                   <label className="form-label">PRECIO BASE DE REFERENCIA (ARS)</label>
@@ -1320,7 +1973,7 @@ export default function AdminPage() {
               <div>
                 <label className="form-label">DESCRIPCIÓN DEL COMPLEJO</label>
                 <textarea
-                  rows={3}
+                  rows={2}
                   value={editingClub.description}
                   onChange={e => setEditingClub({ ...editingClub, description: e.target.value })}
                   placeholder="Detalles sobre las instalaciones, vestuarios, ambiente..."
@@ -1328,10 +1981,18 @@ export default function AdminPage() {
                 />
               </div>
 
-              {/* Club Images & Firebase Storage */}
-              <div>
+              {/* Bloque 7: GESTIÓN DE FOTOS DEL CLUB */}
+              <div className="photos-management-card">
                 <div className="images-label-row">
-                  <label className="form-label" style={{ marginBottom: 0 }}>FOTOS DEL CLUB (FIREBASE STORAGE)</label>
+                  <div>
+                    <label className="form-label" style={{ marginBottom: 2 }}>
+                      FOTOS DEL CLUB ({editingClub.images.length})
+                    </label>
+                    <span className="images-sublabel">
+                      La primera foto es la portada principal en la app y web. Podés subir archivos a Firebase Storage o pegar URLs directas.
+                    </span>
+                  </div>
+
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
@@ -1350,40 +2011,77 @@ export default function AdminPage() {
                   />
                 </div>
 
-                <div className="images-preview-row">
+                {/* Input para agregar foto por URL */}
+                <div className="add-image-url-row">
+                  <div style={{ flex: 1, position: 'relative' }}>
+                    <Icons.Image size={13} color="#94a3b8" />
+                    <input
+                      type="text"
+                      value={imageUrlInput}
+                      onChange={e => setImageUrlInput(e.target.value)}
+                      placeholder="O pegar URL directa de imagen (ej: https://...)"
+                      className="input-sharp input-url"
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddImageUrl();
+                        }
+                      }}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddImageUrl}
+                    className="btn-add-url-pill"
+                  >
+                    <Icons.Plus size={12} />
+                    <span>AGREGAR FOTO</span>
+                  </button>
+                </div>
+
+                {/* Galería de fotos con Portada y Eliminar */}
+                <div className="images-gallery-grid">
                   {editingClub.images.map((imgUrl, i) => (
-                    <div key={i} className="image-preview-card" style={{ position: 'relative' }}>
-                      <img 
-                        src={imgUrl} 
-                        alt={i === 0 ? 'Isotipo' : `Foto ${i + 1}`}
-                        style={{ objectFit: i === 0 ? 'contain' : 'cover', backgroundColor: '#0c0c0c' }}
-                        onError={(e) => {
-                          if (i === 0) {
-                            e.currentTarget.style.display = 'none';
-                          } else {
-                            e.currentTarget.src = 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=300';
-                          }
-                        }} 
+                    <div key={i} className={`image-card-item ${i === 0 ? 'is-cover' : ''}`}>
+                      <div
+                        className="image-card-thumb"
+                        style={{
+                          backgroundImage: `url(${imgUrl})`,
+                        }}
                       />
-                      <div style={{ position: 'absolute', bottom: 2, left: 4, fontSize: 8, fontWeight: 700, color: i === 0 ? '#fc1c46' : '#ffffff', textTransform: 'uppercase', background: 'rgba(0,0,0,0.7)', padding: '1px 4px', borderRadius: 4 }}>
-                        {i === 0 ? 'Isotipo' : `Foto ${i + 1}`}
-                      </div>
-                      {editingClub.images.length > 1 && (
+
+                      <div className="image-card-overlay">
+                        {i === 0 ? (
+                          <div className="cover-badge">
+                            <Icons.Star size={10} color="#fc1c46" />
+                            <span>PORTADA</span>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleMakeCoverImage(i)}
+                            className="btn-make-cover"
+                            title="Hacer foto de portada"
+                          >
+                            Hacer Portada
+                          </button>
+                        )}
+
                         <button
                           type="button"
-                          onClick={() => {
-                            const filtered = editingClub.images.filter((_, idx) => idx !== i);
-                            setEditingClub({ ...editingClub, images: filtered });
-                          }}
-                          className="btn-remove-img"
+                          onClick={() => handleRemoveImage(i)}
+                          className="btn-delete-image"
+                          title="Eliminar foto"
                         >
-                          <Icons.Close size={11} />
+                          <Icons.Trash size={12} color="#ffffff" />
                         </button>
-                      )}
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
+
+              {/* Bloque 8: Comodidades y Servicios */}
 
               {/* Amenities Toggles */}
               <div>
@@ -1637,6 +2335,28 @@ export default function AdminPage() {
                         style={{ display: 'none' }}
                       />
                     </div>
+                    {newCourtForm.images && newCourtForm.images.length > 0 && (
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
+                        {newCourtForm.images.map((imgUrl, i) => (
+                          <div key={i} className="image-preview-card">
+                            <img src={imgUrl} alt="Cancha" />
+                            <button
+                              type="button"
+                              className="btn-remove-img"
+                              onClick={() =>
+                                setNewCourtForm(prev => ({
+                                  ...prev,
+                                  images: prev.images.filter((_, idx) => idx !== i),
+                                }))
+                              }
+                              title="Eliminar foto"
+                            >
+                              <Icons.Trash size={10} color="#ffffff" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <button
@@ -1657,9 +2377,213 @@ export default function AdminPage() {
 
       {/* Global & Scoped Styles */}
       <style jsx global>{`
-        /* Eradicate any browser default purple visited link color */
+        /* Eradicate any browser default purple/blue link colors and outlines */
         a, a:visited, a:active, a:hover {
           text-decoration: none !important;
+          color: inherit !important;
+        }
+
+        /* ── Header Matching Landing & Rest of Web — ThoughtLab Swiss Minimal ── */
+        .landing-header {
+          position: sticky;
+          top: 0;
+          z-index: 1000;
+          height: 64px;
+          padding: 0 32px;
+          background: rgba(6, 6, 6, 0.88);
+          backdrop-filter: blur(24px) saturate(180%);
+          -webkit-backdrop-filter: blur(24px) saturate(180%);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 20px;
+        }
+
+        .header-left-col {
+          display: flex;
+          align-items: center;
+        }
+
+        .header-brand-wrap {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          text-decoration: none !important;
+          color: #ffffff !important;
+        }
+
+        .brand-title {
+          font-size: 20px;
+          font-weight: 800;
+          color: #ffffff !important;
+          letter-spacing: -0.6px;
+          font-family: var(--font-sui, 'Space Grotesk', sans-serif);
+          line-height: 1;
+        }
+
+        .brand-tag-wrap {
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+          padding: 3px 9px 3px 7px;
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 9999px;
+        }
+
+        .live-dot-pulse {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: #10b981;
+          box-shadow: 0 0 8px rgba(16, 185, 129, 0.8);
+          display: inline-block;
+          animation: pulseGreen 2.2s infinite ease-in-out;
+        }
+
+        @keyframes pulseGreen {
+          0%, 100% {
+            opacity: 1;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 0.45;
+            transform: scale(0.85);
+          }
+        }
+
+        .brand-sub {
+          font-size: 10px;
+          font-weight: 700;
+          color: #94a3b8 !important;
+          letter-spacing: 1.1px;
+          text-transform: uppercase;
+        }
+
+        .brand-version-pill {
+          font-size: 9px;
+          font-weight: 800;
+          letter-spacing: 0.6px;
+          color: #e2e8f0 !important;
+          background: rgba(255, 255, 255, 0.08);
+          padding: 1px 6px;
+          border-radius: 9999px;
+        }
+
+        .header-center-col {
+          display: flex;
+          align-items: center;
+        }
+
+        .header-live-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 5px 12px;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 9999px;
+          font-size: 11.5px;
+        }
+
+        .badge-text {
+          color: #94a3b8;
+          font-weight: 500;
+        }
+
+        .badge-highlight {
+          color: #ffffff;
+          font-weight: 700;
+          letter-spacing: 0.2px;
+        }
+
+        .header-nav-actions {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .header-nav-link {
+          background-color: rgba(255, 255, 255, 0.04);
+          color: #e2e8f0 !important;
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          border-radius: 9999px;
+          padding: 7px 15px;
+          font-size: 12px;
+          font-weight: 600;
+          text-decoration: none !important;
+          letter-spacing: 0.2px;
+          transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+          cursor: pointer;
+        }
+
+        .header-nav-link:hover {
+          background-color: rgba(255, 255, 255, 0.09);
+          border-color: rgba(255, 255, 255, 0.28);
+          color: #ffffff !important;
+          transform: translateY(-1px);
+        }
+
+        .header-btn-primary {
+          background-color: #fc1c46;
+          color: #ffffff !important;
+          border: 1px solid rgba(255, 255, 255, 0.18);
+          border-radius: 9999px;
+          padding: 7px 18px;
+          font-size: 12px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.6px;
+          cursor: pointer;
+          box-shadow: 0 2px 14px rgba(252, 28, 70, 0.32);
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+          transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .header-btn-primary:hover {
+          background-color: #ff2a54;
+          box-shadow: 0 4px 20px rgba(252, 28, 70, 0.48);
+          transform: translateY(-1px);
+        }
+
+        .header-btn-exit {
+          background-color: transparent;
+          color: #94a3b8 !important;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 9999px;
+          padding: 7px 13px;
+          font-size: 12px;
+          font-weight: 600;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .header-btn-exit:hover {
+          color: #fc1c46 !important;
+          border-color: rgba(252, 28, 70, 0.4);
+          background-color: rgba(252, 28, 70, 0.08);
+          transform: translateY(-1px);
+        }
+
+        @media (max-width: 900px) {
+          .landing-header {
+            padding: 0 16px;
+          }
+          .header-center-col {
+            display: none;
+          }
+          .brand-sub, .brand-version-pill {
+            display: none;
+          }
         }
       `}</style>
 
@@ -1710,188 +2634,30 @@ export default function AdminPage() {
           }
         }
 
-        /* ── Header Clean & Polished ── */
-        .admin-header {
-          position: sticky;
-          top: 0;
-          z-index: 100;
-          height: 64px;
-          background-color: #0a0a0a;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-          display: flex;
-          align-items: center;
-        }
-        .header-container {
-          width: 100%;
-          max-width: 1400px;
-          margin: 0 auto;
-          padding: 0 24px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 16px;
-        }
-        .header-left {
-          display: flex;
-          align-items: center;
-          gap: 14px;
-        }
-        .brand-link,
-        .brand-link:visited,
-        .brand-link:hover,
-        .brand-link:active {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          text-decoration: none !important;
-          color: #ffffff !important;
-        }
-        .brand-dot {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          background-color: #fc1c46;
-          display: inline-block;
-        }
-        .brand-title {
-          font-size: 15px;
-          font-weight: 800;
-          letter-spacing: -0.3px;
-          color: #ffffff !important;
-        }
-        .brand-badge {
-          font-size: 10px;
-          font-weight: 700;
-          letter-spacing: 0.8px;
-          background: rgba(252, 28, 70, 0.15);
-          color: #fc1c46 !important;
-          border: 1px solid rgba(252, 28, 70, 0.3);
-          padding: 2px 7px;
-          border-radius: 9999px;
-        }
-        .header-sep {
-          width: 1px;
-          height: 18px;
-          background-color: rgba(255, 255, 255, 0.12);
-        }
-        .status-indicator {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          font-size: 12px;
-        }
-        .pulse-dot {
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
-          background-color: #10b981;
-          box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
-        }
-        .status-text {
-          color: #cccccc;
-          font-weight: 500;
-        }
-        .status-sub {
-          color: #666666;
-          font-weight: 400;
-        }
-        .header-right {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-        .btn-header-ghost,
-        .btn-header-ghost:visited,
-        .btn-header-ghost:active {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          height: 36px;
-          padding: 0 14px;
-          background: transparent;
-          color: #ffffff !important;
-          border: 1px solid rgba(255, 255, 255, 0.18);
-          border-radius: 9999px;
-          font-size: 12px;
-          font-weight: 600;
-          text-decoration: none !important;
-          transition: background-color 0.2s, border-color 0.2s;
-        }
-        .btn-header-ghost:hover {
-          background-color: rgba(255, 255, 255, 0.08);
-          border-color: rgba(255, 255, 255, 0.35);
-          color: #ffffff !important;
-        }
-        .btn-header-dark {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          height: 36px;
-          padding: 0 14px;
-          background: #141414;
-          color: #ffffff !important;
-          border: 1px solid rgba(255, 255, 255, 0.12);
-          border-radius: 9999px;
-          font-size: 12px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: background-color 0.2s, border-color 0.2s;
-        }
-        .btn-header-dark:hover {
-          background: #1f1f1f;
-          border-color: rgba(255, 255, 255, 0.25);
-        }
-        .btn-header-primary {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          height: 36px;
-          padding: 0 16px;
-          background: #fc1c46;
-          color: #ffffff !important;
-          border: none;
-          border-radius: 9999px;
-          font-size: 12px;
-          font-weight: 700;
-          letter-spacing: 0.3px;
-          cursor: pointer;
-          transition: opacity 0.2s, transform 0.1s;
-        }
-        .btn-header-primary:hover {
-          opacity: 0.92;
-        }
-        .btn-header-icon {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          width: 36px;
-          height: 36px;
-          background: #141414;
-          border: 1px solid rgba(255, 255, 255, 0.12);
-          border-radius: 9999px;
-          color: #94a3b8;
-          cursor: pointer;
-          transition: color 0.2s, border-color 0.2s, background-color 0.2s;
-        }
-        .btn-header-icon:hover {
-          color: #ffffff;
-          border-color: #fc1c46;
-          background-color: rgba(252, 28, 70, 0.1);
-        }
-
         /* Body */
         .admin-body {
           max-width: 1400px;
           margin: 0 auto;
-          padding: 28px 24px;
+          padding: 32px 36px;
         }
 
-        /* Metrics Bento Grid */
+        /* Metrics Bento Grid — 3 Balanced Cards */
         .metrics-grid {
           display: grid;
-          grid-template-columns: repeat(4, 1fr);
+          grid-template-columns: repeat(3, 1fr);
           gap: 16px;
-          margin-bottom: 28px;
+          margin-bottom: 24px;
+        }
+        @media (max-width: 900px) {
+          .metrics-grid {
+            grid-template-columns: 1fr;
+          }
+          .landing-header {
+            padding: 0 16px;
+          }
+          .admin-body {
+            padding: 20px 16px;
+          }
         }
         .metric-card {
           background-color: #0a0a0a;
@@ -2000,210 +2766,523 @@ export default function AdminPage() {
           color: #000000;
           border-color: #ffffff;
         }
+        .filter-chip-sep {
+          width: 1px;
+          height: 18px;
+          background-color: rgba(255, 255, 255, 0.15);
+          margin: 0 4px;
+          flex-shrink: 0;
+        }
+        .filter-chip.sub-chip {
+          background: #141414;
+        }
+        .filter-chip.active-sub {
+          background: #ffffff;
+          color: #000000;
+          border-color: #ffffff;
+        }
+        .filter-chip.active-emerald {
+          background: rgba(16, 185, 129, 0.15);
+          color: #10b981;
+          border-color: #10b981;
+        }
+        .filter-chip.active-amber {
+          background: rgba(245, 158, 11, 0.15);
+          color: #f59e0b;
+          border-color: #f59e0b;
+        }
 
-        /* Table Container: Sharp 90° */
-        .table-container {
-          background-color: #0a0a0a;
-          border: 1px solid rgba(255, 255, 255, 0.1);
+        .btn-sync-all {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          background: #141414;
+          border: 1px solid rgba(16, 185, 129, 0.3);
+          border-radius: 9999px;
+          color: #10b981;
+          font-size: 10px;
+          font-weight: 700;
+          letter-spacing: 0.5px;
+          padding: 6px 14px;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .btn-sync-all:hover {
+          background: rgba(16, 185, 129, 0.15);
+          border-color: #10b981;
+        }
+
+        /* Catalog Container: Sharp 90° */
+        .catalog-container {
+          background-color: transparent;
+          border: none;
           border-radius: 0px;
-          overflow: hidden;
         }
         .table-header-meta {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 14px 20px;
+          padding: 14px 0;
+          margin-bottom: 18px;
           border-bottom: 1px solid rgba(255, 255, 255, 0.08);
           font-size: 11px;
           font-weight: 700;
           letter-spacing: 1px;
           color: #94a3b8;
+          flex-wrap: wrap;
+          gap: 12px;
         }
+        .meta-left-group {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          flex-wrap: wrap;
+        }
+        .view-toggle-capsule {
+          display: inline-flex;
+          align-items: center;
+          background: #0a0a0a;
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          border-radius: 9999px;
+          padding: 2px;
+          gap: 2px;
+        }
+        .btn-view-toggle {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          background: transparent;
+          border: none;
+          border-radius: 9999px;
+          color: #94a3b8;
+          padding: 4px 11px;
+          font-size: 10px;
+          font-weight: 700;
+          letter-spacing: 0.5px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        .btn-view-toggle:hover {
+          color: #ffffff;
+        }
+        .btn-view-toggle.active {
+          background: #ffffff;
+          color: #000000;
+        }
+
         .btn-refresh {
           display: inline-flex;
           align-items: center;
           gap: 6px;
-          background: transparent;
-          border: none;
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          border-radius: 9999px;
           color: #94a3b8;
           cursor: pointer;
-          font-size: 11px;
+          font-size: 10px;
           font-weight: 700;
           letter-spacing: 0.5px;
+          padding: 6px 14px;
+          transition: all 0.2s;
         }
         .btn-refresh:hover {
           color: #ffffff;
+          border-color: rgba(255, 255, 255, 0.35);
         }
 
-        .clubs-table {
-          width: 100%;
-          border-collapse: collapse;
-          text-align: left;
+        /* ═══════════════════════════════════════════════════════════
+           GRILLA DE BLOQUES MINIMALISTAS
+           ═══════════════════════════════════════════════════════════ */
+        .clubs-grid-layout {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+          gap: 22px;
         }
-        .clubs-table th {
-          background-color: #121212;
-          padding: 12px 20px;
-          font-size: 10px;
-          font-weight: 700;
-          letter-spacing: 1px;
-          color: #94a3b8;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .clubs-table td {
-          padding: 16px 20px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-          vertical-align: middle;
-        }
-        .clubs-table tr:hover td {
-          background-color: rgba(255, 255, 255, 0.02);
-        }
-        .row-inactive td {
-          opacity: 0.5;
-        }
-
-        /* Table Cells */
-        .club-cell {
-          display: flex;
-          align-items: center;
-          gap: 14px;
-        }
-        .club-thumb {
-          width: 44px;
-          height: 44px;
+        .club-block-card {
+          background: #0a0a0a;
+          border: 1px solid rgba(255, 255, 255, 0.08);
           border-radius: 0px;
-          background-size: contain;
-          background-repeat: no-repeat;
-          background-position: center;
-          background-color: #0c0c0c;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          flex-shrink: 0;
-        }
-        .club-cell-name {
-          font-size: 14px;
-          font-weight: 700;
-          color: #ffffff;
-          line-height: 1.3;
-        }
-        .club-cell-slug {
-          font-size: 11px;
-          color: #666666;
-          margin-top: 2px;
-        }
-        .address-cell {
-          font-size: 13px;
-        }
-        .address-main {
-          color: #ffffff;
-        }
-        .address-city {
-          font-size: 11px;
-          color: #94a3b8;
-          margin-top: 2px;
-        }
-
-        /* Courts Breakdown Cell */
-        .courts-breakdown-cell {
           display: flex;
           flex-direction: column;
-          gap: 4px;
+          overflow: hidden;
+          transition: border-color 0.25s ease, box-shadow 0.25s ease;
         }
-        .total-badge {
-          font-size: 11px;
+        .club-block-card:hover {
+          border-color: rgba(252, 28, 70, 0.4);
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+        }
+        .club-block-card.is-inactive {
+          opacity: 0.55;
+        }
+
+        /* Block Banner / Header */
+        .club-block-banner {
+          position: relative;
+          height: 145px;
+          overflow: hidden;
+          background: #000000;
+        }
+        .club-block-cover-img {
+          width: 100%;
+          height: 100%;
+          background-size: cover;
+          background-position: center;
+          filter: brightness(0.85);
+          transition: transform 0.4s ease;
+        }
+        .club-block-card:hover .club-block-cover-img {
+          transform: scale(1.03);
+        }
+        .club-block-overlay {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(to top, rgba(10, 10, 10, 1) 0%, rgba(10, 10, 10, 0.65) 50%, rgba(10, 10, 10, 0.2) 100%);
+        }
+        .club-block-top-row {
+          position: absolute;
+          top: 12px;
+          left: 14px;
+          right: 14px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+          z-index: 2;
+        }
+        .pill-admin-status {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          font-size: 9.5px;
+          font-weight: 700;
+          letter-spacing: 0.5px;
+          padding: 3px 9px;
+          border-radius: 9999px;
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          text-transform: uppercase;
+        }
+        .pill-admin-status.ok {
+          background: rgba(16, 185, 129, 0.15);
+          border: 1px solid rgba(16, 185, 129, 0.35);
+          color: #10b981;
+        }
+        .pill-admin-status.pending {
+          background: rgba(0, 0, 0, 0.65);
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          color: #94a3b8;
+        }
+        .club-block-header-text {
+          position: absolute;
+          bottom: 12px;
+          left: 14px;
+          right: 14px;
+          z-index: 2;
+        }
+        .club-block-title {
+          font-size: 18px;
           font-weight: 700;
           color: #ffffff;
+          letter-spacing: -0.4px;
+          line-height: 1.25;
+          margin: 0 0 3px 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
-        .courts-chips {
+        .club-block-slug {
+          font-size: 10.5px;
+          color: #888888;
+          font-family: monospace;
+          letter-spacing: 0.3px;
+        }
+
+        /* Block Body */
+        .club-block-body {
+          padding: 16px 16px 14px;
           display: flex;
-          gap: 6px;
+          flex-direction: column;
+          gap: 10px;
+          flex: 1;
+        }
+        .block-data-row {
+          display: flex;
+          align-items: flex-start;
+          gap: 8px;
+          font-size: 12.5px;
+          color: #cccccc;
+          line-height: 1.4;
+        }
+        .block-data-text {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .block-courts-box {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 8px 10px;
+          background: #000000;
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          border-radius: 0px;
+        }
+        .courts-box-label {
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 0.8px;
+          color: #888888;
+          text-transform: uppercase;
+        }
+        .courts-box-chips {
+          display: flex;
+          gap: 5px;
           flex-wrap: wrap;
         }
-        .court-chip {
-          font-size: 10px;
-          font-weight: 600;
-          padding: 2px 8px;
+        .court-mini-chip {
+          font-size: 9.5px;
+          font-weight: 700;
+          padding: 2px 7px;
           border-radius: 9999px;
         }
-        .court-chip.padel {
+        .court-mini-chip.padel {
           background: rgba(252, 28, 70, 0.12);
           color: #fc1c46;
           border: 1px solid rgba(252, 28, 70, 0.3);
         }
-        .court-chip.futbol {
+        .court-mini-chip.futbol {
           background: rgba(16, 185, 129, 0.12);
           color: #10b981;
           border: 1px solid rgba(16, 185, 129, 0.3);
         }
-        .court-chip.zero {
+        .court-mini-chip.zero {
           background: rgba(255, 255, 255, 0.05);
-          color: #666666;
+          color: #777777;
+          border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
-        /* Contact Cell */
-        .contact-cell {
+        .block-admin-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 6px 0;
+          font-size: 11.5px;
+          gap: 8px;
+        }
+        .block-admin-info {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          overflow: hidden;
+        }
+        .block-admin-email {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          max-width: 200px;
+        }
+        .block-admin-email.has-email {
+          color: #ffffff;
+          font-weight: 600;
+        }
+        .block-admin-email.no-email {
+          color: #64748b;
+          font-style: italic;
+        }
+        .admin-extra-badge {
+          background: rgba(16, 185, 129, 0.2);
+          color: #10b981;
+          font-size: 9px;
+          font-weight: 800;
+          padding: 1px 5px;
+          border-radius: 9999px;
+        }
+        .btn-block-assign {
+          background: transparent;
+          border: none;
+          color: #fc1c46;
+          font-size: 11px;
+          font-weight: 700;
+          cursor: pointer;
+          padding: 0;
+          white-space: nowrap;
+        }
+        .btn-block-assign:hover {
+          text-decoration: underline;
+        }
+
+        .block-contact-row {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          font-size: 11.5px;
+          flex-wrap: wrap;
+          margin-top: 2px;
+        }
+        .block-contact-link {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          color: #94a3b8;
+          text-decoration: none !important;
+          transition: color 0.2s;
+        }
+        .block-contact-link.whatsapp:hover {
+          color: #10b981 !important;
+        }
+        .block-contact-link.phone:hover {
+          color: #ffffff !important;
+        }
+        .block-contact-empty {
+          font-size: 11px;
+          color: #555555;
+        }
+
+        /* Block Footer Actions */
+        .club-block-footer {
+          padding: 10px 14px;
+          border-top: 1px solid rgba(255, 255, 255, 0.06);
+          background: #070707;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+        }
+        .block-footer-left,
+        .block-footer-right {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .btn-card-action {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid rgba(255, 255, 255, 0.14);
+          border-radius: 9999px;
+          color: #ffffff !important;
+          font-size: 10.5px;
+          font-weight: 700;
+          letter-spacing: 0.4px;
+          padding: 5px 12px;
+          cursor: pointer;
+          text-decoration: none !important;
+          transition: all 0.2s ease;
+        }
+        .btn-card-action:hover {
+          background: rgba(255, 255, 255, 0.09);
+          border-color: rgba(255, 255, 255, 0.3);
+        }
+        .btn-card-action.highlight {
+          background: rgba(252, 28, 70, 0.1);
+          border-color: rgba(252, 28, 70, 0.35);
+          color: #fc1c46 !important;
+        }
+        .btn-card-action.highlight:hover {
+          background: #fc1c46;
+          border-color: #fc1c46;
+          color: #ffffff !important;
+        }
+        .btn-card-action.danger {
+          padding: 5px 8px;
+          border-color: rgba(255, 255, 255, 0.1);
+          color: #777777 !important;
+        }
+        .btn-card-action.danger:hover {
+          border-color: #fc1c46;
+          background: rgba(252, 28, 70, 0.15);
+          color: #fc1c46 !important;
+        }
+
+        /* ═══════════════════════════════════════════════════════════
+           LISTA MINIMALISTA DE CLUBES
+           ═══════════════════════════════════════════════════════════ */
+        .clubs-clean-list {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+        .clean-list-item {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 12px 18px;
+          background: #0a0a0a;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 0px;
+          gap: 16px;
+          transition: border-color 0.2s;
+          flex-wrap: wrap;
+        }
+        .clean-list-item:hover {
+          border-color: rgba(255, 255, 255, 0.2);
+        }
+        .clean-list-col-main {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          min-width: 240px;
+        }
+        .clean-list-thumb {
+          width: 44px;
+          height: 44px;
+          background-size: cover;
+          background-position: center;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 0px;
+          flex-shrink: 0;
+        }
+        .clean-list-name-row {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .clean-list-name {
+          font-size: 14px;
+          font-weight: 700;
+          color: #ffffff;
+          line-height: 1.2;
+        }
+        .clean-list-slug {
+          font-size: 10.5px;
+          color: #777777;
+          font-family: monospace;
+          margin-top: 2px;
+        }
+        .clean-list-col-address {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 12px;
+          color: #cccccc;
+          min-width: 200px;
+        }
+        .clean-list-col-courts {
           display: flex;
           flex-direction: column;
           gap: 4px;
+          min-width: 130px;
         }
-        .contact-link {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          font-size: 12px;
-          text-decoration: none !important;
-          color: #ffffff !important;
+        .courts-count-text {
+          font-size: 10px;
+          font-weight: 800;
+          color: #888888;
+          text-transform: uppercase;
         }
-        .contact-link.whatsapp:hover {
-          color: #10b981 !important;
+        .clean-list-col-admin {
+          min-width: 170px;
         }
-        .contact-link.phone {
-          color: #94a3b8 !important;
+        .truncate {
+          max-width: 150px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
-        .text-muted {
-          font-size: 12px;
-          color: #666666;
-        }
-
-        /* Action Buttons */
-        .action-buttons {
+        .clean-list-col-actions {
           display: flex;
           align-items: center;
           gap: 6px;
-        }
-        .btn-pill-action {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          background: #171717;
-          border: 1px solid rgba(255, 255, 255, 0.15);
-          border-radius: 9999px;
-          padding: 6px 12px;
-          font-size: 11px;
-          font-weight: 700;
-          letter-spacing: 0.5px;
-          color: #ffffff;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .btn-pill-action:hover {
-          background: #242424;
-          border-color: #ffffff;
-        }
-        .btn-pill-action.secondary {
-          background: transparent;
-          color: #94a3b8;
-        }
-        .btn-pill-action.secondary:hover {
-          color: #ffffff;
-        }
-        .btn-pill-action.danger {
-          background: transparent;
-          color: #fc1c46;
-          border-color: rgba(252, 28, 70, 0.3);
-          padding: 6px 8px;
-        }
-        .btn-pill-action.danger:hover {
-          background: rgba(252, 28, 70, 0.15);
-          border-color: #fc1c46;
         }
 
         /* Loading & Empty States */
@@ -2330,13 +3409,291 @@ export default function AdminPage() {
           grid-template-columns: 1fr 1fr;
           gap: 16px;
         }
+        .form-grid-3 {
+          display: grid;
+          grid-template-columns: 2fr 1fr;
+          gap: 16px;
+        }
+        .input-with-icon {
+          position: relative;
+          display: flex;
+          align-items: center;
+        }
+        .input-with-icon svg {
+          position: absolute;
+          left: 12px;
+          pointer-events: none;
+        }
+        .input-padded {
+          padding-left: 36px !important;
+        }
+
+        /* Admin Access Card */
+        .admin-access-card {
+          background: #080808;
+          border: 1px solid rgba(252, 28, 70, 0.35);
+          border-radius: 0px;
+          padding: 18px 20px;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          position: relative;
+        }
+        .admin-card-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+        .admin-card-title {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 13px;
+          font-weight: 800;
+          letter-spacing: 0.5px;
+          color: #ffffff;
+        }
+        .admin-card-pill {
+          font-size: 9px;
+          font-weight: 700;
+          letter-spacing: 0.6px;
+          color: #fc1c46;
+          background: rgba(252, 28, 70, 0.15);
+          padding: 2px 8px;
+          border-radius: 9999px;
+        }
+        .admin-card-desc {
+          font-size: 12px;
+          color: #94a3b8;
+          line-height: 1.5;
+          margin: 0;
+        }
+        .admin-card-desc strong {
+          color: #ffffff;
+        }
+        .admin-fields-row {
+          display: flex;
+          gap: 12px;
+          align-items: flex-end;
+        }
+        .btn-test-club-panel {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          height: 38px;
+          background: #141414;
+          color: #fc1c46 !important;
+          border: 1px solid rgba(252, 28, 70, 0.4);
+          border-radius: 9999px;
+          padding: 0 16px;
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.5px;
+          text-decoration: none !important;
+          cursor: pointer;
+          white-space: nowrap;
+          transition: all 0.2s;
+        }
+        .btn-test-club-panel:hover {
+          background: rgba(252, 28, 70, 0.15);
+          border-color: #fc1c46;
+        }
+        .additional-admins-box {
+          border-top: 1px solid rgba(255, 255, 255, 0.08);
+          padding-top: 12px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+        .admin-chips-list {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+          margin-bottom: 4px;
+        }
+        .admin-email-tag {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          background: rgba(255, 255, 255, 0.06);
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          border-radius: 9999px;
+          padding: 3px 10px;
+          font-size: 11px;
+          color: #ffffff;
+        }
+        .btn-del-email-tag {
+          background: transparent;
+          border: none;
+          color: #94a3b8;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          padding: 0;
+        }
+        .btn-del-email-tag:hover {
+          color: #fc1c46;
+        }
+        .add-email-row {
+          display: flex;
+          gap: 8px;
+          align-items: center;
+        }
+        .btn-add-email-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          background: #171717;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          border-radius: 9999px;
+          color: #ffffff;
+          font-size: 11px;
+          font-weight: 700;
+          padding: 8px 16px;
+          cursor: pointer;
+          white-space: nowrap;
+          transition: all 0.2s;
+        }
+        .btn-add-email-pill:hover {
+          background: #242424;
+          border-color: #ffffff;
+        }
+
+        /* Photos Management Card */
+        .photos-management-card {
+          background: #080808;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 0px;
+          padding: 16px 18px;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+        .images-sublabel {
+          display: block;
+          font-size: 11px;
+          color: #888888;
+          margin-top: 2px;
+        }
+        .add-image-url-row {
+          display: flex;
+          gap: 8px;
+          align-items: center;
+        }
+        .input-url {
+          padding-left: 32px !important;
+        }
+        .add-image-url-row svg {
+          position: absolute;
+          left: 10px;
+          top: 50%;
+          transform: translateY(-50%);
+          pointer-events: none;
+        }
+        .btn-add-url-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          background: #171717;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          border-radius: 9999px;
+          color: #ffffff;
+          font-size: 11px;
+          font-weight: 700;
+          padding: 8px 16px;
+          cursor: pointer;
+          white-space: nowrap;
+          transition: all 0.2s;
+        }
+        .btn-add-url-pill:hover {
+          background: #242424;
+          border-color: #fc1c46;
+        }
+        .images-gallery-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+          gap: 12px;
+          margin-top: 4px;
+        }
+        .image-card-item {
+          position: relative;
+          height: 100px;
+          background: #000000;
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          border-radius: 0px;
+          overflow: hidden;
+        }
+        .image-card-item.is-cover {
+          border: 2px solid #fc1c46;
+        }
+        .image-card-thumb {
+          width: 100%;
+          height: 100%;
+          background-size: cover;
+          background-position: center;
+        }
+        .image-card-overlay {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          background: linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.4) 60%, transparent 100%);
+          padding: 6px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 4px;
+        }
+        .cover-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 3px;
+          background: #fc1c46;
+          color: #ffffff;
+          font-size: 9px;
+          font-weight: 800;
+          padding: 2px 6px;
+          border-radius: 9999px;
+          letter-spacing: 0.5px;
+        }
+        .btn-make-cover {
+          background: rgba(0, 0, 0, 0.7);
+          color: #ffffff;
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          border-radius: 9999px;
+          font-size: 9px;
+          font-weight: 700;
+          padding: 2px 7px;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .btn-make-cover:hover {
+          background: #fc1c46;
+          border-color: #fc1c46;
+        }
+        .btn-delete-image {
+          background: rgba(0, 0, 0, 0.7);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          border-radius: 50%;
+          width: 22px;
+          height: 22px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+        .btn-delete-image:hover {
+          background: #fc1c46;
+          border-color: #fc1c46;
+        }
 
         /* Image row */
         .images-label-row {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          margin-bottom: 10px;
+          margin-bottom: 6px;
         }
         .btn-pill-upload {
           display: inline-flex;
@@ -2346,20 +3703,15 @@ export default function AdminPage() {
           color: #ffffff;
           border: 1px solid rgba(255, 255, 255, 0.2);
           border-radius: 9999px;
-          padding: 4px 12px;
-          font-size: 10px;
+          padding: 6px 14px;
+          font-size: 11px;
           font-weight: 700;
           letter-spacing: 0.5px;
           cursor: pointer;
+          transition: border-color 0.2s;
         }
         .btn-pill-upload:hover {
           border-color: #fc1c46;
-        }
-        .images-preview-row {
-          display: flex;
-          gap: 10px;
-          overflow-x: auto;
-          padding: 4px 0;
         }
         .image-preview-card {
           position: relative;
