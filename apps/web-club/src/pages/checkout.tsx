@@ -607,6 +607,35 @@ export default function CheckoutPage() {
                     <span>{copiedSplitLink ? '¡Copiado!' : 'Copiar'}</span>
                   </button>
                 </div>
+
+                <a
+                  href={`https://wa.me/?text=${encodeURIComponent(`¡Muchachos! Armé el partido en ${confirmedBooking.clubName} (${confirmedBooking.courtName}) para ${confirmedBooking.time}. Entren acá para pagar su parte con Mercado Pago: ${confirmedBooking.splitLink}`)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    marginTop: 10,
+                    backgroundColor: '#25D366',
+                    color: '#000000',
+                    border: 'none',
+                    borderRadius: 'var(--radius-full)',
+                    padding: '12px 20px',
+                    fontSize: 12.5,
+                    fontWeight: 800,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.6px',
+                    textDecoration: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                    cursor: 'pointer',
+                    width: '100%',
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  <Icons.WhatsApp size={16} color="#000000" />
+                  <span>Compartir en WhatsApp al grupo</span>
+                </a>
               </div>
             )}
 

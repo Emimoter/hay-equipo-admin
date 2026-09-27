@@ -83,7 +83,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         phone: remoteData?.phone || firebaseUser.phoneNumber || '',
         photoURL: firebaseUser.photoURL || remoteData?.photoURL || '',
         bio: remoteData?.bio || '',
-        zone: remoteData?.zone || 'CABA / GBA',
+        zone: remoteData?.zone || 'Mar del Plata, Buenos Aires',
         sports: remoteData?.sports || ['PADEL'],
         padelCategory: remoteData?.padelCategory || '5ta Categoría',
         padelPosition: remoteData?.padelPosition || 'DRIVE',

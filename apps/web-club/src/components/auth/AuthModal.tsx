@@ -84,6 +84,8 @@ function getSpanishAuthError(error: any): string {
       return 'El código SMS expiró. Solicitá uno nuevo.';
     case 'auth/invalid-phone-number':
       return 'Número de teléfono no válido. Recordá incluir el código de país (ej: +54 9 11...).';
+    case 'auth/unauthorized-domain':
+      return 'Dominio no autorizado en Firebase. Agregá este dominio en Firebase Console > Authentication > Settings > Authorized domains.';
     default:
       return error?.message || 'Ocurrió un error inesperado al autenticar.';
   }

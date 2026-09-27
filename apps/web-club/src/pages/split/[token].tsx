@@ -90,7 +90,14 @@ export default function SplitInvitationPage() {
   const [payError, setPayError] = useState<string | null>(null);
   const [hasPaidSuccessfully, setHasPaidSuccessfully] = useState<boolean>(false);
   const [copiedLink, setCopiedLink] = useState<boolean>(false);
+  const [shareUrl, setShareUrl] = useState<string>('');
   const [selectedPlayerForModal, setSelectedPlayerForModal] = useState<PlayerPublicData | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setShareUrl(window.location.href);
+    }
+  }, []);
 
   useEffect(() => {
     if (!router.isReady || !token || typeof token !== 'string') return;
@@ -648,7 +655,7 @@ export default function SplitInvitationPage() {
               </button>
 
               <a
-                href={`https://wa.me/?text=${encodeURIComponent(`¡Muchachos! Quedan cupos para el partido en ${booking.clubName} (${booking.date} ${booking.startTime}hs). Entren acá para pagar su parte con Mercado Pago: ${typeof window !== 'undefined' ? window.location.href : ''}`)}`}
+                href={`https://wa.me/?text=${encodeURIComponent(`¡Muchachos! Quedan cupos para el partido en ${booking.clubName} (${booking.date} ${booking.startTime}hs). Entren acá para pagar su parte con Mercado Pago: ${shareUrl || booking.splitLink || ''}`)}`}
                 target="_blank"
                 rel="noreferrer"
                 style={{

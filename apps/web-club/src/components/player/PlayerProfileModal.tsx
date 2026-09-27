@@ -229,7 +229,7 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({ isOpen, 
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#94a3b8' }}>
                 <Icons.MapPin size={12} color="#fc1c46" />
-                <span>{player.zone || 'CABA / Buenos Aires'}</span>
+                <span>{player.zone || 'Mar del Plata, Buenos Aires'}</span>
               </div>
             </div>
           </div>

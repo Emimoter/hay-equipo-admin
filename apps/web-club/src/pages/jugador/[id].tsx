@@ -103,7 +103,7 @@ export default function JugadorPublicPage() {
             nickname: 'Dibu',
             photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
             bio: 'Fanático del pádel competitivo de 5ta categoría y de los partidos de fútbol 7 entre semana. Busco partidos intensos con tercer tiempo.',
-            zone: 'Palermo / Colegiales, CABA',
+            zone: 'Mar del Plata, Buenos Aires',
             sports: ['PADEL', 'FUTBOL'],
             padelCategory: '5ta Categoría',
             padelPosition: 'REVES',
@@ -287,7 +287,7 @@ export default function JugadorPublicPage() {
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#94a3b8', marginTop: 4 }}>
                     <Icons.MapPin size={13} color="#fc1c46" />
-                    <span>{player.zone || 'CABA / Buenos Aires'}</span>
+                    <span>{player.zone || 'Mar del Plata, Buenos Aires'}</span>
                   </div>
                 </div>
               </div>

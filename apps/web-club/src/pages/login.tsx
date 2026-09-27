@@ -204,7 +204,7 @@ export default function LoginPage() {
                   type="text"
                   value={clubName}
                   onChange={e => setClubName(e.target.value)}
-                  placeholder="ej. Club Atlético Palermo"
+                  placeholder="ej. Complejo Pádel & Fútbol"
                   autoComplete="organization"
                   style={{
                     width: '100%',

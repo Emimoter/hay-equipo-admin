@@ -1095,7 +1095,7 @@ export async function getUserMatchHistory(userId: string, userEmail?: string): P
     {
       id: 'match-hist-1',
       sport: 'PADEL',
-      clubName: 'Arena Pádel Palermo',
+      clubName: 'Complejo Pádel Gaboto',
       courtName: 'Cancha 1 Panorámica (Blindex)',
       date: '2026-09-05',
       startTime: '20:00',
@@ -1108,20 +1108,20 @@ export async function getUserMatchHistory(userId: string, userEmail?: string): P
     {
       id: 'match-hist-2',
       sport: 'FUTBOL',
-      clubName: 'Jara Fútbol Club',
-      courtName: 'Cancha 7 Sintético Pro',
+      clubName: 'Laverde Jara - Fútbol & Pádel',
+      courtName: 'Cancha 1 Sintético Forbex',
       date: '2026-08-30',
       startTime: '21:00',
       endTime: '22:00',
       status: 'COMPLETADO',
       bookingType: 'TURNO_FIJO',
-      badgeLabel: 'Fútbol 7 · Turno Fijo Semanal',
-      partnerInfo: '14 jugadores'
+      badgeLabel: 'Fútbol 5 · Turno Fijo Semanal',
+      partnerInfo: '10 jugadores'
     },
     {
       id: 'match-hist-3',
       sport: 'PADEL',
-      clubName: 'Club 360 Pádel',
+      clubName: 'Club 3er Tiempo',
       courtName: 'Cancha Central Techada',
       date: '2026-08-24',
       startTime: '19:30',
@@ -1133,15 +1133,15 @@ export async function getUserMatchHistory(userId: string, userEmail?: string): P
     },
     {
       id: 'match-hist-4',
-      sport: 'PADEL',
-      clubName: 'Arena Pádel Palermo',
-      courtName: 'Cancha 2 Panorámica',
+      sport: 'FUTBOL',
+      clubName: 'Catonio Fútbol 7',
+      courtName: 'Cancha Principal — Fútbol 7 Pro',
       date: '2026-08-17',
-      startTime: '18:00',
-      endTime: '19:30',
+      startTime: '19:00',
+      endTime: '20:00',
       status: 'COMPLETADO',
       bookingType: 'TURNO_SIMPLE',
-      badgeLabel: 'Pádel Dobles',
+      badgeLabel: 'Fútbol 7',
       partnerInfo: 'Reserva Directa'
     }
   ];

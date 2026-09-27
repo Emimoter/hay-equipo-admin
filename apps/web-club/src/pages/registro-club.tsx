@@ -329,7 +329,7 @@ export default function RegistroClubPage() {
                 required
                 value={clubName}
                 onChange={e => setClubName(e.target.value)}
-                placeholder="ej. Club Atlético Palermo / Padel Center Norte"
+                placeholder="ej. Complejo Deportivo / Padel Center"
                 style={{
                   width: '100%',
                   padding: '14px 0',
@@ -397,7 +397,7 @@ export default function RegistroClubPage() {
                 required
                 value={address}
                 onChange={e => setAddress(e.target.value)}
-                placeholder="ej. Av. del Libertador 4400, Palermo, CABA"
+                placeholder="ej. Av. Jara 2840, Mar del Plata"
                 style={{
                   width: '100%',
                   padding: '14px 0',

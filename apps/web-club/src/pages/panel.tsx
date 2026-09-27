@@ -428,7 +428,7 @@ export default function ClubPanel() {
   // Settings State
   const [mercadoPagoConnected, setMercadoPagoConnected] = useState(true);
   const [cancellationWindowHours, setCancellationWindowHours] = useState(6);
-  const [clubAddress, setClubAddress] = useState('Av. Del Libertador 4400, Palermo, CABA');
+  const [clubAddress, setClubAddress] = useState('Av. Jara 2840, Mar del Plata');
 
   // Notifications State & Handlers
   const [notifications, setNotifications] = useState<ClubNotification[]>(INITIAL_NOTIFICATIONS);
